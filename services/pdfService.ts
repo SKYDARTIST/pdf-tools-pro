@@ -154,81 +154,31 @@ export const compressPdf = async (
 ): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const arrayBuffer = await file.arrayBuffer();
+    if (onProgress) onProgress(20);
 
-    // TIER 1 & 2: Structural and Meta Cleanup (Med/High)
-    if (quality === 'high' || quality === 'med') {
-      const sourcePdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-      const compressedPdf = await PDFDocument.create();
-      const copiedPages = await compressedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
-      copiedPages.forEach((page) => compressedPdf.addPage(page));
+    const sourcePdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    const compressedPdf = await PDFDocument.create();
 
-      const saveOptions = {
-        useObjectStreams: true,
-        addDefaultPage: false,
-        objectsPerTick: quality === 'med' ? 50 : 100,
-      };
+    if (onProgress) onProgress(40);
+    const copiedPages = await compressedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
+    copiedPages.forEach((page) => compressedPdf.addPage(page));
 
-      if (quality === 'med') {
-        compressedPdf.setTitle('');
-        compressedPdf.setProducer('Anti-Gravity Protocol v2.1');
-        compressedPdf.setCreator('Monolith OS Optimization');
-      }
+    if (onProgress) onProgress(70);
 
-      return await compressedPdf.save(saveOptions);
-    }
+    const saveOptions = {
+      useObjectStreams: true,
+      addDefaultPage: false,
+      objectsPerTick: 50,
+    };
 
-    // TIER 3: AGGRESSIVE RASTERIZATION (Low) - For the "WOW" factor
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    // Metadata stripping for optimization
+    compressedPdf.setTitle('');
+    compressedPdf.setProducer('Anti-Gravity Protocol v2.2');
+    compressedPdf.setCreator('Monolith OS Optimization');
 
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-    const pdf = await loadingTask.promise;
-    const outPdf = await PDFDocument.create();
-
-    console.log(`Starting aggressive rasterization of ${pdf.numPages} pages...`);
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      if (onProgress) onProgress(Math.round((i / pdf.numPages) * 100));
-
-      const page = await pdf.getPage(i);
-
-      // Smart DPI: 1.5x (144 DPI) is the "Sweet Spot" for sharp mobile viewing 
-      // without exceeding memory limits on 25MB+ documents.
-      const viewport = page.getViewport({ scale: 1.5 });
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      if (!context) continue;
-
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      // Ensure crisp text rendering by disabling image smoothing during the draw phase
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = 'high';
-
-      await page.render({ canvas, viewport }).promise;
-
-      // Higher JPEG quality (0.7) for clarity, balanced by the useObjectStreams cleanup
-      const imageData = canvas.toDataURL('image/jpeg', 0.7);
-      const imageBytes = await fetch(imageData).then(res => res.arrayBuffer());
-      const embeddedImg = await outPdf.embedJpg(imageBytes);
-
-      const newPage = outPdf.addPage([viewport.width, viewport.height]);
-      newPage.drawImage(embeddedImg, {
-        x: 0,
-        y: 0,
-        width: viewport.width,
-        height: viewport.height,
-      });
-
-      // Explicit Cleanup for Mobile Memory
-      canvas.width = 0;
-      canvas.height = 0;
-      (page as any).cleanup();
-    }
-
+    const result = await compressedPdf.save(saveOptions);
     if (onProgress) onProgress(100);
-    return await outPdf.save({ useObjectStreams: true });
+    return result;
   });
 };
 

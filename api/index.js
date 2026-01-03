@@ -58,13 +58,23 @@ export default async function handler(req, res) {
         for (const modelName of modelsToTry) {
             try {
                 // Skip embedding models or experimental ones if we have others
-                if (modelName.includes('embedding') || modelName.includes('vision') && modelsToTry.length > 1) continue;
+                if (modelName.includes('embedding') || (modelName.includes('vision') && modelsToTry.length > 1)) continue;
 
                 const model = genAI.getGenerativeModel({ model: modelName });
-                const promptPayload = `
-                You are the Anti-Gravity AI. Keep answers under 3 sentences.
-                DOCUMENT: ${(documentText || '').substring(0, 15000)}
-                QUERY: ${prompt}`;
+
+                let promptPayload = "";
+                if (req.body.type === 'naming') {
+                    promptPayload = `
+                    You are the Anti-Gravity Organizer. Read the document text and suggest a professional filename.
+                    RULES: No extension, max 50 chars, use underscores for spaces, no special characters.
+                    DOCUMENT: ${(documentText || '').substring(0, 5000)}
+                    ONLY OUTPUT THE FILENAME. NO EXPLANATION.`;
+                } else {
+                    promptPayload = `
+                    You are the Anti-Gravity AI. Keep answers under 3 sentences.
+                    DOCUMENT: ${(documentText || '').substring(0, 15000)}
+                    QUERY: ${prompt}`;
+                }
 
                 const result = await model.generateContent(promptPayload);
                 const response = await result.response;
