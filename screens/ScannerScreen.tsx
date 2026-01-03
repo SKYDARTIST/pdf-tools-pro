@@ -128,7 +128,7 @@ const ScannerScreen: React.FC = () => {
                 scale: 1,
                 opacity: 1,
                 filter: appliedFilters
-                  ? `brightness(${appliedFilters.brightness}%) contrast(${appliedFilters.contrast}%) grayscale(${appliedFilters.grayscale === 200 ? 100 : 0}%)`
+                  ? `brightness(${appliedFilters.brightness}%) contrast(${appliedFilters.contrast}%) grayscale(${appliedFilters.grayscale}%) saturate(${appliedFilters.grayscale > 50 ? 0 : 100}%)`
                   : 'none'
               }}
               src={capturedImage}
