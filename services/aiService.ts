@@ -23,7 +23,9 @@ export const askGemini = async (prompt: string, documentText: string) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Proxy Processing Error');
+      const msg = errorData.error || 'Proxy Processing Error';
+      const details = errorData.details ? ` Details: ${errorData.details}` : '';
+      throw new Error(`${msg}${details}`);
     }
     const data = await response.json();
     return data.text || "No response content.";
