@@ -1,34 +1,38 @@
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Wrench, FileUp, Download, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { downloadBlob } from '../services/pdfService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wrench, FileUp, Download, Loader2, ShieldCheck, CheckCircle2, X } from 'lucide-react';
+import { downloadBlob, repairPdf } from '../services/pdfService';
 
 const RepairScreen: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [repaired, setRepaired] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setRepaired(false);
+      setError(null);
     }
   };
 
   const handleRepair = async () => {
     if (!file) return;
     setIsProcessing(true);
-    // Simulate robust PDF cleanup and re-linearization
-    setTimeout(async () => {
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        downloadBlob(new Uint8Array(arrayBuffer), `repaired_${file.name}`, 'application/pdf');
-        setRepaired(true);
-      } finally {
-        setIsProcessing(false);
-      }
-    }, 2500);
+    setError(null);
+
+    try {
+      const repairedBytes = await repairPdf(file);
+      downloadBlob(repairedBytes, `repaired_${file.name}`, 'application/pdf');
+      setRepaired(true);
+    } catch (err: any) {
+      console.error("Restoration Failed:", err);
+      setError("System Handshake Failed: The internal data of this PDF is too fragmented to recover in a browser environment.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -90,19 +94,28 @@ const RepairScreen: React.FC = () => {
         </div>
       </div>
 
-      {repaired && (
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl flex items-center gap-4 text-emerald-500">
-          <CheckCircle2 size={18} />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em]">Data Integrity Restored. Optimized carrier ready.</p>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {repaired && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl flex items-center gap-4 text-emerald-500">
+            <CheckCircle2 size={18} />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Data Integrity Restored. Optimized carrier ready.</p>
+          </motion.div>
+        )}
+
+        {error && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center gap-4 text-rose-500">
+            <X size={18} />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em]">{error}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <button
         disabled={!file || isProcessing}
         onClick={handleRepair}
         className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!file || isProcessing
-            ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-            : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+          ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+          : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
           }`}
       >
         <motion.div

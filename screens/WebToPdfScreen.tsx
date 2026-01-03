@@ -1,25 +1,40 @@
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Download, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import { createPdfFromText, downloadBlob } from '../services/pdfService';
 
 const WebToPdfScreen: React.FC = () => {
   const [url, setUrl] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleConvert = async () => {
     if (!url) return;
     setIsProcessing(true);
-    // Simulation of a web capture (requires server-side or sophisticated client-side rendering)
-    setTimeout(async () => {
-      try {
-        const result = await createPdfFromText(`Web Capture: ${url}`, `Full content capture from ${url} at ${new Date().toLocaleString()}. This document was generated using PDF Tools Pro on-device web engine.`);
-        downloadBlob(result, `web_capture_${Date.now()}.pdf`, 'application/pdf');
-      } finally {
-        setIsProcessing(false);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const { askGemini } = await import('../services/aiService');
+
+      // The backend will fetch the URL, clean the HTML, and return structured text
+      const cleanedContent = await askGemini(url, undefined, 'scrape');
+
+      if (cleanedContent.startsWith('BACKEND_ERROR') || cleanedContent.startsWith('AI_ERROR')) {
+        throw new Error(cleanedContent);
       }
-    }, 2500);
+
+      const pdfBytes = await createPdfFromText(`Web Capture: ${url}`, cleanedContent);
+      downloadBlob(pdfBytes, `web_capture_${Date.now()}.pdf`, 'application/pdf');
+      setSuccess(true);
+    } catch (err: any) {
+      console.error("Web Capture Failed:", err);
+      setError("Protcol Failure: Could not penetrate this URL. Ensure it is public and allows remote access.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -61,23 +76,36 @@ const WebToPdfScreen: React.FC = () => {
 
           <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none flex flex-col items-center justify-center text-center gap-4 h-44">
             <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+              animate={isProcessing ? { rotate: 360 } : {}}
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
             >
-              <Globe size={24} className="text-gray-300 dark:text-gray-700" />
+              <Globe size={24} className={isProcessing ? "text-violet-500" : "text-gray-300 dark:text-gray-700"} />
             </motion.div>
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest px-8 leading-relaxed">
-              Auto-purging advertisement layers and session identifiers for tactical layout
+              {isProcessing ? "Neural bypass active: Stripping ad layers and isolating core content..." : "Auto-purging advertisement layers and session identifiers for tactical layout"}
             </p>
           </div>
+
+          <AnimatePresence>
+            {error && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-[10px] font-black uppercase tracking-widest text-center">
+                {error}
+              </motion.div>
+            )}
+            {success && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-[10px] font-black uppercase tracking-widest text-center">
+                Capture serialized and downloaded.
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <button
           disabled={!url || isProcessing}
           onClick={handleConvert}
           className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!url || isProcessing
-              ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-              : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+            ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+            : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
             }`}
         >
           <motion.div

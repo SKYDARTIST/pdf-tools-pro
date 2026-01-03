@@ -94,6 +94,24 @@ export default async function handler(req, res) {
                     PRIORITY: Readability and detail preservation over perfect paper whiteness.
                     FORMAT: { "brightness": 115, "contrast": 135, "grayscale": 5, "sharpness": 125, "reason": "Whitened background while protecting highlights on the photo and ensuring text isn't faded." }
                     ONLY OUTPUT THE JSON. NO MARKDOWN.`;
+                } else if (req.body.type === 'scrape') {
+                    const scrapeResponse = await fetch(prompt);
+                    const html = await scrapeResponse.text();
+                    // High-speed text extraction for PDF serialization
+                    const textContent = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmb, '')
+                        .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmb, '')
+                        .replace(/<[^>]+>/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .substring(0, 10000);
+
+                    promptPayload = `
+                    You are the Anti-Gravity Web Clerk. 
+                    TASK: Clean and structure the following raw web text into a professional document format.
+                    INPUT: ${textContent}
+                    RULES: Remove headers, footers, and navigation links. Keep only main content.
+                    FORMAT: Title followed by structured paragraphs.
+                    ONLY OUTPUT THE CLEANED TEXT. NO MARKDOWN, NO EXPLANATION.`;
                 } else {
                     promptPayload = `
                     You are the Anti-Gravity AI. Keep answers under 3 sentences.

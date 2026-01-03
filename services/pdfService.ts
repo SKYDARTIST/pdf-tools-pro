@@ -148,6 +148,19 @@ export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number
 };
 
 
+export const repairPdf = async (file: File): Promise<Uint8Array> => {
+  return safeExecute(async () => {
+    const arrayBuffer = await file.arrayBuffer();
+    // Loading and re-saving reconstructs the XREF table and internal structure
+    const pdfDoc = await PDFDocument.load(arrayBuffer, {
+      ignoreEncryption: true,
+      throwOnInvalidObject: false
+    });
+    return await pdfDoc.save();
+  });
+};
+
+
 export const downloadBlob = (data: any, fileName: string, mimeType: string) => {
   const blob = new Blob([data], { type: mimeType });
   const url = window.URL.createObjectURL(blob);
