@@ -1,13 +1,45 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Image as ImageIcon, Plus, Trash2, Download, Loader2, GripVertical, FileUp } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { imageToPdf, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
 
 const ImageToPdfScreen: React.FC = () => {
+  const location = useLocation();
   const [items, setItems] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    // Check if we arrived with a captured image from the scanner
+    const state = location.state as { capturedImage?: string } | null;
+    if (state?.capturedImage) {
+      const handleIncomingScan = async () => {
+        try {
+          // Convert base64 data URL to a File object
+          const res = await fetch(state.capturedImage!);
+          const blob = await res.blob();
+          const file = new File([blob], `scan_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+          const newItem: FileItem = {
+            id: Math.random().toString(36).substr(2, 9),
+            file,
+            name: file.name,
+            size: file.size,
+            type: file.type
+          };
+
+          setItems(prev => [...prev, newItem]);
+          // Clean up state to prevent duplicate imports on refresh
+          window.history.replaceState({}, document.title);
+        } catch (err) {
+          console.error("Failed to import scan:", err);
+        }
+      };
+      handleIncomingScan();
+    }
+  }, [location]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

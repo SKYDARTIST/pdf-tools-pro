@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
 
@@ -71,6 +71,14 @@ const ScannerScreen: React.FC = () => {
     } finally {
       setIsPolishing(false);
     }
+  };
+
+  const handleDownload = () => {
+    if (!capturedImage) return;
+    const link = document.createElement('a');
+    link.href = capturedImage;
+    link.download = `scan_${Date.now()}.jpg`;
+    link.click();
   };
 
   return (
@@ -224,16 +232,26 @@ const ScannerScreen: React.FC = () => {
                 <span className="font-black text-[10px] uppercase tracking-[0.3em]">Neural Enhance</span>
               </button>
             ) : (
-              <button
-                onClick={() => navigate('/image-to-pdf')}
-                className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <FileCheck size={20} />
-                  <span className="font-black text-[10px] uppercase tracking-[0.3em]">Save to Local Device</span>
-                </div>
-                <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">Zero Cloud Upload Required</span>
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleDownload}
+                  className="h-20 px-6 bg-white/10 rounded-3xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10"
+                >
+                  <Download size={20} />
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-2">Quick JPEG</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/image-to-pdf', { state: { capturedImage } })}
+                  className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                >
+                  <div className="flex items-center gap-4">
+                    <FileCheck size={20} />
+                    <span className="font-black text-[10px] uppercase tracking-[0.3em]">Assemble PDF</span>
+                  </div>
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">Handoff to Compile</span>
+                </button>
+              </div>
             )}
           </>
         )}
