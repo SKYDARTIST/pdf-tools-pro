@@ -176,8 +176,9 @@ export const compressPdf = async (file: File, quality: 'low' | 'med' | 'high' = 
     // TIER 3: AGGRESSIVE RASTERIZATION (Low) - For the "WOW" factor
     // This renders each page to an optimized JPG and rebuilds the PDF.
     const pdfjsLib = await import('pdfjs-dist');
-    // Use the integrated worker from the package
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+    // Use unpkg which is more reliable for pdf.js workers
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
