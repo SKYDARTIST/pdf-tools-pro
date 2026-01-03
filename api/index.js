@@ -1,7 +1,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Standard Vercel Serverless Function (No Express needed for simplicity/reliability)
+// Anti-Gravity Backend v1.1 - Diagnostic Deployment
 export default async function handler(req, res) {
     if (req.method === 'GET' && req.url.includes('/health')) {
         return res.status(200).json({ status: 'online', mode: 'Serverless Function' });
