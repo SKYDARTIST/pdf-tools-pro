@@ -192,8 +192,9 @@ export const compressPdf = async (
 
       const page = await pdf.getPage(i);
 
-      // Use even lower scale (1.0) for maximum mobile stability on massive files
-      const viewport = page.getViewport({ scale: 1.0 });
+      // Smart DPI: 1.5x (144 DPI) is the "Sweet Spot" for sharp mobile viewing 
+      // without exceeding memory limits on 25MB+ documents.
+      const viewport = page.getViewport({ scale: 1.5 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       if (!context) continue;
@@ -201,10 +202,14 @@ export const compressPdf = async (
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
+      // Ensure crisp text rendering by disabling image smoothing during the draw phase
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+
       await page.render({ canvas, viewport }).promise;
 
-      // Use native fetch for much faster data URL to Uint8Array conversion
-      const imageData = canvas.toDataURL('image/jpeg', 0.4); // Lower quality for "Low" tier
+      // Higher JPEG quality (0.7) for clarity, balanced by the useObjectStreams cleanup
+      const imageData = canvas.toDataURL('image/jpeg', 0.7);
       const imageBytes = await fetch(imageData).then(res => res.arrayBuffer());
       const embeddedImg = await outPdf.embedJpg(imageBytes);
 
