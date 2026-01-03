@@ -30,24 +30,24 @@ export const askGemini = async (prompt: string, documentText: string) => {
   } catch (err: any) {
     console.error("Backend Proxy Failure:", err);
 
-    // Fallback to direct API key IF we are in development and proxy is failing
-    if (localApiKey && localApiKey !== 'PLACEHOLDER_API_KEY') {
-      console.log("🔄 falling back to direct API key...");
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const ai = new GoogleGenerativeAI(localApiKey);
+    // Fallback to direct API key ONLY in local development
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
+    if (localApiKey && (isLocal && localApiKey !== 'PLACEHOLDER_API_KEY')) {
+      console.log("🔄 falling back to direct API key (Dev Mode)...");
       try {
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const ai = new GoogleGenerativeAI(localApiKey);
         const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(`Context: ${documentText}\n\nQuestion: ${prompt}`);
         return result.response.text();
       } catch (error: any) {
         console.error("Direct API Error:", error);
-        if (error.message?.includes('SAFETY')) return "SAFETY_BLOCK: The response was filtered.";
-        return `AI_ERROR: ${error.message || 'Direct connection failed.'}`;
+        return `AI_ERROR: Direct connection failed. ${error.message}`;
       }
     }
 
     const details = err.message || 'Security proxy is unreachable.';
-    return `BACKEND_ERROR: ${details}`;
+    return `BACKEND_ERROR: ${details} (If on Vercel, ensure GEMINI_API_KEY is set in settings)`;
   }
 };

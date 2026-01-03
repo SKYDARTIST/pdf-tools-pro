@@ -1,69 +1,54 @@
 
-import express from 'express';
-import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import dotenv from 'dotenv';
 
-dotenv.config();
+// Standard Vercel Serverless Function (No Express needed for simplicity/reliability)
+export default async function handler(req, res) {
+    if (req.method === 'GET' && req.url.includes('/health')) {
+        return res.status(200).json({ status: 'online', mode: 'Serverless Function' });
+    }
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-// INITIALIZE GEMINI
-const apiKey = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey || '');
-
-const SYSTEM_INSTRUCTION = `
-You are the Anti-Gravity AI. 
-Your goal is to help users understand complex PDF documents quickly.
-Keep answers extremely concise, under 3 sentences.
-Focus on extracting facts, explaining jargon, and summarizing content.
-Do not speculate. If the text doesn't contain the answer, say so.
-Maintain a professional, helpful, and technical tone.
-`;
-
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'online', protocol: 'Anti-Gravity Secure Proxy' });
-});
-
-app.post('/api/ai/ask', async (req, res) => {
     const { prompt, documentText } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (!apiKey) {
         return res.status(500).json({ error: "Server Configuration Error: Missing API Key" });
     }
 
     try {
-        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash"];
+        const genAI = new GoogleGenerativeAI(apiKey);
+        // Using models known to be stable and available
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
             try {
                 const model = genAI.getGenerativeModel({ model: modelName });
                 const promptPayload = `
-                ${SYSTEM_INSTRUCTION}
+                You are the Anti-Gravity AI. 
+                Keep answers under 3 sentences.
+                Focus on facts and summaries based on the provided document.
                 
-                DOCUMENT_TEXT_PAYLOAD_START
+                DOCUMENT:
                 ${(documentText || '').substring(0, 15000)}
-                DOCUMENT_TEXT_PAYLOAD_END
 
-                PROTOCOL_QUERY: ${prompt}
+                QUERY: ${prompt}
                 `;
 
                 const result = await model.generateContent(promptPayload);
                 const response = await result.response;
-                return res.json({ text: response.text() });
+                return res.status(200).json({ text: response.text() });
             } catch (err) {
                 lastError = err;
-                console.warn(`⚠️ Model ${modelName} failed. Routing...`);
+                console.warn(`⚠️ Model ${modelName} failed. Trying next...`);
             }
         }
         throw lastError;
     } catch (error) {
-        console.error("CRITICAL AI KERNEL RESET:", error);
+        console.error("AI KERNEL ERROR:", error);
         res.status(500).json({ error: error.message || "AI Protocol Failure" });
     }
-});
-
-export default app;
+}
