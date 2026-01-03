@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     Search, Combine, Scissors, Lock, PenTool, Image, FileText, Droplet, Zap,
-    RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet
+    RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet, BookOpen
 } from 'lucide-react';
 import LegalFooter from '../components/LegalFooter';
 
@@ -14,13 +14,13 @@ const ToolsScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
 
     const tools = [
+        { title: 'Read', desc: 'Secure Sequential Reading', icon: BookOpen, path: '/reader', cat: 'popular' },
         { title: 'Scanner', desc: 'AI Polish & Smart Naming', icon: Zap, path: '/scanner', cat: 'popular' },
         { title: 'Image to PDF', desc: 'Convert photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
         { title: 'Merge', desc: 'Combine PDFs', icon: Combine, path: '/merge', cat: 'popular' },
         { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },
         { title: 'To Text', desc: 'Extract copyable text', icon: FileText, path: '/extract-text', cat: 'convert' },
         { title: 'Sign', desc: 'Authorize documents', icon: PenTool, path: '/sign', cat: 'security' },
-
         { title: 'Rotate', desc: 'Fix orientation', icon: RotateCw, path: '/rotate', cat: 'popular' },
         { title: 'Watermark', desc: 'Add brand layer', icon: Droplet, path: '/watermark', cat: 'security' },
         { title: 'Get Images', desc: 'Export PDF visuals', icon: FileImage, path: '/extract-images', cat: 'convert' },

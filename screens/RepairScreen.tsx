@@ -3,12 +3,22 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wrench, FileUp, Download, Loader2, ShieldCheck, CheckCircle2, X } from 'lucide-react';
 import { downloadBlob, repairPdf } from '../services/pdfService';
+import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
+import { useNavigate } from 'react-router-dom';
 
 const RepairScreen: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [repaired, setRepaired] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState<{
+    fileName: string;
+    originalSize: number;
+    finalSize: number;
+  } | null>(null);
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -25,11 +35,36 @@ const RepairScreen: React.FC = () => {
 
     try {
       const repairedBytes = await repairPdf(file);
-      downloadBlob(repairedBytes, `repaired_${file.name}`, 'application/pdf');
+      const fileName = `repaired_${file.name}`;
+      downloadBlob(repairedBytes, fileName, 'application/pdf');
+
+      // Record in history
+      FileHistoryManager.addEntry({
+        fileName,
+        operation: 'repair',
+        originalSize: file.size,
+        finalSize: repairedBytes.length,
+        status: 'success'
+      });
+
+      // Prepare success data for modal
+      setSuccessData({
+        fileName,
+        originalSize: file.size,
+        finalSize: repairedBytes.length
+      });
+
       setRepaired(true);
+      setShowSuccessModal(true);
     } catch (err: any) {
       console.error("Restoration Failed:", err);
       setError("System Handshake Failed: The internal data of this PDF is too fragmented to recover in a browser environment.");
+
+      FileHistoryManager.addEntry({
+        fileName: `repair_failed_${file.name}`,
+        operation: 'repair',
+        status: 'error'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -132,6 +167,22 @@ const RepairScreen: React.FC = () => {
           </>
         )}
       </button>
+
+      {/* Success Modal */}
+      {successData && (
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          operation="Repair Assets"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setShowSuccessModal(false);
+            navigate('/my-files');
+          }}
+        />
+      )}
     </motion.div>
   );
 };

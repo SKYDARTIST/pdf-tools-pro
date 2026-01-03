@@ -1,32 +1,39 @@
-
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FileSearch, FileUp, Copy, Check, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileSearch, FileUp, Copy, Check, Loader2, Edit3, Download, RefreshCcw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { replaceTextInPdf } from '../utils/pdfEditor';
 
 // Configure PDF.js worker - using local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 const ExtractTextScreen: React.FC = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const [originalBuffer, setOriginalBuffer] = useState<ArrayBuffer | null>(null);
   const [text, setText] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState<{ chars: number; pages: number } | null>(null);
 
+  // Direct Edit State
+  const [showEdit, setShowEdit] = useState(false);
+  const [findText, setFindText] = useState('');
+  const [replaceText, setReplaceText] = useState('');
+  const [isApplyingEdit, setIsApplyingEdit] = useState(false);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
       setIsProcessing(true);
 
       try {
-        // Read file as ArrayBuffer
-        const arrayBuffer = await file.arrayBuffer();
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        setOriginalBuffer(arrayBuffer);
 
-        // Load PDF document
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
         const numPages = pdf.numPages;
 
-        // Extract text from all pages
         let fullText = '';
         for (let i = 1; i <= numPages; i++) {
           const page = await pdf.getPage(i);
@@ -37,10 +44,9 @@ const ExtractTextScreen: React.FC = () => {
           fullText += pageText + '\n\n';
         }
 
-        // Clean up text
         const cleanedText = fullText
-          .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
-          .replace(/\n\s*\n/g, '\n\n')  // Remove extra blank lines
+          .replace(/\s+/g, ' ')
+          .replace(/\n\s*\n/g, '\n\n')
           .trim();
 
         setText(cleanedText);
@@ -50,18 +56,37 @@ const ExtractTextScreen: React.FC = () => {
         });
       } catch (err) {
         alert('Error extracting text: ' + (err instanceof Error ? err.message : 'Unknown error'));
-        setText('Failed to extract text from PDF. The file may be image-based or corrupted.');
+        setText('Failed to extract text from PDF.');
       } finally {
         setIsProcessing(false);
       }
     }
   };
 
-  const copyToClipboard = () => {
-    if (text) {
-      navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const handleApplyEdit = async () => {
+    if (!originalBuffer || !findText || !replaceText || !file) return;
+
+    setIsApplyingEdit(true);
+    try {
+      // Universal Replace: now handles all pages and all occurrences
+      const modifiedBytes = await replaceTextInPdf(originalBuffer, findText, replaceText);
+      if (modifiedBytes) {
+        const blob = new Blob([modifiedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `edited_${file.name}`;
+        link.click();
+        URL.revokeObjectURL(url);
+        alert('Global Neural Modification Synchronized. Modified document is ready.');
+      } else {
+        alert(`No occurrences of "${findText}" found in the document.`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Neural Modification failed.');
+    } finally {
+      setIsApplyingEdit(false);
     }
   };
 
@@ -76,8 +101,8 @@ const ExtractTextScreen: React.FC = () => {
         {/* Header Section */}
         <div className="space-y-3">
           <div className="text-technical">Protocol Assets / Lexical Extraction</div>
-          <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Extract</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Identify and reconstruct readable data streams for lexical reuse</p>
+          <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Extract & Edit</h1>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Reconstruct readable data streams or inject modifications directly</p>
         </div>
 
         {!text && !isProcessing ? (
@@ -89,44 +114,95 @@ const ExtractTextScreen: React.FC = () => {
               <FileSearch size={32} />
             </motion.div>
             <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Extraction</span>
-            <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Lexical Scan Mode</span>
             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
           </label>
         ) : isProcessing ? (
           <div className="h-80 flex flex-col items-center justify-center gap-6 monolith-card bg-black/5 dark:bg-white/5 border-none shadow-xl">
-            <div className="relative">
-              <Loader2 className="animate-spin text-black dark:text-white" size={48} strokeWidth={3} />
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="absolute inset-0 bg-black/5 dark:bg-white/5 rounded-full filter blur-xl"
-              />
-            </div>
+            <Loader2 className="animate-spin text-black dark:text-white" size={48} strokeWidth={3} />
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] animate-pulse">Syncing Lexical Data...</p>
           </div>
         ) : (
           <div className="space-y-8">
+            {/* Stats & Actions */}
             <div className="flex justify-between items-end px-2">
               <div className="space-y-1">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Extracted Buffer</h4>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Neural Buffer</h4>
                 {stats && (
                   <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                     {stats.chars.toLocaleString()} BYTES • {stats.pages} SEGMENTS
                   </p>
                 )}
               </div>
-              <button
-                onClick={copyToClipboard}
-                className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all shadow-2xl ${copied
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-black dark:bg-white text-white dark:text-black hover:scale-105 active:scale-95'
-                  }`}
-              >
-                {copied ? <Check size={14} strokeWidth={3} /> : <Copy size={14} strokeWidth={3} />}
-                {copied ? 'BUFFER_COPIED' : 'Sync to Clipboard'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowEdit(!showEdit)}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${showEdit ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10'}`}
+                >
+                  <Edit3 size={14} />
+                  {showEdit ? 'Close Editor' : 'Direct Edit'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (text) navigator.clipboard.writeText(text);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? 'COPIED' : 'Copy'}
+                </button>
+              </div>
             </div>
 
+            {/* Editor Panel */}
+            <AnimatePresence>
+              {showEdit && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="monolith-card p-6 bg-emerald-500/5 border-emerald-500/20 mb-8 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Edit3 size={14} className="text-emerald-500" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Neural Injector Prototype</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-widest text-gray-400">Search Lexeme</label>
+                        <input
+                          value={findText}
+                          onChange={(e) => setFindText(e.target.value)}
+                          placeholder="Existing text..."
+                          className="w-full bg-white dark:bg-black/40 border border-black/5 dark:border-white/5 rounded-xl p-3 text-[11px] font-bold uppercase tracking-widest focus:ring-1 ring-emerald-500 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[8px] font-black uppercase tracking-widest text-gray-400">Target Injection</label>
+                        <input
+                          value={replaceText}
+                          onChange={(e) => setReplaceText(e.target.value)}
+                          placeholder="New text..."
+                          className="w-full bg-white dark:bg-black/40 border border-black/5 dark:border-white/5 rounded-xl p-3 text-[11px] font-bold uppercase tracking-widest focus:ring-1 ring-emerald-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      disabled={!findText || !replaceText || isApplyingEdit}
+                      onClick={handleApplyEdit}
+                      className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 disabled:opacity-20"
+                    >
+                      {isApplyingEdit ? <RefreshCcw className="animate-spin" size={16} /> : <Download size={16} />}
+                      {isApplyingEdit ? 'Injecting Data...' : 'Apply Neural Inject & Save'}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Buffer Display */}
             <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none shadow-xl min-h-[400px] max-h-[500px] overflow-y-auto custom-scrollbar">
               <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
                 {text}
@@ -134,7 +210,7 @@ const ExtractTextScreen: React.FC = () => {
             </div>
 
             <button
-              onClick={() => { setText(null); setStats(null); }}
+              onClick={() => { setText(null); setStats(null); setFile(null); setShowEdit(false); }}
               className="w-full py-4 text-[9px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase tracking-[0.5em] transition-colors"
             >
               [ Re-Initialize Extraction ]

@@ -1,21 +1,27 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { extractTextFromPdf } from '../utils/pdfExtractor';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const ReaderScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [scale, setScale] = useState<number>(1.0);
+    const [isFluidMode, setIsFluidMode] = useState<boolean>(false);
+    const [fluidContent, setFluidContent] = useState<string>('');
+    const [isLoadingFluid, setIsLoadingFluid] = useState<boolean>(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
             setPageNumber(1);
+            setIsFluidMode(false);
+            setFluidContent('');
         }
     };
 
@@ -39,6 +45,24 @@ const ReaderScreen: React.FC = () => {
         setScale((prev) => Math.max(prev - 0.2, 0.5));
     };
 
+    const toggleFluidMode = async () => {
+        if (!file) return;
+
+        if (!isFluidMode && !fluidContent) {
+            setIsLoadingFluid(true);
+            try {
+                const buffer = await file.arrayBuffer();
+                const text = await extractTextFromPdf(buffer);
+                setFluidContent(text);
+            } catch (error) {
+                console.error("Fluid Extraction Failed:", error);
+            } finally {
+                setIsLoadingFluid(false);
+            }
+        }
+        setIsFluidMode(!isFluidMode);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -51,7 +75,9 @@ const ReaderScreen: React.FC = () => {
                 <div className="space-y-3">
                     <div className="text-technical">Protocol Assets / Linear Reading</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Read</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Execute sequential data interpretation via high-fidelity document rendering</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        {isFluidMode ? "Neural Reflow Mode - Responsive Data Stream" : "Execute sequential data interpretation via high-fidelity document rendering"}
+                    </p>
                 </div>
 
                 {!file ? (
@@ -63,80 +89,181 @@ const ReaderScreen: React.FC = () => {
                             <BookOpen size={32} />
                         </motion.div>
                         <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Reader</span>
-                        <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Sequential Scan Mode</span>
                         <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                     </label>
                 ) : (
                     <div className="space-y-8">
-                        {/* Controls */}
-                        <div className="flex items-center justify-between monolith-card p-6 border-none shadow-xl">
-                            {/* Page Navigation */}
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={goToPrevPage}
-                                    disabled={pageNumber <= 1}
-                                    className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
+                        {/* Advanced Controls Bar */}
+                        <div className="flex items-center justify-between monolith-card p-6 border-none shadow-xl gap-4 overflow-x-auto no-scrollbar">
+                            <div className="flex items-center gap-2">
+                                {/* Reflow/Fluid Toggle */}
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={toggleFluidMode}
+                                    className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isFluidMode
+                                        ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
+                                        : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                        }`}
                                 >
-                                    <ChevronLeft size={20} className="text-gray-900 dark:text-white" />
-                                </button>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white min-w-[80px] text-center">
-                                    {pageNumber} / {numPages}
-                                </span>
-                                <button
-                                    onClick={goToNextPage}
-                                    disabled={pageNumber >= numPages}
-                                    className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                >
-                                    <ChevronRight size={20} className="text-gray-900 dark:text-white" />
-                                </button>
+                                    {isFluidMode ? <Zap size={14} fill="currentColor" /> : <Zap size={14} />}
+                                    {isFluidMode ? "Disable Fluid" : "Fluid Mode"}
+                                </motion.button>
                             </div>
 
-                            {/* Zoom Controls */}
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={zoomOut}
-                                    disabled={scale <= 0.5}
-                                    className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                >
-                                    <ZoomOut size={20} className="text-gray-900 dark:text-white" />
-                                </button>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white min-w-[50px] text-center">
-                                    {Math.round(scale * 100)}%
-                                </span>
-                                <button
-                                    onClick={zoomIn}
-                                    disabled={scale >= 3.0}
-                                    className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                >
-                                    <ZoomIn size={20} className="text-gray-900 dark:text-white" />
-                                </button>
-                            </div>
+                            <AnimatePresence mode="wait">
+                                {!isFluidMode ? (
+                                    <motion.div
+                                        key="classic-controls"
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 10 }}
+                                        className="flex items-center gap-4 shrink-0"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={goToPrevPage}
+                                                disabled={pageNumber <= 1}
+                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
+                                            >
+                                                <ChevronLeft size={18} className="text-gray-900 dark:text-white" />
+                                            </button>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white min-w-[60px] text-center">
+                                                {pageNumber} / {numPages}
+                                            </span>
+                                            <button
+                                                onClick={goToNextPage}
+                                                disabled={pageNumber >= numPages}
+                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
+                                            >
+                                                <ChevronRight size={18} className="text-gray-900 dark:text-white" />
+                                            </button>
+                                        </div>
 
-                            {/* Close */}
+                                        <div className="h-8 w-[1px] bg-black/5 dark:bg-white/5 hidden sm:block" />
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={zoomOut}
+                                                disabled={scale <= 0.5}
+                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
+                                            >
+                                                <ZoomOut size={18} className="text-gray-900 dark:text-white" />
+                                            </button>
+                                            <button
+                                                onClick={zoomIn}
+                                                disabled={scale >= 3.0}
+                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
+                                            >
+                                                <ZoomIn size={18} className="text-gray-900 dark:text-white" />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="fluid-indicator"
+                                        initial={{ opacity: 0, x: 10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -10 }}
+                                        className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 flex items-center gap-2"
+                                    >
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        Responsive Stream Active
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
                             <button
-                                onClick={() => setFile(null)}
+                                onClick={() => {
+                                    setFile(null);
+                                    setIsFluidMode(false);
+                                }}
                                 className="p-3 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
-                        {/* PDF Viewer */}
-                        <div className="monolith-card bg-gray-100 dark:bg-black border-none shadow-2xl p-8 flex items-center justify-center min-h-[500px] overflow-auto custom-scrollbar">
-                            <Document
-                                file={file}
-                                onLoadSuccess={onDocumentLoadSuccess}
-                                className="flex items-center justify-center"
-                            >
-                                <Page
-                                    pageNumber={pageNumber}
-                                    scale={scale}
-                                    className="shadow-[0_0_100px_rgba(0,0,0,0.1)] dark:shadow-[0_0_100px_rgba(255,255,255,0.05)] border border-black/5 dark:border-white/5"
-                                    renderTextLayer={true}
-                                    renderAnnotationLayer={true}
-                                    loading={<div className="w-full h-96 bg-black/5 dark:bg-white/5 animate-pulse rounded-2xl" />}
-                                />
-                            </Document>
+                        {/* Content Area */}
+                        <div className="monolith-card bg-gray-50 dark:bg-[#0a0a0a] border-none shadow-2xl p-0 overflow-hidden relative min-h-[600px]">
+                            <AnimatePresence mode="wait">
+                                {isLoadingFluid ? (
+                                    <motion.div
+                                        key="loading"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center"
+                                    >
+                                        <Zap size={48} className="text-black dark:text-white animate-pulse mb-6 opacity-20" />
+                                        <h3 className="text-sm font-black uppercase tracking-widest text-black dark:text-white mb-2">Neural Reflow Processing</h3>
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Optimizing sequential data for mobile consumption...</p>
+                                    </motion.div>
+                                ) : isFluidMode ? (
+                                    <motion.div
+                                        key="fluid-view"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="p-10 h-[600px] overflow-y-auto custom-scrollbar prose prose-sm dark:prose-invert max-w-none relative"
+                                        onScroll={(e) => {
+                                            const container = e.currentTarget;
+                                            const markers = container.querySelectorAll('.page-marker');
+                                            let currentVisiblePage = 1;
+                                            markers.forEach((marker) => {
+                                                const rect = marker.getBoundingClientRect();
+                                                const containerRect = container.getBoundingClientRect();
+                                                if (rect.top <= containerRect.top + 100) {
+                                                    const pageMatch = marker.textContent?.match(/PAGE (\d+)/);
+                                                    if (pageMatch) currentVisiblePage = parseInt(pageMatch[1]);
+                                                }
+                                            });
+                                            if (currentVisiblePage !== pageNumber) setPageNumber(currentVisiblePage);
+                                        }}
+                                    >
+                                        {/* Floating Page Indicator for Fluid Mode */}
+                                        <div className="sticky top-0 right-0 flex justify-end pointer-events-none z-20">
+                                            <div className="bg-black/80 dark:bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[9px] font-black text-white dark:text-black uppercase tracking-[0.2em] shadow-2xl flex items-center gap-2">
+                                                <Activity size={10} className="text-emerald-400" />
+                                                Streaming Page {pageNumber}
+                                            </div>
+                                        </div>
+
+                                        {fluidContent.split('\n\n').map((para, i) => (
+                                            <p key={i} className="text-[14px] leading-relaxed text-gray-800 dark:text-gray-200 font-medium mb-6">
+                                                {para.startsWith('[PAGE') ? (
+                                                    <span className="page-marker block text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4 pb-2 border-b border-black/5 dark:border-white/5 pt-8">
+                                                        {para}
+                                                    </span>
+                                                ) : para}
+                                            </p>
+                                        ))}
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="classic-view"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="h-[600px] overflow-auto bg-gray-200 dark:bg-black/40 custom-scrollbar"
+                                    >
+                                        <div className="p-8 min-h-full flex items-start justify-center">
+                                            <Document
+                                                file={file}
+                                                onLoadSuccess={onDocumentLoadSuccess}
+                                                className="shadow-[0_0_80px_rgba(0,0,0,0.1)] dark:shadow-[0_0_80px_rgba(255,255,255,0.05)] border border-black/5 dark:border-white/5"
+                                            >
+                                                <Page
+                                                    pageNumber={pageNumber}
+                                                    scale={scale}
+                                                    renderTextLayer={true}
+                                                    renderAnnotationLayer={true}
+                                                    loading={<div className="w-96 h-[500px] bg-black/5 dark:bg-white/5 animate-pulse rounded-2xl" />}
+                                                />
+                                            </Document>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </div>
                 )}

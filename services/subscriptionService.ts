@@ -91,14 +91,38 @@ export const canPerformOperation = (): { allowed: boolean; reason?: string } => 
     return { allowed: true };
 };
 
-// Check if user can use AI
-export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: number } => {
+// Check if user is near their AI limit
+export const isNearAiLimit = (): boolean => {
     const subscription = getSubscription();
-    const now = new Date();
 
     // 1. Check AI Pack Credits First (High Priority)
     if (subscription.aiPackCredits > 0) {
-        return { allowed: true, remaining: subscription.aiPackCredits };
+        // AI Pack efficiency: warn when less than 10 credits remaining
+        return subscription.aiPackCredits <= 10;
+    }
+
+    // 2. Tier Specific Limits
+    if (subscription.tier === SubscriptionTier.FREE) {
+        return subscription.aiDocsThisWeek >= FREE_LIMITS.aiDocsPerWeek;
+    }
+
+    if (subscription.tier === SubscriptionTier.PRO) {
+        // High efficiency: warn when less than 3 docs remaining in monthly quota
+        return (PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth) <= 3;
+    }
+
+    return false;
+};
+
+// Check if user can use AI
+export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: number; warning?: boolean } => {
+    const subscription = getSubscription();
+    const now = new Date();
+    const warning = isNearAiLimit();
+
+    // 1. Check AI Pack Credits First (High Priority)
+    if (subscription.aiPackCredits > 0) {
+        return { allowed: true, remaining: subscription.aiPackCredits, warning };
     }
 
     // 2. Weekly Reset for Free Tier
@@ -127,7 +151,7 @@ export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: num
                 reason: `You've used your 1 free AI document this week. Upgrade to Pro for 10 AI documents per month!`
             };
         }
-        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerWeek - subscription.aiDocsThisWeek };
+        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerWeek - subscription.aiDocsThisWeek, warning };
     }
 
     if (subscription.tier === SubscriptionTier.PRO) {
@@ -137,7 +161,7 @@ export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: num
                 reason: `You've used your 10 AI documents this month. Get an AI Pack for more credits!`
             };
         }
-        return { allowed: true, remaining: PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth };
+        return { allowed: true, remaining: PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning };
     }
 
     // Premium and Lifetime have unlimited

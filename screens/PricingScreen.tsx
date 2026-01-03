@@ -133,6 +133,13 @@ const PricingScreen: React.FC = () => {
               >
                 {tier.cta}
               </motion.button>
+              {tier.name === 'AI PACK' && (
+                <div className="mt-4 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
+                  <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-relaxed text-center">
+                    HARD USER LOGIC: 100 Massive PDFs (50pg+ each) analyzed for ~$1.50 in base cost. Your $4.99 pack is high-efficiency.
+                  </p>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>
@@ -192,7 +199,7 @@ const PricingScreen: React.FC = () => {
               <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
                 <Check size={20} className="text-emerald-500" />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-80">No Account Required</span>
+              <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Privacy Protocol 2.5</span>
             </div>
             <div className="p-6 bg-white/5 dark:bg-black/5 rounded-[32px] border border-white/10 dark:border-black/10 flex flex-col items-center text-center space-y-3">
               <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center">
@@ -204,9 +211,9 @@ const PricingScreen: React.FC = () => {
 
           <div className="p-8 bg-white/5 dark:bg-black/5 rounded-3xl border border-white/10 dark:border-black/10 relative z-10">
             <p className="text-[10px] font-black uppercase leading-relaxed tracking-wider opacity-80 text-center">
-              Anti-Gravity tools run locally on your device hardware.
-              Unlike Adobe, we never force you to store your private docs in our cloud.
-              The $2.99 lifetime pass unlocks all 14 offline modules forever.
+              Our AI implementation uses Enterprise-grade isolation.
+              <span className="text-emerald-500 font-black"> NO DATA IS EVER USED TO TRAIN MODELS.</span>
+              Your documents remain 100% ephemeral and disconnected from the global training swarm.
             </p>
           </div>
         </motion.div>

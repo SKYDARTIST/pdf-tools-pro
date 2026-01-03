@@ -211,6 +211,33 @@ const AntiGravityWorkspace: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 flex flex-col space-y-8"
           >
+            {/* Low Credit Alert */}
+            {canUseAI().warning && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="monolith-card p-6 bg-amber-500/10 border-amber-500/30 flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
+                    <Zap size={18} className="text-amber-500" fill="currentColor" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-500">Low Neural Credits</div>
+                    <p className="text-[9px] font-bold text-amber-500/80 uppercase tracking-widest">
+                      Your AI authorization is nearing exhaustion. Synchronize more credits to maintain protocol stability.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.location.hash = '#/pricing'}
+                  className="px-6 py-3 bg-amber-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:brightness-110"
+                >
+                  Top Up Logic
+                </button>
+              </motion.div>
+            )}
+
             {/* Analysis Result */}
             <div className="monolith-card p-10 relative overflow-hidden bg-black text-white dark:bg-white dark:text-black border-none">
               <div className="absolute top-0 right-0 p-8 opacity-5">
@@ -259,8 +286,8 @@ const AntiGravityWorkspace: React.FC = () => {
                     </div>
                   )}
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-black/10 rounded-full border border-white/10 dark:border-black/10">
-                    <Zap size={10} className="text-yellow-400" fill="currentColor" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-white dark:text-black">
+                    <Zap size={10} className={`${canUseAI().warning ? 'text-amber-500' : 'text-yellow-400'}`} fill="currentColor" />
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${canUseAI().warning ? 'text-amber-500' : 'text-white dark:text-black'}`}>
                       Neural Budget: {canUseAI().remaining !== undefined ? canUseAI().remaining : '∞'}
                     </span>
                   </div>
