@@ -95,7 +95,16 @@ export default async function handler(req, res) {
                     FORMAT: { "brightness": 115, "contrast": 135, "grayscale": 5, "sharpness": 125, "reason": "Whitened background while protecting highlights on the photo and ensuring text isn't faded." }
                     ONLY OUTPUT THE JSON. NO MARKDOWN.`;
                 } else if (req.body.type === 'scrape') {
-                    const scrapeResponse = await fetch(prompt);
+                    const scrapeResponse = await fetch(prompt, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        }
+                    });
+
+                    if (!scrapeResponse.ok) {
+                        return res.status(500).json({ error: `Connection Refused: Target site returned status ${scrapeResponse.status}. Some sites block automated captures for security.` });
+                    }
+
                     const html = await scrapeResponse.text();
                     // High-speed text extraction for PDF serialization
                     const textContent = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmb, '')
