@@ -26,6 +26,7 @@ import MetadataScreen from './screens/MetadataScreen';
 import ToolsScreen from './screens/ToolsScreen';
 import AntiGravityWorkspace from './screens/AntiGravityWorkspace';
 import MyFilesScreen from './screens/MyFilesScreen';
+import LandingPage from './screens/LandingPage';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
@@ -66,7 +67,8 @@ const App: React.FC = () => {
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
             <Routes location={location}>
-              <Route path="/" element={<HomeScreen />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/workspace" element={<HomeScreen />} />
               <Route path="/tools" element={<ToolsScreen />} />
               <Route path="/merge" element={<MergeScreen />} />
               <Route path="/split" element={<SplitScreen />} />

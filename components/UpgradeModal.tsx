@@ -35,7 +35,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+                        className="fixed inset-0 bg-black/80 backdrop-blur-xl z-50"
                     />
 
                     {/* Modal */}
@@ -45,7 +45,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-6"
                     >
-                        <div className="relative w-full max-w-sm monolith-card overflow-hidden border-none shadow-2xl">
+                        <div className="relative w-full max-w-sm bg-white dark:bg-[#0a0a0a] rounded-[40px] overflow-hidden border border-black/5 dark:border-white/5 shadow-2xl">
                             {/* Close button */}
                             <button
                                 onClick={onClose}
@@ -115,27 +115,27 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                     <Feature icon={Check} text="Zero Ads • Zero Watermarks" />
                                 </div>
 
-                                {/* Comparison */}
-                                <div className="p-6 bg-black/5 dark:bg-white/5 rounded-3xl space-y-3">
+                                {/* Comparison Card */}
+                                <div className="p-8 bg-black/5 dark:bg-white/5 rounded-[32px] space-y-4 border border-black/[0.03] dark:border-white/[0.03]">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Other Apps</span>
-                                        <span className="text-xs font-black text-red-500 uppercase tracking-tighter">$100+/YEAR</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Standard Apps</span>
+                                        <span className="text-xs font-black text-red-500 uppercase tracking-tighter">$100/YEAR</span>
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity</span>
-                                        <span className="text-xs font-black text-emerald-500 uppercase tracking-tighter">$2.99 LIFETIME</span>
+                                        <span className="text-sm font-black text-emerald-500 uppercase tracking-tighter">$2.99 LIFETIME</span>
                                     </div>
                                 </div>
 
                                 {/* CTA */}
-                                <div className="space-y-3">
+                                <div className="space-y-4 pt-4">
                                     <button
                                         onClick={handleUpgrade}
-                                        className="w-full py-5 bg-black dark:bg-white text-white dark:text-black rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
+                                        className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
                                     >
                                         <motion.div
                                             animate={{ x: ['-100%', '200%'] }}
-                                            transition={{ repeat: Infinity, duration: 2, ease: "linear", repeatDelay: 1 }}
+                                            transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 1 }}
                                             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
                                         />
                                         Authorize Access - $2.99

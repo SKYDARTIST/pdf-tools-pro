@@ -10,7 +10,7 @@ const Header: React.FC = () => {
   const location = useLocation();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const isHome = location.pathname === '/';
+  const isHome = location.pathname === '/' || location.pathname === '/workspace';
 
   useEffect(() => {
     setShowUpgradeModal(false);

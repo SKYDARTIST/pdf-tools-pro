@@ -8,7 +8,7 @@ const BottomNav: React.FC = () => {
     const location = useLocation();
 
     const navItems = [
-        { path: '/', icon: Home, label: 'Home' },
+        { path: '/workspace', icon: Home, label: 'Home' },
         { path: '/tools', icon: LayoutGrid, label: 'Tools' },
         { path: '/my-files', icon: FolderOpen, label: 'Files' },
         { path: '/ai-settings', icon: Settings, label: 'Settings' },
@@ -17,7 +17,7 @@ const BottomNav: React.FC = () => {
     const isPathActive = (path: string) => {
         if (path === '/tools') {
             return location.pathname === '/tools' ||
-                (!['/', '/my-files', '/ai-settings', '/pricing', '/ag-workspace'].includes(location.pathname));
+                (!['/workspace', '/', '/my-files', '/ai-settings', '/pricing', '/ag-workspace'].includes(location.pathname));
         }
         return location.pathname === path;
     };
