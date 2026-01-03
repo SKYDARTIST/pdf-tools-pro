@@ -80,14 +80,16 @@ export default async function handler(req, res) {
                 } else if (req.body.type === 'polisher') {
                     promptPayload = `
                     You are the Anti-Gravity Vision Polisher. 
-                    TASK: Optimize this document scan for a "Magic Color" effect.
-                    GOAL: Brighten the paper to pure white/high clarity, but PRESERVE colors in logos, photos, and highlights.
-                    INPUT: Analyze the lighting and color composition.
+                    TASK: Optimize this document scan for a "Magic Color" effect with DETAIL PRESERVATION.
+                    GOAL: Whiten the paper, but DO NOT wash out text, faces, or bright areas (Highlights).
+                    INPUT: Analyze the lighting, text contrast, and existing bright spots.
                     RULES: Return numeric values for [brightness, contrast, grayscale, sharpness] (100 is neutral).
-                    - Brightness/Contrast: Boost enough to make paper white but not wash out photos.
-                    - Grayscale: ONLY use for actual B&W documents. For color documents, keep this LOW (0-20) to preserve ink colors.
-                    - Sharpness: Boost to define text edges.
-                    FORMAT: { "brightness": 120, "contrast": 140, "grayscale": 10, "sharpness": 130, "reason": "Whitened paper while preserving red masthead and photo colors." }
+                    - Brightness: Be conservative (105-120). Do not "blow out" highlights or fade light-colored text.
+                    - Contrast: Boost (120-140) to define text against the paper, but avoid crushing shadows in photos.
+                    - Grayscale: Keep low (0-15) to preserve original ink and photo colors.
+                    - Sharpness: Moderate boost (110-130) to define character edges.
+                    PRIORITY: Readability and detail preservation over perfect paper whiteness.
+                    FORMAT: { "brightness": 115, "contrast": 135, "grayscale": 5, "sharpness": 125, "reason": "Whitened background while protecting highlights on the photo and ensuring text isn't faded." }
                     ONLY OUTPUT THE JSON. NO MARKDOWN.`;
                 } else {
                     promptPayload = `
