@@ -31,7 +31,7 @@ const WebToPdfScreen: React.FC = () => {
       setSuccess(true);
     } catch (err: any) {
       console.error("Web Capture Failed:", err);
-      setError("Protcol Failure: Could not penetrate this URL. Ensure it is public and allows remote access.");
+      setError(`Protocol Failure: ${err.message || "Target site blocked the connection."}`);
     } finally {
       setIsProcessing(false);
     }

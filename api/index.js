@@ -55,6 +55,35 @@ export default async function handler(req, res) {
 
         const errors = [];
 
+        let textContent = "";
+        if (req.body.type === 'scrape') {
+            try {
+                const scrapeResponse = await fetch(prompt, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                });
+
+                if (!scrapeResponse.ok) {
+                    return res.status(500).json({ error: `Connection Refused: Target site returned status ${scrapeResponse.status}.` });
+                }
+
+                const html = await scrapeResponse.text();
+                textContent = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmb, '')
+                    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmb, '')
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .substring(0, 10000);
+
+                if (textContent.length < 50) {
+                    return res.status(500).json({ error: "Empty Payload: Site returned no readable text." });
+                }
+            } catch (scrapeErr) {
+                return res.status(500).json({ error: `Network Error: ${scrapeErr.message}` });
+            }
+        }
+
         for (const modelName of modelsToTry) {
             try {
                 // Skip embedding models or experimental ones if we have others
@@ -95,25 +124,6 @@ export default async function handler(req, res) {
                     FORMAT: { "brightness": 115, "contrast": 135, "grayscale": 5, "sharpness": 125, "reason": "Whitened background while protecting highlights on the photo and ensuring text isn't faded." }
                     ONLY OUTPUT THE JSON. NO MARKDOWN.`;
                 } else if (req.body.type === 'scrape') {
-                    const scrapeResponse = await fetch(prompt, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                        }
-                    });
-
-                    if (!scrapeResponse.ok) {
-                        return res.status(500).json({ error: `Connection Refused: Target site returned status ${scrapeResponse.status}. Some sites block automated captures for security.` });
-                    }
-
-                    const html = await scrapeResponse.text();
-                    // High-speed text extraction for PDF serialization
-                    const textContent = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmb, '')
-                        .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmb, '')
-                        .replace(/<[^>]+>/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                        .substring(0, 10000);
-
                     promptPayload = `
                     You are the Anti-Gravity Web Clerk. 
                     TASK: Clean and structure the following raw web text into a professional document format.
