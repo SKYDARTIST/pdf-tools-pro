@@ -11,20 +11,21 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Dynamic Discovery Logic
+    // Optimized Discovery Logic - Skip for high-speed tasks
     const getAvailableModels = async () => {
+        if (req.body.type === 'scrape' || req.body.type === 'naming') {
+            return ["gemini-1.5-flash"]; // Force high-speed model
+        }
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const data = await response.json();
-            if (!data.models) return [];
+            if (!data.models) return ["gemini-1.5-flash", "gemini-1.5-pro"];
 
-            // Filter for models that support text generation
             return data.models
                 .filter(m => m.supportedGenerationMethods.includes('generateContent'))
                 .map(m => m.name.replace('models/', ''));
         } catch (err) {
-            console.error("Discovery Error:", err);
-            return [];
+            return ["gemini-1.5-flash", "gemini-1.5-pro"];
         }
     };
 
@@ -75,7 +76,7 @@ export default async function handler(req, res) {
                     .replace(/<[^>]+>/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim()
-                    .substring(0, 10000);
+                    .substring(0, 6000); // Reduced size for faster AI turnaround
 
                 if (textContent.length < 50) {
                     return res.status(500).json({ error: "Empty Payload: Site returned no readable text." });
