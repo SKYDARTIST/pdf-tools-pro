@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Sparkles, Shield, Cpu, MessageSquare, ArrowRight, Twitter } from 'lucide-react';
+import LegalFooter from '../components/LegalFooter';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -100,23 +101,8 @@ const LandingPage: React.FC = () => {
                 </div>
             </main>
 
-            {/* Signature Footer */}
-            <footer className="p-12 flex flex-col items-center space-y-6">
-                <div className="w-[1px] h-12 bg-black/5 dark:bg-white/10" />
-                <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    className="flex flex-col items-center gap-3 cursor-default"
-                >
-                    <span className="text-[9px] font-black uppercase tracking-[0.5em] text-gray-400">Design Protocol by</span>
-                    <div className="flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-full">
-                        <Twitter size={12} fill="currentColor" />
-                        <span className="text-[11px] font-black uppercase tracking-widest">Cryptobulla</span>
-                    </div>
-                </motion.div>
-                <div className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-300 dark:text-gray-700 pb-12">
-                    A MindMint Ecosystem Production
-                </div>
-            </footer>
+            {/* Premium Legal Footer */}
+            <LegalFooter />
         </div>
     );
 };

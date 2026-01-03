@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
+import LegalFooter from '../components/LegalFooter';
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -154,14 +155,7 @@ const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer / System Note */}
-      <div className="pt-8 border-t border-black/5 dark:border-white/5 flex flex-col items-center justify-center gap-2 opacity-20 hover:opacity-50 transition-opacity cursor-default">
-        <div className="flex items-center gap-3">
-          <Zap size={12} fill="currentColor" />
-          <span className="text-[9px] font-black uppercase tracking-[0.3em]">System OS 2.0.1 // Anti-Gravity Core</span>
-        </div>
-        <span className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-400">Built By Cryptobulla</span>
-      </div>
+      <LegalFooter />
     </motion.div>
   );
 };

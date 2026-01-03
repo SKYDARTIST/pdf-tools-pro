@@ -5,6 +5,7 @@ import {
     Search, Combine, Scissors, Lock, PenTool, Image, FileText, Droplet, Zap,
     RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet
 } from 'lucide-react';
+import LegalFooter from '../components/LegalFooter';
 
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -131,18 +132,7 @@ const ToolsScreen: React.FC = () => {
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zero matches in archive</p>
                     </motion.div>
                 )}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6 }}
-                    className="pt-12 border-t border-black/5 dark:border-white/5 flex flex-col items-center justify-center gap-2 opacity-20 hover:opacity-50 transition-opacity cursor-default"
-                >
-                    <div className="flex items-center gap-3">
-                        <Zap size={12} fill="currentColor" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Anti-Gravity Asset Library</span>
-                    </div>
-                    <span className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-400">Built By Cryptobulla</span>
-                </motion.div>
+                <LegalFooter />
             </div>
         </div>
     );

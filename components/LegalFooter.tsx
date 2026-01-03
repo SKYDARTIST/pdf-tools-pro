@@ -1,0 +1,42 @@
+
+import React from 'react';
+import { motion } from 'framer-motion';
+
+const LegalFooter: React.FC = () => {
+    const currentYear = new Date().getFullYear();
+
+    return (
+        <footer className="w-full py-12 px-6 border-t border-black/5 dark:border-white/5 bg-transparent">
+            <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
+                {/* Legal Links */}
+                <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
+                    {['Privacy Policy', 'Terms of Service', 'AI Disclaimer'].map((item) => (
+                        <motion.a
+                            key={item}
+                            href="#"
+                            whileHover={{ opacity: 1, y: -1 }}
+                            className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black dark:hover:text-white transition-all opacity-40"
+                        >
+                            {item}
+                        </motion.a>
+                    ))}
+                </div>
+
+                {/* Brand Layer */}
+                <div className="flex flex-col items-center gap-3 opacity-20">
+                    <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-500">
+                            Anti-Gravity Neural Protocol v2.5
+                        </span>
+                    </div>
+                    <span className="text-[8px] font-black uppercase tracking-[0.5em] text-gray-500 px-4 py-1 border border-black/5 dark:border-white/5 rounded-full">
+                        © {currentYear} Built By Cryptobulla
+                    </span>
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+export default LegalFooter;
