@@ -10,6 +10,7 @@ const CompressScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [quality, setQuality] = useState<'low' | 'med' | 'high'>('med');
+  const [progress, setProgress] = useState<number>(0);
   const [estimatedSavings, setEstimatedSavings] = useState<{
     low: number;
     med: number;
@@ -31,9 +32,11 @@ const CompressScreen: React.FC = () => {
   const handleCompress = async () => {
     if (!file) return;
     setIsProcessing(true);
+    setProgress(0);
+    setStatusMessage(null);
 
     try {
-      const result = await compressPdf(file.file, quality);
+      const result = await compressPdf(file.file, quality, (p) => setProgress(p));
       const isActuallyCompressed = result.length < file.size - 1024; // At least 1KB reduction
       const fileName = isActuallyCompressed
         ? `optimized_${file.name}`
@@ -224,8 +227,26 @@ const CompressScreen: React.FC = () => {
                 transition={{ repeat: Infinity, duration: 2, ease: "linear", repeatDelay: 1 }}
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
               />
-              {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Minimize2 size={20} />}
-              <span>Execute Optimization</span>
+              {isProcessing ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="animate-spin" size={20} />
+                    <span>Processing: {progress}%</span>
+                  </div>
+                  <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-white"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Minimize2 size={20} />
+                  <span>Execute Optimization</span>
+                </>
+              )}
             </button>
           </div>
         )}

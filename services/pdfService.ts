@@ -147,7 +147,11 @@ export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number
   });
 };
 
-export const compressPdf = async (file: File, quality: 'low' | 'med' | 'high' = 'med'): Promise<Uint8Array> => {
+export const compressPdf = async (
+  file: File,
+  quality: 'low' | 'med' | 'high' = 'med',
+  onProgress?: (progress: number) => void
+): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const arrayBuffer = await file.arrayBuffer();
 
@@ -183,21 +187,13 @@ export const compressPdf = async (file: File, quality: 'low' | 'med' | 'high' = 
 
     console.log(`Starting aggressive rasterization of ${pdf.numPages} pages...`);
 
-    // Helper: Convert base64 to Uint8Array efficiently
-    const base64ToUint8 = (base64: string) => {
-      const bin = atob(base64.split(',')[1]);
-      const len = bin.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
-      return bytes;
-    };
-
     for (let i = 1; i <= pdf.numPages; i++) {
-      console.log(`Neural Processing: Page ${i}/${pdf.numPages}`);
+      if (onProgress) onProgress(Math.round((i / pdf.numPages) * 100));
+
       const page = await pdf.getPage(i);
 
-      // Use lower scale (1.2) for better mobile memory safety
-      const viewport = page.getViewport({ scale: 1.2 });
+      // Use even lower scale (1.0) for maximum mobile stability on massive files
+      const viewport = page.getViewport({ scale: 1.0 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       if (!context) continue;
@@ -207,9 +203,9 @@ export const compressPdf = async (file: File, quality: 'low' | 'med' | 'high' = 
 
       await page.render({ canvas, viewport }).promise;
 
-      // Aggressive JPEG compression (0.5 quality for mobile stability)
-      const imageData = canvas.toDataURL('image/jpeg', 0.5);
-      const imageBytes = base64ToUint8(imageData);
+      // Use native fetch for much faster data URL to Uint8Array conversion
+      const imageData = canvas.toDataURL('image/jpeg', 0.4); // Lower quality for "Low" tier
+      const imageBytes = await fetch(imageData).then(res => res.arrayBuffer());
       const embeddedImg = await outPdf.embedJpg(imageBytes);
 
       const newPage = outPdf.addPage([viewport.width, viewport.height]);
@@ -226,6 +222,7 @@ export const compressPdf = async (file: File, quality: 'low' | 'med' | 'high' = 
       (page as any).cleanup();
     }
 
+    if (onProgress) onProgress(100);
     return await outPdf.save({ useObjectStreams: true });
   });
 };
