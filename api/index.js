@@ -20,12 +20,20 @@ export default async function handler(req, res) {
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        // Using models known to be stable and available
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+
+        // RESILIENT MODEL CHAIN: Try the latest robust models
+        const modelsToTry = [
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro"
+        ];
+
         let lastError = null;
 
         for (const modelName of modelsToTry) {
             try {
+                console.log(`🤖 Anti-Gravity Attempt: ${modelName}`);
                 const model = genAI.getGenerativeModel({ model: modelName });
                 const promptPayload = `
                 You are the Anti-Gravity AI. 
