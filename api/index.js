@@ -36,11 +36,13 @@ export default async function handler(req, res) {
     const { prompt, documentText } = req.body;
 
     try {
-        // DISCOVERED MODELS FROM HEARTBEAT (Verified available for this key)
+        // KITCHEN SINK FALLBACK: Try everything from stable to newest
         const modelsToTry = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
             "gemini-2.0-flash-lite",
-            "gemini-2.0-flash",
-            "gemini-2.0-flash-exp"
+            "gemini-1.5-pro",
+            "gemini-pro"
         ];
 
         const errors = [];
