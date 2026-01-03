@@ -9,7 +9,6 @@ import ImageToPdfScreen from './screens/ImageToPdfScreen';
 import PricingScreen from './screens/PricingScreen';
 import TextToPdfScreen from './screens/TextToPdfScreen';
 import ScannerScreen from './screens/ScannerScreen';
-import WebToPdfScreen from './screens/WebToPdfScreen';
 import WatermarkScreen from './screens/WatermarkScreen';
 import SignScreen from './screens/SignScreen';
 import ViewScreen from './screens/ViewScreen';
@@ -76,7 +75,6 @@ const App: React.FC = () => {
 
               <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
               <Route path="/scanner" element={<ScannerScreen />} />
-              <Route path="/web-to-pdf" element={<WebToPdfScreen />} />
               <Route path="/watermark" element={<WatermarkScreen />} />
               <Route path="/sign" element={<SignScreen />} />
               <Route path="/view" element={<ViewScreen />} />

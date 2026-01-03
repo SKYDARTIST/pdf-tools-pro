@@ -26,7 +26,6 @@ const ToolsScreen: React.FC = () => {
         { title: 'Repair', desc: 'Fix corrupted data', icon: Wrench, path: '/repair', cat: 'popular' },
         { title: 'Remove', desc: 'Delete specific pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
-        { title: 'Web Capture', desc: 'Transcribe URLs', icon: Globe, path: '/web-to-pdf', cat: 'convert' },
         { title: 'Table AI', desc: 'Neural Table Extraction', icon: FileSpreadsheet, path: '/table-extractor', cat: 'convert' },
         { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },
     ];
