@@ -58,7 +58,8 @@ export default async function handler(req, res) {
         let textContent = "";
         if (req.body.type === 'scrape') {
             try {
-                const scrapeResponse = await fetch(prompt, {
+                const targetUrl = prompt.trim().toLowerCase();
+                const scrapeResponse = await fetch(targetUrl, {
                     headers: {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                     }
