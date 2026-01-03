@@ -36,12 +36,11 @@ export default async function handler(req, res) {
     const { prompt, documentText } = req.body;
 
     try {
-        // We will try 1.5 Flash first as it's the most reliable for free tier
+        // DISCOVERED MODELS FROM HEARTBEAT (Verified available for this key)
         const modelsToTry = [
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
-            "gemini-2.0-flash-exp",
-            "gemini-1.5-pro"
+            "gemini-2.0-flash-lite",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-exp"
         ];
 
         const errors = [];
