@@ -1,7 +1,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Anti-Gravity Backend v1.1 - Diagnostic Deployment
+// Anti-Gravity Backend v1.2 - Stable Production
 export default async function handler(req, res) {
     if (req.method === 'GET' && req.url.includes('/health')) {
         return res.status(200).json({ status: 'online', mode: 'Serverless Function' });
@@ -20,8 +20,10 @@ export default async function handler(req, res) {
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
-        const diagnosticLog = [];
+
+        // Stable Model Chain
+        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash"];
+        let lastError = null;
 
         for (const modelName of modelsToTry) {
             try {
@@ -35,15 +37,12 @@ export default async function handler(req, res) {
                 const response = await result.response;
                 return res.status(200).json({ text: response.text() });
             } catch (err) {
-                diagnosticLog.push(`${modelName}: ${err.message}`);
+                lastError = err;
             }
         }
-
-        return res.status(500).json({
-            error: "All AI Nuclei failed to respond.",
-            details: diagnosticLog.join(" | ")
-        });
+        throw lastError;
     } catch (error) {
-        res.status(500).json({ error: error.message || "Root AI Protocol Failure" });
+        console.error("AI PROTOCOL ERROR:", error);
+        res.status(500).json({ error: error.message || "AI Protocol Failure" });
     }
 }
