@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search, Combine, Scissors, Lock, PenTool, Image, FileText, Minimize2, Droplet, Zap,
+    Search, Combine, Scissors, Lock, PenTool, Image, FileText, Droplet, Zap,
     RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet
 } from 'lucide-react';
 
@@ -19,7 +19,6 @@ const ToolsScreen: React.FC = () => {
         { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },
         { title: 'Protect', desc: 'Add password', icon: Lock, path: '/password', cat: 'security' },
         { title: 'To Text', desc: 'Extract copyable text', icon: FileText, path: '/extract-text', cat: 'convert' },
-        { title: 'Compress', desc: 'Reduce data weight', icon: Minimize2, path: '/compress', cat: 'popular' },
         { title: 'Sign', desc: 'Authorize documents', icon: PenTool, path: '/sign', cat: 'security' },
 
         { title: 'Rotate', desc: 'Fix orientation', icon: RotateCw, path: '/rotate', cat: 'popular' },

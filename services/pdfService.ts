@@ -147,40 +147,6 @@ export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number
   });
 };
 
-export const compressPdf = async (
-  file: File,
-  quality: 'low' | 'med' | 'high' = 'med',
-  onProgress?: (progress: number) => void
-): Promise<Uint8Array> => {
-  return safeExecute(async () => {
-    const arrayBuffer = await file.arrayBuffer();
-    if (onProgress) onProgress(20);
-
-    const sourcePdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-    const compressedPdf = await PDFDocument.create();
-
-    if (onProgress) onProgress(40);
-    const copiedPages = await compressedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
-    copiedPages.forEach((page) => compressedPdf.addPage(page));
-
-    if (onProgress) onProgress(70);
-
-    const saveOptions = {
-      useObjectStreams: true,
-      addDefaultPage: false,
-      objectsPerTick: 50,
-    };
-
-    // Metadata stripping for optimization
-    compressedPdf.setTitle('');
-    compressedPdf.setProducer('Anti-Gravity Protocol v2.2');
-    compressedPdf.setCreator('Monolith OS Optimization');
-
-    const result = await compressedPdf.save(saveOptions);
-    if (onProgress) onProgress(100);
-    return result;
-  });
-};
 
 export const downloadBlob = (data: any, fileName: string, mimeType: string) => {
   const blob = new Blob([data], { type: mimeType });

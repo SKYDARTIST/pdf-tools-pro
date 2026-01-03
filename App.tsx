@@ -8,7 +8,6 @@ import RemovePagesScreen from './screens/RemovePagesScreen';
 import ImageToPdfScreen from './screens/ImageToPdfScreen';
 import PricingScreen from './screens/PricingScreen';
 import TextToPdfScreen from './screens/TextToPdfScreen';
-import CompressScreen from './screens/CompressScreen';
 import ScannerScreen from './screens/ScannerScreen';
 import WebToPdfScreen from './screens/WebToPdfScreen';
 import WatermarkScreen from './screens/WatermarkScreen';
@@ -77,7 +76,6 @@ const App: React.FC = () => {
               <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
 
               <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
-              <Route path="/compress" element={<CompressScreen />} />
               <Route path="/scanner" element={<ScannerScreen />} />
               <Route path="/web-to-pdf" element={<WebToPdfScreen />} />
               <Route path="/watermark" element={<WatermarkScreen />} />
