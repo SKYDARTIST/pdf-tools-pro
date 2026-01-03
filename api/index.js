@@ -20,43 +20,30 @@ export default async function handler(req, res) {
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
-
-        // RESILIENT MODEL CHAIN: Try the latest robust models
-        const modelsToTry = [
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro"
-        ];
-
-        let lastError = null;
+        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+        const diagnosticLog = [];
 
         for (const modelName of modelsToTry) {
             try {
-                console.log(`🤖 Anti-Gravity Attempt: ${modelName}`);
                 const model = genAI.getGenerativeModel({ model: modelName });
                 const promptPayload = `
-                You are the Anti-Gravity AI. 
-                Keep answers under 3 sentences.
-                Focus on facts and summaries based on the provided document.
-                
-                DOCUMENT:
-                ${(documentText || '').substring(0, 15000)}
-
-                QUERY: ${prompt}
-                `;
+                You are the Anti-Gravity AI. Keep answers under 3 sentences.
+                DOCUMENT: ${(documentText || '').substring(0, 15000)}
+                QUERY: ${prompt}`;
 
                 const result = await model.generateContent(promptPayload);
                 const response = await result.response;
                 return res.status(200).json({ text: response.text() });
             } catch (err) {
-                lastError = err;
-                console.warn(`⚠️ Model ${modelName} failed. Trying next...`);
+                diagnosticLog.push(`${modelName}: ${err.message}`);
             }
         }
-        throw lastError;
+
+        return res.status(500).json({
+            error: "All AI Nuclei failed to respond.",
+            details: diagnosticLog.join(" | ")
+        });
     } catch (error) {
-        console.error("AI KERNEL ERROR:", error);
-        res.status(500).json({ error: error.message || "AI Protocol Failure" });
+        res.status(500).json({ error: error.message || "Root AI Protocol Failure" });
     }
 }
