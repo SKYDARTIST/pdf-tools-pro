@@ -13,9 +13,9 @@ export interface ScanFilters {
  * AI Scan Polisher Service
  * Analyzes an image (sampled text or metadata) and recommends corrective filters.
  */
-export const getPolisherProtocol = async (sampleText?: string): Promise<ScanFilters> => {
+export const getPolisherProtocol = async (sampleText?: string, imageBase64?: string): Promise<ScanFilters> => {
     try {
-        const response = await askGemini("Analyze scan quality.", sampleText || "Image scan analysis.", 'polisher');
+        const response = await askGemini("Analyze scan quality.", sampleText || "Image scan analysis.", 'polisher', imageBase64);
 
         try {
             const cleanJson = response.replace(/```json|```/g, '').trim();

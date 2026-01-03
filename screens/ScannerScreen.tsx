@@ -35,22 +35,36 @@ const ScannerScreen: React.FC = () => {
   }, []);
 
   const handleCapture = () => {
+    if (!videoRef.current) return;
     setIsCapturing(true);
     setAppliedFilters(null);
-    // Simulate smart cropping and processing
-    setTimeout(() => {
-      setCapturedImage("https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=1000&auto=format&fit=crop");
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+      // Simulate premium processing delay
+      setTimeout(() => {
+        setCapturedImage(dataUrl);
+        setIsCapturing(false);
+      }, 800);
+    } else {
       setIsCapturing(false);
-    }, 1200);
+    }
   };
 
   const handleNeuralEnhance = async () => {
     if (!capturedImage) return;
     setIsPolishing(true);
     try {
-      // In a real app we'd send the image or OCR sample. 
-      // For now we simulate with the service.
-      const filters = await getPolisherProtocol();
+      // Pass the captured base64 image to Gemini for analysis
+      const filters = await getPolisherProtocol(undefined, capturedImage);
       setAppliedFilters(filters);
     } catch (err) {
       console.error("Enhancement failed", err);

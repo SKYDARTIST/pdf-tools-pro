@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { prompt, documentText } = req.body;
+    const { prompt, documentText, image, mimeType = 'image/jpeg' } = req.body;
 
     try {
         // Step 1: Get the actual list of models available to THIS key right now
@@ -92,7 +92,18 @@ export default async function handler(req, res) {
                     QUERY: ${prompt}`;
                 }
 
-                const result = await model.generateContent(promptPayload);
+                let contents = [{ text: promptPayload }];
+
+                if (req.body.type === 'polisher' && image) {
+                    contents.push({
+                        inlineData: {
+                            data: image.includes('base64,') ? image.split('base64,')[1] : image,
+                            mimeType: mimeType
+                        }
+                    });
+                }
+
+                const result = await model.generateContent(contents);
                 const response = await result.response;
                 return res.status(200).json({ text: response.text() });
             } catch (err) {
