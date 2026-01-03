@@ -27,7 +27,9 @@ export const askGemini = async (prompt: string, documentText: string) => {
       return data.text || "No response content.";
     } catch (err: any) {
       console.error("Backend Proxy Failure:", err);
-      return `BACKEND_ERROR: ${err.message || 'Security proxy is unreachable.'}`;
+      // More descriptive error for proxy failure
+      const details = err.message || 'Security proxy is unreachable.';
+      return `BACKEND_ERROR: ${details}`;
     }
   }
 
@@ -44,7 +46,7 @@ export const askGemini = async (prompt: string, documentText: string) => {
     } catch (error: any) {
       console.error("Direct API Error:", error);
       if (error.message?.includes('SAFETY')) return "SAFETY_BLOCK: The response was filtered.";
-      return "AI_ERROR: Direct connection failed.";
+      return `AI_ERROR: ${error.message || 'Direct connection failed.'}`;
     }
   }
 
