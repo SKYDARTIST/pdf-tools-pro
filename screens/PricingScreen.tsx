@@ -175,10 +175,26 @@ const PricingScreen: React.FC = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4 relative z-10">
+            <div className="p-6 bg-white/5 dark:bg-black/5 rounded-[32px] border border-white/10 dark:border-black/10 flex flex-col items-center text-center space-y-3">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                <Check size={20} className="text-emerald-500" />
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-widest opacity-80">No Account Required</span>
+            </div>
+            <div className="p-6 bg-white/5 dark:bg-black/5 rounded-[32px] border border-white/10 dark:border-black/10 flex flex-col items-center text-center space-y-3">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center">
+                <Check size={20} className="text-blue-500" />
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Local-First Storage</span>
+            </div>
+          </div>
+
           <div className="p-8 bg-white/5 dark:bg-black/5 rounded-3xl border border-white/10 dark:border-black/10 relative z-10">
             <p className="text-[10px] font-black uppercase leading-relaxed tracking-wider opacity-80 text-center">
-              Our "BYOK" Protocol allows power users to bypass all neural caps by integrating their own API key.
-              The $2.99 fee supports the 14 core offline tools for life.
+              Anti-Gravity tools run locally on your device hardware.
+              Unlike Adobe, we never force you to store your private docs in our cloud.
+              The $2.99 lifetime pass unlocks all 14 offline modules forever.
             </p>
           </div>
         </motion.div>

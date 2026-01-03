@@ -25,6 +25,7 @@ import ExtractImagesScreen from './screens/ExtractImagesScreen';
 import MetadataScreen from './screens/MetadataScreen';
 import ToolsScreen from './screens/ToolsScreen';
 import AntiGravityWorkspace from './screens/AntiGravityWorkspace';
+import TableExtractorScreen from './screens/TableExtractorScreen';
 import MyFilesScreen from './screens/MyFilesScreen';
 import LandingPage from './screens/LandingPage';
 import Header from './components/Header';
@@ -92,6 +93,7 @@ const App: React.FC = () => {
               <Route path="/metadata" element={<MetadataScreen />} />
               <Route path="/ai-settings" element={<AISettingsScreen />} />
               <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
+              <Route path="/table-extractor" element={<TableExtractorScreen />} />
               <Route path="/my-files" element={<MyFilesScreen />} />
               <Route path="/pricing" element={<PricingScreen />} />
             </Routes>

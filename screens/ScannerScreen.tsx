@@ -53,8 +53,11 @@ const ScannerScreen: React.FC = () => {
           <X size={24} />
         </button>
         <div className="flex flex-col items-center">
-          <span className="text-white font-black text-[10px] tracking-[0.3em] uppercase opacity-50">Protocol: Smart Acquisition</span>
-          <span className="text-white font-black text-xs tracking-widest uppercase">Scanner_v4.0</span>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Offline Acquisition</span>
+          </div>
+          <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
         </div>
         <button onClick={() => setFlash(!flash)} className={`p-2 transition-all ${flash ? 'text-white' : 'text-white/30'}`}>
           <Zap size={22} fill={flash ? "currentColor" : "none"} />
@@ -138,10 +141,13 @@ const ScannerScreen: React.FC = () => {
             </button>
             <button
               onClick={() => navigate('/image-to-pdf')}
-              className="h-20 px-10 bg-white rounded-3xl flex items-center gap-4 text-black shadow-2xl font-black text-[10px] uppercase tracking-[0.3em] hover:scale-105 active:scale-95 transition-all"
+              className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
             >
-              <FileCheck size={20} />
-              Commit to Archive
+              <div className="flex items-center gap-4">
+                <FileCheck size={20} />
+                <span className="font-black text-[10px] uppercase tracking-[0.3em]">Save to Local Device</span>
+              </div>
+              <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">Zero Cloud Upload Required</span>
             </button>
           </>
         )}

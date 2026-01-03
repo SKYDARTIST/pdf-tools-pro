@@ -9,6 +9,7 @@ const AntiGravityWorkspace: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'lifting' | 'analyzed'>('idle');
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [suggestedName, setSuggestedName] = useState<string | null>(null);
   const [documentContext, setDocumentContext] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [isAsking, setIsAsking] = useState(false);
@@ -20,6 +21,7 @@ const AntiGravityWorkspace: React.FC = () => {
       setFile(selected);
       setIsImporting(true);
       setStatus('lifting');
+      setSuggestedName(null);
 
       try {
         const arrayBuffer = await selected.arrayBuffer();
@@ -48,9 +50,18 @@ const AntiGravityWorkspace: React.FC = () => {
           ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context.substring(0, 1000)}`
           : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
 
-        const initialAnalysis = await askGemini(analysisPrompt, context);
+        // Run analysis and naming suggestion in parallel
+        const { suggestDocumentName } = await import('../services/namingService');
+
+        const [initialAnalysis, smartName] = await Promise.all([
+          askGemini(analysisPrompt, context),
+          extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
+        ]);
 
         setAnalysis(initialAnalysis);
+        if (smartName && smartName !== 'unnamed_document') {
+          setSuggestedName(smartName);
+        }
         setDocumentContext(context);
         setChatHistory([{ role: 'bot', text: initialAnalysis }]);
         setStatus('analyzed');
@@ -172,7 +183,24 @@ const AntiGravityWorkspace: React.FC = () => {
                 <div className="p-3 bg-white/10 dark:bg-black/10 rounded-2xl backdrop-blur-md">
                   <Bot size={24} className="text-white dark:text-black" />
                 </div>
-                <div className="text-technical tracking-[0.3em] opacity-60 text-white dark:text-black">Primary Insights</div>
+                <div className="flex-1">
+                  <div className="text-technical tracking-[0.3em] opacity-60 text-white dark:text-black uppercase">Primary Insights</div>
+                  <AnimatePresence>
+                    {suggestedName && (
+                      <motion.div
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="mt-2 flex items-center gap-2 group cursor-pointer"
+                        title="AI Suggested Filename"
+                      >
+                        <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/30 flex items-center gap-2">
+                          <Sparkles size={10} />
+                          {suggestedName}.pdf
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
               <p className="text-base leading-relaxed font-bold tracking-tight">
                 {analysis}

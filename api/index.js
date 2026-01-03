@@ -69,6 +69,14 @@ export default async function handler(req, res) {
                     RULES: No extension, max 50 chars, use underscores for spaces, no special characters.
                     DOCUMENT: ${(documentText || '').substring(0, 5000)}
                     ONLY OUTPUT THE FILENAME. NO EXPLANATION.`;
+                } else if (req.body.type === 'table') {
+                    promptPayload = `
+                    You are the Anti-Gravity Data Extractor. 
+                    TASK: Extract all tables found in the document into a structured JSON array of objects.
+                    FORMAT: [{ "tableName": "name", "headers": ["h1", "h2"], "rows": [["v1", "v2"]] }]
+                    RULES: If multiple tables exist, include them all. If no tables exist, return an empty array [].
+                    DOCUMENT: ${(documentText || '').substring(0, 10000)}
+                    ONLY OUTPUT THE JSON. NO MARKDOWN, NO EXPLANATION.`;
                 } else {
                     promptPayload = `
                     You are the Anti-Gravity AI. Keep answers under 3 sentences.
