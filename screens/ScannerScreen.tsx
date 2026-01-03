@@ -59,6 +59,28 @@ const ScannerScreen: React.FC = () => {
     }
   };
 
+  const bakeFilters = (imageData: string, filters: ScanFilters): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Apply filters to canvas context
+          const filterString = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) grayscale(${filters.grayscale}%) saturate(${filters.grayscale > 50 ? 0 : 100}%)`;
+          ctx.filter = filterString;
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+        } else {
+          resolve(imageData);
+        }
+      };
+      img.src = imageData;
+    });
+  };
+
   const handleNeuralEnhance = async () => {
     if (!capturedImage) return;
     setIsPolishing(true);
@@ -73,10 +95,16 @@ const ScannerScreen: React.FC = () => {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!capturedImage) return;
+
+    let finalImage = capturedImage;
+    if (appliedFilters) {
+      finalImage = await bakeFilters(capturedImage, appliedFilters);
+    }
+
     const link = document.createElement('a');
-    link.href = capturedImage;
+    link.href = finalImage;
     link.download = `scan_${Date.now()}.jpg`;
     link.click();
   };
@@ -242,7 +270,13 @@ const ScannerScreen: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate('/image-to-pdf', { state: { capturedImage } })}
+                  onClick={async () => {
+                    let finalImage = capturedImage;
+                    if (appliedFilters) {
+                      finalImage = await bakeFilters(capturedImage, appliedFilters);
+                    }
+                    navigate('/image-to-pdf', { state: { capturedImage: finalImage } });
+                  }}
                   className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
                 >
                   <div className="flex items-center gap-4">
