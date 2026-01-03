@@ -16,7 +16,6 @@ import ViewScreen from './screens/ViewScreen';
 import RepairScreen from './screens/RepairScreen';
 import ExtractTextScreen from './screens/ExtractTextScreen';
 import AISettingsScreen from './screens/AISettingsScreen';
-import PasswordScreen from './screens/PasswordScreen';
 import ReaderScreen from './screens/ReaderScreen';
 import RotateScreen from './screens/RotateScreen';
 import PageNumbersScreen from './screens/PageNumbersScreen';
@@ -83,7 +82,6 @@ const App: React.FC = () => {
               <Route path="/view" element={<ViewScreen />} />
               <Route path="/repair" element={<RepairScreen />} />
               <Route path="/extract-text" element={<ExtractTextScreen />} />
-              <Route path="/password" element={<PasswordScreen />} />
               <Route path="/reader" element={<ReaderScreen />} />
               <Route path="/rotate" element={<RotateScreen />} />
               <Route path="/page-numbers" element={<PageNumbersScreen />} />

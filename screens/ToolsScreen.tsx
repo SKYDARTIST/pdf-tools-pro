@@ -17,7 +17,6 @@ const ToolsScreen: React.FC = () => {
         { title: 'Image to PDF', desc: 'Convert photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
         { title: 'Merge', desc: 'Combine PDFs', icon: Combine, path: '/merge', cat: 'popular' },
         { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },
-        { title: 'Protect', desc: 'Add password', icon: Lock, path: '/password', cat: 'security' },
         { title: 'To Text', desc: 'Extract copyable text', icon: FileText, path: '/extract-text', cat: 'convert' },
         { title: 'Sign', desc: 'Authorize documents', icon: PenTool, path: '/sign', cat: 'security' },
 
