@@ -80,14 +80,14 @@ export default async function handler(req, res) {
                 } else if (req.body.type === 'polisher') {
                     promptPayload = `
                     You are the Anti-Gravity Vision Polisher. 
-                    TASK: Optimize this document scan for professional clarity. 
-                    GOAL: Aim for a "Magic Color" effect: bright white paper, deep black text, high contrast.
-                    INPUT: Analyze the lighting, shadows, and color cast from the provided image.
-                    RULES: Return numeric values for [brightness, contrast, grayscale, sharpness] from 0 to 200.
-                    - 100 is neutral. 
-                    - For document scans, favor contrast (130-160) and brightness (110-140) if it's dark.
-                    - If there is a yellow cast, increase grayscale significantly.
-                    FORMAT: { "brightness": 125, "contrast": 150, "grayscale": 30, "sharpness": 120, "reason": "Extracted from shadow; removed yellow cast for document clarity." }
+                    TASK: Optimize this document scan for a "Magic Color" effect.
+                    GOAL: Brighten the paper to pure white/high clarity, but PRESERVE colors in logos, photos, and highlights.
+                    INPUT: Analyze the lighting and color composition.
+                    RULES: Return numeric values for [brightness, contrast, grayscale, sharpness] (100 is neutral).
+                    - Brightness/Contrast: Boost enough to make paper white but not wash out photos.
+                    - Grayscale: ONLY use for actual B&W documents. For color documents, keep this LOW (0-20) to preserve ink colors.
+                    - Sharpness: Boost to define text edges.
+                    FORMAT: { "brightness": 120, "contrast": 140, "grayscale": 10, "sharpness": 130, "reason": "Whitened paper while preserving red masthead and photo colors." }
                     ONLY OUTPUT THE JSON. NO MARKDOWN.`;
                 } else {
                     promptPayload = `

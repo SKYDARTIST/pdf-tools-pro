@@ -69,7 +69,7 @@ const ScannerScreen: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           // Apply filters to canvas context
-          const filterString = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) grayscale(${filters.grayscale}%) saturate(${filters.grayscale > 50 ? 0 : 100}%)`;
+          const filterString = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) grayscale(${filters.grayscale}%)`;
           ctx.filter = filterString;
           ctx.drawImage(img, 0, 0);
           resolve(canvas.toDataURL('image/jpeg', 0.9));
@@ -164,7 +164,7 @@ const ScannerScreen: React.FC = () => {
                 scale: 1,
                 opacity: 1,
                 filter: appliedFilters
-                  ? `brightness(${appliedFilters.brightness}%) contrast(${appliedFilters.contrast}%) grayscale(${appliedFilters.grayscale}%) saturate(${appliedFilters.grayscale > 50 ? 0 : 100}%)`
+                  ? `brightness(${appliedFilters.brightness}%) contrast(${appliedFilters.contrast}%) grayscale(${appliedFilters.grayscale}%)`
                   : 'none'
               }}
               src={capturedImage}
