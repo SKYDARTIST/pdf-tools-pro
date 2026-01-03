@@ -37,7 +37,7 @@ export const askGemini = async (prompt: string, documentText: string) => {
       const ai = new GoogleGenerativeAI(localApiKey);
 
       try {
-        const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
+        const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(`Context: ${documentText}\n\nQuestion: ${prompt}`);
         return result.response.text();
       } catch (error: any) {

@@ -35,7 +35,7 @@ app.post('/api/ai/ask', async (req, res) => {
     }
 
     try {
-        const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-flash-lite-latest"];
+        const modelsToTry = ["gemini-2.0-flash", "gemini-1.5-flash"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
