@@ -4,7 +4,7 @@
  * Dual-mode implementation for Play Store Compliance.
  */
 
-export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' = 'chat'): Promise<string> => {
+export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' = 'chat'): Promise<string> => {
   // @ts-ignore - Vite env variables
   const localApiKey = import.meta.env?.VITE_GEMINI_API_KEY;
 

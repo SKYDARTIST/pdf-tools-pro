@@ -77,6 +77,14 @@ export default async function handler(req, res) {
                     RULES: If multiple tables exist, include them all. If no tables exist, return an empty array [].
                     DOCUMENT: ${(documentText || '').substring(0, 10000)}
                     ONLY OUTPUT THE JSON. NO MARKDOWN, NO EXPLANATION.`;
+                } else if (req.body.type === 'polisher') {
+                    promptPayload = `
+                    You are the Anti-Gravity Vision Polisher. 
+                    TASK: Analyze the lighting and quality of this document scan.
+                    INPUT: ${documentText ? 'Text-extracted layer provided.' : 'Image-based analysis required.'}
+                    RULES: Provide specific numeric values for [brightness, contrast, grayscale, sharpness] from 0 to 200 (100 is neutral).
+                    FORMAT: { "brightness": 110, "contrast": 120, "grayscale": 100, "sharpness": 130, "reason": "Low light, heavy shadows" }
+                    ONLY OUTPUT THE JSON. NO MARKDOWN.`;
                 } else {
                     promptPayload = `
                     You are the Anti-Gravity AI. Keep answers under 3 sentences.

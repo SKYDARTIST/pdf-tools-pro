@@ -1,8 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Zap, RefreshCw, FileCheck, Loader2 } from 'lucide-react';
+import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ const ScannerScreen: React.FC = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<ScanFilters | null>(null);
 
   useEffect(() => {
     async function setupCamera() {
@@ -33,11 +36,27 @@ const ScannerScreen: React.FC = () => {
 
   const handleCapture = () => {
     setIsCapturing(true);
+    setAppliedFilters(null);
     // Simulate smart cropping and processing
     setTimeout(() => {
       setCapturedImage("https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=1000&auto=format&fit=crop");
       setIsCapturing(false);
     }, 1200);
+  };
+
+  const handleNeuralEnhance = async () => {
+    if (!capturedImage) return;
+    setIsPolishing(true);
+    try {
+      // In a real app we'd send the image or OCR sample. 
+      // For now we simulate with the service.
+      const filters = await getPolisherProtocol();
+      setAppliedFilters(filters);
+    } catch (err) {
+      console.error("Enhancement failed", err);
+    } finally {
+      setIsPolishing(false);
+    }
   };
 
   return (
@@ -88,12 +107,52 @@ const ScannerScreen: React.FC = () => {
             </div>
           </>
         ) : (
-          <motion.img
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            src={capturedImage}
-            className="w-full h-full object-contain p-6"
-          />
+          <div className="relative w-full h-full flex items-center justify-center p-6">
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                filter: appliedFilters
+                  ? `brightness(${appliedFilters.brightness}%) contrast(${appliedFilters.contrast}%) grayscale(${appliedFilters.grayscale === 200 ? 100 : 0}%)`
+                  : 'none'
+              }}
+              src={capturedImage}
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl transition-all duration-700"
+            />
+            {appliedFilters && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute bottom-10 left-10 right-10 bg-emerald-500/90 backdrop-blur-md p-4 rounded-2xl flex items-center gap-4 text-white shadow-2xl"
+              >
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <Sparkles size={16} />
+                </div>
+                <div className="flex-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest block">Neural Polish Applied</span>
+                  <span className="text-[8px] font-black opacity-70 uppercase tracking-wider">{appliedFilters.reason}</span>
+                </div>
+                <button
+                  onClick={() => setAppliedFilters(null)}
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </motion.div>
+            )}
+
+            {isPolishing && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
+              >
+                <Loader2 className="animate-spin text-white" size={32} />
+                <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Analyzing Lighting...</span>
+              </motion.div>
+            )}
+          </div>
         )}
 
         <AnimatePresence>
@@ -139,16 +198,29 @@ const ScannerScreen: React.FC = () => {
               </div>
               <span className="text-[9px] font-black uppercase tracking-widest">Reset Scan</span>
             </button>
-            <button
-              onClick={() => navigate('/image-to-pdf')}
-              className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <FileCheck size={20} />
-                <span className="font-black text-[10px] uppercase tracking-[0.3em]">Save to Local Device</span>
-              </div>
-              <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">Zero Cloud Upload Required</span>
-            </button>
+
+            {!appliedFilters ? (
+              <button
+                onClick={handleNeuralEnhance}
+                disabled={isPolishing}
+                className="h-20 px-8 bg-violet-600 rounded-3xl flex items-center gap-4 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all group overflow-hidden relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <Wand2 size={20} className={isPolishing ? 'animate-spin' : ''} />
+                <span className="font-black text-[10px] uppercase tracking-[0.3em]">Neural Enhance</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/image-to-pdf')}
+                className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <FileCheck size={20} />
+                  <span className="font-black text-[10px] uppercase tracking-[0.3em]">Save to Local Device</span>
+                </div>
+                <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">Zero Cloud Upload Required</span>
+              </button>
+            )}
           </>
         )}
       </div>
