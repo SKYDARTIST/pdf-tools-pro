@@ -150,36 +150,66 @@ export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number
 export const compressPdf = async (file: File, quality: 'low' | 'med' | 'high' = 'med'): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const arrayBuffer = await file.arrayBuffer();
-    const sourcePdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
-    // "Structural Reconstruction Protocol" - Highest efficiency garbage collection
-    // By creating a fresh document and copying only the active pages, we shed all
-    // unused XObjects, structural bloat, and incremental save history.
-    const compressedPdf = await PDFDocument.create();
+    // TIER 1 & 2: Structural and Meta Cleanup (Med/High)
+    if (quality === 'high' || quality === 'med') {
+      const sourcePdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+      const compressedPdf = await PDFDocument.create();
+      const copiedPages = await compressedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
+      copiedPages.forEach((page) => compressedPdf.addPage(page));
 
-    // Copying with ignoreEncryption for legacy documents
-    const copiedPages = await compressedPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
-    copiedPages.forEach((page) => compressedPdf.addPage(page));
+      const saveOptions = {
+        useObjectStreams: true,
+        addDefaultPage: false,
+        objectsPerTick: quality === 'med' ? 50 : 100,
+      };
 
-    // Configure save options based on quality level
-    const saveOptions = {
-      useObjectStreams: true,
-      addDefaultPage: false,
-      objectsPerTick: quality === 'low' ? 50 : quality === 'med' ? 100 : 200,
-    };
+      if (quality === 'med') {
+        compressedPdf.setTitle('');
+        compressedPdf.setProducer('Anti-Gravity Protocol v2.1');
+        compressedPdf.setCreator('Monolith OS Optimization');
+      }
 
-    // Strip Information Architecture for lower quality profiles
-    if (quality === 'low' || quality === 'med') {
-      compressedPdf.setTitle('');
-      compressedPdf.setAuthor('');
-      compressedPdf.setSubject('');
-      compressedPdf.setKeywords([]);
-      compressedPdf.setProducer('Anti-Gravity Protocol v2.0');
-      compressedPdf.setCreator('Monolith OS Optimization Engine');
+      return await compressedPdf.save(saveOptions);
     }
 
-    // Save with maximum structural optimization
-    return await compressedPdf.save(saveOptions);
+    // TIER 3: AGGRESSIVE RASTERIZATION (Low) - For the "WOW" factor
+    // This renders each page to an optimized JPG and rebuilds the PDF.
+    const pdfjsLib = await import('pdfjs-dist');
+    // Use the integrated worker from the package
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    const outPdf = await PDFDocument.create();
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 }); // Balanced resolution for mobile viewing
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) continue;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({ canvas, viewport }).promise;
+
+      // Aggressive JPEG compression (0.6 quality for "Low" tier)
+      const imageData = canvas.toDataURL('image/jpeg', 0.6);
+      const imageBytes = await fetch(imageData).then(res => res.arrayBuffer());
+      const embeddedImg = await outPdf.embedJpg(imageBytes);
+
+      const newPage = outPdf.addPage([viewport.width, viewport.height]);
+      newPage.drawImage(embeddedImg, {
+        x: 0,
+        y: 0,
+        width: viewport.width,
+        height: viewport.height,
+      });
+    }
+
+    return await outPdf.save({ useObjectStreams: true });
   });
 };
 
