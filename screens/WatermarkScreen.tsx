@@ -1,0 +1,140 @@
+
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Stamp, FileText, Download, Loader2, FileUp, Type } from 'lucide-react';
+import { addWatermark, downloadBlob } from '../services/pdfService';
+import { FileItem } from '../types';
+
+const WatermarkScreen: React.FC = () => {
+  const [file, setFile] = useState<FileItem | null>(null);
+  const [text, setText] = useState('CONFIDENTIAL');
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const f = e.target.files[0];
+      setFile({ id: 'main', file: f, name: f.name, size: f.size, type: f.type });
+    }
+  };
+
+  const handleApply = async () => {
+    if (!file || !text) return;
+    setIsProcessing(true);
+    try {
+      const result = await addWatermark(file.file, text);
+      downloadBlob(result, `stamped_${file.name}`, 'application/pdf');
+    } catch (err) {
+      alert('Error applying watermark');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="min-h-screen pb-32 pt-32 max-w-2xl mx-auto px-6"
+    >
+      <div className="space-y-12">
+        {/* Header Section */}
+        <div className="space-y-3">
+          <div className="text-technical">Protocol Assets / Intellectual Property</div>
+          <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Watermark</h1>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Embed permanent identification markers to protect structural asset ownership</p>
+        </div>
+
+        {!file ? (
+          <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 10 }}
+              className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center shadow-2xl mb-6"
+            >
+              <Stamp size={32} />
+            </motion.div>
+            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Stamping</span>
+            <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
+            <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+          </label>
+        ) : (
+          <div className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="monolith-card p-6 flex items-center gap-5 border-none shadow-xl"
+            >
+              <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shrink-0">
+                <FileText size={28} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-black uppercase tracking-tighter truncate">{file.name}</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Awaiting Marker Input</p>
+              </div>
+              <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">Clear</button>
+            </motion.div>
+
+            <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none space-y-6">
+              <div className="flex items-center gap-3">
+                <Type size={14} className="text-black dark:text-white" />
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Marker Definition</h4>
+              </div>
+
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="IDENTIFIER..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  className="w-full h-16 px-6 bg-white dark:bg-black border-none rounded-2xl text-[11px] focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all font-black uppercase tracking-widest text-gray-900 dark:text-white shadow-inner"
+                />
+
+                <div className="flex gap-2">
+                  {['DRAFT', 'CONFIDENTIAL', 'SAMPLE'].map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => setText(tag)}
+                      className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${text === tag
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                        }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1"></div>
+
+      <button
+        disabled={!file || !text || isProcessing}
+        onClick={handleApply}
+        className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!file || !text || isProcessing
+            ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+            : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+          }`}
+      >
+        <motion.div
+          animate={{ x: ['-100%', '200%'] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "linear", repeatDelay: 1 }}
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
+        />
+        {isProcessing ? (
+          <Loader2 className="animate-spin" size={20} />
+        ) : (
+          <>
+            <Download size={18} strokeWidth={3} />
+            <span>Execute Stamping</span>
+          </>
+        )}
+      </button>
+    </motion.div>
+  );
+};
+
+export default WatermarkScreen;

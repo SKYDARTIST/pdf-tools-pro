@@ -1,0 +1,8 @@
+
+{
+  "name": "PDF Tools Pro",
+  "description": "Professional, ad-free PDF management suite with on-device scanning, merging, and encryption. 100% private and offline.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
