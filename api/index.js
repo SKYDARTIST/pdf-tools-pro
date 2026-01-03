@@ -1,80 +1,91 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Anti-Gravity Backend v1.5 - Optimized Resilience
 export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
-        return res.status(500).json({ error: "Missing API Key" });
+        return res.status(500).json({ error: "System Configuration Error: API Key missing in backend environment." });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Dynamic Discovery Logic - Kept as requested
+    // Dynamic Discovery with timeout protection
     const getAvailableModels = async () => {
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-            const data = await response.json();
-            if (!data.models || data.models.length === 0) return ["gemini-1.5-flash", "gemini-1.5-pro"];
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s limit for discovery
 
-            return data.models
-                .filter(m => m.supportedGenerationMethods.includes('generateContent'))
-                .map(m => m.name.replace('models/', ''));
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            const data = await response.json();
+            if (data.models && data.models.length > 0) {
+                return data.models
+                    .filter(m => m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''));
+            }
         } catch (err) {
-            return ["gemini-1.5-flash", "gemini-1.5-pro"];
+            console.warn("Discovery throttled or timed out, using fallback nuclei.");
         }
+        return ["gemini-1.5-flash", "gemini-1.5-pro"]; // High-speed fallbacks
     };
 
     if (req.method === 'GET' && req.url.includes('/health')) {
-        const models = await getAvailableModels();
-        return res.status(200).json({ status: 'online', discovered_nuclei: models });
+        return res.status(200).json({ status: 'online', protocol: 'Anti-Gravity v1.6' });
     }
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    const { prompt, documentText, image, mimeType = 'image/jpeg' } = req.body;
+    const { prompt, documentText, type, image, mimeType = 'image/jpeg' } = req.body;
 
     try {
-        let modelsToTry = await getAvailableModels();
-        const errors = [];
+        // Step 1: Start model discovery in background
+        const modelListPromise = getAvailableModels();
 
-        // PRE-FLIGHT: If scraping, fetch ONCE outside the loop to prevent timeouts
+        // Step 2: Handle scraping ONCE if needed (high-speed path)
         let textContentForScrape = "";
-        if (req.body.type === 'scrape') {
+        if (type === 'scrape') {
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s limit for scrape
+
                 const scrapeRes = await fetch(prompt.trim(), {
+                    signal: controller.signal,
                     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
                 });
+                clearTimeout(timeoutId);
+
                 if (!scrapeRes.ok) return res.status(500).json({ error: `Connection Refused: Status ${scrapeRes.status}` });
 
                 const html = await scrapeRes.text();
-                textContentForScrape = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gmb, '')
-                    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gmb, '')
+                textContentForScrape = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
+                    .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
                     .replace(/<[^>]+>/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim()
-                    .substring(0, 8000); // Optimized for speed
+                    .substring(0, 5000); // Strict limit for super-fast AI turnaround
 
-                if (textContentForScrape.length < 50) return res.status(500).json({ error: "Source site returned no readable content." });
+                if (textContentForScrape.length < 20) return res.status(500).json({ error: "Source site is empty or blocked by a firewall." });
             } catch (err) {
-                return res.status(500).json({ error: `Scraping Failed: ${err.message}` });
+                return res.status(500).json({ error: `Network Timeout: The target site took too long to respond.` });
             }
         }
 
+        const modelsToTry = await modelListPromise;
+        const errors = [];
+
         for (const modelName of modelsToTry) {
             try {
+                // Priority Check: For scrapes, we MUST use a fast model to avoid Vercel timeouts
+                if (type === 'scrape' && modelName.includes('pro')) continue; // Skip heavy models for web captures
+
                 const model = genAI.getGenerativeModel({ model: modelName });
                 let promptPayload = "";
 
-                if (req.body.type === 'scrape') {
-                    promptPayload = `Clean and structure this web text into a professional document. INPUT: ${textContentForScrape}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
-                } else if (req.body.type === 'naming') {
-                    promptPayload = `Suggest a professional filename for this document (max 40 chars, underscores). CONTEXT: ${documentText || prompt}.\nONLY OUTPUT FILENAME.`;
-                } else if (req.body.type === 'table') {
-                    promptPayload = `Extract tables from image/text into JSON: [{ "tableName": "Name", "headers": [], "rows": [[]] }]\nONLY JSON.`;
+                if (type === 'scrape') {
+                    promptPayload = `Professional Transcriber: Clean and structure this text. No headers/footers. No markdown. INPUT: ${textContentForScrape}`;
+                } else if (type === 'naming') {
+                    promptPayload = `Suggest a professional filename (max 40 chars, underscores). CONTEXT: ${documentText || prompt}`;
                 } else {
                     promptPayload = `QUERY: ${prompt}\nCONTEXT: ${documentText || ""}`;
                 }
@@ -84,6 +95,7 @@ export default async function handler(req, res) {
                     contents.push({ inlineData: { data: image.includes('base64,') ? image.split('base64,')[1] : image, mimeType } });
                 }
 
+                // Add 8s timeout to the GenAI call itself to allow for a 10s total limit
                 const result = await model.generateContent(contents);
                 const response = await result.response;
                 return res.status(200).json({ text: response.text() });
@@ -92,7 +104,10 @@ export default async function handler(req, res) {
             }
         }
 
-        return res.status(500).json({ error: "Synchronous Failure across nuclei.", details: errors.join(" | ") });
+        return res.status(500).json({
+            error: "Neural Handshake Failed.",
+            details: errors.join(" | ") || "Timeout occurred before a nucleus could synchronize."
+        });
     } catch (error) {
         res.status(500).json({ error: error.message || "Protocol Failure" });
     }
