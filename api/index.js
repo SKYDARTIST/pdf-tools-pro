@@ -11,21 +11,20 @@ export default async function handler(req, res) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Optimized Discovery Logic - Skip for high-speed tasks
+    // Dynamic Discovery Logic
     const getAvailableModels = async () => {
-        if (req.body.type === 'scrape' || req.body.type === 'naming') {
-            return ["gemini-1.5-flash"]; // Force high-speed model
-        }
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const data = await response.json();
-            if (!data.models) return ["gemini-1.5-flash", "gemini-1.5-pro"];
+            if (!data.models) return [];
 
+            // Filter for models that support text generation
             return data.models
                 .filter(m => m.supportedGenerationMethods.includes('generateContent'))
                 .map(m => m.name.replace('models/', ''));
         } catch (err) {
-            return ["gemini-1.5-flash", "gemini-1.5-pro"];
+            console.error("Discovery Error:", err);
+            return [];
         }
     };
 
