@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Check, Zap, Sparkles } from 'lucide-react';
+import { upgradeTier, addAiPackCredits, SubscriptionTier } from '../services/subscriptionService';
 
 const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -112,6 +113,17 @@ const PricingScreen: React.FC = () => {
                 whileHover={{ scale: tier.disabled ? 1 : 1.05 }}
                 whileTap={{ scale: tier.disabled ? 1 : 0.95 }}
                 disabled={tier.disabled}
+                onClick={() => {
+                  if (tier.name === 'PRO') {
+                    upgradeTier(SubscriptionTier.PRO);
+                    alert('LIFETIME PRO AUTHORIZED. Neural Layer Unlocked.');
+                    navigate('/ag-workspace');
+                  } else if (tier.name === 'AI PACK') {
+                    addAiPackCredits(100);
+                    alert('100 NEURAL CREDITS INJECTED. AI Pack Activated.');
+                    navigate('/ag-workspace');
+                  }
+                }}
                 className={`w-full py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all relative overflow-hidden shadow-lg ${tier.disabled
                   ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed'
                   : tier.popular

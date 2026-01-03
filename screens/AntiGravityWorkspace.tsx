@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag } from 'lucide-react';
 import { askGemini } from '../services/aiService';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits } from '../services/subscriptionService';
 
 const AntiGravityWorkspace: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -11,50 +12,85 @@ const AntiGravityWorkspace: React.FC = () => {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [suggestedName, setSuggestedName] = useState<string | null>(null);
   const [documentContext, setDocumentContext] = useState<string | null>(null);
+  const [imageContext, setImageContext] = useState<string | string[] | null>(null);
   const [query, setQuery] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string }[]>([]);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      const check = canUseAI();
+      if (!check.allowed) {
+        alert(check.reason);
+        return;
+      }
+
       const selected = e.target.files[0];
       setFile(selected);
       setIsImporting(true);
       setStatus('lifting');
       setSuggestedName(null);
+      setImageContext(null);
 
       try {
-        const arrayBuffer = await selected.arrayBuffer();
+        const isImage = selected.type.startsWith('image/');
+        let context = '';
+        let extractedText = '';
+        let base64Images: string | string[] = '';
 
-        // 1. EXTRACT RAW METADATA
-        const { PDFDocument } = await import('pdf-lib');
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
-        const pageCount = pdfDoc.getPageCount();
-        const fileName = selected.name;
+        if (isImage) {
+          // CONVERT IMAGE TO BASE64 FOR NEURAL VISION
+          const reader = new FileReader();
+          base64Images = await new Promise((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(selected);
+          });
+          setImageContext(base64Images);
+          context = `IMAGE_PAYLOAD: ${selected.name} | TYPE: ${selected.type} | SIZE: ${(selected.size / 1024).toFixed(2)} KB`;
+        } else {
+          // 1. EXTRACT RAW METADATA
+          const arrayBuffer = await selected.arrayBuffer();
+          const { PDFDocument } = await import('pdf-lib');
+          const pdfDoc = await PDFDocument.load(arrayBuffer);
+          const pageCount = pdfDoc.getPageCount();
 
-        // 2. EXTRACT NEURAL PAYLOAD (Full Text)
-        const { extractTextFromPdf } = await import('../utils/pdfExtractor');
-        const extractedText = await extractTextFromPdf(arrayBuffer);
+          // 2. EXTRACT NEURAL PAYLOAD (Full Text)
+          const { extractTextFromPdf, renderMultiplePagesToImages } = await import('../utils/pdfExtractor');
+          extractedText = await extractTextFromPdf(arrayBuffer.slice(0));
+          console.log(`Extracted Text Length: ${extractedText.length}`);
 
-        const context = `
-        SYSTEM_PAYLOAD_ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}
-        FILENAME: ${fileName}
-        TOTAL_PAGES: ${pageCount}
-        SIZE: ${(selected.size / 1024).toFixed(2)} KB
-        
-        DOCUMENT_TEXT_PAYLOAD:
-        ${extractedText || "NO_EXTRACTABLE_TEXT: Document is likely image-based or lacks an OCR layer."}
-        `.trim();
+          if (!extractedText) {
+            console.log("⚠️ No text found. Triggering Triple-Vision Fallback...");
+            // NEURAL SIGHT FALLBACK: Render first 3 pages if no text layer exists
+            base64Images = await renderMultiplePagesToImages(arrayBuffer, 3);
+            console.log(`Fallback Images Generated: ${(base64Images as string[]).length}`);
+            if ((base64Images as string[]).length > 0) {
+              setImageContext(base64Images);
+            }
+          }
 
-        const analysisPrompt = extractedText
-          ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context.substring(0, 1000)}`
-          : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
+          context = `
+          SYSTEM_PAYLOAD_ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}
+          FILENAME: ${selected.name}
+          TOTAL_PAGES: ${pageCount}
+          SIZE: ${(selected.size / 1024).toFixed(2)} KB
+          
+          DOCUMENT_TEXT_PAYLOAD:
+          ${extractedText || "NO_EXTRACTABLE_TEXT: Document is image-based. Visual Neural Sight Activated."}
+          `.trim();
+        }
+
+        const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
+          ? `Initialize Multimodal Protocol. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
+          : extractedText
+            ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context.substring(0, 1000)}`
+            : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
 
         // Run analysis and naming suggestion in parallel
         const { suggestDocumentName } = await import('../services/namingService');
 
         const [initialAnalysis, smartName] = await Promise.all([
-          askGemini(analysisPrompt, context),
+          askGemini(analysisPrompt, context, 'chat', base64Images || undefined),
           extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
         ]);
 
@@ -65,6 +101,7 @@ const AntiGravityWorkspace: React.FC = () => {
         setDocumentContext(context);
         setChatHistory([{ role: 'bot', text: initialAnalysis }]);
         setStatus('analyzed');
+        recordAIUsage(); // Record successful AI document extraction
       } catch (error) {
         console.error('Error processing PDF:', error);
         setAnalysis(`Document "${selected.name}" processed. AI is ready for your questions.`);
@@ -82,7 +119,7 @@ const AntiGravityWorkspace: React.FC = () => {
     setQuery('');
     setChatHistory(prev => [...prev, { role: 'user', text: currentQuery }]);
     setIsAsking(true);
-    const response = await askGemini(currentQuery, documentContext || "");
+    const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
     setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
     setIsAsking(false);
   };
@@ -139,7 +176,7 @@ const AntiGravityWorkspace: React.FC = () => {
               </div>
             </div>
 
-            <input type="file" accept=".pdf" className="hidden" onChange={handleImport} />
+            <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleImport} />
           </motion.label>
         )}
 
@@ -215,9 +252,17 @@ const AntiGravityWorkspace: React.FC = () => {
                   <div className="text-technical tracking-[0.3em] text-white dark:text-black">Neural Interface</div>
                 </div>
                 <div className="flex items-center gap-6">
+                  {imageContext && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30" title="Triple-Vision Active: Analyzing the first 3 pages of this scanned document.">
+                      <Sparkles size={10} className="text-emerald-400" />
+                      <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400 text-white dark:text-black">Neural Sight (First 3 Pages)</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-black/10 rounded-full border border-white/10 dark:border-black/10">
                     <Zap size={10} className="text-yellow-400" fill="currentColor" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-white dark:text-black">Neural Budget: 7/10</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-white dark:text-black">
+                      Neural Budget: {canUseAI().remaining !== undefined ? canUseAI().remaining : '∞'}
+                    </span>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.1, rotate: 90 }}

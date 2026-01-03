@@ -4,7 +4,7 @@
  * Dual-mode implementation for Play Store Compliance.
  */
 
-export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' = 'chat', image?: string): Promise<string> => {
+export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' = 'chat', image?: string | string[]): Promise<string> => {
   // @ts-ignore - Vite env variables
   const localApiKey = import.meta.env?.VITE_GEMINI_API_KEY;
 
@@ -36,8 +36,22 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       try {
         const { GoogleGenerativeAI } = await import("@google/generative-ai");
         const ai = new GoogleGenerativeAI(localApiKey);
-        const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const result = await model.generateContent(`Type: ${type}\nContext: ${documentText}\n\nQuestion: ${prompt}`);
+        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' }, { apiVersion: 'v1' });
+
+        let contents: any[] = [`Type: ${type}\nContext: ${documentText}\n\nQuestion: ${prompt}`];
+        if (image) {
+          const images = Array.isArray(image) ? image : [image];
+          images.forEach(img => {
+            contents.push({
+              inlineData: {
+                data: img.includes('base64,') ? img.split('base64,')[1] : img,
+                mimeType: 'image/jpeg'
+              }
+            });
+          });
+        }
+
+        const result = await model.generateContent(contents);
         const resultText = await result.response;
         return resultText.text();
       } catch (error: any) {

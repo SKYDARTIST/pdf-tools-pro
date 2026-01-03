@@ -16,14 +16,14 @@ export default async function handler(req, res) {
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const data = await response.json();
-            if (!data.models) return ["gemini-1.5-flash", "gemini-1.5-pro"];
+            if (!data.models) return ["gemini-2.5-flash", "gemini-2.5-pro"];
 
             return data.models
                 .filter(m => m.supportedGenerationMethods.includes('generateContent'))
                 .map(m => m.name.replace('models/', ''));
         } catch (err) {
             console.error("Discovery Error:", err);
-            return ["gemini-1.5-flash", "gemini-1.5-pro"];
+            return ["gemini-2.5-flash", "gemini-2.5-pro"];
         }
     };
 
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
 
         for (const modelName of modelsToTry) {
             try {
-                const model = genAI.getGenerativeModel({ model: modelName });
+                const model = genAI.getGenerativeModel({ model: modelName }, { apiVersion: 'v1' });
 
                 let promptPayload = "";
                 if (type === 'naming') {
@@ -64,7 +64,15 @@ export default async function handler(req, res) {
 
                 let contents = [{ text: promptPayload }];
                 if (image) {
-                    contents.push({ inlineData: { data: image.includes('base64,') ? image.split('base64,')[1] : image, mimeType } });
+                    const images = Array.isArray(image) ? image : [image];
+                    images.forEach(img => {
+                        contents.push({
+                            inlineData: {
+                                data: img.includes('base64,') ? img.split('base64,')[1] : img,
+                                mimeType
+                            }
+                        });
+                    });
                 }
 
                 const result = await model.generateContent(contents);
