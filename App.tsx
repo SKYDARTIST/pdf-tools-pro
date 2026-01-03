@@ -25,6 +25,7 @@ import AntiGravityWorkspace from './screens/AntiGravityWorkspace';
 import TableExtractorScreen from './screens/TableExtractorScreen';
 import MyFilesScreen from './screens/MyFilesScreen';
 import LandingPage from './screens/LandingPage';
+import LegalScreen from './screens/LegalScreen';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
@@ -90,6 +91,7 @@ const App: React.FC = () => {
               <Route path="/table-extractor" element={<TableExtractorScreen />} />
               <Route path="/my-files" element={<MyFilesScreen />} />
               <Route path="/pricing" element={<PricingScreen />} />
+              <Route path="/legal/:type" element={<LegalScreen />} />
             </Routes>
           </motion.div>
         </AnimatePresence>

@@ -1,24 +1,30 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const LegalFooter: React.FC = () => {
     const currentYear = new Date().getFullYear();
+
+    const links = [
+        { name: 'Privacy Policy', path: '/legal/privacy' },
+        { name: 'Terms of Service', path: '/legal/terms' },
+        { name: 'AI Disclaimer', path: '/legal/disclaimer' }
+    ];
 
     return (
         <footer className="w-full py-12 px-6 border-t border-black/5 dark:border-white/5 bg-transparent">
             <div className="max-w-4xl mx-auto flex flex-col items-center gap-8">
                 {/* Legal Links */}
                 <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-                    {['Privacy Policy', 'Terms of Service', 'AI Disclaimer'].map((item) => (
-                        <motion.a
-                            key={item}
-                            href="#"
-                            whileHover={{ opacity: 1, y: -1 }}
-                            className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black dark:hover:text-white transition-all opacity-40"
-                        >
-                            {item}
-                        </motion.a>
+                    {links.map((item) => (
+                        <motion.div key={item.name} whileHover={{ y: -1 }}>
+                            <Link
+                                to={item.path}
+                                className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black dark:hover:text-white transition-all opacity-40 hover:opacity-100"
+                            >
+                                {item.name}
+                            </Link>
+                        </motion.div>
                     ))}
                 </div>
 
