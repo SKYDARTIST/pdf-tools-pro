@@ -65,17 +65,20 @@ export default async function handler(req, res) {
                 let promptPayload = "";
                 if (req.body.type === 'naming') {
                     promptPayload = `
-                    You are the Anti-Gravity Organizer. Read the document text and suggest a professional filename.
-                    RULES: No extension, max 50 chars, use underscores for spaces, no special characters.
-                    DOCUMENT: ${(documentText || '').substring(0, 5000)}
+                    You are the Anti-Gravity Organizer. Read the document text or analyze the image and suggest a professional filename.
+                    RULES: No extension, max 40 chars, use underscores for spaces, no special characters.
+                    CONTEXT: ${(documentText || '').substring(0, 3000)}
+                    GOAL: Create a name like: Invoice_Amazon_Jan_2024 or Signed_Lease_Agreement.
                     ONLY OUTPUT THE FILENAME. NO EXPLANATION.`;
                 } else if (req.body.type === 'table') {
                     promptPayload = `
                     You are the Anti-Gravity Data Extractor. 
-                    TASK: Extract all tables found in the document into a structured JSON array of objects.
-                    FORMAT: [{ "tableName": "name", "headers": ["h1", "h2"], "rows": [["v1", "v2"]] }]
-                    RULES: If multiple tables exist, include them all. If no tables exist, return an empty array [].
-                    DOCUMENT: ${(documentText || '').substring(0, 10000)}
+                    TASK: Analyze the provided image or text and extract all tables found into a structured JSON array.
+                    FORMAT: [{ "tableName": "Display Name", "headers": ["Header1", "Header2"], "rows": [["Row1Val1", "Row1Val2"]] }]
+                    RULES: 
+                    1. Reconstruct the table grid with extreme precision. 
+                    2. If multiple tables exist, include them all as separate objects in the array. 
+                    3. If no tables exist, return an empty array [].
                     ONLY OUTPUT THE JSON. NO MARKDOWN, NO EXPLANATION.`;
                 } else if (req.body.type === 'polisher') {
                     promptPayload = `
@@ -100,7 +103,7 @@ export default async function handler(req, res) {
 
                 let contents = [{ text: promptPayload }];
 
-                if (req.body.type === 'polisher' && image) {
+                if ((req.body.type === 'polisher' || req.body.type === 'table' || req.body.type === 'naming') && image) {
                     contents.push({
                         inlineData: {
                             data: image.includes('base64,') ? image.split('base64,')[1] : image,

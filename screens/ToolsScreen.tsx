@@ -13,7 +13,7 @@ const ToolsScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
 
     const tools = [
-        { title: 'Scanner', desc: 'Secure document scan', icon: Zap, path: '/scanner', cat: 'popular' },
+        { title: 'Scanner', desc: 'AI Polish & Smart Naming', icon: Zap, path: '/scanner', cat: 'popular' },
         { title: 'Image to PDF', desc: 'Convert photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
         { title: 'Merge', desc: 'Combine PDFs', icon: Combine, path: '/merge', cat: 'popular' },
         { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },
@@ -27,7 +27,7 @@ const ToolsScreen: React.FC = () => {
         { title: 'Remove', desc: 'Delete specific pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
         { title: 'Web Capture', desc: 'Transcribe URLs', icon: Globe, path: '/web-to-pdf', cat: 'convert' },
-        { title: 'Excel Engine', desc: 'Neural Table Extraction', icon: FileSpreadsheet, path: '/table-extractor', cat: 'convert' },
+        { title: 'Table AI', desc: 'Neural Table Extraction', icon: FileSpreadsheet, path: '/table-extractor', cat: 'convert' },
         { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },
     ];
 

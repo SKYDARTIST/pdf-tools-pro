@@ -11,11 +11,11 @@ export interface ExtractedTable {
  * AI Table Extraction Service
  * Uses vision/text analysis to pull structured data from PDFs.
  */
-export const extractTablesFromDocument = async (text: string): Promise<ExtractedTable[]> => {
-    if (!text || text.length < 20) return [];
+export const extractTablesFromDocument = async (text?: string, imageBase64?: string): Promise<ExtractedTable[]> => {
+    if (!text && !imageBase64) return [];
 
     try {
-        const response = await askGemini("Extract tables.", text, 'table');
+        const response = await askGemini("Extract tables.", text || "", 'table', imageBase64);
 
         // Attempt to parse the JSON response
         try {

@@ -20,11 +20,22 @@ const TableExtractorScreen: React.FC = () => {
             setStatus('analyzing');
 
             try {
-                const { extractTextFromPdf } = await import('../utils/pdfExtractor');
-                const arrayBuffer = await selected.arrayBuffer();
-                const text = await extractTextFromPdf(arrayBuffer);
+                let extractedTables: ExtractedTable[] = [];
 
-                const extractedTables = await extractTablesFromDocument(text);
+                if (selected.type === 'application/pdf') {
+                    const { extractTextFromPdf } = await import('../utils/pdfExtractor');
+                    const arrayBuffer = await selected.arrayBuffer();
+                    const text = await extractTextFromPdf(arrayBuffer);
+                    extractedTables = await extractTablesFromDocument(text);
+                } else if (selected.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    const imageBase64 = await new Promise<string>((resolve) => {
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.readAsDataURL(selected);
+                    });
+                    extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                }
+
                 setTables(extractedTables);
                 setStatus('done');
             } catch (err) {
@@ -89,8 +100,8 @@ const TableExtractorScreen: React.FC = () => {
                             <FileUp size={32} />
                         </div>
                         <h3 className="text-xl font-black uppercase tracking-tight text-gray-900 dark:text-white">Inject Data Source</h3>
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-2">Upload PDF with tables for AI extraction</p>
-                        <input type="file" accept=".pdf" className="hidden" onChange={handleFileSelect} />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-2">Upload Image or PDF for AI extraction</p>
+                        <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileSelect} />
                     </motion.label>
                 )}
 

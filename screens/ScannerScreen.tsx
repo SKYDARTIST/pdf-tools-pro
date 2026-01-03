@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
+import { askGemini } from '../services/aiService';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const ScannerScreen: React.FC = () => {
   const [flash, setFlash] = useState(false);
   const [isPolishing, setIsPolishing] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<ScanFilters | null>(null);
+  const [suggestedName, setSuggestedName] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function setupCamera() {
@@ -25,6 +28,7 @@ const ScannerScreen: React.FC = () => {
         }
       } catch (err) {
         console.error("Camera access denied", err);
+        setError("Camera access denied. Please allow camera permissions.");
       }
     }
     setupCamera();
@@ -38,6 +42,7 @@ const ScannerScreen: React.FC = () => {
     if (!videoRef.current) return;
     setIsCapturing(true);
     setAppliedFilters(null);
+    setSuggestedName(''); // Clear suggested name on new capture
 
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
@@ -84,29 +89,55 @@ const ScannerScreen: React.FC = () => {
   const handleNeuralEnhance = async () => {
     if (!capturedImage) return;
     setIsPolishing(true);
+    setError(null);
     try {
-      // Pass the captured base64 image to Gemini for analysis
-      const filters = await getPolisherProtocol(undefined, capturedImage);
+      // Parallel execution for better speed
+      const [filters, nameSuggestion] = await Promise.all([
+        getPolisherProtocol(undefined, capturedImage),
+        askGemini("Suggest a professional filename for this document.", undefined, 'naming', capturedImage)
+      ]);
+
       setAppliedFilters(filters);
+      setSuggestedName(nameSuggestion.replace(/ /g, '_'));
     } catch (err) {
       console.error("Enhancement failed", err);
+      setError("Enhancement failed. Please try again.");
     } finally {
       setIsPolishing(false);
     }
   };
 
+  const dataURLToBlob = (dataUrl: string) => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new Blob([u8arr], { type: mime });
+  };
+
+  const downloadBlob = (blob: Blob, filename: string, type: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleDownload = async () => {
     if (!capturedImage) return;
-
-    let finalImage = capturedImage;
-    if (appliedFilters) {
-      finalImage = await bakeFilters(capturedImage, appliedFilters);
+    try {
+      const baked = appliedFilters ? await bakeFilters(capturedImage, appliedFilters) : capturedImage;
+      const finalName = suggestedName ? `${suggestedName}.jpg` : `scan_${Date.now()}.jpg`;
+      downloadBlob(dataURLToBlob(baked), finalName, 'image/jpeg');
+    } catch (err) {
+      console.error("Download failed", err);
+      setError("Download failed. Please try again.");
     }
-
-    const link = document.createElement('a');
-    link.href = finalImage;
-    link.download = `scan_${Date.now()}.jpg`;
-    link.click();
   };
 
   return (
@@ -174,21 +205,41 @@ const ScannerScreen: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute bottom-10 left-10 right-10 bg-emerald-500/90 backdrop-blur-md p-4 rounded-2xl flex items-center gap-4 text-white shadow-2xl"
+                className="absolute bottom-10 left-10 right-10 flex flex-col gap-2"
               >
-                <div className="p-2 bg-white/20 rounded-xl">
-                  <Sparkles size={16} />
+                {suggestedName && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="bg-black/80 backdrop-blur-xl p-3 px-5 rounded-[20px] flex items-center gap-3 border border-white/10"
+                  >
+                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-400">Smart Name:</span>
+                    <input
+                      type="text"
+                      value={suggestedName}
+                      onChange={(e) => setSuggestedName(e.target.value)}
+                      className="bg-transparent border-none text-[11px] font-black uppercase tracking-widest text-white focus:outline-none flex-1"
+                    />
+                  </motion.div>
+                )}
+                <div className="bg-emerald-500/90 backdrop-blur-md p-4 rounded-2xl flex items-center gap-4 text-white shadow-2xl">
+                  <div className="p-2 bg-white/20 rounded-xl">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest block">Neural Polish Applied</span>
+                    <span className="text-[8px] font-black opacity-70 uppercase tracking-wider">{appliedFilters.reason}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAppliedFilters(null);
+                      setSuggestedName('');
+                    }}
+                    className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest block">Neural Polish Applied</span>
-                  <span className="text-[8px] font-black opacity-70 uppercase tracking-wider">{appliedFilters.reason}</span>
-                </div>
-                <button
-                  onClick={() => setAppliedFilters(null)}
-                  className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-                >
-                  <X size={14} />
-                </button>
               </motion.div>
             )}
 
