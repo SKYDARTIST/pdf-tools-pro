@@ -95,25 +95,25 @@ const AntiGravityWorkspace: React.FC = () => {
       className="px-6 pb-32 pt-32 max-w-2xl mx-auto flex flex-col min-h-screen space-y-12 overflow-x-hidden"
     >
       {/* Workspace Header */}
-      <div className="flex justify-between items-start gap-4">
-        <div className="space-y-3 min-w-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
+        <div className="space-y-3 min-w-0 w-full">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-black dark:bg-white rounded-2xl flex items-center justify-center shadow-2xl shrink-0">
-              <Sparkles size={24} className="text-white dark:text-black" />
+            <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center shadow-2xl shrink-0">
+              <Sparkles size={20} className="text-white dark:text-black" />
             </div>
-            <div className="space-y-1 min-w-0">
-              <div className="text-technical tracking-[0.3em] truncate">Anti-Gravity Protocol</div>
-              <h2 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
+            <div className="space-y-0.5 min-w-0">
+              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 truncate">Anti-Gravity Protocol</div>
+              <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
                 Workspace
               </h2>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">
+          <div className="flex items-center gap-2 text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">
             <div className="w-1.5 h-1.5 rounded-full bg-gray-900 dark:bg-white animate-pulse" />
             STATUS: {status === 'idle' ? 'STANDBY' : status.toUpperCase()}
           </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white rounded-full border border-black/5 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] shadow-sm">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white rounded-full border border-black/5 dark:border-white/10 text-[8px] font-black uppercase tracking-[0.2em] shadow-sm">
           SECURE ENCRYPTION ACTIVE
         </div>
       </div>
