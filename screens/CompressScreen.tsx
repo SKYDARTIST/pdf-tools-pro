@@ -66,6 +66,8 @@ const CompressScreen: React.FC = () => {
         setFile(null); // Clear file only on successful reduction
       }
     } catch (err) {
+      console.error('Compression error:', err);
+      alert(err instanceof Error ? err.message : 'Optimization Protocol Failure');
       FileHistoryManager.addEntry({
         fileName: `compress_failed_${file.name}`,
         operation: 'compress',
