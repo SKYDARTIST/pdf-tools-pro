@@ -75,7 +75,7 @@ export default async function handler(req, res) {
                     .replace(/<[^>]+>/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim()
-                    .substring(0, 6000); // Reduced size for faster AI turnaround
+                    .substring(0, 10000);
 
                 if (textContent.length < 50) {
                     return res.status(500).json({ error: "Empty Payload: Site returned no readable text." });
