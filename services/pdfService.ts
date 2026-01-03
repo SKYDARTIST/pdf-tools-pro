@@ -82,14 +82,48 @@ export const imageToPdf = async (images: File[]): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const pdfDoc = await PDFDocument.create();
     for (const image of images) {
+      console.log(`Processing image: ${image.name}, type: ${image.type}, size: ${image.size}`);
       const arrayBuffer = await image.arrayBuffer();
       let embeddedImage;
-      if (image.type === 'image/jpeg' || image.type === 'image/jpg') embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
-      else if (image.type === 'image/png') embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-      else continue;
-      const page = pdfDoc.addPage([embeddedImage.width, embeddedImage.height]);
-      page.drawImage(embeddedImage, { x: 0, y: 0, width: embeddedImage.width, height: embeddedImage.height });
+
+      try {
+        if (image.type === 'image/jpeg' || image.type === 'image/jpg') {
+          try {
+            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+          } catch (e) {
+            console.warn(`JPG embedding failed for ${image.name}, trying PNG fallback...`);
+            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
+          }
+        } else if (image.type === 'image/png') {
+          try {
+            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
+          } catch (e) {
+            console.warn(`PNG embedding failed for ${image.name}, trying JPG fallback...`);
+            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+          }
+        } else {
+          // Attempt generic embedding if type is unknown or mismatched
+          try {
+            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+          } catch {
+            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to embed image ${image.name} even with fallback:`, err);
+        continue;
+      }
+
+      if (embeddedImage) {
+        const page = pdfDoc.addPage([embeddedImage.width, embeddedImage.height]);
+        page.drawImage(embeddedImage, { x: 0, y: 0, width: embeddedImage.width, height: embeddedImage.height });
+      }
     }
+
+    if (pdfDoc.getPageCount() === 0) {
+      throw new Error("No valid images could be processed. Please ensure your files are valid JPEG or PNG images.");
+    }
+
     return await pdfDoc.save();
   });
 };

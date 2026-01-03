@@ -33,7 +33,8 @@ const ImageToPdfScreen: React.FC = () => {
       const result = await imageToPdf(items.map(f => f.file));
       downloadBlob(result, `scanned_doc_${Date.now()}.pdf`, 'application/pdf');
     } catch (err) {
-      alert('Error converting images to PDF');
+      console.error('Conversion error:', err);
+      alert(err instanceof Error ? err.message : 'Error converting images to PDF');
     } finally {
       setIsProcessing(false);
     }
