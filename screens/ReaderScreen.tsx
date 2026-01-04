@@ -275,11 +275,11 @@ const ReaderScreen: React.FC = () => {
                         {/* Optimized 2-Tier Control Hub */}
                         <div className="monolith-card p-4 space-y-4 shadow-xl border-none">
                             {/* Tier 1: Neural & AI Intelligence Tools */}
-                            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-1.5">
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={toggleFluidMode}
-                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
+                                    className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
                                         ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
@@ -291,7 +291,7 @@ const ReaderScreen: React.FC = () => {
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={generateMindMap}
-                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
+                                    className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
                                         ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
@@ -303,7 +303,7 @@ const ReaderScreen: React.FC = () => {
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={generateOutline}
-                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
+                                    className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
                                         ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
@@ -315,7 +315,7 @@ const ReaderScreen: React.FC = () => {
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={toggleAudioNarrator}
-                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isAudioPlaying
+                                    className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isAudioPlaying
                                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
@@ -327,7 +327,7 @@ const ReaderScreen: React.FC = () => {
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleMindMintHandoff}
-                                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all flex-1 group"
+                                    className="flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all flex-1 group"
                                 >
                                     <Sparkles size={12} className="group-hover:rotate-12 transition-transform" fill="currentColor" />
                                     Study
