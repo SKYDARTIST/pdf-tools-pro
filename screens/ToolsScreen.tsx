@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     Search, Combine, Scissors, Lock, PenTool, Image, FileText, Droplet, Zap,
-    RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet, BookOpen
+    RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet, BookOpen, Shield,
+    GitMerge, Database, Sparkles
 } from 'lucide-react';
 import LegalFooter from '../components/LegalFooter';
 
@@ -28,6 +29,11 @@ const ToolsScreen: React.FC = () => {
         { title: 'Remove', desc: 'Delete specific pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
         { title: 'Table AI', desc: 'Neural Table Extraction', icon: FileSpreadsheet, path: '/table-extractor', cat: 'convert' },
+        { title: 'Smart Redact', desc: 'Auto-PII Neutralization', icon: Shield, path: '/smart-redact', cat: 'security' },
+        { title: 'Neural OCR', desc: 'Interactive Data Chat', icon: Zap, path: '/scanner', cat: 'convert' },
+        { title: 'Neural Diff', desc: 'Compare document versions', icon: GitMerge, path: '/neural-diff', cat: 'security' },
+        { title: 'Expansion Studio', desc: 'Educational Expansion (Bonus)', icon: Sparkles, path: '/reader', cat: 'popular' },
+        { title: 'Data Extractor', desc: 'PDF to JSON/CSV feed', icon: Database, path: '/data-extractor', cat: 'convert' },
         { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },
     ];
 

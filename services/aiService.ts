@@ -4,9 +4,18 @@
  * Dual-mode implementation for Play Store Compliance.
  */
 
-export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' = 'chat', image?: string | string[]): Promise<string> => {
+const aiCache = new Map<string, string>();
+
+export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' = 'chat', image?: string | string[]): Promise<string> => {
   // @ts-ignore - Vite env variables
   const localApiKey = import.meta.env?.VITE_GEMINI_API_KEY;
+
+  // Neuro-Caching Logic
+  const cacheKey = `${type}:${prompt}:${documentText?.substring(0, 500)}:${image ? 'img' : 'no-img'}`;
+  if (aiCache.has(cacheKey)) {
+    console.log("⚡ Neuro-Cache Hit: Returning cached intelligence...");
+    return aiCache.get(cacheKey)!;
+  }
 
   try {
     const backendUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/index' : '/api';
@@ -17,6 +26,10 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       body: JSON.stringify({ prompt, documentText: documentText || "", type, image }),
     });
 
+    if (response.status === 429) {
+      return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const msg = errorData.error || 'Proxy Processing Error';
@@ -24,7 +37,14 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       throw new Error(`${msg}${details}`);
     }
     const data = await response.json();
-    return data.text || "No response content.";
+    const result = data.text || "No response content.";
+
+    // Store in cache if successful
+    if (result && !result.startsWith('AI_ERROR') && !result.startsWith('BACKEND_ERROR')) {
+      aiCache.set(cacheKey, result);
+    }
+
+    return result;
   } catch (err: any) {
     console.error("Backend Proxy Failure:", err);
 
@@ -36,7 +56,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       try {
         const { GoogleGenerativeAI } = await import("@google/generative-ai");
         const ai = new GoogleGenerativeAI(localApiKey);
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' }, { apiVersion: 'v1' });
+        const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' }, { apiVersion: 'v1' });
 
         let contents: any[] = [`Type: ${type}\nContext: ${documentText}\n\nQuestion: ${prompt}`];
         if (image) {
@@ -52,10 +72,16 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
         }
 
         const result = await model.generateContent(contents);
-        const resultText = await result.response;
-        return resultText.text();
+        const resultResponse = await result.response;
+        const resultText = resultResponse.text();
+
+        // Cache dev fallback too
+        aiCache.set(cacheKey, resultText);
+
+        return resultText;
       } catch (error: any) {
         console.error("Direct API Error:", error);
+        if (error.message?.includes('429')) return "AI_RATE_LIMIT: Synapse cooling in progress.";
         return `AI_ERROR: Direct connection failed. ${error.message}`;
       }
     }

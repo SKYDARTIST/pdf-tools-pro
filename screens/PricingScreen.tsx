@@ -24,7 +24,7 @@ const PricingScreen: React.FC = () => {
       name: 'PRO',
       price: '$2.99',
       period: 'Lifetime',
-      badge: 'Main Revenue',
+      badge: 'PHASE 1: EARLY ACCESS',
       features: [
         'UNLIMITED PDF tasks',
         '10 AI docs/month',
@@ -82,8 +82,13 @@ const PricingScreen: React.FC = () => {
               className={`monolith-card p-10 flex flex-col relative group ${tier.popular ? 'border-2 border-black dark:border-white shadow-2xl' : ''}`}
             >
               {tier.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl">
-                  MOST POPULAR
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                  <div className="px-5 py-1.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl whitespace-nowrap">
+                    {tier.badge || 'MOST POPULAR'}
+                  </div>
+                  <div className="px-4 py-1.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl animate-pulse">
+                    70% OFF
+                  </div>
                 </div>
               )}
 
@@ -149,71 +154,116 @@ const PricingScreen: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.6 }}
-          className="monolith-card p-12 space-y-12 border-none bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative"
+          className="monolith-card p-12 space-y-16 border-none bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative"
         >
           <div className="absolute top-0 right-0 p-12 opacity-5">
             <Zap size={160} />
           </div>
 
-          <div className="space-y-4 relative z-10">
-            <h4 className="text-3xl font-black uppercase tracking-tighter leading-none">The Efficiency Protocol</h4>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Value Comparison Index</p>
+          <div className="space-y-4 relative z-10 text-center">
+            <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">THE EDGE ADVANTAGE</h4>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs "Cloud Giants"</p>
           </div>
 
-          <div className="space-y-8 relative z-10">
-            {/* Standard Subscription */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Traditional Subscription</span>
-                <span className="text-xl font-black tabular-nums tracking-tighter">$240.00 / YEAR</span>
+          <div className="space-y-12 relative z-10">
+            {/* Savings Catalyst Chart */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-end border-b border-white/10 dark:border-black/10 pb-4">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">3-Year Projected Cost</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Savings: $717.01</span>
               </div>
-              <div className="h-2 w-full bg-white/10 dark:bg-black/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 1.5, delay: 0.8 }}
-                  className="h-full bg-red-500"
-                />
+
+              <div className="space-y-8 pt-4">
+                {/* Standard Subscription */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Standard Subscription (Avg $20/mo)</span>
+                    <span className="text-xl font-black tabular-nums tracking-tighter opacity-80">$720.00</span>
+                  </div>
+                  <div className="h-3 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 2, ease: "easeOut", delay: 0.8 }}
+                      className="h-full bg-gradient-to-r from-red-900 to-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Anti-Gravity Lifetime */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Anti-Gravity Lifetime</span>
+                    <span className="text-xl font-black tabular-nums tracking-tighter text-emerald-500">$2.99</span>
+                  </div>
+                  <div className="h-3 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: "0.4%" }}
+                      transition={{ duration: 1.5, delay: 1.2 }}
+                      className="h-full bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Anti-Gravity Lifetime */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-end">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Anti-Gravity Lifetime</span>
-                <span className="text-xl font-black tabular-nums tracking-tighter text-emerald-500">$2.99 / ONCE</span>
-              </div>
-              <div className="h-2 w-full bg-white/10 dark:bg-black/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "1.25%" }}
-                  transition={{ duration: 1.5, delay: 1 }}
-                  className="h-full bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)]"
-                />
+            {/* Combat Comparison Table */}
+            <div className="pt-8 space-y-6">
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-60 block border-b border-white/10 dark:border-black/10 pb-4">Protocol Combat Checklist</span>
+              <div className="bg-white/5 dark:bg-black/5 rounded-3xl overflow-hidden border border-white/10 dark:border-black/10">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 dark:border-black/10">
+                      <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Feature</th>
+                      <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Cloud Giants</th>
+                      <th className="p-6 text-[9px] font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[10px] font-bold uppercase tracking-tight">
+                    {[
+                      { f: "Data Privacy", c: "Cloud Sync (Shared)", l: "Local Only (Isolated)" },
+                      { f: "Login Barrier", c: "Mandatory", l: "Zero Required" },
+                      { f: "Processing Speed", c: "Server Latency", l: "Instant Edge Power" },
+                      { f: "Offline Work", c: "Laggy / Impossible", l: "100% Airplane Mode" },
+                      { f: "Cost Strategy", c: "$240/Year Sub", l: "$2.99 Lifetime" },
+                    ].map((row, i) => (
+                      <tr key={i} className="border-b border-white/5 dark:border-black/5 last:border-0 hover:bg-white/5 dark:hover:bg-black/5 transition-colors">
+                        <td className="p-6 opacity-40">{row.f}</td>
+                        <td className="p-6 text-red-500/60">{row.c}</td>
+                        <td className="p-6 text-emerald-500">{row.l}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 relative z-10">
-            <div className="p-6 bg-white/5 dark:bg-black/5 rounded-[32px] border border-white/10 dark:border-black/10 flex flex-col items-center text-center space-y-3">
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
-                <Check size={20} className="text-emerald-500" />
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Privacy Protocol 2.5</span>
-            </div>
-            <div className="p-6 bg-white/5 dark:bg-black/5 rounded-[32px] border border-white/10 dark:border-black/10 flex flex-col items-center text-center space-y-3">
-              <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-                <Check size={20} className="text-blue-500" />
-              </div>
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Local-First Storage</span>
-            </div>
-          </div>
-
-          <div className="p-8 bg-white/5 dark:bg-black/5 rounded-3xl border border-white/10 dark:border-black/10 relative z-10">
-            <p className="text-[10px] font-black uppercase leading-relaxed tracking-wider opacity-80 text-center">
+          <div className="p-8 bg-emerald-500/5 rounded-3xl border border-emerald-500/10 relative z-10 mt-8">
+            <p className="text-[10px] font-black uppercase leading-relaxed tracking-wider opacity-90 text-center">
               Our AI implementation uses Enterprise-grade isolation.
-              <span className="text-emerald-500 font-black"> NO DATA IS EVER USED TO TRAIN MODELS.</span>
+              <span className="text-emerald-500"> NO DATA IS EVER USED TO TRAIN MODELS.</span><br />
               Your documents remain 100% ephemeral and disconnected from the global training swarm.
+            </p>
+          </div>
+
+          {/* Transparency Audit */}
+          <div className="pt-16 space-y-8 relative z-10 border-t border-white/10 dark:border-black/10 mt-16">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 dark:bg-black/5 flex items-center justify-center">
+                <Sparkles size={20} className="text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <h5 className="text-[10px] font-black uppercase tracking-[0.3em]">Transparency Audit: Why $2.99?</h5>
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Zero Maintenance Philosophy</p>
+              </div>
+            </div>
+
+            <p className="text-[11px] font-medium leading-relaxed opacity-70">
+              Unlike big corporations, <span className="text-white dark:text-black font-black">Anti-Gravity is Local-First.</span> We don't maintain massive server farms to process your basic PDF tasks—your device does the work. Since our maintenance costs are near zero, we don't need to trap you in a monthly subscription. You pay once for the software, and you own the utility forever.
+              <br /><br />
+              <span className="text-emerald-500 font-black italic">Fair Pricing. Infinite Trust. No Subscriptions.</span>
             </p>
           </div>
         </motion.div>

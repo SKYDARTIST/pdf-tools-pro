@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity } from 'lucide-react';
+import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
+import MindMapComponent from '../components/MindMapComponent';
+import { askGemini } from '../services/aiService';
+import NeuralCoolingUI from '../components/NeuralCoolingUI';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -15,6 +18,17 @@ const ReaderScreen: React.FC = () => {
     const [isFluidMode, setIsFluidMode] = useState<boolean>(false);
     const [fluidContent, setFluidContent] = useState<string>('');
     const [isLoadingFluid, setIsLoadingFluid] = useState<boolean>(false);
+
+    // Advanced Intelligence State
+    const [isMindMapMode, setIsMindMapMode] = useState<boolean>(false);
+    const [mindMapData, setMindMapData] = useState<string>('');
+    const [isGeneratingMindMap, setIsGeneratingMindMap] = useState<boolean>(false);
+
+    const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
+    const [isCooling, setIsCooling] = useState<boolean>(false);
+    const [audioScript, setAudioScript] = useState<string>('');
+    const [isGeneratingAudio, setIsGeneratingAudio] = useState<boolean>(false);
+    const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -61,7 +75,113 @@ const ReaderScreen: React.FC = () => {
             }
         }
         setIsFluidMode(!isFluidMode);
+        setIsMindMapMode(false);
     };
+
+    const generateMindMap = async () => {
+        if (!file || isGeneratingMindMap) return;
+
+        setIsMindMapMode(true);
+        setIsFluidMode(false);
+
+        if (mindMapData) return;
+
+        setIsGeneratingMindMap(true);
+        try {
+            let text = fluidContent;
+            if (!text) {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer);
+                setFluidContent(text);
+            }
+            const response = await askGemini("Extract a hierarchical mind map structure from this PDF. Use a simple indented list. STRICT LIMITS: Max 5 level-1 branches and 3 level-2 sub-branches per node. Group similar concepts together to ensure a clean, focused hierarchy. Output only the indented list.", text, "mindmap");
+            if (response.startsWith('AI_RATE_LIMIT')) {
+                setIsCooling(true);
+                setMindMapData(null);
+                return;
+            }
+            setMindMapData(response);
+        } catch (error) {
+            console.error("Mind Map Generation Failed:", error);
+        } finally {
+            setIsGeneratingMindMap(false);
+        }
+    };
+
+    const toggleAudioNarrator = async () => {
+        if (isAudioPlaying) {
+            window.speechSynthesis.cancel();
+            setIsAudioPlaying(false);
+            return;
+        }
+
+        if (audioScript) {
+            startSpeaking(audioScript);
+            return;
+        }
+
+        setIsGeneratingAudio(true);
+        try {
+            let text = fluidContent;
+            if (!text) {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer);
+                setFluidContent(text);
+            }
+            const response = await askGemini("Convert this document into a concise, engaging 'podcast-style' audio script for a narrator. Focus on the core value and findings.", text, "audio_script");
+            setAudioScript(response);
+            startSpeaking(response);
+        } catch (error) {
+            console.error("Audio Generation Failed:", error);
+        } finally {
+            setIsGeneratingAudio(false);
+        }
+    };
+
+    const startSpeaking = (text: string) => {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.onend = () => setIsAudioPlaying(false);
+        setSpeechUtterance(utterance);
+        window.speechSynthesis.speak(utterance);
+        setIsAudioPlaying(true);
+    };
+
+    const handleMindMintHandoff = async () => {
+        if (!file) return;
+
+        let text = fluidContent;
+        if (!text) {
+            try {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer);
+                setFluidContent(text);
+            } catch (err) {
+                console.error("Text extraction failed for handoff", err);
+                return;
+            }
+        }
+
+        // Copy context for manual paste on MindMint
+        const context = text.substring(0, 6000);
+        try {
+            await navigator.clipboard.writeText(context);
+            if (window.confirm("ECO-EXPANSION: Study Studio Integrated!\n\nWe've optimized this document's text and copied it to your clipboard. \n\nGet an amazing educational boost at MindMint.study (Free Tier Included):\n• Generate Quizzes & Flashcards\n• Create Study Infographics\n• PWA Mobile-Ready\n\nClick 'OK' to launch your expansion studio.")) {
+                window.open("https://www.mindmint.study/", '_blank');
+            }
+        } catch (e) {
+            alert("Clipboard access failed. Please copy the text manually from Fluid Mode.");
+            window.open("https://www.mindmint.study/", '_blank');
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            window.speechSynthesis.cancel();
+        };
+    }, []);
 
     return (
         <motion.div
@@ -107,6 +227,39 @@ const ReaderScreen: React.FC = () => {
                                 >
                                     {isFluidMode ? <Zap size={14} fill="currentColor" /> : <Zap size={14} />}
                                     {isFluidMode ? "Disable Fluid" : "Fluid Mode"}
+                                </motion.button>
+
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={generateMindMap}
+                                    className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isMindMapMode
+                                        ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
+                                        : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                        }`}
+                                >
+                                    <GitBranch size={14} />
+                                    {isGeneratingMindMap ? "Scanning..." : "Neural Map"}
+                                </motion.button>
+
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={toggleAudioNarrator}
+                                    className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isAudioPlaying
+                                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                        : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                        }`}
+                                >
+                                    {isGeneratingAudio ? <Loader2 size={14} className="animate-spin" /> : isAudioPlaying ? <Square size={14} fill="currentColor" /> : <Play size={14} />}
+                                    {isAudioPlaying ? "Stop Audio" : "Audio Brief"}
+                                </motion.button>
+
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleMindMintHandoff}
+                                    className="flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all group"
+                                >
+                                    <Sparkles size={14} className="group-hover:rotate-12 transition-transform" fill="currentColor" />
+                                    Expansion Studio
                                 </motion.button>
                             </div>
 
@@ -186,7 +339,39 @@ const ReaderScreen: React.FC = () => {
                         {/* Content Area */}
                         <div className="monolith-card bg-gray-50 dark:bg-[#0a0a0a] border-none shadow-2xl p-0 overflow-hidden relative min-h-[600px]">
                             <AnimatePresence mode="wait">
-                                {isLoadingFluid ? (
+                                {isMindMapMode ? (
+                                    <motion.div
+                                        key="mindmap-view"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 p-8 flex flex-col"
+                                    >
+                                        <div className="flex justify-between items-center mb-8">
+                                            <div className="flex items-center gap-2">
+                                                <GitBranch size={16} className="text-black dark:text-white" />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">Neural Mind Map Projection</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setIsMindMapMode(false)}
+                                                className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
+                                            >
+                                                Back to Reader
+                                            </button>
+                                        </div>
+
+                                        <div className="flex-1 min-h-0">
+                                            {isGeneratingMindMap ? (
+                                                <div className="h-full flex flex-col items-center justify-center space-y-4">
+                                                    <Loader2 size={32} className="animate-spin text-black dark:text-white opacity-20" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Synthesizing Document Structure...</span>
+                                                </div>
+                                            ) : (
+                                                <MindMapComponent data={mindMapData} />
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                ) : isLoadingFluid ? (
                                     <motion.div
                                         key="loading"
                                         initial={{ opacity: 0 }}
@@ -268,6 +453,8 @@ const ReaderScreen: React.FC = () => {
                     </div>
                 )}
             </div>
+            {/* Neural Cooling Safety Valve */}
+            <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
         </motion.div>
     );
 };

@@ -24,8 +24,12 @@ import ToolsScreen from './screens/ToolsScreen';
 import AntiGravityWorkspace from './screens/AntiGravityWorkspace';
 import TableExtractorScreen from './screens/TableExtractorScreen';
 import MyFilesScreen from './screens/MyFilesScreen';
+import SmartRedactScreen from './screens/SmartRedactScreen';
+import PrivacyManifestoScreen from './screens/PrivacyManifestoScreen';
 import LandingPage from './screens/LandingPage';
 import LegalScreen from './screens/LegalScreen';
+import NeuralDiffScreen from './screens/NeuralDiffScreen';
+import DataExtractorScreen from './screens/DataExtractorScreen';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
@@ -90,6 +94,10 @@ const App: React.FC = () => {
               <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
               <Route path="/table-extractor" element={<TableExtractorScreen />} />
               <Route path="/my-files" element={<MyFilesScreen />} />
+              <Route path="/smart-redact" element={<SmartRedactScreen />} />
+              <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
+              <Route path="/neural-diff" element={<NeuralDiffScreen />} />
+              <Route path="/data-extractor" element={<DataExtractorScreen />} />
               <Route path="/pricing" element={<PricingScreen />} />
               <Route path="/legal/:type" element={<LegalScreen />} />
             </Routes>

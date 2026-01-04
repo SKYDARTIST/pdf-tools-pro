@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Send, Loader2, Bot, ShieldAlert } from 'lucide-react';
+import { Sparkles, X, Send, Loader2, Bot, ShieldAlert, Quote } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 
 interface AIAssistantProps {
@@ -11,18 +11,28 @@ interface AIAssistantProps {
 const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [messages, setMessages] = useState<{role: 'user' | 'bot', text: string}[]>([]);
+  const [messages, setMessages] = useState<{ role: 'user' | 'bot', text: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSend = async () => {
     if (!query.trim() || isLoading) return;
-    
+
     const userMsg = query;
     setQuery('');
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
 
     const botResponse = await askGemini(userMsg, contextText);
+    setMessages(prev => [...prev, { role: 'bot', text: botResponse }]);
+    setIsLoading(false);
+  };
+
+  const handleCitationExtract = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setMessages(prev => [...prev, { role: 'user', text: "Please extract all academic citations and references from this document." }]);
+
+    const botResponse = await askGemini("Extract all academic citations, references, and bibliography entries found in this text. Format them clearly.", contextText, "citation");
     setMessages(prev => [...prev, { role: 'bot', text: botResponse }]);
     setIsLoading(false);
   };
@@ -59,13 +69,19 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
                 <div className="text-center py-6 space-y-2 opacity-40">
                   <Sparkles size={24} className="mx-auto" />
                   <p className="text-[10px] font-bold uppercase tracking-widest px-4">Ask me anything about this document</p>
+                  <button
+                    onClick={handleCitationExtract}
+                    className="flex items-center gap-2 mx-auto px-4 py-2 bg-slate-900 text-white rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all border border-slate-800"
+                  >
+                    <Quote size={10} />
+                    Extract Citations
+                  </button>
                 </div>
               )}
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] p-3 rounded-2xl text-xs font-medium leading-relaxed ${
-                    m.role === 'user' ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
-                  }`}>
+                  <div className={`max-w-[85%] p-3 rounded-2xl text-xs font-medium leading-relaxed ${m.role === 'user' ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
+                    }`}>
                     {m.text}
                   </div>
                 </div>
@@ -81,15 +97,15 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
 
             {/* Input */}
             <div className="p-3 bg-white border-t border-slate-100 flex gap-2">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Type a question..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500/20"
               />
-              <button 
+              <button
                 onClick={handleSend}
                 className="w-10 h-10 bg-violet-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-violet-200"
               >

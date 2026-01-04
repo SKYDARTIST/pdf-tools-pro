@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag } from 'lucide-react';
+import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, GitMerge, Database } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits } from '../services/subscriptionService';
+import { useNavigate } from 'react-router-dom';
 
 const AntiGravityWorkspace: React.FC = () => {
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'lifting' | 'analyzed'>('idle');
@@ -378,6 +380,68 @@ const AntiGravityWorkspace: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Ecosystem Synergies */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Ecosystem Synergies</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            {
+              title: "Neural Diff",
+              desc: "Compare document versions locally",
+              icon: GitMerge,
+              path: "/neural-diff",
+              color: "text-blue-500",
+              tag: "LOCAL"
+            },
+            {
+              title: "Expansion Studio",
+              desc: "Flashcards & Quizzes (MindMint Free)",
+              icon: Sparkles,
+              path: "/reader",
+              color: "text-emerald-500",
+              tag: "FREE BONUS"
+            },
+            {
+              title: "Data Extractor",
+              desc: "Noise to clean JSON/CSV feeds",
+              icon: Database,
+              path: "/data-extractor",
+              color: "text-purple-500",
+              tag: "LOCAL"
+            }
+          ].map((tool, i) => (
+            <motion.button
+              key={i}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(tool.path)}
+              className="monolith-card p-6 flex flex-col items-start text-left space-y-4 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-4 right-4 text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 opacity-80 uppercase tracking-widest bg-emerald-500/5 group-hover:scale-110 transition-transform">
+                {tool.tag}
+              </div>
+              <div className={`p-4 bg-black/5 dark:bg-white/5 rounded-2xl ${tool.color} group-hover:scale-110 transition-transform`}>
+                <tool.icon size={20} />
+              </div>
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white mb-1">{tool.title}</div>
+                <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-relaxed">
+                  {tool.desc}
+                </div>
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Workspace Footer */}
       <motion.div

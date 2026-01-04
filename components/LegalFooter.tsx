@@ -6,9 +6,9 @@ const LegalFooter: React.FC = () => {
     const currentYear = new Date().getFullYear();
 
     const links = [
+        { name: 'Privacy Manifesto', path: '/manifesto' },
         { name: 'Privacy Policy', path: '/legal/privacy' },
-        { name: 'Terms of Service', path: '/legal/terms' },
-        { name: 'AI Disclaimer', path: '/legal/disclaimer' }
+        { name: 'Terms of Service', path: '/legal/terms' }
     ];
 
     return (
