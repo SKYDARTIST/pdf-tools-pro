@@ -11,8 +11,9 @@ const LEGAL_CONTENT = {
         subtitle: 'Zero-Persistence Mandate',
         content: [
             "Anti-Gravity operates on a strict Zero-Data mandate. We do not maintain any database of your uploaded documents or PDF content.",
-            "NEURAL PROCESSING: When you utilize the Workspace or AI tools, your document data is transmitted via secure HTTPS to the Gemini Neural Engine for real-time interpretation. This data is processed ephemerally and is not used for model training by Cryptobulla.",
-            "LOCAL CACHING: Page history and usage stats are stored exclusively on your local device (browser storage). No document-level data ever leaves your hardware except for active AI processing.",
+            "NEURAL PROCESSING: When you utilize the Workspace or AI tools, your document data is transmitted via secure HTTPS to the Google Gemini Neural Engine for real-time interpretation. This data is processed ephemerally and is not used for model training by Cryptobulla. By using these features, you consent to this data flow.",
+            "LOCAL STORAGE: We utilize HTML5 Web Storage (localStorage) exclusively to store your subscription status, operation counters, and session preferences. This data remains on your device and is not synchronized to any cloud service.",
+            "CONTENT REPORTING: In compliance with Google safety standards, users may flag AI-generated content for review. This triggers a localized reporting protocol to help us refine the neural filters.",
             "ENCRYPTION: All state transitions and data flows are protected by industry-standard SSL/TLS encryption protocols."
         ]
     },

@@ -5,6 +5,9 @@ import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
+import { Flag } from 'lucide-react';
 
 const DataExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -14,6 +17,9 @@ const DataExtractorScreen: React.FC = () => {
     const [format, setFormat] = useState<'json' | 'csv'>('json');
     const [error, setError] = useState<string>('');
     const [isCooling, setIsCooling] = useState(false);
+    const [showConsent, setShowConsent] = useState(false);
+    const [showReport, setShowReport] = useState(false);
+    const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -25,6 +31,12 @@ const DataExtractorScreen: React.FC = () => {
 
     const runExtraction = async () => {
         if (!file) return;
+
+        if (!hasConsent) {
+            setShowConsent(true);
+            return;
+        }
+
         setIsExtracting(true);
         setError('');
 
@@ -161,6 +173,14 @@ const DataExtractorScreen: React.FC = () => {
                                         <span className="text-[9px] font-bold uppercase tracking-widest">Download .{format}</span>
                                     </button>
                                     <button
+                                        onClick={() => setShowReport(true)}
+                                        className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors flex items-center gap-2 mr-2"
+                                        title="Report AI Content"
+                                    >
+                                        <Flag size={14} />
+                                        <span className="text-[8px] font-black uppercase tracking-widest">Flag</span>
+                                    </button>
+                                    <button
                                         onClick={() => setExtractedData('')}
                                         className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
                                     >
@@ -186,7 +206,23 @@ const DataExtractorScreen: React.FC = () => {
                 </AnimatePresence>
             </div>
             <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
-        </motion.div>
+
+            <AIOptInModal
+                isOpen={showConsent}
+                onClose={() => setShowConsent(false)}
+                onAccept={() => {
+                    localStorage.setItem('ai_neural_consent', 'true');
+                    setHasConsent(true);
+                    setShowConsent(false);
+                    runExtraction();
+                }}
+            />
+
+            <AIReportModal
+                isOpen={showReport}
+                onClose={() => setShowReport(false)}
+            />
+        </motion.div >
     );
 };
 

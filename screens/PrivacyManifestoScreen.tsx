@@ -44,13 +44,18 @@ const PrivacyManifestoScreen: React.FC = () => {
                         },
                         {
                             icon: EyeOff,
-                            title: "Privacy-by-Design",
-                            desc: "Our 'Neural Protocol' executes AI queries ephemerally. No document data is ever stored for model training. Your intelligence belongs to you, and no one else."
+                            title: "AI Transparency",
+                            desc: "Under Google's 2026 AI Safety Protocols, we mandate explicit user consent before any document data is transmitted to Gemini neural engines. You retain absolute control over when and how AI interacts with your data."
+                        },
+                        {
+                            icon: Lock,
+                            title: "Zero-Persistence Storage",
+                            desc: "We utilize encrypted LocalStorage only for operational state (like your AI consent status). No personal identifiers or document contents are ever persisted beyond the active processing session."
                         },
                         {
                             icon: Zap,
-                            title: "Edge Dominance",
-                            desc: "By processing everything on your device's secured hardware, we eliminate the 'Cloud-Leak' risk entirely. It's not just a security feature—it's a performance revolution."
+                            title: "Compliance & Reporting",
+                            desc: "Every AI-generated output includes a secure reporting mechanism (Flag AI). This ensures that any unexpected or biased content can be immediately flagged for technical review, maintaining our commitment to neural integrity."
                         }
                     ].map((pillar, i) => (
                         <motion.div

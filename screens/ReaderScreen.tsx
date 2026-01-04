@@ -6,6 +6,9 @@ import { extractTextFromPdf } from '../utils/pdfExtractor';
 import MindMapComponent from '../components/MindMapComponent';
 import { askGemini } from '../services/aiService';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
+import { Flag } from 'lucide-react';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -29,6 +32,10 @@ const ReaderScreen: React.FC = () => {
     const [audioScript, setAudioScript] = useState<string>('');
     const [isGeneratingAudio, setIsGeneratingAudio] = useState<boolean>(false);
     const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+    const [showConsent, setShowConsent] = useState(false);
+    const [showReport, setShowReport] = useState(false);
+    const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -81,6 +88,12 @@ const ReaderScreen: React.FC = () => {
     const generateMindMap = async () => {
         if (!file || isGeneratingMindMap) return;
 
+        if (!hasConsent) {
+            setPendingAction(() => generateMindMap);
+            setShowConsent(true);
+            return;
+        }
+
         setIsMindMapMode(true);
         setIsFluidMode(false);
 
@@ -112,6 +125,12 @@ const ReaderScreen: React.FC = () => {
         if (isAudioPlaying) {
             window.speechSynthesis.cancel();
             setIsAudioPlaying(false);
+            return;
+        }
+
+        if (!hasConsent) {
+            setPendingAction(() => toggleAudioNarrator);
+            setShowConsent(true);
             return;
         }
 
@@ -352,12 +371,21 @@ const ReaderScreen: React.FC = () => {
                                                 <GitBranch size={16} className="text-black dark:text-white" />
                                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">Neural Mind Map Projection</span>
                                             </div>
-                                            <button
-                                                onClick={() => setIsMindMapMode(false)}
-                                                className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
-                                            >
-                                                Back to Reader
-                                            </button>
+                                            <div className="flex items-center gap-4">
+                                                <button
+                                                    onClick={() => setShowReport(true)}
+                                                    className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-rose-500 hover:opacity-100 opacity-60 transition-all mr-4"
+                                                >
+                                                    <Flag size={10} />
+                                                    Report Content
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsMindMapMode(false)}
+                                                    className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
+                                                >
+                                                    Back to Reader
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="flex-1 min-h-0">
@@ -455,6 +483,25 @@ const ReaderScreen: React.FC = () => {
             </div>
             {/* Neural Cooling Safety Valve */}
             <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
+
+            <AIOptInModal
+                isOpen={showConsent}
+                onClose={() => setShowConsent(false)}
+                onAccept={() => {
+                    localStorage.setItem('ai_neural_consent', 'true');
+                    setHasConsent(true);
+                    setShowConsent(false);
+                    if (pendingAction) {
+                        pendingAction();
+                        setPendingAction(null);
+                    }
+                }}
+            />
+
+            <AIReportModal
+                isOpen={showReport}
+                onClose={() => setShowReport(false)}
+            />
         </motion.div>
     );
 };

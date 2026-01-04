@@ -5,6 +5,8 @@ import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Act
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -18,60 +20,77 @@ const AntiGravityWorkspace: React.FC = () => {
   const [query, setQuery] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string }[]>([]);
+  const [showConsent, setShowConsent] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const check = canUseAI();
-      if (!check.allowed) {
-        alert(check.reason);
+      const selected = e.target.files[0];
+
+      // Check for consent first
+      if (!hasConsent) {
+        setPendingAction(() => () => processFile(selected));
+        setShowConsent(true);
         return;
       }
 
-      const selected = e.target.files[0];
-      setFile(selected);
-      setIsImporting(true);
-      setStatus('lifting');
-      setSuggestedName(null);
-      setImageContext(null);
+      processFile(selected);
+    }
+  };
 
-      try {
-        const isImage = selected.type.startsWith('image/');
-        let context = '';
-        let extractedText = '';
-        let base64Images: string | string[] = '';
+  const processFile = async (selected: File) => {
+    const check = canUseAI();
+    if (!check.allowed) {
+      alert(check.reason);
+      return;
+    }
 
-        if (isImage) {
-          // CONVERT IMAGE TO BASE64 FOR NEURAL VISION
-          const reader = new FileReader();
-          base64Images = await new Promise((resolve) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(selected);
-          });
-          setImageContext(base64Images);
-          context = `IMAGE_PAYLOAD: ${selected.name} | TYPE: ${selected.type} | SIZE: ${(selected.size / 1024).toFixed(2)} KB`;
-        } else {
-          // 1. EXTRACT RAW METADATA
-          const arrayBuffer = await selected.arrayBuffer();
-          const { PDFDocument } = await import('pdf-lib');
-          const pdfDoc = await PDFDocument.load(arrayBuffer);
-          const pageCount = pdfDoc.getPageCount();
+    setFile(selected);
+    setIsImporting(true);
+    setStatus('lifting');
+    setSuggestedName(null);
+    setImageContext(null);
 
-          // 2. EXTRACT NEURAL PAYLOAD (Full Text)
-          const { extractTextFromPdf, renderMultiplePagesToImages } = await import('../utils/pdfExtractor');
-          extractedText = await extractTextFromPdf(arrayBuffer.slice(0));
-          console.log(`Extracted Text Length: ${extractedText.length}`);
+    try {
+      const isImage = selected.type.startsWith('image/');
+      let context = '';
+      let extractedText = '';
+      let base64Images: string | string[] = '';
 
-          if (!extractedText) {
-            console.log("⚠️ No text found. Triggering Triple-Vision Fallback...");
-            // NEURAL SIGHT FALLBACK: Render first 3 pages if no text layer exists
-            base64Images = await renderMultiplePagesToImages(arrayBuffer, 3);
-            console.log(`Fallback Images Generated: ${(base64Images as string[]).length}`);
-            if ((base64Images as string[]).length > 0) {
-              setImageContext(base64Images);
-            }
+      if (isImage) {
+        // CONVERT IMAGE TO BASE64 FOR NEURAL VISION
+        const reader = new FileReader();
+        base64Images = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(selected);
+        });
+        setImageContext(base64Images);
+        context = `IMAGE_PAYLOAD: ${selected.name} | TYPE: ${selected.type} | SIZE: ${(selected.size / 1024).toFixed(2)} KB`;
+      } else {
+        // 1. EXTRACT RAW METADATA
+        const arrayBuffer = await selected.arrayBuffer();
+        const { PDFDocument } = await import('pdf-lib');
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const pageCount = pdfDoc.getPageCount();
+
+        // 2. EXTRACT NEURAL PAYLOAD (Full Text)
+        const { extractTextFromPdf, renderMultiplePagesToImages } = await import('../utils/pdfExtractor');
+        extractedText = await extractTextFromPdf(arrayBuffer.slice(0));
+        console.log(`Extracted Text Length: ${extractedText.length}`);
+
+        if (!extractedText) {
+          console.log("⚠️ No text found. Triggering Triple-Vision Fallback...");
+          // NEURAL SIGHT FALLBACK: Render first 3 pages if no text layer exists
+          base64Images = await renderMultiplePagesToImages(arrayBuffer, 3);
+          console.log(`Fallback Images Generated: ${(base64Images as string[]).length}`);
+          if ((base64Images as string[]).length > 0) {
+            setImageContext(base64Images);
           }
+        }
 
-          context = `
+        context = `
           SYSTEM_PAYLOAD_ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}
           FILENAME: ${selected.name}
           TOTAL_PAGES: ${pageCount}
@@ -80,43 +99,49 @@ const AntiGravityWorkspace: React.FC = () => {
           DOCUMENT_TEXT_PAYLOAD:
           ${extractedText || "NO_EXTRACTABLE_TEXT: Document is image-based. Visual Neural Sight Activated."}
           `.trim();
-        }
-
-        const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
-          ? `Initialize Multimodal Protocol. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
-          : extractedText
-            ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context.substring(0, 1000)}`
-            : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
-
-        // Run analysis and naming suggestion in parallel
-        const { suggestDocumentName } = await import('../services/namingService');
-
-        const [initialAnalysis, smartName] = await Promise.all([
-          askGemini(analysisPrompt, context, 'chat', base64Images || undefined),
-          extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
-        ]);
-
-        setAnalysis(initialAnalysis);
-        if (smartName && smartName !== 'unnamed_document') {
-          setSuggestedName(smartName);
-        }
-        setDocumentContext(context);
-        setChatHistory([{ role: 'bot', text: initialAnalysis }]);
-        setStatus('analyzed');
-        recordAIUsage(); // Record successful AI document extraction
-      } catch (error) {
-        console.error('Error processing PDF:', error);
-        setAnalysis(`Document "${selected.name}" processed. AI is ready for your questions.`);
-        setDocumentContext(`Metadata: ${selected.name}`);
-        setStatus('analyzed');
-      } finally {
-        setIsImporting(false);
       }
+
+      const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
+        ? `Initialize Multimodal Protocol. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
+        : extractedText
+          ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context.substring(0, 1000)}`
+          : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
+
+      // Run analysis and naming suggestion in parallel
+      const { suggestDocumentName } = await import('../services/namingService');
+
+      const [initialAnalysis, smartName] = await Promise.all([
+        askGemini(analysisPrompt, context, 'chat', base64Images || undefined),
+        extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
+      ]);
+
+      setAnalysis(initialAnalysis);
+      if (smartName && smartName !== 'unnamed_document') {
+        setSuggestedName(smartName);
+      }
+      setDocumentContext(context);
+      setChatHistory([{ role: 'bot', text: initialAnalysis }]);
+      setStatus('analyzed');
+      recordAIUsage(); // Record successful AI document extraction
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      setAnalysis(`Document "${selected.name}" processed. AI is ready for your questions.`);
+      setDocumentContext(`Metadata: ${selected.name}`);
+      setStatus('analyzed');
+    } finally {
+      setIsImporting(false);
     }
-  };
+  }
 
   const handleAsk = async () => {
     if (!query.trim() || isAsking) return;
+
+    if (!hasConsent) {
+      setPendingAction(() => handleAsk);
+      setShowConsent(true);
+      return;
+    }
+
     const currentQuery = query;
     setQuery('');
     setChatHistory(prev => [...prev, { role: 'user', text: currentQuery }]);
@@ -331,11 +356,7 @@ const AntiGravityWorkspace: React.FC = () => {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 0.3 }}
                           whileHover={{ opacity: 1, color: '#ef4444' }}
-                          onClick={() => {
-                            if (window.confirm('Report this AI response for safety review?')) {
-                              alert('Response reported to Anti-Gravity Safety Hub. Thank you.');
-                            }
-                          }}
+                          onClick={() => setShowReport(true)}
                           className="flex items-center gap-1.5 ml-4 text-[9px] font-black uppercase tracking-widest transition-all"
                         >
                           <Flag size={10} />
@@ -460,6 +481,25 @@ const AntiGravityWorkspace: React.FC = () => {
           </p>
         </div>
       </motion.div>
+
+      <AIOptInModal
+        isOpen={showConsent}
+        onClose={() => setShowConsent(false)}
+        onAccept={() => {
+          localStorage.setItem('ai_neural_consent', 'true');
+          setHasConsent(true);
+          setShowConsent(false);
+          if (pendingAction) {
+            pendingAction();
+            setPendingAction(null);
+          }
+        }}
+      />
+
+      <AIReportModal
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+      />
     </motion.div>
   );
 };

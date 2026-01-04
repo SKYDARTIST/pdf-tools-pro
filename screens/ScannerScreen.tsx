@@ -5,6 +5,9 @@ import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Downloa
 import { useNavigate } from 'react-router-dom';
 import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
+import { Flag } from 'lucide-react';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +19,9 @@ const ScannerScreen: React.FC = () => {
   const [appliedFilters, setAppliedFilters] = useState<ScanFilters | null>(null);
   const [suggestedName, setSuggestedName] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [showConsent, setShowConsent] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
 
   useEffect(() => {
     async function setupCamera() {
@@ -88,6 +94,12 @@ const ScannerScreen: React.FC = () => {
 
   const handleNeuralEnhance = async () => {
     if (!capturedImage) return;
+
+    if (!hasConsent) {
+      setShowConsent(true);
+      return;
+    }
+
     setIsPolishing(true);
     setError(null);
     try {
@@ -231,6 +243,13 @@ const ScannerScreen: React.FC = () => {
                     <span className="text-[8px] font-black opacity-70 uppercase tracking-wider">{appliedFilters.reason}</span>
                   </div>
                   <button
+                    onClick={() => setShowReport(true)}
+                    className="p-2 hover:bg-white/10 rounded-xl transition-colors flex items-center gap-2"
+                    title="Report AI Content"
+                  >
+                    <Flag size={14} className="text-white" />
+                  </button>
+                  <button
                     onClick={() => {
                       setAppliedFilters(null);
                       setSuggestedName('');
@@ -341,6 +360,22 @@ const ScannerScreen: React.FC = () => {
           </>
         )}
       </div>
+
+      <AIOptInModal
+        isOpen={showConsent}
+        onClose={() => setShowConsent(false)}
+        onAccept={() => {
+          localStorage.setItem('ai_neural_consent', 'true');
+          setHasConsent(true);
+          setShowConsent(false);
+          handleNeuralEnhance();
+        }}
+      />
+
+      <AIReportModal
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+      />
     </motion.div>
   );
 };

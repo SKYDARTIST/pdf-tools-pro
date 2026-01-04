@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileSpreadsheet, FileUp, Loader2, Bot, Download, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
+import { Flag } from 'lucide-react';
 
 const TableExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -11,39 +14,54 @@ const TableExtractorScreen: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [status, setStatus] = useState<'idle' | 'analyzing' | 'done'>('idle');
     const [tables, setTables] = useState<ExtractedTable[]>([]);
+    const [showConsent, setShowConsent] = useState(false);
+    const [showReport, setShowReport] = useState(false);
+    const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const selected = e.target.files[0];
-            setFile(selected);
-            setIsProcessing(true);
-            setStatus('analyzing');
 
-            try {
-                let extractedTables: ExtractedTable[] = [];
-
-                if (selected.type === 'application/pdf') {
-                    const { extractTextFromPdf } = await import('../utils/pdfExtractor');
-                    const arrayBuffer = await selected.arrayBuffer();
-                    const text = await extractTextFromPdf(arrayBuffer);
-                    extractedTables = await extractTablesFromDocument(text);
-                } else if (selected.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    const imageBase64 = await new Promise<string>((resolve) => {
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.readAsDataURL(selected);
-                    });
-                    extractedTables = await extractTablesFromDocument(undefined, imageBase64);
-                }
-
-                setTables(extractedTables);
-                setStatus('done');
-            } catch (err) {
-                console.error("Extraction Failed:", err);
-                setStatus('idle');
-            } finally {
-                setIsProcessing(false);
+            if (!hasConsent) {
+                setPendingFile(selected);
+                setShowConsent(true);
+                return;
             }
+
+            processFile(selected);
+        }
+    };
+
+    const processFile = async (selected: File) => {
+        setFile(selected);
+        setIsProcessing(true);
+        setStatus('analyzing');
+
+        try {
+            let extractedTables: ExtractedTable[] = [];
+
+            if (selected.type === 'application/pdf') {
+                const { extractTextFromPdf } = await import('../utils/pdfExtractor');
+                const arrayBuffer = await selected.arrayBuffer();
+                const text = await extractTextFromPdf(arrayBuffer);
+                extractedTables = await extractTablesFromDocument(text);
+            } else if (selected.type.startsWith('image/')) {
+                const reader = new FileReader();
+                const imageBase64 = await new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.readAsDataURL(selected);
+                });
+                extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+            }
+
+            setTables(extractedTables);
+            setStatus('done');
+        } catch (err) {
+            console.error("Extraction Failed:", err);
+            setStatus('idle');
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -158,6 +176,14 @@ const TableExtractorScreen: React.FC = () => {
                                         <Download size={14} />
                                         <span className="text-[10px] font-black uppercase tracking-widest">Master JSON</span>
                                     </motion.button>
+                                    <button
+                                        onClick={() => setShowReport(true)}
+                                        className="px-6 py-3 bg-rose-500/20 rounded-full flex items-center gap-2 border border-rose-500/20 hover:bg-rose-500/30 transition-all backdrop-blur-md"
+                                        title="Report AI Content"
+                                    >
+                                        <Flag size={14} className="text-white dark:text-rose-500" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white dark:text-rose-500">Flag AI</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -213,17 +239,24 @@ const TableExtractorScreen: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            <div className="mt-20 p-8 monolith-card bg-transparent border-dashed border-2 opacity-30 flex items-center gap-6">
-                <div className="p-3 bg-black/5 dark:bg-white/5 rounded-2xl">
-                    <Zap size={20} fill="currentColor" />
-                </div>
-                <div>
-                    <div className="text-[9px] font-black uppercase tracking-[0.3em]">Neural Processing Warning</div>
-                    <p className="text-[8px] font-black uppercase tracking-[0.1em] opacity-60">
-                        Precision depends on PDF layer clarity. Best results with digital PDFs rather than scans.
-                    </p>
-                </div>
-            </div>
+            <AIOptInModal
+                isOpen={showConsent}
+                onClose={() => setShowConsent(false)}
+                onAccept={() => {
+                    localStorage.setItem('ai_neural_consent', 'true');
+                    setHasConsent(true);
+                    setShowConsent(false);
+                    if (pendingFile) {
+                        processFile(pendingFile);
+                        setPendingFile(null);
+                    }
+                }}
+            />
+
+            <AIReportModal
+                isOpen={showReport}
+                onClose={() => setShowReport(false)}
+            />
         </motion.div>
     );
 };

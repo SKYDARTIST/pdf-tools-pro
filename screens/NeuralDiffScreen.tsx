@@ -5,6 +5,9 @@ import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
+import { Flag } from 'lucide-react';
 
 const NeuralDiffScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -14,6 +17,9 @@ const NeuralDiffScreen: React.FC = () => {
     const [diffResult, setDiffResult] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [isCooling, setIsCooling] = useState(false);
+    const [showConsent, setShowConsent] = useState(false);
+    const [showReport, setShowReport] = useState(false);
+    const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
@@ -26,6 +32,12 @@ const NeuralDiffScreen: React.FC = () => {
 
     const runNeuralDiff = async () => {
         if (!file1 || !file2) return;
+
+        if (!hasConsent) {
+            setShowConsent(true);
+            return;
+        }
+
         setIsAnalyzing(true);
         setError('');
 
@@ -136,6 +148,14 @@ const NeuralDiffScreen: React.FC = () => {
                                     <span className="text-xs font-black uppercase tracking-widest">Semantic Analysis Ready</span>
                                 </div>
                                 <button
+                                    onClick={() => setShowReport(true)}
+                                    className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors flex items-center gap-2 mr-2"
+                                    title="Report AI Content"
+                                >
+                                    <Flag size={14} />
+                                    <span className="text-[8px] font-black uppercase tracking-widest">Flag</span>
+                                </button>
+                                <button
                                     onClick={() => {
                                         setFile1(null);
                                         setFile2(null);
@@ -171,7 +191,23 @@ const NeuralDiffScreen: React.FC = () => {
                 </AnimatePresence>
             </div>
             <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
-        </motion.div>
+
+            <AIOptInModal
+                isOpen={showConsent}
+                onClose={() => setShowConsent(false)}
+                onAccept={() => {
+                    localStorage.setItem('ai_neural_consent', 'true');
+                    setHasConsent(true);
+                    setShowConsent(false);
+                    runNeuralDiff();
+                }}
+            />
+
+            <AIReportModal
+                isOpen={showReport}
+                onClose={() => setShowReport(false)}
+            />
+        </motion.div >
     );
 };
 
