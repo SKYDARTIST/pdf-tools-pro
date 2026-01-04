@@ -40,22 +40,22 @@ const PrivacyManifestoScreen: React.FC = () => {
                         {
                             icon: Lock,
                             title: "Zero-Knowledge Infrastructure",
-                            desc: "We built Anti-Gravity without a central server. This means we are physically unable to track your movements, store your files, or sell your identity. Your documents exist only in your RAM while being processed."
+                            desc: "Engineered without a central server. Anti-Gravity is physically unable to track your session, store your files, or sell your identity. Your documents reside only in your device's active RAM during manipulation."
                         },
                         {
                             icon: EyeOff,
-                            title: "AI Transparency",
-                            desc: "Under Google's 2026 AI Safety Protocols, we mandate explicit user consent before any document data is transmitted to Gemini neural engines. You retain absolute control over when and how AI interacts with your data."
+                            title: "Transient AI Processing",
+                            desc: "Neural interactions are powered by the Google Gemini API via encrypted TLS 1.3 links. All data transmission is stateless and transient; your documents are never used for model training and are purged immediately after response generation."
                         },
                         {
                             icon: Lock,
                             title: "Zero-Persistence Storage",
-                            desc: "We utilize encrypted LocalStorage only for operational state (like your AI consent status). No personal identifiers or document contents are ever persisted beyond the active processing session."
+                            desc: "Operational state (Consent, Neural Budget) is stored in encrypted LocalStorage. No document identifiers or sensitive content ever persist beyond your active processing window."
                         },
                         {
                             icon: Zap,
-                            title: "Compliance & Reporting",
-                            desc: "Every AI-generated output includes a secure reporting mechanism (Flag AI). This ensures that any unexpected or biased content can be immediately flagged for technical review, maintaining our commitment to neural integrity."
+                            title: "2026 AI Safety Compliance",
+                            desc: "Every AI-generated insight follows strict safety protocols. The integrated 'Flag AI' mechanism allows for immediate reporting of neural inaccuracies, ensuring absolute technical integrity and accountability."
                         }
                     ].map((pillar, i) => (
                         <motion.div
