@@ -22,7 +22,10 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
 
     const response = await fetch(backendUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-ag-signature': 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE'
+      },
       body: JSON.stringify({ prompt, documentText: documentText || "", type, image }),
     });
 

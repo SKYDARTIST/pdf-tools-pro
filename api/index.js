@@ -9,6 +9,13 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Missing API Key" });
     }
 
+    // Stage 1 Protocol Integrity Check
+    const signature = req.headers['x-ag-signature'];
+    if (signature !== 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE') {
+        console.warn("Unauthorized API Access Attempt Dropped");
+        return res.status(401).json({ error: "Protocol Integrity Violation. Request Origin Untrusted." });
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Dynamic Discovery Logic - The "Gemini Decides" way
