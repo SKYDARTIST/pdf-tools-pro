@@ -51,6 +51,7 @@ const Header: React.FC = () => {
             whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.1 }}
             onClick={() => navigate(-1)}
+            aria-label="Go back"
             className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all"
           >
             <ArrowLeft size={16} className="text-gray-900 dark:text-white" />
@@ -103,6 +104,7 @@ const Header: React.FC = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/pricing')}
+          aria-label="Upgrade to Pro"
           className="flex items-center justify-center h-8 sm:h-10 w-8 sm:w-auto sm:px-4 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] sm:text-[11px] font-black shadow-xl hover:brightness-110 transition-all shrink-0 relative overflow-hidden group"
         >
           {/* Shimmer Effect */}

@@ -69,6 +69,7 @@ const ToolsScreen: React.FC = () => {
                     <input
                         type="search"
                         placeholder="SEARCH PROTOCOLS..."
+                        aria-label="Search tools"
                         className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 shadow-sm transition-all"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

@@ -37,6 +37,7 @@ const BottomNav: React.FC = () => {
                             key={item.label}
                             onClick={() => navigate(item.path)}
                             whileTap={{ scale: 0.9 }}
+                            aria-label={item.label}
                             className="relative flex items-center justify-center w-12 h-12 rounded-full"
                         >
                             <AnimatePresence>
