@@ -45,7 +45,7 @@ const ToolsScreen: React.FC = () => {
     });
 
     return (
-        <div className="min-h-screen bg-transparent pb-32 pt-24 max-w-5xl mx-auto px-6">
+        <div className="min-h-screen bg-transparent pb-32 pt-24 max-w-md mx-auto px-6">
             <div className="space-y-12">
                 {/* Header Section */}
                 <motion.div
@@ -103,27 +103,27 @@ const ToolsScreen: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                        className="grid grid-cols-2 gap-4"
                     >
                         {filtered.map((tool, i) => (
-                            <button
+                            <motion.button
                                 key={tool.title}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: i * 0.03 }}
-                                whileHover={{ y: -6, scale: 1.02, backgroundColor: 'rgba(0,0,0,0.02)' }}
+                                whileHover={{ y: -4, scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => navigate(tool.path)}
-                                className="monolith-card p-4 sm:p-5 flex flex-col items-center text-center gap-3 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner"
+                                className="monolith-card p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner"
                             >
-                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
-                                    <tool.icon size={20} className="transition-colors" strokeWidth={2.5} />
+                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                                    <tool.icon size={18} className="transition-colors" strokeWidth={2.5} />
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="text-[11px] sm:text-[12px] font-black uppercase tracking-wider text-black dark:text-white mb-0.5 mt-1">{tool.title}</h3>
-                                    <p className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight leading-tight line-clamp-2 max-w-[120px]">{tool.desc}</p>
+                                <div className="min-w-0 px-1">
+                                    <h3 className="text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-0.5 mt-1 leading-none">{tool.title}</h3>
+                                    <p className="text-[7px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight leading-tight line-clamp-2 max-w-[100px]">{tool.desc}</p>
                                 </div>
-                            </button>
+                            </motion.button>
                         ))}
                     </motion.div>
                 </AnimatePresence>
