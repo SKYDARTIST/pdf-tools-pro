@@ -37,6 +37,10 @@ const ReaderScreen: React.FC = () => {
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
+    const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
+    const [outlineData, setOutlineData] = useState<string | null>(null);
+    const [isOutlineMode, setIsOutlineMode] = useState(false);
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
@@ -196,6 +200,42 @@ const ReaderScreen: React.FC = () => {
         }
     };
 
+    const generateOutline = async () => {
+        if (!file || isGeneratingOutline) return;
+
+        if (!hasConsent) {
+            setPendingAction(() => generateOutline);
+            setShowConsent(true);
+            return;
+        }
+
+        setIsOutlineMode(true);
+        setIsMindMapMode(false);
+        setIsFluidMode(false);
+
+        if (outlineData) return;
+
+        setIsGeneratingOutline(true);
+        try {
+            let text = fluidContent;
+            if (!text) {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer);
+                setFluidContent(text);
+            }
+            const response = await askGemini("Synthesize this document into a professional, high-fidelity executive outline. Use clear headings and bullet points. Focus on key decisions, findings, and actionable data. Output as markdown.", text, "outline");
+            if (response.startsWith('AI_RATE_LIMIT')) {
+                setIsCooling(true);
+                return;
+            }
+            setOutlineData(response);
+        } catch (error) {
+            console.error("Outline Generation Failed:", error);
+        } finally {
+            setIsGeneratingOutline(false);
+        }
+    };
+
     useEffect(() => {
         return () => {
             window.speechSynthesis.cancel();
@@ -258,6 +298,18 @@ const ReaderScreen: React.FC = () => {
                                 >
                                     <GitBranch size={12} />
                                     {isGeneratingMindMap ? "Scanning" : "Map"}
+                                </motion.button>
+
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={generateOutline}
+                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
+                                        ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
+                                        : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                        }`}
+                                >
+                                    <BookOpen size={12} />
+                                    {isGeneratingOutline ? "Thinking" : "Outline"}
                                 </motion.button>
 
                                 <motion.button
@@ -384,6 +436,48 @@ const ReaderScreen: React.FC = () => {
                                             )}
                                         </div>
                                     </motion.div>
+                                ) : isOutlineMode ? (
+                                    <motion.div
+                                        key="outline-view"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 p-8 flex flex-col"
+                                    >
+                                        <div className="flex justify-between items-center mb-8">
+                                            <div className="flex items-center gap-2">
+                                                <BookOpen size={16} className="text-black dark:text-white" />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">Neural Executive Outline</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setIsOutlineMode(false)}
+                                                className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
+                                            >
+                                                Back to Reader
+                                            </button>
+                                        </div>
+                                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-white/5 rounded-3xl border border-black/5 dark:border-white/5 relative">
+                                            {isGeneratingOutline ? (
+                                                <div className="h-full flex flex-col items-center justify-center space-y-4">
+                                                    <div className="relative">
+                                                        <Activity size={32} className="text-emerald-500 animate-pulse" />
+                                                        <motion.div
+                                                            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
+                                                            transition={{ repeat: Infinity, duration: 2 }}
+                                                            className="absolute inset-0 bg-emerald-500 rounded-full blur-xl"
+                                                        />
+                                                    </div>
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 animate-pulse">On-Device Neural Processing active...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                    {outlineData?.split('\n').map((line, i) => (
+                                                        <p key={i} className="mb-2 text-xs font-bold uppercase tracking-tight opacity-80">{line}</p>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
                                 ) : isLoadingFluid ? (
                                     <motion.div
                                         key="loading"
@@ -462,6 +556,26 @@ const ReaderScreen: React.FC = () => {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
+
+                            {/* Instant Pulse UI Overlay (shows when ANY AI action is running) */}
+                            {(isGeneratingMindMap || isGeneratingAudio || isGeneratingOutline || isLoadingFluid) && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="absolute bottom-4 right-4 z-50 pointer-events-none"
+                                >
+                                    <div className="bg-black/80 dark:bg-white/90 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl border border-white/10">
+                                        <div className="relative">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping absolute inset-0" />
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 relative z-10" />
+                                        </div>
+                                        <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white dark:text-black">
+                                            LOCAL NEURAL SYNC
+                                        </span>
+                                    </div>
+                                </motion.div>
+                            )}
                         </div>
                     </div>
                 )}

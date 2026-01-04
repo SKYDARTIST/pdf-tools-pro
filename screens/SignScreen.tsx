@@ -1,14 +1,22 @@
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { PenTool, Download, Loader2, FileUp, Eraser, CheckCircle2 } from 'lucide-react';
+import { PenTool, Download, Loader2, FileUp, Eraser, CheckCircle2, Bookmark, Stamp as StampIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const STAMPS = [
+  { id: 'approved', label: 'APPROVED', color: '#10b981' },
+  { id: 'confidential', label: 'CONFIDENTIAL', color: '#ef4444' },
+  { id: 'urgent', label: 'URGENT', color: '#f59e0b' },
+  { id: 'draft', label: 'DRAFT', color: '#6366f1' },
+];
 
 const SignScreen: React.FC = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
+  const [selectedStamp, setSelectedStamp] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -115,6 +123,42 @@ const SignScreen: React.FC = () => {
         opacity: 1.0, // Fully opaque
       });
 
+      // Add Stamp if selected
+      if (selectedStamp) {
+        const stamp = STAMPS.find(s => s.id === selectedStamp);
+        if (stamp) {
+          const { rgb, degrees, StandardFonts } = await import('pdf-lib');
+          const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+          const fontSize = 40;
+          const text = stamp.label;
+          const textWidth = font.widthOfTextAtSize(text, fontSize);
+
+          // Convert hex to rgb
+          const r = parseInt(stamp.color.slice(1, 3), 16) / 255;
+          const g = parseInt(stamp.color.slice(3, 5), 16) / 255;
+          const b = parseInt(stamp.color.slice(5, 7), 16) / 255;
+
+          firstPage.drawRectangle({
+            x: 50,
+            y: height - 100,
+            width: textWidth + 40,
+            height: 60,
+            borderColor: rgb(r, g, b),
+            borderWidth: 4,
+            rotate: degrees(15),
+          });
+
+          firstPage.drawText(text, {
+            x: 70,
+            y: height - 85,
+            size: fontSize,
+            font: font,
+            color: rgb(r, g, b),
+            rotate: degrees(15),
+          });
+        }
+      }
+
       // Save and download
       const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
@@ -209,6 +253,33 @@ const SignScreen: React.FC = () => {
                     <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black dark:text-white">Authorization Required</p>
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="monolith-card p-6 bg-black/5 dark:bg-white/5 border-none space-y-6">
+              <div className="flex items-center gap-3">
+                <StampIcon size={14} className="text-black dark:text-white" />
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Neural Stamps Protocol</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {STAMPS.map((stamp) => (
+                  <button
+                    key={stamp.id}
+                    onClick={() => setSelectedStamp(selectedStamp === stamp.id ? null : stamp.id)}
+                    className={`p-4 rounded-2xl border-2 transition-all text-left relative overflow-hidden group ${selectedStamp === stamp.id
+                        ? 'bg-white dark:bg-white/10 border-black dark:border-white'
+                        : 'bg-white/50 dark:bg-black/50 border-transparent hover:border-black/20 dark:hover:border-white/20'
+                      }`}
+                  >
+                    <div className="text-[10px] font-black tracking-tighter" style={{ color: stamp.color }}>{stamp.label}</div>
+                    <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">Status Marker</div>
+                    {selectedStamp === stamp.id && (
+                      <div className="absolute top-1 right-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      </div>
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
 

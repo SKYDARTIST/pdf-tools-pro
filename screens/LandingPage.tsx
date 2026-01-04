@@ -55,7 +55,7 @@ const LandingPage: React.FC = () => {
                         </div>
 
                         <h1 className="text-7xl font-black uppercase tracking-tighter leading-[0.85] text-gray-900 dark:text-white">
-                            NO<br />SERVERS.
+                            LOCAL AI.<br />NO CLOUD.
                         </h1>
 
                         <div className="space-y-4">
@@ -110,6 +110,34 @@ const LandingPage: React.FC = () => {
                                     <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
                                 </div>
                             ))}
+                        </div>
+                    </motion.div>
+
+                    {/* Media Desk / Social Proof Section */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        className="pt-24 space-y-8"
+                    >
+                        <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Neural Trust Protocol</div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                                { title: "ZERO-CLOUD", desc: "100% On-Device" },
+                                { title: "AIR-GAPPED", desc: "No Internet Req." },
+                                { title: "TRUSTED", desc: "50k+ Builders" },
+                                { title: "ELITE", desc: "Privacy First" }
+                            ].map((badge, i) => (
+                                <div key={i} className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
+                                    <div className="text-[10px] font-black uppercase tracking-tighter">{badge.title}</div>
+                                    <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1 text-nowrap">{badge.desc}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="pt-4 px-6 py-3 bg-emerald-500/5 border border-emerald-500/10 rounded-full inline-block">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
+                                "THE MOST PRIVATE PDF SUITE EVER BUILT" — TECH PROTOCOL 2026
+                            </span>
                         </div>
                     </motion.div>
                 </div>
