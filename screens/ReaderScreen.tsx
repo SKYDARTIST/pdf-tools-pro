@@ -232,127 +232,112 @@ const ReaderScreen: React.FC = () => {
                     </label>
                 ) : (
                     <div className="space-y-8">
-                        {/* Advanced Controls Bar */}
-                        <div className="flex items-center justify-between monolith-card p-6 border-none shadow-xl gap-4 overflow-x-auto no-scrollbar">
-                            <div className="flex items-center gap-2">
-                                {/* Reflow/Fluid Toggle */}
+                        {/* Optimized 2-Tier Control Hub */}
+                        <div className="monolith-card p-4 space-y-4 shadow-xl border-none">
+                            {/* Tier 1: Neural & AI Intelligence Tools */}
+                            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={toggleFluidMode}
-                                    className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isFluidMode
+                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
                                         ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
                                 >
-                                    {isFluidMode ? <Zap size={14} fill="currentColor" /> : <Zap size={14} />}
-                                    {isFluidMode ? "Disable Fluid" : "Fluid Mode"}
+                                    {isFluidMode ? <Zap size={12} fill="currentColor" /> : <Zap size={12} />}
+                                    {isFluidMode ? "Classic" : "Fluid"}
                                 </motion.button>
 
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={generateMindMap}
-                                    className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isMindMapMode
+                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
                                         ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
                                 >
-                                    <GitBranch size={14} />
-                                    {isGeneratingMindMap ? "Scanning..." : "Neural Map"}
+                                    <GitBranch size={12} />
+                                    {isGeneratingMindMap ? "Scanning" : "Map"}
                                 </motion.button>
 
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={toggleAudioNarrator}
-                                    className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${isAudioPlaying
+                                    className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isAudioPlaying
                                         ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
                                 >
-                                    {isGeneratingAudio ? <Loader2 size={14} className="animate-spin" /> : isAudioPlaying ? <Square size={14} fill="currentColor" /> : <Play size={14} />}
-                                    {isAudioPlaying ? "Stop Audio" : "Audio Brief"}
+                                    {isGeneratingAudio ? <Loader2 size={12} className="animate-spin" /> : isAudioPlaying ? <Square size={12} fill="currentColor" /> : <Play size={12} />}
+                                    {isAudioPlaying ? "Stop" : "Audio"}
                                 </motion.button>
 
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     onClick={handleMindMintHandoff}
-                                    className="flex items-center gap-3 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all group"
+                                    className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all flex-1 group"
                                 >
-                                    <Sparkles size={14} className="group-hover:rotate-12 transition-transform" fill="currentColor" />
-                                    Expansion Studio
+                                    <Sparkles size={12} className="group-hover:rotate-12 transition-transform" fill="currentColor" />
+                                    Study
                                 </motion.button>
                             </div>
 
-                            <AnimatePresence mode="wait">
-                                {!isFluidMode ? (
-                                    <motion.div
-                                        key="classic-controls"
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 10 }}
-                                        className="flex items-center gap-4 shrink-0"
+                            {/* Divider Line */}
+                            <div className="h-[1px] w-full bg-black/5 dark:bg-white/5" />
+
+                            {/* Tier 2: Core Navigation & Utility */}
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-1.5 flex-1">
+                                    <button
+                                        onClick={goToPrevPage}
+                                        disabled={pageNumber <= 1 || isFluidMode}
+                                        className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all font-black text-[12px]"
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={goToPrevPage}
-                                                disabled={pageNumber <= 1}
-                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                            >
-                                                <ChevronLeft size={18} className="text-gray-900 dark:text-white" />
-                                            </button>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white min-w-[60px] text-center">
-                                                {pageNumber} / {numPages}
-                                            </span>
-                                            <button
-                                                onClick={goToNextPage}
-                                                disabled={pageNumber >= numPages}
-                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                            >
-                                                <ChevronRight size={18} className="text-gray-900 dark:text-white" />
-                                            </button>
-                                        </div>
-
-                                        <div className="h-8 w-[1px] bg-black/5 dark:bg-white/5 hidden sm:block" />
-
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={zoomOut}
-                                                disabled={scale <= 0.5}
-                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                            >
-                                                <ZoomOut size={18} className="text-gray-900 dark:text-white" />
-                                            </button>
-                                            <button
-                                                onClick={zoomIn}
-                                                disabled={scale >= 3.0}
-                                                className="p-3 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl disabled:opacity-20 transition-all"
-                                            >
-                                                <ZoomIn size={18} className="text-gray-900 dark:text-white" />
-                                            </button>
-                                        </div>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="fluid-indicator"
-                                        initial={{ opacity: 0, x: 10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -10 }}
-                                        className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 flex items-center gap-2"
+                                        <ChevronLeft size={16} className="text-gray-900 dark:text-white" />
+                                    </button>
+                                    <span className="text-[9px] font-black uppercase tracking-tighter text-gray-900 dark:text-white min-w-[50px] text-center opacity-80">
+                                        {isFluidMode ? "LIVE" : `${pageNumber} / ${numPages}`}
+                                    </span>
+                                    <button
+                                        onClick={goToNextPage}
+                                        disabled={pageNumber >= numPages || isFluidMode}
+                                        className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all font-black text-[12px]"
                                     >
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                        Responsive Stream Active
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                        <ChevronRight size={16} className="text-gray-900 dark:text-white" />
+                                    </button>
+                                </div>
 
-                            <button
-                                onClick={() => {
-                                    setFile(null);
-                                    setIsFluidMode(false);
-                                }}
-                                className="p-3 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
-                            >
-                                <X size={20} />
-                            </button>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={zoomOut}
+                                            disabled={scale <= 0.5 || isFluidMode}
+                                            className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all"
+                                        >
+                                            <ZoomOut size={16} className="text-gray-900 dark:text-white" />
+                                        </button>
+                                        <button
+                                            onClick={zoomIn}
+                                            disabled={scale >= 3.0 || isFluidMode}
+                                            className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all"
+                                        >
+                                            <ZoomIn size={16} className="text-gray-900 dark:text-white" />
+                                        </button>
+                                    </div>
+
+                                    <div className="w-[1px] h-6 bg-black/5 dark:bg-white/5 mx-1" />
+
+                                    <button
+                                        onClick={() => {
+                                            setFile(null);
+                                            setIsFluidMode(false);
+                                        }}
+                                        className="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Content Area */}
