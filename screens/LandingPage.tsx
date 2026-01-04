@@ -115,45 +115,50 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Privacy Manifesto Offset Section */}
-                <div className="w-full max-w-5xl mx-auto pt-32 pb-16 px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-                        <div className="space-y-8">
-                            <h2 className="text-5xl font-black tracking-tighter uppercase leading-none">
-                                The Privacy<br />Manifesto.
+                <div className="w-full max-w-6xl mx-auto pt-32 pb-16 px-6 sm:px-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+                        <div className="space-y-10">
+                            <h2 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-[0.9]">
+                                The Privacy<br className="hidden sm:block" /> Manifesto.
                             </h2>
-                            <p className="text-sm text-gray-400 dark:text-gray-500 font-bold leading-relaxed tracking-tight">
+                            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
                                 In 2026, Adobe and Foxit are tied to "Cloud-First" strategies that require your data to leave your device. Anti-Gravity is different. We have no servers. We cannot see your documents. We cannot sell your data.
                             </p>
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
                                 {[
                                     { title: "ZERO KNOWLEDGE", desc: "Absolute data isolation." },
                                     { title: "AIRPLANE MODE", desc: "100% Offline performance." },
                                     { title: "EDGE AI", desc: "Local neural processing." }
                                 ].map((item, i) => (
-                                    <div key={i} className="flex items-start gap-4">
-                                        <div className="w-1 h-1 rounded-full bg-emerald-500 mt-1.5" />
-                                        <div>
-                                            <div className="text-[10px] font-black uppercase tracking-widest">{item.title}</div>
-                                            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">{item.desc}</div>
+                                    <div key={i} className="flex items-start gap-5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                                        <div className="space-y-1">
+                                            <div className="text-[11px] font-black uppercase tracking-[0.2em]">{item.title}</div>
+                                            <div className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{item.desc}</div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                        <div className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[40px] p-10 space-y-6">
-                            <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Technical Advantage</div>
-                            <h3 className="text-2xl font-black tracking-tighter">INSTANT SPEED. ZERO RISK.</h3>
-                            <p className="text-[11px] font-bold text-gray-400 leading-relaxed uppercase tracking-tight">
-                                Because we process locally, there is no upload latency. Large PDFs are analyzed instantly by your device's own hardware. This is the future of secure document intelligence.
-                            </p>
-                            <div className="pt-6 flex items-center justify-between border-t border-black/5 dark:border-white/5">
-                                <div className="text-center">
-                                    <div className="text-[8px] font-black opacity-30 uppercase">Latency</div>
-                                    <div className="text-xl font-black text-emerald-500">0ms</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-[8px] font-black opacity-30 uppercase">Cloud Leak</div>
-                                    <div className="text-xl font-black text-emerald-500">IMP***IBLE</div>
+                        <div className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[48px] p-8 sm:p-14 space-y-8 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+                                <Shield size={160} />
+                            </div>
+                            <div className="space-y-6 relative z-10">
+                                <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Technical Advantage</div>
+                                <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none">INSTANT SPEED.<br />ZERO RISK.</h3>
+                                <p className="text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
+                                    Because we process locally, there is no upload latency. Large PDFs are analyzed instantly by your device's own hardware. This is the future of secure document intelligence.
+                                </p>
+                                <div className="pt-10 flex items-center justify-between border-t border-black/10 dark:border-white/10">
+                                    <div className="text-left">
+                                        <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.1em] mb-1">Latency</div>
+                                        <div className="text-2xl sm:text-3xl font-black text-emerald-500 tracking-tighter">0ms</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.1em] mb-1">Cloud Leak</div>
+                                        <div className="text-2xl sm:text-3xl font-black text-emerald-500 tracking-tighter">IMP***IBLE</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

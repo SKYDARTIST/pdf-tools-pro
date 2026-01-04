@@ -57,10 +57,13 @@ const App: React.FC = () => {
     };
   }, []);
 
+  const isLandingPage = location.pathname === '/';
+
   return (
-    <div className="min-h-screen bg-transparent flex flex-col max-w-md mx-auto relative shadow-2xl overflow-hidden border-x border-slate-200 dark:border-[#1a1a1a]">
-      <Header />
-      <main className="flex-1 overflow-y-auto pb-20 scroll-smooth bg-transparent">
+    <div className={`min-h-screen bg-transparent flex flex-col relative overflow-hidden ${isLandingPage ? 'w-full max-w-none' : 'max-w-md mx-auto shadow-2xl border-x border-slate-200 dark:border-[#1a1a1a]'
+      }`}>
+      {!isLandingPage && <Header />}
+      <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -104,7 +107,7 @@ const App: React.FC = () => {
           </motion.div>
         </AnimatePresence>
       </main>
-      <BottomNav />
+      {!isLandingPage && <BottomNav />}
       <AnimatePresence>
         {isBooting && (
           <SystemBoot
