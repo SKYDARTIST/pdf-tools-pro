@@ -9,6 +9,26 @@ const SmartRedactScreen: React.FC = () => {
     const [status, setStatus] = useState<'idle' | 'scanning' | 'ready' | 'processing' | 'done'>('idle');
     const [redactedContent, setRedactedContent] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
+    const [localSanitizationStats, setLocalSanitizationStats] = useState({ emails: 0, phones: 0 });
+
+    const localRegexSanitize = (text: string) => {
+        let sanitized = text;
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const phoneRegex = /(\+?\d{1,2}\s?)?(\(?\d{3}\)?[\s.-]?)?\d{3}[\s.-]?\d{4}/g;
+
+        const emailMatches = text.match(emailRegex) || [];
+        const phoneMatches = text.match(phoneRegex) || [];
+
+        setLocalSanitizationStats({
+            emails: emailMatches.length,
+            phones: phoneMatches.length
+        });
+
+        sanitized = sanitized.replace(emailRegex, '[LOCAL_REDACTED_EMAIL]');
+        sanitized = sanitized.replace(phoneRegex, '[LOCAL_REDACTED_PHONE]');
+
+        return sanitized;
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -25,9 +45,11 @@ const SmartRedactScreen: React.FC = () => {
             const text = await extractTextFromPdf(buffer);
 
             setStatus('processing');
+            const sanitizedText = localRegexSanitize(text);
+
             const response = await askGemini(
-                "Find and redact all PII (Personally Identifiable Information) including emails, phone numbers, addresses, and SSNs. Replace them with [REDACTED]. Return the full text with redactions.",
-                text,
+                "Continue the redaction process. This text has already been filtered locally for emails and phone numbers. Now find and redact all remaining PII including addresses, SSNs, credit card numbers, and full names. Replace them with [NEURAL_REDACTED]. Return the full text.",
+                sanitizedText,
                 "redact"
             );
             setRedactedContent(response);
