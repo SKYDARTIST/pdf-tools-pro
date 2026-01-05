@@ -172,33 +172,6 @@ const ReaderScreen: React.FC = () => {
         setIsAudioPlaying(true);
     };
 
-    const handleMindMintHandoff = async () => {
-        if (!file) return;
-
-        let text = fluidContent;
-        if (!text) {
-            try {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer);
-                setFluidContent(text);
-            } catch (err) {
-                console.error("Text extraction failed for handoff", err);
-                return;
-            }
-        }
-
-        // Copy context for manual paste on MindMint
-        const context = text.substring(0, 6000);
-        try {
-            await navigator.clipboard.writeText(context);
-            if (window.confirm("ECO-EXPANSION: Study Studio Integrated!\n\nWe've optimized this document's text and copied it to your clipboard. \n\nGet an amazing educational boost at MindMint.study (Free Tier Included):\n• Generate Quizzes & Flashcards\n• Create Study Infographics\n• PWA Mobile-Ready\n\nClick 'OK' to launch your expansion studio.")) {
-                window.open("https://www.mindmint.study/", '_blank');
-            }
-        } catch (e) {
-            alert("Clipboard access failed. Please copy the text manually from Fluid Mode.");
-            window.open("https://www.mindmint.study/", '_blank');
-        }
-    };
 
     const generateOutline = async () => {
         if (!file || isGeneratingOutline) return;
@@ -288,17 +261,6 @@ const ReaderScreen: React.FC = () => {
                                     {isFluidMode ? "Classic" : "Fluid"}
                                 </motion.button>
 
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={generateMindMap}
-                                    className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
-                                        ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
-                                        : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
-                                        }`}
-                                >
-                                    <GitBranch size={12} />
-                                    {isGeneratingMindMap ? "Scanning" : "Map"}
-                                </motion.button>
 
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
@@ -324,14 +286,6 @@ const ReaderScreen: React.FC = () => {
                                     {isAudioPlaying ? "Stop" : "Audio"}
                                 </motion.button>
 
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={handleMindMintHandoff}
-                                    className="flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all flex-1 group"
-                                >
-                                    <Sparkles size={12} className="group-hover:rotate-12 transition-transform" fill="currentColor" />
-                                    Study
-                                </motion.button>
                             </div>
 
                             {/* Divider Line */}

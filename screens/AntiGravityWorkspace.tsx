@@ -424,14 +424,6 @@ const AntiGravityWorkspace: React.FC = () => {
               tag: "LOCAL"
             },
             {
-              title: "Expansion Studio",
-              desc: "Flashcards & Quizzes (MindMint Free)",
-              icon: Sparkles,
-              path: "/reader",
-              color: "text-emerald-500",
-              tag: "FREE BONUS"
-            },
-            {
               title: "Data Extractor",
               desc: "Noise to clean JSON/CSV feeds",
               icon: Database,
