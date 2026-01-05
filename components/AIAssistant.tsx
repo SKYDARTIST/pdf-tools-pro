@@ -79,11 +79,20 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
                 </div>
               )}
               {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                   <div className={`max-w-[85%] p-3 rounded-2xl text-xs font-medium leading-relaxed ${m.role === 'user' ? 'bg-violet-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
                     }`}>
                     {m.text}
                   </div>
+                  {m.role === 'bot' && (
+                    <button
+                      onClick={() => alert("Response flagged. This feedback helps improve our local neural guardrails.")}
+                      className="mt-1 ml-1 flex items-center gap-1 text-[9px] text-slate-400 hover:text-red-500 font-bold transition-colors uppercase tracking-widest"
+                    >
+                      <ShieldAlert size={10} />
+                      Flag AI Response
+                    </button>
+                  )}
                 </div>
               ))}
               {isLoading && (
