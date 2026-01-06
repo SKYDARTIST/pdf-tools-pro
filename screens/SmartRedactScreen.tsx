@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Download, Eye, EyeOff } from 'lucide-react';
+import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Download, Eye, EyeOff, User, Mail, CreditCard, Fingerprint } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import ToolGuide from '../components/ToolGuide';
@@ -12,6 +12,16 @@ const SmartRedactScreen: React.FC = () => {
     const [redactedContent, setRedactedContent] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
     const [localSanitizationStats, setLocalSanitizationStats] = useState({ emails: 0, phones: 0 });
+    const [filters, setFilters] = useState({
+        identity: true,
+        financial: true,
+        contact: true,
+        identifiers: true
+    });
+
+    const toggleFilter = (key: keyof typeof filters) => {
+        setFilters(prev => ({ ...prev, [key]: !prev[key] }));
+    };
 
     const localRegexSanitize = (text: string) => {
         let sanitized = text;
@@ -198,9 +208,19 @@ const SmartRedactScreen: React.FC = () => {
             setStatus('processing');
             const sanitizedText = file.type === 'application/pdf' ? localRegexSanitize(contentToProcess) : contentToProcess;
 
+            let categoriesToRedact = "";
+            if (filters.identity) categoriesToRedact += "full names, dates of birth, social security numbers, ";
+            if (filters.financial) categoriesToRedact += "bank account numbers, credit card details, financial balances, transactions, ";
+            if (filters.contact) categoriesToRedact += "home addresses, personal phone numbers, emails, ";
+            if (filters.identifiers) categoriesToRedact += "Passport numbers, Voter ID details, License numbers, any government-issued identifiers, ";
+
+            const filterContext = categoriesToRedact
+                ? `You MUST identify and neutralize ONLY the following categories: ${categoriesToRedact.slice(0, -2)}. PRESERVE ALL OTHER DATA EXACTLY AS IT APPEARS. Do NOT redact names or dates if they are not selected in your specific instructions.`
+                : "The user has opted for NO specific redaction. Perform a baseline extraction only.";
+
             const prompt = file.type === 'application/pdf'
-                ? "CRITICAL SECURITY PROTOCOL: You are a high-security redaction engine. Your primary objective is to find and neutralize ALL PII. The provided text has already been filtered locally for basic patterns (emails/phones). You MUST identify and replace every instance of full names, home addresses, Social Security Numbers, Credit Card details, Passport numbers, and birth dates with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any headers, technical reports, 'Extracted Text (Original)' sections, or metadata. Output the pure sanitized stream only."
-                : "ULTIMATE PRIVACY OVERRIDE: Inspect the provided image payload for sensitive data vectors. Perform a Deep-Layer Scan. Identify and extract all text, then IMMEDIATELY neutralize all PII including names, contact details, ID numbers, and financial data. Replace every sensitive identifier with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any report markers, 'Deep-Layer Scan' headers, or summaries. Output the raw sanitized text data only. ADHERE TO MAXIMUM SECURITY CLEARANCE.";
+                ? `CRITICAL SECURITY PROTOCOL: You are a high-security redaction engine. Your primary objective is to find and neutralize specific data vectors. ${filterContext} Replace selected identifiers with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any headers, technical reports, or metadata. Output the pure sanitized stream only.`
+                : `ULTIMATE PRIVACY OVERRIDE: Inspect the provided image payload for sensitive data. ${filterContext} Replace selected metrics with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any report markers, headers, or summaries. ADHERE TO MAXIMUM SECURITY CLEARANCE.`;
 
             const response = await askGemini(
                 prompt,
@@ -294,6 +314,45 @@ const SmartRedactScreen: React.FC = () => {
                                 </motion.button>
                             )}
                         </div>
+
+                        {status === 'ready' && (
+                            <div className="monolith-card p-6 space-y-6">
+                                <div className="flex items-center gap-2">
+                                    <Zap size={14} className="text-emerald-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Redaction Control Hub</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => toggleFilter('identity')}
+                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.identity ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                    >
+                                        <User size={18} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Identity</span>
+                                    </button>
+                                    <button
+                                        onClick={() => toggleFilter('financial')}
+                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.financial ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                    >
+                                        <CreditCard size={18} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Financial</span>
+                                    </button>
+                                    <button
+                                        onClick={() => toggleFilter('contact')}
+                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.contact ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                    >
+                                        <Mail size={18} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Contact</span>
+                                    </button>
+                                    <button
+                                        onClick={() => toggleFilter('identifiers')}
+                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.identifiers ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                    >
+                                        <Fingerprint size={18} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">Identifiers</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {status === 'scanning' || status === 'processing' ? (
                             <div className="monolith-card p-12 flex flex-col items-center justify-center space-y-6 text-center">
