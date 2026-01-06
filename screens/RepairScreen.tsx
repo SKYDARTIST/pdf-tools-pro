@@ -7,6 +7,8 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
 
 const RepairScreen: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -19,6 +21,7 @@ const RepairScreen: React.FC = () => {
     originalSize: number;
     finalSize: number;
   } | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,6 +34,12 @@ const RepairScreen: React.FC = () => {
 
   const handleRepair = async () => {
     if (!file) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
 
@@ -57,6 +66,7 @@ const RepairScreen: React.FC = () => {
 
       setRepaired(true);
       setShowSuccessModal(true);
+      TaskLimitManager.incrementTask();
     } catch (err: any) {
       console.error("Restoration Failed:", err);
       setError("System Handshake Failed: The internal data of this PDF is too fragmented to recover in a browser environment.");
@@ -198,6 +208,12 @@ const RepairScreen: React.FC = () => {
           }}
         />
       )}
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

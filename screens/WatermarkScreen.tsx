@@ -5,11 +5,15 @@ import { Stamp, FileText, Download, Loader2, FileUp, Type } from 'lucide-react';
 import { addWatermark, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 const WatermarkScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
   const [text, setText] = useState('CONFIDENTIAL');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -20,12 +24,38 @@ const WatermarkScreen: React.FC = () => {
 
   const handleApply = async () => {
     if (!file || !text) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const result = await addWatermark(file.file, text);
       downloadBlob(result, `stamped_${file.name}`, 'application/pdf');
+
+      // Increment task counter
+      TaskLimitManager.incrementTask();
+
+      // Add to history
+      FileHistoryManager.addEntry({
+        fileName: file.name,
+        operation: 'watermark',
+        originalSize: file.size,
+        status: 'success'
+      });
+
+      // Clear file
+      setFile(null);
     } catch (err) {
       alert('Error applying watermark');
+
+      FileHistoryManager.addEntry({
+        fileName: `watermark_failed_${file.name}`,
+        operation: 'watermark',
+        status: 'error'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -148,6 +178,12 @@ const WatermarkScreen: React.FC = () => {
           </>
         )}
       </button>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

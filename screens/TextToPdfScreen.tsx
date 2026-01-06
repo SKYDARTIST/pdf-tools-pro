@@ -4,18 +4,45 @@ import { motion } from 'framer-motion';
 import { Type, Download, Loader2, AlignLeft, Bold } from 'lucide-react';
 import { createPdfFromText, downloadBlob } from '../services/pdfService';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 const TextToPdfScreen: React.FC = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleGenerate = async () => {
     if (!title || !content) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const result = await createPdfFromText(title, content);
-      downloadBlob(result, `${title.replace(/\s+/g, '_')}.pdf`, 'application/pdf');
+      const fileName = `${title.replace(/\s+/g, '_')}.pdf`;
+      downloadBlob(result, fileName, 'application/pdf');
+
+      // Increment task count
+      TaskLimitManager.incrementTask();
+
+      // Record in history
+      FileHistoryManager.addEntry({
+        fileName,
+        operation: 'merge', // or create-pdf
+        originalSize: content.length,
+        finalSize: result.length,
+        status: 'success'
+      });
+
+      // Clear
+      setTitle('');
+      setContent('');
     } catch (err) {
       alert('Error generating PDF');
     } finally {
@@ -101,6 +128,12 @@ const TextToPdfScreen: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

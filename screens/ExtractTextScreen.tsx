@@ -4,6 +4,9 @@ import { FileSearch, FileUp, Copy, Check, Loader2, Edit3, Download, RefreshCcw }
 import * as pdfjsLib from 'pdfjs-dist';
 import { replaceTextInPdf } from '../utils/pdfEditor';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 // Configure PDF.js worker - using local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -21,10 +24,17 @@ const ExtractTextScreen: React.FC = () => {
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [isApplyingEdit, setIsApplyingEdit] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+
+      if (!TaskLimitManager.canUseTask()) {
+        setShowUpgradeModal(true);
+        return;
+      }
+
       setFile(selectedFile);
       setIsProcessing(true);
 
@@ -55,6 +65,17 @@ const ExtractTextScreen: React.FC = () => {
           chars: cleanedText.length,
           pages: numPages
         });
+
+        // Increment task count
+        TaskLimitManager.incrementTask();
+
+        // Record in history
+        FileHistoryManager.addEntry({
+          fileName: selectedFile.name,
+          operation: 'extract-text',
+          originalSize: selectedFile.size,
+          status: 'success'
+        });
       } catch (err) {
         alert('Error extracting text: ' + (err instanceof Error ? err.message : 'Unknown error'));
         setText('Failed to extract text from PDF.');
@@ -66,6 +87,11 @@ const ExtractTextScreen: React.FC = () => {
 
   const handleApplyEdit = async () => {
     if (!originalBuffer || !findText || !replaceText || !file) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     setIsApplyingEdit(true);
     try {
@@ -79,6 +105,10 @@ const ExtractTextScreen: React.FC = () => {
         link.download = `edited_${file.name}`;
         link.click();
         URL.revokeObjectURL(url);
+
+        // Increment task count
+        TaskLimitManager.incrementTask();
+
         alert('Global Neural Modification Synchronized. Modified document is ready.');
       } else {
         alert(`No occurrences of "${findText}" found in the document.`);
@@ -233,6 +263,12 @@ const ExtractTextScreen: React.FC = () => {
           </div>
         )}
       </div>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

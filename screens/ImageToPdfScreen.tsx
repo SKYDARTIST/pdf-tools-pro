@@ -6,11 +6,15 @@ import { useLocation } from 'react-router-dom';
 import { imageToPdf, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 const ImageToPdfScreen: React.FC = () => {
   const location = useLocation();
   const [items, setItems] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     // Check if we arrived with a captured image from the scanner
@@ -61,10 +65,32 @@ const ImageToPdfScreen: React.FC = () => {
 
   const handleConvert = async () => {
     if (items.length === 0) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const result = await imageToPdf(items.map(f => f.file));
-      downloadBlob(result, `scanned_doc_${Date.now()}.pdf`, 'application/pdf');
+      const fileName = `scanned_doc_${Date.now()}.pdf`;
+      downloadBlob(result, fileName, 'application/pdf');
+
+      // Increment task count
+      TaskLimitManager.incrementTask();
+
+      // Record in history
+      FileHistoryManager.addEntry({
+        fileName,
+        operation: 'image-to-pdf',
+        originalSize: items.reduce((acc, item) => acc + item.size, 0),
+        finalSize: result.length,
+        status: 'success'
+      });
+
+      // Clear
+      setItems([]);
     } catch (err) {
       console.error('Conversion error:', err);
       alert(err instanceof Error ? err.message : 'Error converting images to PDF');
@@ -166,6 +192,12 @@ const ImageToPdfScreen: React.FC = () => {
           </>
         )}
       </button>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

@@ -5,10 +5,14 @@ import { Scissors, FileText, Download, Loader2, FileUp } from 'lucide-react';
 import { splitPdf, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 const SplitScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -25,6 +29,12 @@ const SplitScreen: React.FC = () => {
 
   const handleSplit = async () => {
     if (!file) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const results = await splitPdf(file.file);
@@ -33,8 +43,28 @@ const SplitScreen: React.FC = () => {
       results.forEach((data, index) => {
         downloadBlob(data, `page_${index + 1}_${file.name}`, 'application/pdf');
       });
+
+      // Increment task counter
+      TaskLimitManager.incrementTask();
+
+      // Add to history
+      FileHistoryManager.addEntry({
+        fileName: file.name,
+        operation: 'split',
+        originalSize: file.size,
+        status: 'success'
+      });
+
+      // Clear file
+      setFile(null);
     } catch (err) {
       alert('Error splitting PDF');
+
+      FileHistoryManager.addEntry({
+        fileName: `split_failed_${file.name}`,
+        operation: 'split',
+        status: 'error'
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -130,6 +160,12 @@ const SplitScreen: React.FC = () => {
           </div>
         )}
       </div>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

@@ -7,6 +7,7 @@ import {
     GitMerge, Database, Sparkles
 } from 'lucide-react';
 import LegalFooter from '../components/LegalFooter';
+import TaskCounter from '../components/TaskCounter';
 
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -28,11 +29,6 @@ const ToolsScreen: React.FC = () => {
         { title: 'Repair', desc: 'Fix corrupted data', icon: Wrench, path: '/repair', cat: 'popular' },
         { title: 'Remove', desc: 'Delete specific pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
-        { title: 'Table AI', desc: 'Neural Table Extraction', icon: FileSpreadsheet, path: '/table-extractor', cat: 'convert' },
-        { title: 'Smart Redact', desc: 'Auto-PII Neutralization', icon: Shield, path: '/smart-redact', cat: 'security' },
-        { title: 'Neural OCR', desc: 'Interactive Data Chat', icon: Zap, path: '/scanner?protocol=ocr', cat: 'convert' },
-        { title: 'Neural Diff', desc: 'Compare document versions', icon: GitMerge, path: '/neural-diff', cat: 'security' },
-        { title: 'Data Extractor', desc: 'PDF to JSON/CSV feed', icon: Database, path: '/data-extractor', cat: 'convert' },
         { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },
     ];
 
@@ -56,6 +52,8 @@ const ToolsScreen: React.FC = () => {
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tools</h1>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Select operation for data manipulation</p>
                 </motion.div>
+
+                <TaskCounter />
 
                 {/* Search Interaction */}
                 <motion.div

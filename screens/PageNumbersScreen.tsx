@@ -8,6 +8,8 @@ import SuccessModal from '../components/SuccessModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
 
 const PageNumbersScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -23,6 +25,7 @@ const PageNumbersScreen: React.FC = () => {
         name: string;
         size: number;
     } | null>(null);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -41,6 +44,11 @@ const PageNumbersScreen: React.FC = () => {
 
     const handleAddPageNumbers = async () => {
         if (!file) return;
+
+        if (!TaskLimitManager.canUseTask()) {
+            setShowUpgradeModal(true);
+            return;
+        }
 
         setIsProcessing(true);
 
@@ -97,6 +105,7 @@ const PageNumbersScreen: React.FC = () => {
             });
 
             setShowSuccessModal(true);
+            TaskLimitManager.incrementTask();
             setFile(null);
             setPageCount(0);
         } catch (err) {
@@ -298,6 +307,12 @@ const PageNumbersScreen: React.FC = () => {
                     />
                 </>
             )}
+
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                reason="limit_reached"
+            />
         </motion.div>
     );
 };

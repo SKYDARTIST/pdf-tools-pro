@@ -7,6 +7,8 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -17,6 +19,7 @@ const ExtractImagesScreen: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedImages, setExtractedImages] = useState<string[]>([]);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -27,6 +30,11 @@ const ExtractImagesScreen: React.FC = () => {
 
     const handleExtractImages = async () => {
         if (!file) return;
+
+        if (!TaskLimitManager.canUseTask()) {
+            setShowUpgradeModal(true);
+            return;
+        }
 
         setIsProcessing(true);
 
@@ -61,6 +69,9 @@ const ExtractImagesScreen: React.FC = () => {
                 finalSize: images.length * 100000, // Approximate
                 status: 'success'
             });
+
+            // Increment task count
+            TaskLimitManager.incrementTask();
 
             setShowSuccessModal(true);
         } catch (err) {
@@ -235,6 +246,12 @@ const ExtractImagesScreen: React.FC = () => {
                     setShowSuccessModal(false);
                     navigate('/my-files');
                 }}
+            />
+
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                reason="limit_reached"
             />
         </motion.div>
     );

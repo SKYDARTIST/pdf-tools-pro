@@ -4,6 +4,9 @@ import { motion } from 'framer-motion';
 import { PenTool, Download, Loader2, FileUp, Eraser, CheckCircle2, Bookmark, Stamp as StampIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
+import TaskLimitManager from '../utils/TaskLimitManager';
+import UpgradeModal from '../components/UpgradeModal';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 const STAMPS = [
   { id: 'approved', label: 'APPROVED', color: '#10b981' },
@@ -20,6 +23,7 @@ const SignScreen: React.FC = () => {
   const [selectedStamp, setSelectedStamp] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -73,6 +77,11 @@ const SignScreen: React.FC = () => {
 
   const handleFinish = async () => {
     if (!file || !canvasRef.current) return;
+
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -162,13 +171,26 @@ const SignScreen: React.FC = () => {
 
       // Save and download
       const pdfBytes = await pdfDoc.save();
+      const fileName = `signed_${file.name}`;
       const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `signed_${file.name}`;
+      link.download = fileName;
       link.click();
       window.URL.revokeObjectURL(url);
+
+      // Increment task counter
+      TaskLimitManager.incrementTask();
+
+      // Add to history
+      FileHistoryManager.addEntry({
+        fileName,
+        operation: 'sign',
+        originalSize: file.size,
+        finalSize: pdfBytes.length,
+        status: 'success'
+      });
 
       // Reset and navigate
       setTimeout(() => {
@@ -330,6 +352,12 @@ const SignScreen: React.FC = () => {
           </>
         )}
       </button>
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="limit_reached"
+      />
     </motion.div>
   );
 };

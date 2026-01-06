@@ -490,6 +490,14 @@ const AntiGravityWorkspace: React.FC = () => {
               path: "/smart-redact",
               color: "text-rose-500",
               tag: "PRIVACY"
+            },
+            {
+              title: "Neural Diff",
+              desc: "Compare document versions",
+              icon: GitMerge,
+              path: "/neural-diff",
+              color: "text-blue-400",
+              tag: "COMPARE"
             }
           ].map((tool, i) => (
             <motion.button
