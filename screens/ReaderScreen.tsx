@@ -12,6 +12,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import NeuralPulse from '../components/NeuralPulse';
+import ToolGuide from '../components/ToolGuide';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -356,6 +357,19 @@ const ReaderScreen: React.FC = () => {
                     </label>
                 ) : (
                     <div className="space-y-8">
+                        <ToolGuide
+                            title="Document Intelligence Protocol"
+                            description="Analyze documents via deep neural audits and strategic audio briefings."
+                            steps={[
+                                "Initialize the operational context by uploading a PDF.",
+                                "Run Neural Audit to detect risks and savings.",
+                                "Generate an Intelligence Briefing for hands-free intake.",
+                                "Synthesize mind maps and hierarchical outlines."
+                            ]}
+                            useCases={[
+                                "Legal Contracts", "Financial Statements", "Technical Papers", "Academic Research"
+                            ]}
+                        />
                         {/* Optimized 2-Tier Control Hub */}
                         <div className="monolith-card p-4 space-y-4 shadow-xl border-none">
                             {/* Tier 0: Neural Elite Protocols (AI Pack Shared) */}

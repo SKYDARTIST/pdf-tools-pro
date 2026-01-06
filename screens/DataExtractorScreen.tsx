@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
+import ToolGuide from '../components/ToolGuide';
 
 const DataExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -124,6 +125,19 @@ const DataExtractorScreen: React.FC = () => {
                     </label>
                 ) : (
                     <div className="space-y-8">
+                        <ToolGuide
+                            title="Intelligence Extraction Protocol"
+                            description="Convert physical and digital noise into structured data streams. Supports high-fidelity handwriting OCR."
+                            steps={[
+                                "Upload a PDF or image (JPG/PNG).",
+                                "Select your target data structure (JSON, CSV, or Markdown).",
+                                "Trigger the Neural Extraction.",
+                                "Download the stabilized dataset."
+                            ]}
+                            useCases={[
+                                "Receipts & Invoices", "Handwritten Notes", "Whiteboards", "Tabular Documents"
+                            ]}
+                        />
                         <div className="monolith-card p-8 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500">

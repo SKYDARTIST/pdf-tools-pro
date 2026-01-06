@@ -7,6 +7,7 @@ import {
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
 import LegalFooter from '../components/LegalFooter';
+import ToolGuide from '../components/ToolGuide';
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -67,6 +68,20 @@ const HomeScreen: React.FC = () => {
           )}
         </div>
       </motion.div>
+
+      <ToolGuide
+        title="Neural Search Protocol"
+        description="Query your operational history using AI-generated neural signatures."
+        steps={[
+          "Process documents via the Workspace or Scanner.",
+          "AI automatically generates a Neural Index for each file.",
+          "Use the search bar to query by intent, entities, or dates.",
+          "Access identified files instantly."
+        ]}
+        useCases={[
+          "Entity Extraction", "Date-based Search", "Intent Queries", "Multi-file Correlation"
+        ]}
+      />
 
       {/* Hub Core */}
       <div className="space-y-6">

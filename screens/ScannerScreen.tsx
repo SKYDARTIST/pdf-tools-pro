@@ -238,16 +238,16 @@ const ScannerScreen: React.FC = () => {
               className="absolute bottom-10 left-10 right-10"
             >
               <ToolGuide
-                title="Neural Acquisition Protocol"
-                description="Acquire and enhance physical documents with AI-powered lighting correction, smart naming, and automated color preservation."
+                title="Neural Reconstruction Protocol"
+                description="Acquire and reconstruct physical documents with AI-powered Shadow Purge technology, smart naming, and automated perspective correction."
                 steps={[
                   "Align your document within the visual guide markers.",
                   "Capture the high-fidelity scan using the trigger.",
-                  "Apply Neural Enhance for lighting & clarity correction.",
-                  "Assemble into a multi-page PDF or export as JPEG."
+                  "Activate Neural Reconstruction for shadow & perspective repair.",
+                  "Assemble into a multi-page PDF or export as high-end JPEG."
                 ]}
                 useCases={[
-                  "Receipts", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
+                  "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
                 ]}
               />
             </motion.div>
