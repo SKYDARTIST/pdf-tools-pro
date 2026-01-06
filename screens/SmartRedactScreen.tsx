@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Download, Eye, EyeOff } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
+import ToolGuide from '../components/ToolGuide';
 
 const SmartRedactScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -110,7 +111,31 @@ const SmartRedactScreen: React.FC = () => {
                         <span className="text-sm font-black uppercase tracking-widest">Inhibit Sensitive Flow</span>
                         <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
                     </label>
-                ) : (
+                ) : null}
+
+                {!file && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <ToolGuide
+                            title="PII Neutralization Engine"
+                            description="Automatically identify and redact sensitive personal information from documents and images using a multi-layer security protocol (Local + Neural)."
+                            steps={[
+                                "Upload a PDF or Image containing sensitive data.",
+                                "Initiate Redaction to trigger local & neural scanning.",
+                                "Preview the sanitized transcript for verification.",
+                                "Export the finalized, privacy-safe asset."
+                            ]}
+                            useCases={[
+                                "ID Cards", "Bank Statements", "Resume Masking", "Public Records", "GDPR Compliance"
+                            ]}
+                        />
+                    </motion.div>
+                )}
+
+                {file && (
                     <div className="space-y-6">
                         <div className="monolith-card p-8 flex items-center justify-between">
                             <div className="flex items-center gap-4">

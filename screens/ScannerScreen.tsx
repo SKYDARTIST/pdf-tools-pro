@@ -8,6 +8,7 @@ import { askGemini } from '../services/aiService';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
+import ToolGuide from '../components/ToolGuide';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -221,6 +222,27 @@ const ScannerScreen: React.FC = () => {
                 </p>
               </div>
             </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="absolute bottom-10 left-10 right-10"
+            >
+              <ToolGuide
+                title="Neural Acquisition Protocol"
+                description="Acquire and enhance physical documents with AI-powered lighting correction, smart naming, and automated color preservation."
+                steps={[
+                  "Align your document within the visual guide markers.",
+                  "Capture the high-fidelity scan using the trigger.",
+                  "Apply Neural Enhance for lighting & clarity correction.",
+                  "Assemble into a multi-page PDF or export as JPEG."
+                ]}
+                useCases={[
+                  "Receipts", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
+                ]}
+              />
+            </motion.div>
           </>
         ) : (
           <div className="relative w-full h-full flex items-center justify-center p-6">
