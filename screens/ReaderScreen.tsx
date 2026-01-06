@@ -152,6 +152,17 @@ const ReaderScreen: React.FC = () => {
                 setFluidContent(text);
             }
             const response = await askGemini("Convert this document into a concise, engaging 'podcast-style' audio script for a narrator. Focus on the core value and findings.", text, "audio_script");
+
+            if (response.startsWith('AI_RATE_LIMIT')) {
+                setIsCooling(true);
+                return;
+            }
+
+            if (response.startsWith('AI_ERROR') || response.startsWith('BACKEND_ERROR')) {
+                console.error("Audio Generation AI Error:", response);
+                return;
+            }
+
             setAudioScript(response);
             startSpeaking(response);
         } catch (error) {
@@ -163,13 +174,36 @@ const ReaderScreen: React.FC = () => {
 
     const startSpeaking = (text: string) => {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        utterance.onend = () => setIsAudioPlaying(false);
-        setSpeechUtterance(utterance);
-        window.speechSynthesis.speak(utterance);
+
+        // Chunking mechanism for long scripts (browser limits)
+        const chunks = text.match(/[^.!?]+[.!?]+/g) || [text];
+        let currentChunk = 0;
+
+        const speakNextChunk = () => {
+            if (currentChunk >= chunks.length) {
+                setIsAudioPlaying(false);
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(chunks[currentChunk].trim());
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+
+            utterance.onend = () => {
+                currentChunk++;
+                speakNextChunk();
+            };
+
+            utterance.onerror = (e) => {
+                console.error("Speech Synthesis Error:", e);
+                setIsAudioPlaying(false);
+            };
+
+            window.speechSynthesis.speak(utterance);
+        };
+
         setIsAudioPlaying(true);
+        speakNextChunk();
     };
 
 

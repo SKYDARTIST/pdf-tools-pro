@@ -23,14 +23,14 @@ export default async function handler(req, res) {
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const data = await response.json();
-            if (!data.models) return ["gemini-2.5-flash", "gemini-2.5-pro"];
+            if (!data.models) return ["gemini-2.0-flash", "gemini-1.5-flash"];
 
             return data.models
                 .filter(m => m.supportedGenerationMethods.includes('generateContent'))
                 .map(m => m.name.replace('models/', ''));
         } catch (err) {
             console.error("Discovery Error:", err);
-            return ["gemini-2.5-flash", "gemini-2.5-pro"];
+            return ["gemini-2.0-flash", "gemini-1.5-flash"];
         }
     };
 

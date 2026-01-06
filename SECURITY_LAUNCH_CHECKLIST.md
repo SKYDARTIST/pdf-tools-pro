@@ -3,16 +3,19 @@
 To ensure your app is 100% secure before you reach your first 1,000 users, follow these steps in the Google Cloud Console.
 
 ## 1. Restrict your Gemini API Key
-Currently, your API key is "unrestricted." If a hacker finds it, they can use it for anything. You must lock it to your app.
+Currently, your API key is "unrestricted." If a hacker finds it, they can use it for anything. You must lock it down.
+
+> [!IMPORTANT]
+> **Because we use a Backend Proxy (Vercel/Node.js) to hide your key, you must NOT restrict the key to "Android apps."**
+> If you restrict it to Android, the server (Vercel) will be blocked with a `403 Forbidden` error because it is not an Android client.
 
 1.  Go to **[Google Cloud Console > Credentials](https://console.cloud.google.com/apis/credentials)**.
-2.  Click on your API Key (the one you use for Gemini).
-3.  Under **"API restrictions"**, select **"Restrict key"**.
-4.  In the dropdown, find and select **"Generative Language API"**.
-5.  Under **"Application restrictions"**, select **"Android apps"**.
-6.  Click **"Add an item"** and enter your **Package Name** (e.g., `com.cryptobulla.pdfpro`).
-7.  Enter your **SHA-1 certificate fingerprint**.
-    *   *To get this, you can run:* `./gradlew signingReport` *in your Android Studio terminal.*
+2.  Click on your API Key.
+3.  Under **"Application restrictions"**, select **"None"**. 
+    *   *Note: Security is instead handled by our "Signature Handshake" in the code, which ensures only your app can talk to the proxy.*
+4.  Under **"API restrictions"**, select **"Restrict key"**.
+5.  In the dropdown, find and select **"Generative Language API"**.
+6.  Click **Save**.
 
 ## 2. Enable Play Integrity (After Capacitor Bundle)
 Once we wrap this web app into an Android APK:
