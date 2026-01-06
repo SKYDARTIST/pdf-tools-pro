@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, GitMerge, Database } from 'lucide-react';
+import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, GitMerge, Database, Shield, Search, Scan } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import NeuralPulse from '../components/NeuralPulse';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import ToolGuide from '../components/ToolGuide';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -420,8 +421,22 @@ const AntiGravityWorkspace: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
+        className="space-y-8"
       >
+        <ToolGuide
+          title="Intelligence Synergy Protocol"
+          description="Leverage the full Anti-Gravity ecosystem to transform PDFs into actionable intelligence."
+          steps={[
+            "Analyze documents via the Workspace for deep semantic insights.",
+            "Run Neural Audit for risk detection and savings opportunities.",
+            "Extract structured data streams via the Intelligence Extractor.",
+            "Index documents globally for instant Neural Search retrieval."
+          ]}
+          useCases={[
+            "Executive Summaries", "Contract Analysis", "Financial Intelligence", "Knowledge Management"
+          ]}
+        />
+
         <div className="flex items-center gap-3">
           <NeuralPulse color="bg-emerald-500" size="sm" />
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Ecosystem Synergies</h3>
@@ -430,20 +445,36 @@ const AntiGravityWorkspace: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             {
-              title: "Neural Diff",
-              desc: "Compare document versions locally",
-              icon: GitMerge,
-              path: "/neural-diff",
-              color: "text-blue-500",
-              tag: "LOCAL"
+              title: "Neural Audit",
+              desc: "Deep risk & savings analysis",
+              icon: Shield,
+              path: "/reader",
+              color: "text-emerald-500",
+              tag: "ELITE"
             },
             {
-              title: "Data Extractor",
-              desc: "Noise to clean JSON/CSV feeds",
+              title: "Intelligence Extractor",
+              desc: "Multimodal Vision & Handwriting OCR",
               icon: Database,
               path: "/data-extractor",
               color: "text-purple-500",
-              tag: "LOCAL"
+              tag: "VISION"
+            },
+            {
+              title: "Neural Reconstruction",
+              desc: "AI-powered scanner Shadow Purge",
+              icon: Scan,
+              path: "/scanner",
+              color: "text-amber-500",
+              tag: "REPAIR"
+            },
+            {
+              title: "Neural Knowledge Base",
+              desc: "Query global document signatures",
+              icon: Search,
+              path: "/",
+              color: "text-blue-500",
+              tag: "SEARCH"
             }
           ].map((tool, i) => (
             <motion.button
