@@ -34,23 +34,47 @@ const SmartRedactScreen: React.FC = () => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
             setStatus('ready');
+            setRedactedContent('');
+            setShowPreview(false);
         }
+    };
+
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
     };
 
     const startRedaction = async () => {
         if (!file) return;
         setStatus('scanning');
         try {
-            const buffer = await file.arrayBuffer();
-            const text = await extractTextFromPdf(buffer);
+            let contentToProcess = "";
+            let imageBase64: string | undefined = undefined;
+
+            if (file.type === 'application/pdf') {
+                const buffer = await file.arrayBuffer();
+                contentToProcess = await extractTextFromPdf(buffer);
+            } else if (file.type.startsWith('image/')) {
+                imageBase64 = await fileToBase64(file);
+                contentToProcess = "Analyzing image for PII vectors.";
+            }
 
             setStatus('processing');
-            const sanitizedText = localRegexSanitize(text);
+            const sanitizedText = file.type === 'application/pdf' ? localRegexSanitize(contentToProcess) : contentToProcess;
+
+            const prompt = file.type === 'application/pdf'
+                ? "Continue the redaction process. This text has already been filtered locally for emails and phone numbers. Now find and redact all remaining PII including addresses, SSNs, credit card numbers, and full names. Replace them with [NEURAL_REDACTED]. Return the full text."
+                : "Analyze this image. Extract all text content and redact all PII (Personally Identifiable Information) including full names, emails, phone numbers, addresses, and ID numbers. Replace PII with [NEURAL_REDACTED]. Return the full redacted text transcript.";
 
             const response = await askGemini(
-                "Continue the redaction process. This text has already been filtered locally for emails and phone numbers. Now find and redact all remaining PII including addresses, SSNs, credit card numbers, and full names. Replace them with [NEURAL_REDACTED]. Return the full text.",
+                prompt,
                 sanitizedText,
-                "redact"
+                "redact",
+                imageBase64
             );
             setRedactedContent(response);
             setStatus('done');
@@ -84,7 +108,7 @@ const SmartRedactScreen: React.FC = () => {
                             <Shield size={32} />
                         </motion.div>
                         <span className="text-sm font-black uppercase tracking-widest">Inhibit Sensitive Flow</span>
-                        <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+                        <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
                     </label>
                 ) : (
                     <div className="space-y-6">
@@ -95,7 +119,9 @@ const SmartRedactScreen: React.FC = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-[12px] font-black uppercase tracking-widest">{file.name}</h3>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Target Asset Ready</p>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                        {file.type.startsWith('image/') ? 'Visual Vector Identified' : 'Document Asset Ready'}
+                                    </p>
                                 </div>
                             </div>
                             {status === 'ready' && (
