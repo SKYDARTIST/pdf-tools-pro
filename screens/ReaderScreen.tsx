@@ -9,6 +9,7 @@ import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
+import NeuralPulse from '../components/NeuralPulse';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -462,7 +463,9 @@ const ReaderScreen: React.FC = () => {
                                             {isGeneratingOutline ? (
                                                 <div className="h-full flex flex-col items-center justify-center space-y-4">
                                                     <div className="relative">
-                                                        <Activity size={32} className="text-emerald-500 animate-pulse" />
+                                                        <div className="absolute inset-0 flex items-center justify-center">
+                                                            <NeuralPulse color="bg-emerald-500" size="lg" />
+                                                        </div>
                                                         <motion.div
                                                             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
                                                             transition={{ repeat: Infinity, duration: 2 }}

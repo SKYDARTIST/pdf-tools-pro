@@ -7,6 +7,7 @@ import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentL
 import { useNavigate } from 'react-router-dom';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
+import NeuralPulse from '../components/NeuralPulse';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -173,7 +174,7 @@ const AntiGravityWorkspace: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-gray-900 dark:bg-white animate-pulse" />
+            <NeuralPulse color="bg-gray-900 dark:bg-white" size="sm" />
             STATUS: {status === 'idle' ? 'STANDBY' : status.toUpperCase()}
           </div>
         </div>
@@ -409,7 +410,7 @@ const AntiGravityWorkspace: React.FC = () => {
         className="space-y-6"
       >
         <div className="flex items-center gap-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <NeuralPulse color="bg-emerald-500" size="sm" />
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Ecosystem Synergies</h3>
         </div>
 

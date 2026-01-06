@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Sparkles, Shield, Cpu, MessageSquare, ArrowRight, Twitter } from 'lucide-react';
 import LegalFooter from '../components/LegalFooter';
+import NeuralPulse from '../components/NeuralPulse';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -49,7 +50,7 @@ const LandingPage: React.FC = () => {
                                 transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
                                 className="px-6 py-2 bg-black/5 dark:bg-white/5 rounded-full border border-black/5 dark:border-white/5 flex items-center gap-2"
                             >
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <NeuralPulse color="bg-emerald-500" size="sm" />
                                 <span className="text-[9px] font-black uppercase tracking-[0.3em]">Neural Protocol Ready</span>
                             </motion.div>
                         </div>

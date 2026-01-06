@@ -9,6 +9,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import ToolGuide from '../components/ToolGuide';
+import NeuralPulse from '../components/NeuralPulse';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -176,7 +177,7 @@ const ScannerScreen: React.FC = () => {
         </button>
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <NeuralPulse color="bg-emerald-500" size="md" />
             <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Offline Acquisition</span>
           </div>
           <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
