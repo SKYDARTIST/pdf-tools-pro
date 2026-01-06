@@ -40,6 +40,19 @@ const SmartRedactScreen: React.FC = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!redactedContent) return;
+        const blob = new Blob([redactedContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sanitized_${file?.name.split('.')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const fileToBase64 = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -68,8 +81,8 @@ const SmartRedactScreen: React.FC = () => {
             const sanitizedText = file.type === 'application/pdf' ? localRegexSanitize(contentToProcess) : contentToProcess;
 
             const prompt = file.type === 'application/pdf'
-                ? "Continue the redaction process. This text has already been filtered locally for emails and phone numbers. Now find and redact all remaining PII including addresses, SSNs, credit card numbers, and full names. Replace them with [NEURAL_REDACTED]. Return the full text."
-                : "Analyze this image. Extract all text content and redact all PII (Personally Identifiable Information) including full names, emails, phone numbers, addresses, and ID numbers. Replace PII with [NEURAL_REDACTED]. Return the full redacted text transcript.";
+                ? "CRITICAL SECURITY PROTOCOL: You are a high-security redaction engine. Your primary objective is to find and neutralize ALL PII. The provided text has already been filtered locally for basic patterns (emails/phones). You MUST identify and replace every instance of full names, home addresses, Social Security Numbers, Credit Card details, Passport numbers, and birth dates with [NEURAL_REDACTED]. Return the complete sanitized text stream. DO NOT LEAVE ANY SENSITIVE DATA VISIBLE."
+                : "ULTIMATE PRIVACY OVERRIDE: Inspect the provided image payload for sensitive data vectors. Perform a Deep-Layer Scan. Identify and extract all text, then IMMEDIATELY neutralize all PII including names, contact details, ID numbers, and financial data. Replace every sensitive identifier with [NEURAL_REDACTED]. Return the full sanitized transcript. ADHERE TO MAXIMUM SECURITY CLEARANCE.";
 
             const response = await askGemini(
                 prompt,
@@ -77,7 +90,10 @@ const SmartRedactScreen: React.FC = () => {
                 "redact",
                 imageBase64
             );
-            setRedactedContent(response);
+
+            // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
+            const finalSanitized = localRegexSanitize(response);
+            setRedactedContent(finalSanitized);
             setStatus('done');
         } catch (error) {
             console.error("Redaction Failed:", error);
@@ -181,7 +197,9 @@ const SmartRedactScreen: React.FC = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <h3 className="text-xl font-black uppercase tracking-tighter text-emerald-500">Document Sanitized</h3>
-                                        <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest">All identified PII has been neutralized from the output stream.</p>
+                                        <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest">
+                                            {file.type.startsWith('image/') ? 'Neural Vision has extracted and neutralized PII from the visual asset.' : 'All identified PII has been neutralized from the output stream.'}
+                                        </p>
                                     </div>
                                     <div className="flex gap-4">
                                         <button
@@ -191,7 +209,10 @@ const SmartRedactScreen: React.FC = () => {
                                             {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
                                             {showPreview ? "Hide Preview" : "Show Preview"}
                                         </button>
-                                        <button className="px-6 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5">
+                                        <button
+                                            onClick={handleExport}
+                                            className="px-6 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
+                                        >
                                             <Download size={14} />
                                             Export Sanitized
                                         </button>
