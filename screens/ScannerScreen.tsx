@@ -240,47 +240,51 @@ const ScannerScreen: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute bottom-10 left-10 right-10 flex flex-col gap-2"
+                className="absolute bottom-6 left-6 right-6 flex flex-col gap-2 z-50"
               >
                 {suggestedName && (
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="bg-black/80 backdrop-blur-xl p-3 px-5 rounded-[20px] flex items-center gap-3 border border-white/10"
+                    className="bg-black/90 backdrop-blur-2xl p-2.5 px-4 rounded-2xl flex items-center gap-3 border border-white/10 shadow-2xl"
                   >
-                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-400">Smart Name:</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-violet-400 shrink-0">Smart Name:</span>
                     <input
                       type="text"
                       value={suggestedName}
                       onChange={(e) => setSuggestedName(e.target.value)}
-                      className="bg-transparent border-none text-[11px] font-black uppercase tracking-widest text-white focus:outline-none flex-1"
+                      className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-white focus:outline-none flex-1 min-w-0"
                     />
                   </motion.div>
                 )}
-                <div className="bg-emerald-500/90 backdrop-blur-md p-4 rounded-2xl flex items-center gap-4 text-white shadow-2xl">
-                  <div className="p-2 bg-white/20 rounded-xl">
-                    <Sparkles size={16} />
+                <div className="bg-emerald-500/90 backdrop-blur-xl p-3 rounded-2xl flex items-center gap-3 text-white shadow-2xl border border-white/10">
+                  <div className="p-1.5 bg-white/20 rounded-lg">
+                    <Sparkles size={14} />
                   </div>
-                  <div className="flex-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest block">Neural Polish Applied</span>
-                    <span className="text-[8px] font-black opacity-70 uppercase tracking-wider">{appliedFilters.reason}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight">Neural Polish Applied</span>
+                    <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate">
+                      {appliedFilters.reason}
+                    </p>
                   </div>
-                  <button
-                    onClick={() => setShowReport(true)}
-                    className="p-2 hover:bg-white/10 rounded-xl transition-colors flex items-center gap-2"
-                    title="Report AI Content"
-                  >
-                    <Flag size={14} className="text-white" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAppliedFilters(null);
-                      setSuggestedName('');
-                    }}
-                    className="p-2 hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
+                  <div className="flex items-center gap-1 border-l border-white/20 pl-2">
+                    <button
+                      onClick={() => setShowReport(true)}
+                      className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                      title="Report"
+                    >
+                      <Flag size={12} className="text-white/70" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAppliedFilters(null);
+                        setSuggestedName('');
+                      }}
+                      className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <X size={12} className="text-white/70" />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
