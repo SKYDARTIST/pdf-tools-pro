@@ -247,6 +247,11 @@ const ScannerScreen: React.FC = () => {
                   "Activate Neural OCR to decouple text from the visual layer.",
                   "Initialize the Data Chat to query the document content.",
                   "Export structured text or JSON payloads."
+                ] : protocol === 'reconstruction' ? [
+                  "Position the physical asset within the optical guides.",
+                  "Execute High-Fidelity Capture for structural analysis.",
+                  "Engage Neural Reconstruction to purge shadows & fix geometry.",
+                  "Assemble the restored asset into a secure PDF container."
                 ] : [
                   "Align your document within the visual guide markers.",
                   "Capture the high-fidelity scan using the trigger.",
@@ -302,14 +307,24 @@ const ScannerScreen: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight text-white">Neural Reconstruction</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight text-white">
+                        {protocol === 'reconstruction' ? "Expert Restoration Protocol" : "Neural Reconstruction"}
+                      </span>
                       {appliedFilters.shadowPurge && (
                         <span className="px-1.5 py-0.5 bg-violet-500 rounded text-[6px] font-black uppercase tracking-widest animate-pulse">Shadow Purge Active</span>
                       )}
                     </div>
-                    <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate">
-                      {appliedFilters.reason}
-                    </p>
+                    {protocol === 'reconstruction' ? (
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 opacity-80">
+                        <span className="text-[6px] font-black tracking-widest uppercase flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-white" /> Luminosity Balance: OK</span>
+                        <span className="text-[6px] font-black tracking-widest uppercase flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-white" /> Shadow Suppression: ACTIVE</span>
+                        <span className="text-[6px] font-black tracking-widest uppercase flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-white" /> Geometry Fix: +2.4°</span>
+                      </div>
+                    ) : (
+                      <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate">
+                        {appliedFilters.reason}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 border-l border-white/20 pl-2">
                     <button
@@ -398,7 +413,9 @@ const ScannerScreen: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <Wand2 size={20} className={isPolishing ? 'animate-spin' : ''} />
-                <span className="font-black text-[10px] uppercase tracking-[0.3em]">Neural Enhance</span>
+                <span className="font-black text-[10px] uppercase tracking-[0.3em]">
+                  {protocol === 'reconstruction' ? "Run Repair Protocol" : "Neural Enhance"}
+                </span>
               </button>
             ) : (
               <div className="flex gap-4">
