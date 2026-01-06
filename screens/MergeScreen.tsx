@@ -10,6 +10,7 @@ import ProgressIndicator from '../components/ProgressIndicator';
 import { useNavigate } from 'react-router-dom';
 import { FileItem } from '../types';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import ToolGuide from '../components/ToolGuide';
 
 const MergeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -140,6 +141,20 @@ const MergeScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Merge</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Arrange and unify multi-stream data into a single carrier</p>
         </div>
+
+        <ToolGuide
+          title="Document Confluence Protocol"
+          description="Unified carriage for multi-stream data. Sequence and merge multiple documents into a stabilized PDF carrier."
+          steps={[
+            "Initialize the data stream by uploading multiple PDF files.",
+            "Arrange the operational order using the navigation controls.",
+            "Validate the sequence of document payloads.",
+            "Execute Confluence to synthesize the final output."
+          ]}
+          useCases={[
+            "Report Assembly", "Document Archiving", "Binder Collaboration", "Sequential Batching"
+          ]}
+        />
 
         <div className="flex-1 space-y-4">
           <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">

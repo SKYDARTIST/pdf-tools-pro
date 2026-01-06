@@ -7,6 +7,7 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 
 const MetadataScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -124,6 +125,20 @@ const MetadataScreen: React.FC = () => {
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Meta</h1>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Inject and modify bit-level information markers within the asset header</p>
                 </div>
+
+                <ToolGuide
+                    title="Archetype Editing Protocol"
+                    description="Modify the hidden document identity markers. Inject and update critical bit-level headers within the PDF carrier."
+                    steps={[
+                        "Initialize the meta-extraction by uploading a PDF carrier.",
+                        "System retrieves existing identity markers (Title, Originator, Subject).",
+                        "Inject new bit-level identifiers into the marker definition fields.",
+                        "Execute Injection to permanently synchronize the archetypal metadata."
+                    ]}
+                    useCases={[
+                        "Document SEO", "Version History Control", "Ownership Labeling", "File Classification Optimization"
+                    ]}
+                />
             </div>
 
             {!file ? (

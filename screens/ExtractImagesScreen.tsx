@@ -6,6 +6,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -102,6 +103,20 @@ const ExtractImagesScreen: React.FC = () => {
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Images</h1>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Identify and decouple tactical visual assets from the document carrier</p>
                 </div>
+
+                <ToolGuide
+                    title="Visual Asset Isolation"
+                    description="Decouple embedded images from the PDF carrier. Identify and extract tactical visual assets for isolated usage."
+                    steps={[
+                        "Initialize the extraction protocol by uploading a PDF carrier.",
+                        "System performs a visual scan to identify tactical image assets within the pages.",
+                        "Embedded image layers are identified for decoupling from the document structure.",
+                        "Execute Extraction to isolate and download the visual payloads."
+                    ]}
+                    useCases={[
+                        "Image Harvesting", "Asset Decoupling", "Visual Content Management", "Portfolio Assembly"
+                    ]}
+                />
             </div>
 
             {!file ? (

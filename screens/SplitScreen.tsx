@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Scissors, FileText, Download, Loader2, FileUp } from 'lucide-react';
 import { splitPdf, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
+import ToolGuide from '../components/ToolGuide';
 
 const SplitScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
@@ -53,6 +54,20 @@ const SplitScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Split</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Extract and isolate individual data layers into separate carriers</p>
         </div>
+
+        <ToolGuide
+          title="Neural Fission Protocol"
+          description="Extract individual pages into isolated carrier streams. Decompose a single document into its component page layers."
+          steps={[
+            "Initialize the decomposition by uploading a PDF carrier.",
+            "AI analyzes the page count and structural complexity.",
+            "Execute Fission to decouple the page layers.",
+            "Download the resulting individual page archives."
+          ]}
+          useCases={[
+            "Page Extraction", "Document Splitting", "Content Isolation", "Asset Management"
+          ]}
+        />
 
         {!file ? (
           <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">

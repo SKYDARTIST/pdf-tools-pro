@@ -7,6 +7,7 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 
 const RotateScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -110,6 +111,20 @@ const RotateScreen: React.FC = () => {
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Rotate</h1>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Adjust structural alignment of asset carrier pages</p>
                 </div>
+
+                <ToolGuide
+                    title="Perspective Alignment Protocol"
+                    description="Correct the orientation of visual data streams. Align incorrectly scanned or captured document layers."
+                    steps={[
+                        "Initialize the alignment protocol by uploading a PDF carrier.",
+                        "Select the target orientation (90° Right, Left, or Invert).",
+                        "Validate the spatial reconstruction in the workspace.",
+                        "Execute Alignment to stabilize the document's perspective."
+                    ]}
+                    useCases={[
+                        "Scan Correction", "Orientation Fixing", "Data Standardization", "Presentation Preparation"
+                    ]}
+                />
 
                 {!file ? (
                     <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">

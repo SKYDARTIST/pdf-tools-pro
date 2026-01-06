@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Type, Download, Loader2, AlignLeft, Bold } from 'lucide-react';
 import { createPdfFromText, downloadBlob } from '../services/pdfService';
+import ToolGuide from '../components/ToolGuide';
 
 const TextToPdfScreen: React.FC = () => {
   const [title, setTitle] = useState('');
@@ -37,6 +38,20 @@ const TextToPdfScreen: React.FC = () => {
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Synthesize tactical document structures from raw lexical input</p>
         </div>
 
+        <ToolGuide
+          title="Data Synthesis Protocol"
+          description="Synthesize tactical document structures from raw lexical input. Convert unstructured text streams into premium PDF asset carriers."
+          steps={[
+            "Define the unique document identifier (Title) for the asset header.",
+            "Initialize the lexical stream by entering raw text data into the terminal.",
+            "System formats the raw lexical input into a standardized document layer.",
+            "Execute Synthesis to finalize the PDF asset carrier and download the payload."
+          ]}
+          useCases={[
+            "Rapid Memo Generation", "Lexical Data Archival", "Note Conversion", "Structured Text Serialization"
+          ]}
+        />
+
         <div className="space-y-8 flex-1 flex flex-col">
           <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none shadow-xl flex-1 flex flex-col space-y-6">
             <div className="flex items-center gap-4 border-b border-black/5 dark:border-white/5 pb-4">
@@ -66,8 +81,8 @@ const TextToPdfScreen: React.FC = () => {
             disabled={!title || !content || isProcessing}
             onClick={handleGenerate}
             className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!title || !content || isProcessing
-                ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-                : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+              ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+              : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
               }`}
           >
             <motion.div

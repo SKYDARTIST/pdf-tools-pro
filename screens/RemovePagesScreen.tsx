@@ -7,6 +7,7 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import { PDFDocument } from 'pdf-lib';
+import ToolGuide from '../components/ToolGuide';
 
 const RemovePagesScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -130,6 +131,20 @@ const RemovePagesScreen: React.FC = () => {
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Remove</h1>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Identify and purge structural segments from the asset carrier</p>
                 </div>
+
+                <ToolGuide
+                    title="Data Purge Protocol"
+                    description="Permanently excise redundant or classified pages. Select valid segments to retain while purging irrelevant data layers."
+                    steps={[
+                        "Initialize the purge protocol by uploading a PDF carrier.",
+                        "Analyze individual page segments for deletion.",
+                        "Select any pages that must be permanently DELETED.",
+                        "Execute Purge to synthesize a cleaned asset carrier."
+                    ]}
+                    useCases={[
+                        "Confidentiality Management", "Document Resizing", "Redundancy Removal", "Classification Control"
+                    ]}
+                />
             </div>
 
             {!file ? (

@@ -7,6 +7,7 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 
 const PageNumbersScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -126,6 +127,20 @@ const PageNumbersScreen: React.FC = () => {
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Apply sequential metadata markers to track structural asset flow</p>
                 </div>
 
+                <ToolGuide
+                    title="Hierarchical Indexing Protocol"
+                    description="Apply structural markers for sequential navigation. Embed persistent page numbers onto the document layer for auditing."
+                    steps={[
+                        "Initialize the indexing protocol by uploading a PDF carrier.",
+                        "Select the desired indexing schema (Simple or Extended).",
+                        "Configure the spatial anchoring (Left, Center, or Right).",
+                        "Execute Indexing to finalize the structural markers."
+                    ]}
+                    useCases={[
+                        "Lease Agreements", "Academic Papers", "Legal Bundles", "Pagination Control"
+                    ]}
+                />
+
                 {!file ? (
                     <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
                         <motion.div
@@ -232,8 +247,8 @@ const PageNumbersScreen: React.FC = () => {
                             onClick={handleAddPageNumbers}
                             disabled={isProcessing}
                             className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${isProcessing
-                                    ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-                                    : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+                                ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+                                : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
                                 }`}
                         >
                             <motion.div

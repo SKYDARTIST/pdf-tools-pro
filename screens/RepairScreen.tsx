@@ -6,6 +6,7 @@ import { downloadBlob, repairPdf } from '../services/pdfService';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 
 const RepairScreen: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -84,6 +85,20 @@ const RepairScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Repair</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Restore internal cross-reference integrity and optimize structure</p>
         </div>
+
+        <ToolGuide
+          title="Structural Salvage Protocol"
+          description="Reconstruct corrupted or unstable PDF metadata. Restore document integrity by repairing internal cross-reference tables."
+          steps={[
+            "Initialize the recovery protocol by uploading a PDF carrier.",
+            "System performs a deep scan of the document's hierarchical structure.",
+            "Broken XREF tables and legacy metadata are identified for reconstruction.",
+            "Execute Restoration to synthesize a stable, optimized asset carrier."
+          ]}
+          useCases={[
+            "Corrupted PDF Recovery", "Metadata Sanitization", "Structure Optimization", "Transmission Stabilization"
+          ]}
+        />
 
         <div className="flex-1 space-y-6">
           {!file ? (

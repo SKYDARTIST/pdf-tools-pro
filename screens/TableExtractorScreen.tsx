@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileSpreadsheet, FileUp, Loader2, Bot, Download, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
+import ToolGuide from '../components/ToolGuide';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
@@ -104,6 +105,20 @@ const TableExtractorScreen: React.FC = () => {
                     <X size={24} />
                 </button>
             </div>
+
+            <ToolGuide
+                title="Structured Data Protocol"
+                description="Isolate grid-based data flows from visual or document carriers. Convert unstructured document layers into premium data assets."
+                steps={[
+                    "Inject the data source (PDF carrier or Image stream) into the recovery engine.",
+                    "AI performs a Deep Scan of the document's internal grid layer.",
+                    "System identifies structural tables and decouples the raw data segments.",
+                    "Execute Export to synthesize a Structured CSV or Master JSON payload."
+                ]}
+                useCases={[
+                    "Financial Audit", "Data Migration", "Report Digitization", "Inventory Management Synthesis"
+                ]}
+            />
 
             <AnimatePresence mode="wait">
                 {status === 'idle' && (

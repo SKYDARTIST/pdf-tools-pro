@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Stamp, FileText, Download, Loader2, FileUp, Type } from 'lucide-react';
 import { addWatermark, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
+import ToolGuide from '../components/ToolGuide';
 
 const WatermarkScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
@@ -44,6 +45,20 @@ const WatermarkScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Watermark</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Embed permanent identification markers to protect structural asset ownership</p>
         </div>
+
+        <ToolGuide
+          title="Ownership Signature Protocol"
+          description="Overlay provenance markers on the document layer. Embed persistent watermarks to verify asset authenticity."
+          steps={[
+            "Initialize the stamping protocol by uploading a PDF carrier.",
+            "Define the identifier text (e.g., CONFIDENTIAL, DRAFT).",
+            "Select from standardized provenance templates.",
+            "Execute Stamping to embed the markers permanently."
+          ]}
+          useCases={[
+            "Brand Protection", "Status Labeling", "Intellectual Property Safeguarding", "Document Classification"
+          ]}
+        />
 
         {!file ? (
           <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
@@ -95,8 +110,8 @@ const WatermarkScreen: React.FC = () => {
                       key={tag}
                       onClick={() => setText(tag)}
                       className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${text === tag
-                          ? 'bg-black dark:bg-white text-white dark:text-black'
-                          : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                        ? 'bg-black dark:bg-white text-white dark:text-black'
+                        : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                         }`}
                     >
                       {tag}
@@ -115,8 +130,8 @@ const WatermarkScreen: React.FC = () => {
         disabled={!file || !text || isProcessing}
         onClick={handleApply}
         className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!file || !text || isProcessing
-            ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-            : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+          ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+          : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
           }`}
       >
         <motion.div

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, FileUp, X, ChevronLeft, ChevronRight, Maximize, ZoomIn } from 'lucide-react';
 import AIAssistant from '../components/AIAssistant';
+import ToolGuide from '../components/ToolGuide';
 
 const ViewScreen: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -33,6 +34,20 @@ const ViewScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">View</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Render tactical document structures for real-time visual inspection</p>
         </div>
+
+        <ToolGuide
+          title="Internal Visualization Protocol"
+          description="Access the internal document layer for structural inspection. Synchronize with the Neural Assistant for semantic analysis."
+          steps={[
+            "Initialize the visualization protocol by uploading a PDF carrier.",
+            "System renders the visual payload in the Active Buffer.",
+            "Interact with the Neural Assistant for real-time document intelligence.",
+            "Navigate the internal segment hierarchy using the spatial controls."
+          ]}
+          useCases={[
+            "Quick Inspection", "Semantic Analysis", "Visual Verification", "Read-Only Access"
+          ]}
+        />
 
         {!pdfUrl ? (
           <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">

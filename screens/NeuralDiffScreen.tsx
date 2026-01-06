@@ -4,6 +4,7 @@ import { FileUp, GitMerge, ListCheck, Loader2, Sparkles, Check, X, AlertCircle }
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
@@ -86,6 +87,20 @@ const NeuralDiffScreen: React.FC = () => {
                         Identify semantic variations between document versions with Edge-AI
                     </p>
                 </div>
+
+                <ToolGuide
+                    title="Semantic Comparison Protocol"
+                    description="Perform a deep semantic analysis between two document versions. Identify critical variations in legal obligations and numerical data."
+                    steps={[
+                        "Initialize the comparison by uploading two versions of the document (Base vs Modified).",
+                        "The Neural Lab extracts textual data streams from both carriers.",
+                        "Gemini AI performs a semantic diff to identify risks, omissions, and additions.",
+                        "Analyze the 'Semantic Analysis Ready' report for critical variations."
+                    ]}
+                    useCases={[
+                        "Contract Review", "Legal Comparison", "Version Control Auditing", "Price Change Verification"
+                    ]}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* File 1 */}

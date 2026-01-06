@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PenTool, Download, Loader2, FileUp, Eraser, CheckCircle2, Bookmark, Stamp as StampIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ToolGuide from '../components/ToolGuide';
 
 const STAMPS = [
   { id: 'approved', label: 'APPROVED', color: '#10b981' },
@@ -198,6 +199,20 @@ const SignScreen: React.FC = () => {
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Apply unique biometric data markers to verify asset ownership</p>
         </div>
 
+        <ToolGuide
+          title="Identity Verification Protocol"
+          description="Authenticate the carrier with a personal signature. Embed persistent biometric markers and status stamps."
+          steps={[
+            "Initialize the authorization by uploading a PDF carrier.",
+            "Capture your biometric signature on the digital canvas.",
+            "Apply Neural Stamps for additional status markers (DRAFT, URGENT, etc).",
+            "Execute Authorization to embed the markers onto the document layer."
+          ]}
+          useCases={[
+            "Contract Execution", "Approval Workflows", "Official Authentications", "Personal Validation"
+          ]}
+        />
+
         {!file ? (
           <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
             <motion.div
@@ -267,8 +282,8 @@ const SignScreen: React.FC = () => {
                     key={stamp.id}
                     onClick={() => setSelectedStamp(selectedStamp === stamp.id ? null : stamp.id)}
                     className={`p-4 rounded-2xl border-2 transition-all text-left relative overflow-hidden group ${selectedStamp === stamp.id
-                        ? 'bg-white dark:bg-white/10 border-black dark:border-white'
-                        : 'bg-white/50 dark:bg-black/50 border-transparent hover:border-black/20 dark:hover:border-white/20'
+                      ? 'bg-white dark:bg-white/10 border-black dark:border-white'
+                      : 'bg-white/50 dark:bg-black/50 border-transparent hover:border-black/20 dark:hover:border-white/20'
                       }`}
                   >
                     <div className="text-[10px] font-black tracking-tighter" style={{ color: stamp.color }}>{stamp.label}</div>

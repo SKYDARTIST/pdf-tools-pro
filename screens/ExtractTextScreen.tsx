@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileSearch, FileUp, Copy, Check, Loader2, Edit3, Download, RefreshCcw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { replaceTextInPdf } from '../utils/pdfEditor';
+import ToolGuide from '../components/ToolGuide';
 
 // Configure PDF.js worker - using local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -104,6 +105,20 @@ const ExtractTextScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Extract & Edit</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Reconstruct readable data streams or inject modifications directly</p>
         </div>
+
+        <ToolGuide
+          title="Lexical Extraction Protocol"
+          description="Identify and decouple document-based text streams. Reconstruct raw lexical data for analysis or direct modification."
+          steps={[
+            "Initialize the extraction protocol by uploading a PDF carrier.",
+            "System performs a lexical scan to decouple character data from the document layer.",
+            "Analyze the character stream in the Neural Buffer for modifications.",
+            "Use the 'Direct Edit' protocol to inject global neural modifications to the carrier."
+          ]}
+          useCases={[
+            "Content Repurposing", "Global Data Replacement", "Textual Archiving", "Document Correction"
+          ]}
+        />
 
         {!text && !isProcessing ? (
           <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">

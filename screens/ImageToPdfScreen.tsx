@@ -5,6 +5,7 @@ import { Image as ImageIcon, Plus, Trash2, Download, Loader2, GripVertical, File
 import { useLocation } from 'react-router-dom';
 import { imageToPdf, downloadBlob } from '../services/pdfService';
 import { FileItem } from '../types';
+import ToolGuide from '../components/ToolGuide';
 
 const ImageToPdfScreen: React.FC = () => {
   const location = useLocation();
@@ -86,6 +87,20 @@ const ImageToPdfScreen: React.FC = () => {
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Compile</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Aggregate tactical visual assets into unified document containers</p>
         </div>
+
+        <ToolGuide
+          title="Visual Aggregation Protocol"
+          description="Synthesize unified PDF carriers from isolated image assets. Compile multiple visual streams into a single document structure."
+          steps={[
+            "Initialize the asset load by selecting image files (JPEG, PNG).",
+            "Organize the compile order using the spatial reorder system.",
+            "Analyze and prepare the visual assets for document synthesis.",
+            "Execute Compilation to generate the unified PDF payload."
+          ]}
+          useCases={[
+            "Document Digitization", "Portfolio Compilation", "Image Archival", "Receipt Aggregation"
+          ]}
+        />
       </div>
 
       <div className="space-y-8">

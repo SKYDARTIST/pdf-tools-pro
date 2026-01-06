@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, GitMerge, Database, Shield, Search, Scan } from 'lucide-react';
+import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, GitMerge, Database, Shield, Search, Scan, Headphones, EyeOff } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
@@ -453,8 +453,16 @@ const AntiGravityWorkspace: React.FC = () => {
               tag: "ELITE"
             },
             {
+              title: "Intelligence Briefing",
+              desc: "Strategic audio downloads",
+              icon: Headphones,
+              path: "/reader",
+              color: "text-indigo-500",
+              tag: "AUDIO"
+            },
+            {
               title: "Intelligence Extractor",
-              desc: "Multimodal Vision & Handwriting OCR",
+              desc: "Vision & Handwriting OCR",
               icon: Database,
               path: "/data-extractor",
               color: "text-purple-500",
@@ -462,7 +470,7 @@ const AntiGravityWorkspace: React.FC = () => {
             },
             {
               title: "Neural Reconstruction",
-              desc: "AI-powered scanner Shadow Purge",
+              desc: "AI-powered scanner repair",
               icon: Scan,
               path: "/scanner",
               color: "text-amber-500",
@@ -470,11 +478,19 @@ const AntiGravityWorkspace: React.FC = () => {
             },
             {
               title: "Neural Knowledge Base",
-              desc: "Query global document signatures",
+              desc: "AI-indexed global history",
               icon: Search,
               path: "/",
               color: "text-blue-500",
               tag: "SEARCH"
+            },
+            {
+              title: "Neural Redact",
+              desc: "Vision-based PII obscuring",
+              icon: EyeOff,
+              path: "/smart-redact",
+              color: "text-rose-500",
+              tag: "PRIVACY"
             }
           ].map((tool, i) => (
             <motion.button
