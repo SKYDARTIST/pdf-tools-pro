@@ -151,7 +151,7 @@ const ReaderScreen: React.FC = () => {
                 text = await extractTextFromPdf(buffer);
                 setFluidContent(text);
             }
-            const response = await askGemini("Convert this document into a concise, engaging 'podcast-style' audio script for a narrator. Focus on the core value and findings.", text, "audio_script");
+            const response = await askGemini("Convert this document into a concise, engaging 'podcast-style' audio script. START DIRECTLY with 'Welcome to Anti-Gravity.' NO markdown, NO asterisks.", text, "audio_script");
 
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
@@ -175,8 +175,22 @@ const ReaderScreen: React.FC = () => {
     const startSpeaking = (text: string) => {
         window.speechSynthesis.cancel();
 
+        // Sanitize text: Remove markdown symbols (*, #, _, etc.) that browsers read literally
+        let sanitizedText = text
+            .replace(/\*\*/g, '') // Remove double asterisks
+            .replace(/\*/g, '')   // Remove single asterisks
+            .replace(/#/g, '')    // Remove hashes
+            .replace(/__/g, '')   // Remove double underscores
+            .replace(/_/g, '')    // Remove single underscores
+            .trim();
+
+        // Ensure the "Welcome to Anti-Gravity" greeting is included if missing
+        if (!sanitizedText.toLowerCase().startsWith("welcome to anti-gravity")) {
+            sanitizedText = "Welcome to Anti-Gravity. " + sanitizedText;
+        }
+
         // Chunking mechanism for long scripts (browser limits)
-        const chunks = text.match(/[^.!?]+[.!?]+/g) || [text];
+        const chunks = sanitizedText.match(/[^.!?]+[.!?]+/g) || [sanitizedText];
         let currentChunk = 0;
 
         const speakNextChunk = () => {

@@ -62,7 +62,7 @@ export default async function handler(req, res) {
                 if (type === 'naming') {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nSuggest a professional filename for this document. NO extension, max 40 chars, underscores. CONTEXT: ${documentText || prompt}`;
                 } else if (type === 'audio_script') {
-                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT FOR A NARRATOR. FOCUS ON CORE FINDINGS.\n\nDOCUMENT TEXT:\n${documentText || "No document text available."}`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT. \n\nRULES:\n1. START DIRECTLY with the phrase: "Welcome to Anti-Gravity."\n2. DO NOT use any markdown symbols like asterisks (**), hashes (#), or bullet points.\n3. Keep the tone conversational and professional.\n\nDOCUMENT TEXT:\n${documentText || "No document text available."}`;
                 } else if (type === 'table') {
                     promptPayload = `Extract tables from image/text into JSON: [{ "tableName": "Name", "headers": [], "rows": [[]] }]\nONLY JSON.`;
                 } else if (type === 'scrape') {
