@@ -18,6 +18,7 @@ const ScannerScreen: React.FC = () => {
   const protocol = searchParams.get('protocol');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
   const [isPolishing, setIsPolishing] = useState(false);
@@ -233,38 +234,52 @@ const ScannerScreen: React.FC = () => {
               </div>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="absolute bottom-10 left-10 right-10"
-            >
-              <ToolGuide
-                title={protocol === 'ocr' ? "Neural OCR Protocol" : "Neural Reconstruction Protocol"}
-                description={protocol === 'ocr' ? "Extract and interact with text data from physical assets. Convert static images into live interactive lexical streams." : "Acquire and reconstruct physical documents with AI-powered Shadow Purge technology, smart naming, and automated perspective correction."}
-                steps={protocol === 'ocr' ? [
-                  "Capture a high-fidelity image of the source text.",
-                  "Activate Neural OCR to decouple text from the visual layer.",
-                  "Initialize the Data Chat to query the document content.",
-                  "Export structured text or JSON payloads."
-                ] : protocol === 'reconstruction' ? [
-                  "Position the physical asset within the optical guides.",
-                  "Execute High-Fidelity Capture for structural analysis.",
-                  "Engage Neural Reconstruction to purge shadows & fix geometry.",
-                  "Assemble the restored asset into a secure PDF container."
-                ] : [
-                  "Align your document within the visual guide markers.",
-                  "Capture the high-fidelity scan using the trigger.",
-                  "Activate Neural Reconstruction for shadow & perspective repair.",
-                  "Assemble into a multi-page PDF or export as high-end JPEG."
-                ]}
-                useCases={protocol === 'ocr' ? [
-                  "Data Retrieval", "Handwriting Digitization", "Code Extraction", "Rapid Translation"
-                ] : [
-                  "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
-                ]}
-              />
-            </motion.div>
+            <AnimatePresence>
+              {showGuide && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute inset-0 z-50 flex items-center justify-center p-10 bg-black/60 backdrop-blur-md"
+                >
+                  <div className="w-full max-w-sm space-y-6">
+                    <ToolGuide
+                      title={protocol === 'ocr' ? "Neural OCR Protocol" : "Neural Reconstruction Protocol"}
+                      description={protocol === 'ocr' ? "Extract and interact with text data from physical assets. Convert static images into live interactive lexical streams." : "Acquire and reconstruct physical documents with AI-powered Shadow Purge technology, smart naming, and automated perspective correction."}
+                      steps={protocol === 'ocr' ? [
+                        "Capture a high-fidelity image of the source text.",
+                        "Activate Neural OCR to decouple text from the visual layer.",
+                        "Initialize the Data Chat to query the document content.",
+                        "Export structured text or JSON payloads."
+                      ] : protocol === 'reconstruction' ? [
+                        "Position the physical asset within the optical guides.",
+                        "Execute High-Fidelity Capture for structural analysis.",
+                        "Engage Neural Reconstruction to purge shadows & fix geometry.",
+                        "Assemble the restored asset into a secure PDF container."
+                      ] : [
+                        "Align your document within the visual guide markers.",
+                        "Capture the high-fidelity scan using the trigger.",
+                        "Activate Neural Reconstruction for shadow & perspective repair.",
+                        "Assemble into a multi-page PDF or export as high-end JPEG."
+                      ]}
+                      useCases={protocol === 'ocr' ? [
+                        "Data Retrieval", "Handwriting Digitization", "Code Extraction", "Rapid Translation"
+                      ] : [
+                        "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
+                      ]}
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowGuide(false)}
+                      className="w-full h-20 bg-white text-black rounded-[32px] font-black uppercase tracking-[0.4em] text-xs shadow-2xl hover:bg-emerald-500 hover:text-white transition-all"
+                    >
+                      Initialize Acquisition
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         ) : (
           <div className="relative w-full h-full flex items-center justify-center p-6">
