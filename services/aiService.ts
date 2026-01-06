@@ -51,6 +51,14 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
   } catch (err: any) {
     console.error("Backend Proxy Failure:", err);
 
+    const isRateLimit = err.message?.includes('AI_RATE_LIMIT') ||
+      err.message?.includes('429') ||
+      err.message?.toLowerCase().includes('quota exceeded');
+
+    if (isRateLimit) {
+      return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
+    }
+
     // Fallback to direct API key ONLY in local development
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 

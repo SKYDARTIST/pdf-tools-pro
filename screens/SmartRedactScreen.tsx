@@ -5,6 +5,7 @@ import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import ToolGuide from '../components/ToolGuide';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import NeuralCoolingUI from '../components/NeuralCoolingUI';
 
 const SmartRedactScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -18,6 +19,7 @@ const SmartRedactScreen: React.FC = () => {
         contact: true,
         identifiers: true
     });
+    const [isCooling, setIsCooling] = useState(false);
 
     const toggleFilter = (key: keyof typeof filters) => {
         setFilters(prev => ({ ...prev, [key]: !prev[key] }));
@@ -229,6 +231,12 @@ const SmartRedactScreen: React.FC = () => {
                 imageBase64
             );
 
+            if (response.startsWith('AI_RATE_LIMIT')) {
+                setIsCooling(true);
+                setStatus('ready');
+                return;
+            }
+
             // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
             const finalSanitized = localRegexSanitize(response);
             setRedactedContent(finalSanitized);
@@ -434,6 +442,7 @@ const SmartRedactScreen: React.FC = () => {
                     </div>
                 )}
             </div>
+            <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
         </motion.div>
     );
 };

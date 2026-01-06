@@ -117,6 +117,10 @@ CRITICAL:
                 const response = await result.response;
                 return res.status(200).json({ text: response.text() });
             } catch (err) {
+                const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
+                if (isRateLimit) {
+                    return res.status(429).json({ error: "AI_RATE_LIMIT", details: "Synapse cooling in progress." });
+                }
                 errors.push(`${modelName}: ${err.message}`);
             }
         }
@@ -126,6 +130,9 @@ CRITICAL:
             details: errors.join(" | ")
         });
     } catch (error) {
-        res.status(500).json({ error: error.message || "Protocol Failure" });
+        const isRateLimit = error.message?.includes('429') || error.message?.includes('Quota');
+        res.status(isRateLimit ? 429 : 500).json({
+            error: isRateLimit ? "AI_RATE_LIMIT" : (error.message || "Protocol Failure")
+        });
     }
 }
