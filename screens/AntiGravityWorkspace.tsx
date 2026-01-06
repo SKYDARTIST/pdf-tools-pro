@@ -479,7 +479,7 @@ const AntiGravityWorkspace: React.FC = () => {
               title: "Neural Knowledge Base",
               desc: "AI-indexed global history",
               icon: Search,
-              path: "/workspace",
+              path: "/my-files",
               color: "text-blue-500",
               tag: "SEARCH"
             },
