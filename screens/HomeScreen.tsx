@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle, Search, X
+  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
@@ -11,15 +11,9 @@ import LegalFooter from '../components/LegalFooter';
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-
   useEffect(() => {
-    if (searchQuery.trim()) {
-      setRecentFiles(FileHistoryManager.searchHistory(searchQuery));
-    } else {
-      setRecentFiles(FileHistoryManager.getRecent(10));
-    }
-  }, [searchQuery]);
+    setRecentFiles(FileHistoryManager.getRecent(10));
+  }, []);
 
   return (
     <motion.div
@@ -44,28 +38,6 @@ const HomeScreen: React.FC = () => {
         <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
           Ready for document interpretation
         </p>
-
-        {/* Neural Search Bar */}
-        <div className="pt-8 relative max-w-sm mx-auto">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <Search size={16} />
-          </div>
-          <input
-            type="text"
-            placeholder="Search Neural Knowledge Base..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl py-4 pl-12 pr-12 text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black dark:hover:text-white"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
       </motion.div>
 
       {/* Hub Core */}
