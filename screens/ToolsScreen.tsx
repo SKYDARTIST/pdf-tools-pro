@@ -15,8 +15,8 @@ const ToolsScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
 
     const tools = [
-        { title: 'Read', desc: 'Secure Sequential Reading', icon: BookOpen, path: '/reader', cat: 'popular' },
-        { title: 'Scanner', desc: 'AI Polish & Smart Naming', icon: Zap, path: '/scanner', cat: 'popular' },
+        { title: 'Read', desc: 'Secure Sequential Reading', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
+        { title: 'Scanner', desc: 'AI Polish & Smart Naming', icon: Zap, path: '/scanner?protocol=reconstruction', cat: 'popular' },
         { title: 'Image to PDF', desc: 'Convert photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
         { title: 'Merge', desc: 'Combine PDFs', icon: Combine, path: '/merge', cat: 'popular' },
         { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },
@@ -30,7 +30,7 @@ const ToolsScreen: React.FC = () => {
         { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
         { title: 'Table AI', desc: 'Neural Table Extraction', icon: FileSpreadsheet, path: '/table-extractor', cat: 'convert' },
         { title: 'Smart Redact', desc: 'Auto-PII Neutralization', icon: Shield, path: '/smart-redact', cat: 'security' },
-        { title: 'Neural OCR', desc: 'Interactive Data Chat', icon: Zap, path: '/scanner', cat: 'convert' },
+        { title: 'Neural OCR', desc: 'Interactive Data Chat', icon: Zap, path: '/scanner?protocol=ocr', cat: 'convert' },
         { title: 'Neural Diff', desc: 'Compare document versions', icon: GitMerge, path: '/neural-diff', cat: 'security' },
         { title: 'Data Extractor', desc: 'PDF to JSON/CSV feed', icon: Database, path: '/data-extractor', cat: 'convert' },
         { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },

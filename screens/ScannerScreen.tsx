@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
@@ -14,6 +14,8 @@ import NeuralPulse from '../components/NeuralPulse';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const protocol = searchParams.get('protocol');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -238,15 +240,22 @@ const ScannerScreen: React.FC = () => {
               className="absolute bottom-10 left-10 right-10"
             >
               <ToolGuide
-                title="Neural Reconstruction Protocol"
-                description="Acquire and reconstruct physical documents with AI-powered Shadow Purge technology, smart naming, and automated perspective correction."
-                steps={[
+                title={protocol === 'ocr' ? "Neural OCR Protocol" : "Neural Reconstruction Protocol"}
+                description={protocol === 'ocr' ? "Extract and interact with text data from physical assets. Convert static images into live interactive lexical streams." : "Acquire and reconstruct physical documents with AI-powered Shadow Purge technology, smart naming, and automated perspective correction."}
+                steps={protocol === 'ocr' ? [
+                  "Capture a high-fidelity image of the source text.",
+                  "Activate Neural OCR to decouple text from the visual layer.",
+                  "Initialize the Data Chat to query the document content.",
+                  "Export structured text or JSON payloads."
+                ] : [
                   "Align your document within the visual guide markers.",
                   "Capture the high-fidelity scan using the trigger.",
                   "Activate Neural Reconstruction for shadow & perspective repair.",
                   "Assemble into a multi-page PDF or export as high-end JPEG."
                 ]}
-                useCases={[
+                useCases={protocol === 'ocr' ? [
+                  "Data Retrieval", "Handwriting Digitization", "Code Extraction", "Rapid Translation"
+                ] : [
                   "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
                 ]}
               />

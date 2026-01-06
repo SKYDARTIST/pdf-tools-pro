@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import MindMapComponent from '../components/MindMapComponent';
@@ -19,6 +19,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 
 const ReaderScreen: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const protocol = searchParams.get('protocol');
     const [file, setFile] = useState<File | null>(null);
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState<number>(1);
@@ -353,22 +355,47 @@ const ReaderScreen: React.FC = () => {
                             <BookOpen size={32} />
                         </motion.div>
                         <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Reader</span>
-                        <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                     </label>
                 ) : (
                     <div className="space-y-8">
                         <ToolGuide
-                            title="Document Intelligence Protocol"
-                            description="Analyze documents via deep neural audits and strategic audio briefings."
-                            steps={[
-                                "Initialize the operational context by uploading a PDF.",
-                                "Run Neural Audit to detect risks and savings.",
-                                "Generate an Intelligence Briefing for hands-free intake.",
-                                "Synthesize mind maps and hierarchical outlines."
-                            ]}
-                            useCases={[
-                                "Legal Contracts", "Financial Statements", "Technical Papers", "Academic Research"
-                            ]}
+                            title={
+                                protocol === 'briefing' ? "Intelligence Briefing Protocol" :
+                                    protocol === 'audit' ? "Neural Audit Protocol" :
+                                        "Secure Reader Protocol"
+                            }
+                            description={
+                                protocol === 'briefing' ? "Convert complex documents into strategic high-end audio downloads. ACTIVATE the headset mode for hands-free intake." :
+                                    protocol === 'audit' ? "Deep-layer structural investigation. Identify risks, financial discrepancies, and strategic savings." :
+                                        "High-fidelity sequential data interpretation. Optimized for deep focus and long-form document absorption."
+                            }
+                            steps={
+                                protocol === 'briefing' ? [
+                                    "Initialize the operational context by uploading a PDF carrier.",
+                                    "System extracts high-fidelity lexical streams from the document.",
+                                    "Execute Synthesis to generate a strategic Intelligence Briefing podcast.",
+                                    "Stream or download the audio payload for elite mobile intake."
+                                ] : protocol === 'audit' ? [
+                                    "Initialize the operational context by uploading a PDF carrier.",
+                                    "Run Neural Audit to perform a deep-layer risk assessment.",
+                                    "AI identifies critical discrepancies, savings, and legal exposure.",
+                                    "Synthesize a comprehensive Risk Analysis report."
+                                ] : [
+                                    "Initialize the operational context by uploading a PDF carrier.",
+                                    "Configure visual parameters (Zoom, Fluid Mode) for optimal intake.",
+                                    "Use Neural Mind Mapping to project document architecture.",
+                                    "Engage with the document via High-Fidelity sequential rendering."
+                                ]
+                            }
+                            useCases={
+                                protocol === 'briefing' ? [
+                                    "Commuter Consumption", "Rapid Executive Briefing", "Mobile Data Sync", "Auditory Learning"
+                                ] : protocol === 'audit' ? [
+                                    "Legal Compliance", "Financial Auditing", "Due Diligence", "Investment Analysis"
+                                ] : [
+                                    "Deep Reading", "Technical Review", "Knowledge Acquisition", "Asset Verification"
+                                ]
+                            }
                         />
                         {/* Optimized 2-Tier Control Hub */}
                         <div className="monolith-card p-4 space-y-4 shadow-xl border-none">
@@ -727,7 +754,7 @@ const ReaderScreen: React.FC = () => {
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
             />
-        </motion.div>
+        </motion.div >
     );
 };
 

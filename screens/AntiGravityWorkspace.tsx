@@ -447,7 +447,7 @@ const AntiGravityWorkspace: React.FC = () => {
               title: "Neural Audit",
               desc: "Deep risk & savings analysis",
               icon: Shield,
-              path: "/reader",
+              path: "/reader?protocol=audit",
               color: "text-emerald-500",
               tag: "ELITE"
             },
@@ -455,7 +455,7 @@ const AntiGravityWorkspace: React.FC = () => {
               title: "Intelligence Briefing",
               desc: "Strategic audio downloads",
               icon: Headphones,
-              path: "/reader",
+              path: "/reader?protocol=briefing",
               color: "text-indigo-500",
               tag: "AUDIO"
             },
