@@ -32,9 +32,9 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
 };
 
 const defaultFilters: ScanFilters = {
-    brightness: 105,
-    contrast: 110,
-    grayscale: 100,
+    brightness: 100,
+    contrast: 100,
+    grayscale: 0,
     sharpness: 100,
     reason: "Standard optimization"
 };

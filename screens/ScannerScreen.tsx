@@ -22,6 +22,7 @@ const ScannerScreen: React.FC = () => {
   const [showConsent, setShowConsent] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+  const [scannerMode, setScannerMode] = useState<'document' | 'photo'>('photo');
 
   useEffect(() => {
     async function setupCamera() {
@@ -110,6 +111,14 @@ const ScannerScreen: React.FC = () => {
       ]);
 
       setAppliedFilters(filters);
+
+      // Force grayscale if in Document mode
+      if (scannerMode === 'document') {
+        setAppliedFilters(prev => prev ? { ...prev, grayscale: 100 } : null);
+      } else {
+        // In Photo mode, we prefer color (0), but trust AI if it strongly suggests B&W
+      }
+
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
     } catch (err) {
       console.error("Enhancement failed", err);
@@ -170,6 +179,20 @@ const ScannerScreen: React.FC = () => {
             <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Offline Acquisition</span>
           </div>
           <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
+        </div>
+        <div className="flex gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+          <button
+            onClick={() => setScannerMode('photo')}
+            className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${scannerMode === 'photo' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+          >
+            Photo
+          </button>
+          <button
+            onClick={() => setScannerMode('document')}
+            className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${scannerMode === 'document' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
+          >
+            Doc
+          </button>
         </div>
         <button onClick={() => setFlash(!flash)} className={`p-2 transition-all ${flash ? 'text-white' : 'text-white/30'}`}>
           <Zap size={22} fill={flash ? "currentColor" : "none"} />

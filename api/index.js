@@ -61,6 +61,8 @@ export default async function handler(req, res) {
                 let promptPayload = "";
                 if (type === 'naming') {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nSuggest a professional filename for this document. NO extension, max 40 chars, underscores. CONTEXT: ${documentText || prompt}`;
+                } else if (type === 'polisher') {
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nAnalyze this scan for clarity. Suggest corrective filters in JSON format: { "brightness": number (80-150), "contrast": number (80-150), "grayscale": number (0 or 100), "sharpness": number (100-150), "reason": "string" }.\n\nCRITICAL: If the image has meaningful color (photographs, color text), set "grayscale" to 0. If it is a standard black and white document, set "grayscale" to 100 for better legibility.\n\nDOCUMENT TEXT (OCR SAMPLES):\n${documentText || "No document text available."}`;
                 } else if (type === 'audio_script') {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT. \n\nRULES:\n1. START DIRECTLY with the phrase: "Welcome to Anti-Gravity."\n2. DO NOT use any markdown symbols like asterisks (**), hashes (#), or bullet points.\n3. Keep the tone conversational and professional.\n\nDOCUMENT TEXT:\n${documentText || "No document text available."}`;
                 } else if (type === 'table') {
