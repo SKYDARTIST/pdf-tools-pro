@@ -2,6 +2,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Anti-Gravity Backend v1.4 - Dynamic Model Discovery (Full Revert)
+const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. If text is provided, analyze it thoroughly before responding. Maintain a professional, technical tone.`;
+
 export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
@@ -58,7 +60,9 @@ export default async function handler(req, res) {
 
                 let promptPayload = "";
                 if (type === 'naming') {
-                    promptPayload = `Suggest a professional filename for this document. NO extension, max 40 chars, underscores. CONTEXT: ${documentText || prompt}`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nSuggest a professional filename for this document. NO extension, max 40 chars, underscores. CONTEXT: ${documentText || prompt}`;
+                } else if (type === 'audio_script') {
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT FOR A NARRATOR. FOCUS ON CORE FINDINGS.\n\nDOCUMENT TEXT:\n${documentText || "No document text available."}`;
                 } else if (type === 'table') {
                     promptPayload = `Extract tables from image/text into JSON: [{ "tableName": "Name", "headers": [], "rows": [[]] }]\nONLY JSON.`;
                 } else if (type === 'scrape') {
@@ -72,9 +76,9 @@ export default async function handler(req, res) {
                         .trim()
                         .substring(0, 10000);
 
-                    promptPayload = `Clean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nClean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
                 } else {
-                    promptPayload = `QUERY: ${prompt}\nCONTEXT: ${documentText || ""}`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
                 }
 
                 let contents = [{ text: promptPayload }];
