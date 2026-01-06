@@ -42,7 +42,7 @@ const PricingScreen: React.FC = () => {
       features: [
         '100 AI documents',
         'Never expires',
-        'Infinite BYOK Support',
+        'Multimodal Neural Sight',
         'Stacks with Pro'
       ],
       cta: 'Buy AI Pack',
