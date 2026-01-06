@@ -4,6 +4,7 @@ import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Download, Eye, EyeOff
 import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import ToolGuide from '../components/ToolGuide';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 const SmartRedactScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -40,17 +41,134 @@ const SmartRedactScreen: React.FC = () => {
         }
     };
 
-    const handleExport = () => {
+    const handleExport = (format: 'txt' | 'pdf' | 'image') => {
         if (!redactedContent) return;
-        const blob = new Blob([redactedContent], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
+        const fileName = `sanitized_${file?.name.split('.')[0]}`;
+
+        if (format === 'txt') {
+            const blob = new Blob([redactedContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else if (format === 'pdf') {
+            exportToPdf(redactedContent, fileName);
+        } else if (format === 'image') {
+            exportToImage(redactedContent, fileName);
+        }
+    };
+
+    const exportToPdf = async (text: string, fileName: string) => {
+        try {
+            const pdfDoc = await PDFDocument.create();
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            let page = pdfDoc.addPage([600, 800]);
+            const { width, height } = page.getSize();
+            const fontSize = 10;
+            const margin = 50;
+            const maxWidth = width - margin * 2;
+
+            const lines = text.split('\n');
+            let y = height - margin;
+
+            for (const line of lines) {
+                // Simple wrapping logic
+                const words = line.split(' ');
+                let currentLine = "";
+
+                for (const word of words) {
+                    const testLine = currentLine + word + " ";
+                    const testLineWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+                    if (testLineWidth > maxWidth) {
+                        page.drawText(currentLine, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+                        y -= fontSize * 1.5;
+                        currentLine = word + " ";
+
+                        if (y < margin) {
+                            page = pdfDoc.addPage([600, 800]);
+                            y = height - margin;
+                        }
+                    } else {
+                        currentLine = testLine;
+                    }
+                }
+
+                page.drawText(currentLine, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+                y -= fontSize * 1.5;
+
+                if (y < margin) {
+                    page = pdfDoc.addPage([600, 800]);
+                    y = height - margin;
+                }
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes] as any, { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("PDF Export Failed:", error);
+        }
+    };
+
+    const exportToImage = (text: string, fileName: string) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const padding = 60;
+        const fontSize = 14;
+        const lineHeight = 20;
+        const width = 800;
+
+        ctx.font = `${fontSize}px monospace`;
+        const lines: string[] = [];
+        const words = text.split('\n');
+
+        words.forEach(paragraph => {
+            const pWords = paragraph.split(' ');
+            let currentLine = "";
+            pWords.forEach(word => {
+                const testLine = currentLine + word + " ";
+                const metrics = ctx.measureText(testLine);
+                if (metrics.width > width - padding * 2) {
+                    lines.push(currentLine);
+                    currentLine = word + " ";
+                } else {
+                    currentLine = testLine;
+                }
+            });
+            lines.push(currentLine);
+        });
+
+        canvas.width = width;
+        canvas.height = lines.length * lineHeight + padding * 2;
+
+        // Draw Background
+        ctx.fillStyle = '#f9fafb';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Text
+        ctx.fillStyle = '#111827';
+        ctx.font = `${fontSize}px monospace`;
+        lines.forEach((line, i) => {
+            ctx.fillText(line, padding, padding + i * lineHeight);
+        });
+
+        const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
-        a.download = `sanitized_${file?.name.split('.')[0]}.txt`;
-        document.body.appendChild(a);
+        a.download = `${fileName}.png`;
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     };
 
     const fileToBase64 = (file: File): Promise<string> => {
@@ -81,8 +199,8 @@ const SmartRedactScreen: React.FC = () => {
             const sanitizedText = file.type === 'application/pdf' ? localRegexSanitize(contentToProcess) : contentToProcess;
 
             const prompt = file.type === 'application/pdf'
-                ? "CRITICAL SECURITY PROTOCOL: You are a high-security redaction engine. Your primary objective is to find and neutralize ALL PII. The provided text has already been filtered locally for basic patterns (emails/phones). You MUST identify and replace every instance of full names, home addresses, Social Security Numbers, Credit Card details, Passport numbers, and birth dates with [NEURAL_REDACTED]. Return the complete sanitized text stream. DO NOT LEAVE ANY SENSITIVE DATA VISIBLE."
-                : "ULTIMATE PRIVACY OVERRIDE: Inspect the provided image payload for sensitive data vectors. Perform a Deep-Layer Scan. Identify and extract all text, then IMMEDIATELY neutralize all PII including names, contact details, ID numbers, and financial data. Replace every sensitive identifier with [NEURAL_REDACTED]. Return the full sanitized transcript. ADHERE TO MAXIMUM SECURITY CLEARANCE.";
+                ? "CRITICAL SECURITY PROTOCOL: You are a high-security redaction engine. Your primary objective is to find and neutralize ALL PII. The provided text has already been filtered locally for basic patterns (emails/phones). You MUST identify and replace every instance of full names, home addresses, Social Security Numbers, Credit Card details, Passport numbers, and birth dates with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any headers, technical reports, 'Extracted Text (Original)' sections, or metadata. Output the pure sanitized stream only."
+                : "ULTIMATE PRIVACY OVERRIDE: Inspect the provided image payload for sensitive data vectors. Perform a Deep-Layer Scan. Identify and extract all text, then IMMEDIATELY neutralize all PII including names, contact details, ID numbers, and financial data. Replace every sensitive identifier with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any report markers, 'Deep-Layer Scan' headers, or summaries. Output the raw sanitized text data only. ADHERE TO MAXIMUM SECURITY CLEARANCE.";
 
             const response = await askGemini(
                 prompt,
@@ -201,7 +319,7 @@ const SmartRedactScreen: React.FC = () => {
                                             {file.type.startsWith('image/') ? 'Neural Vision has extracted and neutralized PII from the visual asset.' : 'All identified PII has been neutralized from the output stream.'}
                                         </p>
                                     </div>
-                                    <div className="flex gap-4">
+                                    <div className="flex flex-wrap justify-center gap-3">
                                         <button
                                             onClick={() => setShowPreview(!showPreview)}
                                             className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
@@ -209,13 +327,30 @@ const SmartRedactScreen: React.FC = () => {
                                             {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
                                             {showPreview ? "Hide Preview" : "Show Preview"}
                                         </button>
-                                        <button
-                                            onClick={handleExport}
-                                            className="px-6 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
-                                        >
-                                            <Download size={14} />
-                                            Export Sanitized
-                                        </button>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleExport('txt')}
+                                                className="px-4 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
+                                            >
+                                                <Download size={14} />
+                                                Text
+                                            </button>
+                                            <button
+                                                onClick={() => handleExport('pdf')}
+                                                className="px-4 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
+                                            >
+                                                <Download size={14} />
+                                                PDF
+                                            </button>
+                                            <button
+                                                onClick={() => handleExport('image')}
+                                                className="px-4 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
+                                            >
+                                                <Download size={14} />
+                                                Image
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
 
