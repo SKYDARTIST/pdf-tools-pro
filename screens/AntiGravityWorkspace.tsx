@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import NeuralPulse from '../components/NeuralPulse';
+import FileHistoryManager from '../utils/FileHistoryManager';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -123,6 +124,18 @@ const AntiGravityWorkspace: React.FC = () => {
       setDocumentContext(context);
       setChatHistory([{ role: 'bot', text: initialAnalysis }]);
       setStatus('analyzed');
+
+      // Phase 5: Knowledge Base Indexing
+      const signaturePrompt = `Generate a 1-sentence "Neural Signature" for this document for search indexing. Focus on key entities, dates, and intent. NO markdown. Payload: ${initialAnalysis.substring(0, 500)}`;
+      const neuralSignature = await askGemini(signaturePrompt, context, 'chat');
+
+      FileHistoryManager.addEntry({
+        fileName: selected.name,
+        operation: 'extract-text', // Categorized as text extraction/analysis
+        status: 'success',
+        neuralSignature: neuralSignature.replace(/\n|"/g, '')
+      });
+
       recordAIUsage(); // Record successful AI document extraction
     } catch (error) {
       console.error('Error processing PDF:', error);

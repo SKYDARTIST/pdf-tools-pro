@@ -5,6 +5,7 @@ import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Downloa
 import { useNavigate } from 'react-router-dom';
 import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
+import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
@@ -103,6 +104,11 @@ const ScannerScreen: React.FC = () => {
       return;
     }
 
+    if (!canUseAI()) {
+      navigate('/pricing');
+      return;
+    }
+
     setIsPolishing(true);
     setError(null);
     try {
@@ -122,6 +128,7 @@ const ScannerScreen: React.FC = () => {
       }
 
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
+      recordAIUsage();
     } catch (err) {
       console.error("Enhancement failed", err);
       setError("Enhancement failed. Please try again.");
@@ -285,7 +292,12 @@ const ScannerScreen: React.FC = () => {
                     <Sparkles size={14} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight">Neural Polish Applied</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight text-white">Neural Reconstruction</span>
+                      {appliedFilters.shadowPurge && (
+                        <span className="px-1.5 py-0.5 bg-violet-500 rounded text-[6px] font-black uppercase tracking-widest animate-pulse">Shadow Purge Active</span>
+                      )}
+                    </div>
                     <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate">
                       {appliedFilters.reason}
                     </p>

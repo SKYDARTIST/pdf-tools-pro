@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles } from 'lucide-react';
+import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { useNavigate } from 'react-router-dom';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
+import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import MindMapComponent from '../components/MindMapComponent';
 import { askGemini } from '../services/aiService';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
@@ -15,6 +17,7 @@ import NeuralPulse from '../components/NeuralPulse';
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const ReaderScreen: React.FC = () => {
+    const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState<number>(1);
@@ -39,6 +42,8 @@ const ReaderScreen: React.FC = () => {
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
+    const [isAuditing, setIsAuditing] = useState(false);
+    const [auditData, setAuditData] = useState<string | null>(null);
     const [outlineData, setOutlineData] = useState<string | null>(null);
     const [isOutlineMode, setIsOutlineMode] = useState(false);
 
@@ -99,6 +104,11 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
+        if (!canUseAI()) {
+            navigate('/pricing');
+            return;
+        }
+
         setIsMindMapMode(true);
         setIsFluidMode(false);
 
@@ -119,6 +129,7 @@ const ReaderScreen: React.FC = () => {
                 return;
             }
             setMindMapData(response);
+            recordAIUsage();
         } catch (error) {
             console.error("Mind Map Generation Failed:", error);
         } finally {
@@ -139,6 +150,11 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
+        if (!canUseAI()) {
+            navigate('/pricing');
+            return;
+        }
+
         if (audioScript) {
             startSpeaking(audioScript);
             return;
@@ -152,7 +168,7 @@ const ReaderScreen: React.FC = () => {
                 text = await extractTextFromPdf(buffer);
                 setFluidContent(text);
             }
-            const response = await askGemini("Convert this document into a concise, engaging 'podcast-style' audio script. START DIRECTLY with 'Welcome to Anti-Gravity.' NO markdown, NO asterisks.", text, "audio_script");
+            const response = await askGemini("Convert this document into a high-end 'Intelligence Briefing' podcast script. Act as a professional host providing a strategic download for an elite listener. Focus on clarity, tone, and key insights. START DIRECTLY with 'Welcome to Anti-Gravity.' NO markdown, NO asterisks, NO symbols.", text, "audio_script");
 
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
@@ -165,6 +181,7 @@ const ReaderScreen: React.FC = () => {
             }
 
             setAudioScript(response);
+            recordAIUsage();
             startSpeaking(response);
         } catch (error) {
             console.error("Audio Generation Failed:", error);
@@ -231,6 +248,11 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
+        if (!canUseAI()) {
+            navigate('/pricing');
+            return;
+        }
+
         setIsOutlineMode(true);
         setIsMindMapMode(false);
         setIsFluidMode(false);
@@ -251,10 +273,50 @@ const ReaderScreen: React.FC = () => {
                 return;
             }
             setOutlineData(response);
+            recordAIUsage();
         } catch (error) {
             console.error("Outline Generation Failed:", error);
         } finally {
             setIsGeneratingOutline(false);
+        }
+    };
+
+    const runNeuralAudit = async () => {
+        if (!file || isAuditing) return;
+
+        if (!hasConsent) {
+            setPendingAction(() => runNeuralAudit);
+            setShowConsent(true);
+            return;
+        }
+
+        if (!canUseAI()) {
+            navigate('/pricing');
+            return;
+        }
+
+        setIsAuditing(true);
+        setIsOutlineMode(false);
+        setIsMindMapMode(false);
+
+        try {
+            let text = fluidContent;
+            if (!text) {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer);
+                setFluidContent(text);
+            }
+            const response = await askGemini("Perform a high-level Neural Audit of this document. Flag hidden risks, suspicious clauses, math errors, or missed savings. Be direct and objective. Use professional technical tone. Output as markdown.", text, "redact");
+            if (response.startsWith('AI_RATE_LIMIT')) {
+                setIsCooling(true);
+                return;
+            }
+            setAuditData(response);
+            recordAIUsage();
+        } catch (error) {
+            console.error("Audit Failed:", error);
+        } finally {
+            setIsAuditing(false);
         }
     };
 
@@ -296,6 +358,20 @@ const ReaderScreen: React.FC = () => {
                     <div className="space-y-8">
                         {/* Optimized 2-Tier Control Hub */}
                         <div className="monolith-card p-4 space-y-4 shadow-xl border-none">
+                            {/* Tier 0: Neural Elite Protocols (AI Pack Shared) */}
+                            <div className="flex items-center gap-2">
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={runNeuralAudit}
+                                    className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${auditData || isAuditing
+                                        ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
+                                        : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10'
+                                        }`}
+                                >
+                                    <Shield size={16} fill={isAuditing ? "currentColor" : "none"} />
+                                    {isAuditing ? "Synthesizing Risk Map" : "Neural Audit Protocol"}
+                                </motion.button>
+                            </div>
                             {/* Tier 1: Neural & AI Intelligence Tools */}
                             <div className="flex flex-wrap items-center gap-2 sm:gap-1.5">
                                 <motion.button
@@ -331,8 +407,8 @@ const ReaderScreen: React.FC = () => {
                                         : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
                                 >
-                                    {isGeneratingAudio ? <Loader2 size={12} className="animate-spin" /> : isAudioPlaying ? <Square size={12} fill="currentColor" /> : <Play size={12} />}
-                                    {isAudioPlaying ? "Stop" : "Audio"}
+                                    {isGeneratingAudio ? <Loader2 size={12} className="animate-spin" /> : isAudioPlaying ? <Square size={12} fill="currentColor" /> : <Mic size={12} />}
+                                    {isAudioPlaying ? "Stop" : "Podcast"}
                                 </motion.button>
 
                             </div>
@@ -481,6 +557,37 @@ const ReaderScreen: React.FC = () => {
                                                     ))}
                                                 </div>
                                             )}
+                                        </div>
+                                    </motion.div>
+                                ) : auditData ? (
+                                    <motion.div
+                                        key="audit-view"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        className="absolute inset-0 p-8 flex flex-col bg-emerald-500/5"
+                                    >
+                                        <div className="flex justify-between items-center mb-8">
+                                            <div className="flex items-center gap-2">
+                                                <Shield size={16} className="text-emerald-500" />
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Neural Risk Analysis Report</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setAuditData(null)}
+                                                className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
+                                            >
+                                                Back to Reader
+                                            </button>
+                                        </div>
+
+                                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-[#0c0c0c] rounded-3xl border border-emerald-500/10">
+                                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                                                {auditData.split('\n').map((line, i) => (
+                                                    <p key={i} className={`mb-2 text-xs font-bold tracking-tight ${line.startsWith('!') || line.toLowerCase().includes('risk') ? 'text-rose-500' : 'opacity-80'}`}>
+                                                        {line}
+                                                    </p>
+                                                ))}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 ) : isLoadingFluid ? (

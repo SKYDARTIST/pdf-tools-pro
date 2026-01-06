@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle
+  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle, Search, X
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
@@ -11,10 +11,15 @@ import LegalFooter from '../components/LegalFooter';
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    setRecentFiles(FileHistoryManager.getRecent(5));
-  }, []);
+    if (searchQuery.trim()) {
+      setRecentFiles(FileHistoryManager.searchHistory(searchQuery));
+    } else {
+      setRecentFiles(FileHistoryManager.getRecent(10));
+    }
+  }, [searchQuery]);
 
   return (
     <motion.div
@@ -39,6 +44,28 @@ const HomeScreen: React.FC = () => {
         <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
           Ready for document interpretation
         </p>
+
+        {/* Neural Search Bar */}
+        <div className="pt-8 relative max-w-sm mx-auto">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <Search size={16} />
+          </div>
+          <input
+            type="text"
+            placeholder="Search Neural Knowledge Base..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-2xl py-4 pl-12 pr-12 text-xs font-black uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black dark:hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </motion.div>
 
       {/* Hub Core */}
@@ -129,19 +156,31 @@ const HomeScreen: React.FC = () => {
                   key={file.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + (i * 0.1) }}
+                  transition={{ delay: 0.1 }}
                   whileHover={{ x: 4 }}
-                  className="monolith-card p-5 flex items-center gap-4 cursor-pointer"
+                  className="monolith-card p-5 flex items-center gap-4 cursor-pointer relative overflow-hidden"
                 >
                   <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
                     <FileText size={20} className="text-gray-900 dark:text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-black uppercase tracking-tighter">{file.fileName}</h4>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                      {new Date(file.timestamp).toLocaleDateString()}
-                    </p>
+                    <h4 className="text-sm font-black uppercase tracking-tighter truncate">{file.fileName}</h4>
+                    {file.neuralSignature ? (
+                      <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tight line-clamp-1 mt-1">
+                        {file.neuralSignature}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        {new Date(file.timestamp).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
+                  {file.neuralSignature && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                      <Sparkles size={8} className="text-emerald-500" />
+                      <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">Neural Index</span>
+                    </div>
+                  )}
                   <CheckCircle size={16} className="text-gray-900 dark:text-white opacity-20" />
                 </motion.div>
               ))

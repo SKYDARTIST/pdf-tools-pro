@@ -6,6 +6,7 @@ export interface ScanFilters {
     contrast: number;
     grayscale: number;
     sharpness: number;
+    shadowPurge?: boolean;
     reason: string;
 }
 
@@ -36,5 +37,6 @@ const defaultFilters: ScanFilters = {
     contrast: 100,
     grayscale: 0,
     sharpness: 100,
+    shadowPurge: false,
     reason: "Standard optimization"
 };

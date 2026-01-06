@@ -9,6 +9,7 @@ export interface FileHistoryEntry {
     timestamp: number;
     status: 'success' | 'error';
     thumbnail?: string;
+    neuralSignature?: string; // Phase 5: AI-generated searchable metadata
 }
 
 const STORAGE_KEY = 'pdf-tools-history';
@@ -84,7 +85,8 @@ class FileHistoryManager {
         const history = this.getHistory();
         const lowerQuery = query.toLowerCase();
         return history.filter(entry =>
-            entry.fileName.toLowerCase().includes(lowerQuery)
+            entry.fileName.toLowerCase().includes(lowerQuery) ||
+            (entry.neuralSignature && entry.neuralSignature.toLowerCase().includes(lowerQuery))
         );
     }
 

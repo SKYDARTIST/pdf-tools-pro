@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Table, Database, Loader2, Sparkles, Check, X, AlertCircle, Download, FileJson, FileSpreadsheet } from 'lucide-react';
+import { FileUp, Table, Database, Loader2, Sparkles, Check, X, AlertCircle, Download, FileJson, FileSpreadsheet, PenTool, Flag } from 'lucide-react';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
+import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
-import { Flag } from 'lucide-react';
 
 const DataExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
     const [extractedData, setExtractedData] = useState<string>('');
-    const [format, setFormat] = useState<'json' | 'csv'>('json');
+    const [format, setFormat] = useState<'json' | 'csv' | 'markdown'>('json');
     const [error, setError] = useState<string>('');
     const [isCooling, setIsCooling] = useState(false);
     const [showConsent, setShowConsent] = useState(false);
@@ -37,27 +37,51 @@ const DataExtractorScreen: React.FC = () => {
             return;
         }
 
+        if (!canUseAI()) {
+            navigate('/pricing');
+            return;
+        }
+
         setIsExtracting(true);
         setError('');
 
         try {
-            const buffer = await file.arrayBuffer();
-            const text = await extractTextFromPdf(buffer);
+            let text = "";
+            let imageBase64 = "";
 
-            const prompt = `Extract all tabular or structured data from this document and convert it into a clean ${format.toUpperCase()} format. 
-            Ensure all headers and values are correctly mapped. 
-            DOCUMENT TEXT: ${text.substring(0, 8000)}
-            
-            Output ONLY the raw ${format.toUpperCase()} content. No explanations.`;
+            if (file.type === "application/pdf") {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer);
+            } else {
+                // Handle Image (Vision Mode)
+                imageBase64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(file);
+                });
+            }
 
-            const response = await askGemini(prompt, "Extracting structured data.", "table");
+            let prompt = "";
+            if (format === 'markdown') {
+                prompt = `Perform a high-level Neural Transcription of this ${file.type.includes('pdf') ? 'document' : 'image'}. 
+                If it is handwriting, notes, or a whiteboard, convert it into clean, structured Markdown. 
+                Focus on legibility and preserving the logical flow. 
+                Output ONLY the markdown content.`;
+            } else {
+                prompt = `Extract all tabular or structured data from this ${file.type.includes('pdf') ? 'document' : 'image'} and convert it into a clean ${format.toUpperCase()} format. 
+                Ensure all headers and values are correctly mapped. 
+                Output ONLY the raw ${format.toUpperCase()} content. No explanations.`;
+            }
+
+            const response = await askGemini(prompt, text || "Vision Extraction Protocol Active.", "table", imageBase64 || undefined);
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
             }
             setExtractedData(response);
+            recordAIUsage();
         } catch (err) {
-            setError("Extraction failed. Document may be too complex or binary.");
+            setError("Extraction failed. Visual data may be too obscured or file corrupted.");
             console.error(err);
         } finally {
             setIsExtracting(false);
@@ -65,11 +89,13 @@ const DataExtractorScreen: React.FC = () => {
     };
 
     const downloadData = () => {
-        const blob = new Blob([extractedData], { type: format === 'json' ? 'application/json' : 'text/csv' });
+        const mimeType = format === 'json' ? 'application/json' : format === 'csv' ? 'text/csv' : 'text/markdown';
+        const blob = new Blob([extractedData], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `extracted_data.${format}`;
+        const ext = format === 'markdown' ? 'md' : format;
+        a.download = `extracted_data.${ext}`;
         a.click();
     };
 
@@ -93,8 +119,8 @@ const DataExtractorScreen: React.FC = () => {
                         <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-[24px] flex items-center justify-center shadow-2xl mb-6 group-hover:scale-110 transition-transform">
                             <FileUp size={28} />
                         </div>
-                        <span className="text-sm font-black uppercase tracking-widest">Upload Data Source (PDF)</span>
-                        <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
+                        <span className="text-sm font-black uppercase tracking-widest text-center px-6">Upload Source (PDF, JPG, PNG)</span>
+                        <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
                     </label>
                 ) : (
                     <div className="space-y-8">
@@ -115,18 +141,24 @@ const DataExtractorScreen: React.FC = () => {
 
                         {!extractedData && (
                             <div className="flex flex-col items-center space-y-8">
-                                <div className="flex gap-4">
+                                <div className="flex flex-wrap justify-center gap-4">
                                     <button
                                         onClick={() => setFormat('json')}
                                         className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'json' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
                                     >
-                                        <FileJson size={14} /> JSON Format
+                                        <FileJson size={14} /> JSON Feed
                                     </button>
                                     <button
                                         onClick={() => setFormat('csv')}
                                         className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'csv' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
                                     >
-                                        <FileSpreadsheet size={14} /> CSV Format
+                                        <FileSpreadsheet size={14} /> CSV Sheet
+                                    </button>
+                                    <button
+                                        onClick={() => setFormat('markdown')}
+                                        className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'markdown' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
+                                    >
+                                        <PenTool size={14} /> Intelligence Draft
                                     </button>
                                 </div>
 
@@ -170,7 +202,7 @@ const DataExtractorScreen: React.FC = () => {
                                         className="p-3 bg-emerald-500 text-white rounded-xl shadow-lg hover:scale-110 transition-all flex items-center gap-2 mr-4"
                                     >
                                         <Download size={16} />
-                                        <span className="text-[9px] font-bold uppercase tracking-widest">Download .{format}</span>
+                                        <span className="text-[9px] font-bold uppercase tracking-widest">Download .{format === 'markdown' ? 'md' : format}</span>
                                     </button>
                                     <button
                                         onClick={() => setShowReport(true)}
