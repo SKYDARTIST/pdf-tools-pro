@@ -196,7 +196,6 @@ const AntiGravityWorkspace: React.FC = () => {
           SECURE ENCRYPTION ACTIVE
         </div>
       </div>
-
       <AnimatePresence mode="wait">
         {status === 'idle' && (
           <motion.label
@@ -328,9 +327,9 @@ const AntiGravityWorkspace: React.FC = () => {
                     </div>
                   )}
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-black/10 rounded-full border border-white/10 dark:border-black/10">
-                    <Zap size={10} className={`${canUseAI().warning ? 'text-amber-500' : 'text-yellow-400'}`} fill="currentColor" />
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${canUseAI().warning ? 'text-amber-500' : 'text-white dark:text-black'}`}>
-                      Neural Budget: {canUseAI().remaining !== undefined ? canUseAI().remaining : '∞'}
+                    <Zap size={10} className={`${canUseAI().warning ? 'text-amber-500' : 'text-neutral-500'}`} fill="currentColor" />
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${canUseAI().warning ? 'text-amber-500' : 'text-neutral-500'}`}>
+                      Neural Budget: {canUseAI().warning ? canUseAI().remaining : 'ACTIVE'}
                     </span>
                   </div>
                   <motion.button

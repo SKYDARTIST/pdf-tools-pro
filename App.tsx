@@ -33,10 +33,30 @@ import DataExtractorScreen from './screens/DataExtractorScreen';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
+import AiPackNotification from './components/AiPackNotification';
+import { getAiPackNotification, ackAiNotification } from './services/subscriptionService';
 
 const App: React.FC = () => {
   const location = useLocation();
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
+  const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
+
+  // Global AI Notification Listener
+  React.useEffect(() => {
+    // Check on mount and on location change
+    const checkNotification = () => {
+      const notification = getAiPackNotification();
+      if (notification) {
+        setActiveNotification(notification);
+      }
+    };
+
+    checkNotification();
+
+    // Also poll occasionally or listen for storage events if needed
+    const interval = setInterval(checkNotification, 2000);
+    return () => clearInterval(interval);
+  }, [location.pathname]);
 
   React.useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
@@ -117,6 +137,15 @@ const App: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      <AiPackNotification
+        message={activeNotification?.message || null}
+        type={activeNotification?.type || null}
+        onClose={() => {
+          ackAiNotification();
+          setActiveNotification(null);
+        }}
+      />
     </div>
   );
 };

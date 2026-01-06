@@ -16,6 +16,7 @@ export interface UserSubscription {
     lastAiWeeklyReset: string; // ISO date
     lastAiMonthlyReset: string; // ISO date
     purchaseToken?: string;
+    lastNotifiedCredits?: number;
 }
 
 const STORAGE_KEY = 'pdf_tools_subscription';
@@ -114,6 +115,43 @@ export const isNearAiLimit = (): boolean => {
     return false;
 };
 
+// Get the latest notification message if a milestone is hit
+export const getAiPackNotification = (): { message: string; type: 'milestone' | 'warning' | 'exhausted' } | null => {
+    const subscription = getSubscription();
+    // Only notify if user actually has/had an AI pack
+    if (subscription.aiPackCredits === undefined && (subscription.lastNotifiedCredits === undefined || subscription.lastNotifiedCredits === 0)) {
+        return null;
+    }
+
+    const credits = subscription.aiPackCredits || 0;
+    const lastNotified = subscription.lastNotifiedCredits ?? 101;
+
+    // Don't notify if we haven't consumed anything since last notification
+    if (credits === lastNotified) return null;
+
+    if (credits === 0 && lastNotified > 0) {
+        return { message: "Neural Pack Exhausted. Synchronize more credits to continue AI operations.", type: 'exhausted' };
+    }
+
+    if (credits <= 10 && credits > 0 && lastNotified > credits) {
+        return { message: `Neural Pack Depleting: ${credits} authorizations remaining.`, type: 'warning' };
+    }
+
+    // Every 10 milestone
+    if (credits > 10 && credits % 10 === 0 && lastNotified > credits) {
+        return { message: `Neural Authorization Status: ${credits} credits remaining.`, type: 'milestone' };
+    }
+
+    return null;
+};
+
+// Acknowledge a notification to prevent re-rendering
+export const ackAiNotification = (): void => {
+    const subscription = getSubscription();
+    subscription.lastNotifiedCredits = subscription.aiPackCredits;
+    saveSubscription(subscription);
+};
+
 // Check if user can use AI
 export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: number; warning?: boolean } => {
     const subscription = getSubscription();
@@ -166,6 +204,13 @@ export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: num
 
     // Premium and Lifetime have unlimited
     return { allowed: true };
+};
+
+// Check if a specific credit level is a milestone the user should be notified about
+const isMilestone = (credits: number): boolean => {
+    if (credits === 0) return true;
+    if (credits <= 10) return true;
+    return credits % 10 === 0;
 };
 
 // Record a PDF operation
