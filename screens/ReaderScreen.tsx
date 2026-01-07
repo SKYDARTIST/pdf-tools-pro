@@ -156,16 +156,17 @@ const ReaderScreen: React.FC = () => {
             - Root: The absolute central concept (MAX 1).
             - Level 1: Primary strategic pillars (MAX 5).
             - Level 2: Critical evidentiary sub-nodes (MAX 3 per pillar).
+            - LABEL LIMIT: Each node MUST be between 1-3 words maximum. No sentences.
             
             OUTPUT FORMAT:
             A simple indented list using dashes (-). No bolding, no extra text, no symbols except dashes for hierarchy.
             
             Example:
-            Central Concept
-            - First Pillar
-              - Sub-point A
-              - Sub-point B
-            - Second Pillar
+            Quantum Computing
+            - Superposition
+              - Qubit States
+              - Vector Mapping
+            - Entanglement
             `;
 
             const response = await askGemini(prompt, text, "mindmap");
