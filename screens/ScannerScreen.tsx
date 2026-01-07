@@ -168,15 +168,9 @@ const ScannerScreen: React.FC = () => {
 
       console.log('🎨 AI Returned Filters:', filters);
 
-      // Force grayscale if in Document mode
-      if (scannerMode === 'document') {
-        const updatedFilters = { ...filters, grayscale: 100 };
-        console.log('📄 Document Mode - Forcing Grayscale:', updatedFilters);
-        setAppliedFilters(updatedFilters);
-      } else {
-        console.log('📸 Photo Mode - Using AI Filters:', filters);
-        setAppliedFilters(filters);
-      }
+      // Apply filters from AI (color is always preserved via polisherService)
+      console.log(`📸 ${scannerMode === 'document' ? 'Document' : 'Photo'} Mode - Using AI Filters:`, filters);
+      setAppliedFilters(filters);
 
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
       recordAIUsage();
