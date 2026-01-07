@@ -27,12 +27,12 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
             if (filters.brightness === 100 && filters.contrast === 100 && filters.grayscale === 0) {
                 console.warn('⚠️ AI returned neutral values, applying intelligent defaults');
                 return {
-                    brightness: 110,
-                    contrast: 125,
+                    brightness: 115,
+                    contrast: 140,
                     grayscale: 0, // Keep color by default
-                    sharpness: 115,
+                    sharpness: 120,
                     shadowPurge: false,
-                    reason: "Auto-enhanced: Brightness and contrast boost"
+                    reason: "Auto-enhanced: Professional brightness and contrast boost"
                 };
             }
 
@@ -48,10 +48,10 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
 };
 
 const defaultFilters: ScanFilters = {
-    brightness: 110,
-    contrast: 125,
+    brightness: 115,
+    contrast: 140,
     grayscale: 0, // Keep color by default
-    sharpness: 115,
+    sharpness: 120,
     shadowPurge: false,
-    reason: "Standard enhancement"
+    reason: "Professional enhancement"
 };
