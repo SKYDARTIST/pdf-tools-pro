@@ -13,15 +13,15 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
     const content = {
         audit: {
             title: "Neural Audit Protocol",
-            subtitle: "Deep-Layer Structural Investigation",
-            description: "An advanced AI-driven scanner that identifies hidden risks, financial discrepancies, and strategic savings within any document.",
+            subtitle: "Structural & Financial Investigation",
+            description: "Advanced AI-driven analysis designed for High-Stakes assets (Contracts, Invoices, Legal Filings). It identifies hidden risks, math discrepancies, and strategic savings without modifying your original file.",
             icon: <Shield size={24} className="text-emerald-500" />,
             color: "emerald",
             features: [
+                "Target: Legal Contracts, Commercial Invoices, Expense Reports.",
                 "Risk Identification: Flag legal loopholes and dangerous clauses.",
                 "Financial Audit: Detect math errors and inconsistent billing.",
-                "Strategic Savings: Identify areas for cost reduction.",
-                "On-Device Cleaning: Scrubs PII before processing."
+                "Logic Mapping: Identify structural gaps in business proposals."
             ]
         },
         briefing: {

@@ -362,7 +362,19 @@ const ReaderScreen: React.FC = () => {
                 text = await extractTextFromPdf(buffer);
                 setFluidContent(text);
             }
-            const response = await askGemini("Perform a high-level Neural Audit of this document. Flag hidden risks, suspicious clauses, math errors, or missed savings. Be direct and objective. Use professional technical tone. Output as markdown.", text, "redact");
+            const response = await askGemini(`
+Perform a high-level Neural Audit of this high-stakes document. 
+Identify hidden risks, financial discrepancies, and legal exposure. 
+
+REPORT STRUCTURE:
+1. ### [SCOPE OF ANALYSIS]
+   - List exactly what parameters were scanned (e.g., Clause Consistency, Mathematical Accuracy, Termination Risks).
+2. ### [CRITICAL FINDINGS]
+   - Flag high-risk items with a "!" prefix.
+3. ### [STRATEGIC OPPORTUNITIES]
+   - Suggest potential savings or logic improvements.
+
+Be direct and objective. Use a professional technical tone. Output as markdown.`, text, "redact");
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
@@ -724,11 +736,19 @@ const ReaderScreen: React.FC = () => {
 
                                             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-[#0c0c0c] rounded-3xl border border-emerald-500/10">
                                                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                                                    {auditData.split('\n').map((line, i) => (
-                                                        <p key={i} className={`mb-2 text-xs font-bold tracking-tight ${line.startsWith('!') || line.toLowerCase().includes('risk') ? 'text-rose-500' : 'opacity-80'}`}>
-                                                            {line}
-                                                        </p>
-                                                    ))}
+                                                    {auditData.split('\n').map((line, i) => {
+                                                        const isHeader = line.startsWith('#');
+                                                        const isRisk = line.startsWith('!') || line.toLowerCase().includes('risk');
+                                                        return (
+                                                            <p key={i} className={`
+                                                                mb-2 text-xs font-bold tracking-tight
+                                                                ${isHeader ? 'text-gray-900 dark:text-white border-b border-black/5 dark:border-white/5 pb-1 mt-4' : 'opacity-80'}
+                                                                ${isRisk ? 'text-rose-600 dark:text-rose-500' : ''}
+                                                            `}>
+                                                                {line.replace(/^#+\s*/, '')}
+                                                            </p>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         </motion.div>
