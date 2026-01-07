@@ -476,14 +476,6 @@ const AntiGravityWorkspace: React.FC = () => {
               tag: "REPAIR"
             },
             {
-              title: "Neural Knowledge Base",
-              desc: "AI-indexed global history",
-              icon: Search,
-              path: "/my-files",
-              color: "text-blue-500",
-              tag: "SEARCH"
-            },
-            {
               title: "Neural Redact",
               desc: "Vision-based PII obscuring",
               icon: EyeOff,
