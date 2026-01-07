@@ -106,8 +106,15 @@ CRITICAL:
                     DOCUMENT TEXT:
                     ${documentText || "No context provided."}`;
                 } else if (type === 'table') {
-                    // v1.7: Respect the frontend prompt for more versatile extraction (Handwriting, JSON, etc.)
-                    promptPayload = prompt || `Extract all structured data from image/text into JSON format. ONLY output the raw JSON.`;
+                    // v2.0: Properly structure extraction prompts to prevent prompt leak
+                    const extractionInstruction = prompt || `Extract all structured data from this document into JSON format. Output ONLY the raw JSON.`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}
+
+EXTRACTION TASK:
+${extractionInstruction}
+
+DOCUMENT TO ANALYZE:
+${documentText || "No text content - analyzing image only."}`;
                 } else if (type === 'scrape') {
                     // Fetch inside the loop to allow model retries
                     const scrapeResponse = await fetch(prompt.trim());
@@ -121,42 +128,42 @@ CRITICAL:
 
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nClean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
                 } else {
-                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
+                promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
                 }
 
-                let contents = [{ text: promptPayload }];
-                if (image) {
-                    const images = Array.isArray(image) ? image : [image];
-                    images.forEach(img => {
-                        contents.push({
-                            inlineData: {
-                                data: img.includes('base64,') ? img.split('base64,')[1] : img,
-                                mimeType
-                            }
+                    let contents = [{ text: promptPayload }];
+                    if (image) {
+                        const images = Array.isArray(image) ? image : [image];
+                        images.forEach(img => {
+                            contents.push({
+                                inlineData: {
+                                    data: img.includes('base64,') ? img.split('base64,')[1] : img,
+                                    mimeType
+                                }
+                            });
                         });
-                    });
-                }
+                    }
 
-                const result = await model.generateContent(contents);
-                const response = await result.response;
-                return res.status(200).json({ text: response.text() });
-            } catch (err) {
-                const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
-                if (isRateLimit) {
-                    return res.status(429).json({ error: "AI_RATE_LIMIT", details: "Synapse cooling in progress." });
+                    const result = await model.generateContent(contents);
+                    const response = await result.response;
+                    return res.status(200).json({ text: response.text() });
+                } catch (err) {
+                    const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
+                    if (isRateLimit) {
+                        return res.status(429).json({ error: "AI_RATE_LIMIT", details: "Synapse cooling in progress." });
+                    }
+                    errors.push(`${modelName}: ${err.message}`);
                 }
-                errors.push(`${modelName}: ${err.message}`);
             }
-        }
 
         return res.status(500).json({
-            error: "Neural Sync Failed.",
-            details: errors.join(" | ")
-        });
-    } catch (error) {
-        const isRateLimit = error.message?.includes('429') || error.message?.includes('Quota');
-        res.status(isRateLimit ? 429 : 500).json({
-            error: isRateLimit ? "AI_RATE_LIMIT" : (error.message || "Protocol Failure")
-        });
+                error: "Neural Sync Failed.",
+                details: errors.join(" | ")
+            });
+        } catch (error) {
+            const isRateLimit = error.message?.includes('429') || error.message?.includes('Quota');
+            res.status(isRateLimit ? 429 : 500).json({
+                error: isRateLimit ? "AI_RATE_LIMIT" : (error.message || "Protocol Failure")
+            });
+        }
     }
-}
