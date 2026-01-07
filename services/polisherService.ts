@@ -8,6 +8,10 @@ export interface ScanFilters {
     sharpness: number;
     shadowPurge?: boolean;
     reason: string;
+    // Advanced reconstruction features
+    perspectiveCorrection?: boolean;
+    autoCrop?: boolean;
+    textEnhancement?: boolean;
 }
 
 /**
@@ -72,7 +76,10 @@ export const getReconstructionProtocol = async (sampleText?: string, imageBase64
                 grayscale: 0,
                 sharpness: Math.min(150, filters.sharpness + 30),
                 shadowPurge: true, // Always enable shadow removal
-                reason: "Neural Reconstruction: Aggressive shadow removal + perspective correction"
+                perspectiveCorrection: true, // Enable perspective correction
+                autoCrop: true, // Enable auto-crop
+                textEnhancement: true, // Enable text enhancement
+                reason: "Neural Reconstruction: Perspective correction + shadow removal + text enhancement"
             };
         } catch (parseErr) {
             console.error("Reconstruction Parse Error:", parseErr);
@@ -99,5 +106,8 @@ const reconstructionDefaults: ScanFilters = {
     grayscale: 0,
     sharpness: 140,
     shadowPurge: true,
-    reason: "Neural Reconstruction: Professional document restoration"
+    perspectiveCorrection: true,
+    autoCrop: true,
+    textEnhancement: true,
+    reason: "Neural Reconstruction: Professional document restoration with perspective correction"
 };

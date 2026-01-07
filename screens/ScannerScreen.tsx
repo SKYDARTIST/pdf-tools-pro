@@ -81,62 +81,95 @@ const ScannerScreen: React.FC = () => {
 
   const bakeFilters = (imageData: string, filters: ScanFilters): Promise<string> => {
     console.log('🔥 BAKING FILTERS:', filters);
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
+      img.onload = async () => {
+        let canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          // Draw the original image first
-          ctx.drawImage(img, 0, 0);
+        let ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(imageData);
+          return;
+        }
 
-          // Get pixel data for manipulation
-          const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imageDataObj.data;
+        // Draw the original image first
+        ctx.drawImage(img, 0, 0);
 
-          // Convert filter percentages to multipliers
-          const brightnessFactor = filters.brightness / 100;
-          const contrastFactor = filters.contrast / 100;
-          const grayscaleFactor = filters.grayscale / 100;
+        // Step 1: Apply advanced processing if enabled (reconstruction mode)
+        if (filters.perspectiveCorrection || filters.autoCrop || filters.textEnhancement) {
+          const { detectDocumentEdges, perspectiveTransform, enhanceText } = await import('../utils/imageProcessing');
 
-          // Apply pixel-level transformations
-          for (let i = 0; i < data.length; i += 4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
+          // Perspective correction and auto-crop
+          if (filters.perspectiveCorrection || filters.autoCrop) {
+            const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const corners = detectDocumentEdges(imageDataObj);
 
-            // Apply grayscale if needed
-            if (grayscaleFactor > 0) {
-              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-              r = r * (1 - grayscaleFactor) + gray * grayscaleFactor;
-              g = g * (1 - grayscaleFactor) + gray * grayscaleFactor;
-              b = b * (1 - grayscaleFactor) + gray * grayscaleFactor;
+            if (corners) {
+              console.log('📐 Applying perspective correction...');
+              canvas = perspectiveTransform(canvas, corners);
+              ctx = canvas.getContext('2d');
+              if (!ctx) {
+                resolve(imageData);
+                return;
+              }
             }
-
-            // Apply contrast (centered around 128)
-            r = ((r - 128) * contrastFactor) + 128;
-            g = ((g - 128) * contrastFactor) + 128;
-            b = ((b - 128) * contrastFactor) + 128;
-
-            // Apply brightness
-            r = r * brightnessFactor;
-            g = g * brightnessFactor;
-            b = b * brightnessFactor;
-
-            // Clamp values to 0-255 range
-            data[i] = Math.max(0, Math.min(255, r));
-            data[i + 1] = Math.max(0, Math.min(255, g));
-            data[i + 2] = Math.max(0, Math.min(255, b));
           }
 
-          // Put the modified pixel data back
-          ctx.putImageData(imageDataObj, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.9));
-        } else {
-          resolve(imageData);
+          // Text enhancement
+          if (filters.textEnhancement) {
+            console.log('📝 Applying text enhancement...');
+            canvas = enhanceText(canvas);
+            ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(imageData);
+              return;
+            }
+          }
         }
+
+        // Step 2: Get pixel data for standard filter manipulation
+        const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageDataObj.data;
+
+        // Convert filter percentages to multipliers
+        const brightnessFactor = filters.brightness / 100;
+        const contrastFactor = filters.contrast / 100;
+        const grayscaleFactor = filters.grayscale / 100;
+
+        // Apply pixel-level transformations
+        for (let i = 0; i < data.length; i += 4) {
+          let r = data[i];
+          let g = data[i + 1];
+          let b = data[i + 2];
+
+          // Apply grayscale if needed
+          if (grayscaleFactor > 0) {
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = r * (1 - grayscaleFactor) + gray * grayscaleFactor;
+            g = g * (1 - grayscaleFactor) + gray * grayscaleFactor;
+            b = b * (1 - grayscaleFactor) + gray * grayscaleFactor;
+          }
+
+          // Apply contrast (centered around 128)
+          r = ((r - 128) * contrastFactor) + 128;
+          g = ((g - 128) * contrastFactor) + 128;
+          b = ((b - 128) * contrastFactor) + 128;
+
+          // Apply brightness
+          r = r * brightnessFactor;
+          g = g * brightnessFactor;
+          b = b * brightnessFactor;
+
+          // Clamp values to 0-255 range
+          data[i] = Math.max(0, Math.min(255, r));
+          data[i + 1] = Math.max(0, Math.min(255, g));
+          data[i + 2] = Math.max(0, Math.min(255, b));
+        }
+
+        // Put the modified pixel data back
+        ctx.putImageData(imageDataObj, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
       };
       img.src = imageData;
     });
