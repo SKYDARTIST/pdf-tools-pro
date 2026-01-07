@@ -18,6 +18,7 @@ import NeuralPulse from '../components/NeuralPulse';
 import ToolGuide from '../components/ToolGuide';
 import MindMapSettingsModal from '../components/MindMapSettingsModal';
 import NeuralProtocolBrief from '../components/NeuralProtocolBrief';
+import BriefingSettingsModal from '../components/BriefingSettingsModal';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -58,6 +59,7 @@ const ReaderScreen: React.FC = () => {
     const [isOutlineMode, setIsOutlineMode] = useState(false);
     const [showBrief, setShowBrief] = useState(false);
     const [briefType, setBriefType] = useState<'audit' | 'briefing' | 'reader'>('reader');
+    const [showBriefingSettings, setShowBriefingSettings] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -189,7 +191,7 @@ const ReaderScreen: React.FC = () => {
         }
     };
 
-    const toggleAudioNarrator = async () => {
+    const toggleAudioNarrator = async (settings?: { range: string; focus: string }) => {
         if (isAudioPlaying) {
             window.speechSynthesis.cancel();
             setIsAudioPlaying(false);
@@ -197,7 +199,7 @@ const ReaderScreen: React.FC = () => {
         }
 
         if (!hasConsent) {
-            setPendingAction(() => toggleAudioNarrator);
+            setPendingAction(() => () => toggleAudioNarrator(settings));
             setShowConsent(true);
             return;
         }
@@ -209,20 +211,49 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
-        if (audioScript) {
+        if (audioScript && !settings) {
             startSpeaking(audioScript);
             return;
         }
 
+        if (!settings && numPages > 1) {
+            setShowBriefingSettings(true);
+            return;
+        }
+
+        setShowBriefingSettings(false);
         setIsGeneratingAudio(true);
         try {
-            let text = fluidContent;
-            if (!text) {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer);
-                setFluidContent(text);
+            let text = "";
+            let startPage = 1;
+            let endPage = numPages;
+
+            if (settings?.range) {
+                const parts = settings.range.split('-').map(p => parseInt(p.trim()));
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    startPage = Math.max(1, parts[0]);
+                    endPage = Math.min(parts[1], numPages);
+                }
             }
-            const response = await askGemini("Convert this document into a high-end 'Intelligence Briefing' podcast script. Act as a professional host providing a strategic download for an elite listener. Focus on clarity, tone, and key insights. START DIRECTLY with 'Welcome to Anti-Gravity.' NO markdown, NO asterisks, NO symbols.", text, "audio_script");
+
+            const buffer = await file.arrayBuffer();
+            text = await extractTextFromPdf(buffer, startPage, endPage);
+
+            const prompt = `Convert this high-stakes intelligence context into a professional podcast script.
+            Target Range: ${settings?.range || "Full Document"}.
+            Focus: ${settings?.focus || "Strategic summary and key structural insights"}.
+            
+            ROLE: Act as a professional intelligence host. Providing a high-end strategic download.
+            TONE: Elite, objective, clear.
+            
+            RULES:
+            - START DIRECTLY with 'Welcome to Anti-Gravity.'
+            - Focus on clarity and narrative flow.
+            - NO markdown symbols, NO asterisks, NO formatting characters.
+            - Length: Optimized for a 2-3 minute briefing.
+            `;
+
+            const response = await askGemini(prompt, text, "audio_script");
 
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
@@ -511,7 +542,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                     <div className="flex items-center gap-2">
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
-                                            onClick={toggleAudioNarrator}
+                                            onClick={() => toggleAudioNarrator()}
                                             className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${isAudioPlaying
                                                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
                                                 : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10'
@@ -900,6 +931,12 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                 isOpen={showBrief}
                 onClose={() => setShowBrief(false)}
                 type={briefType}
+            />
+            <BriefingSettingsModal
+                isOpen={showBriefingSettings}
+                onClose={() => setShowBriefingSettings(false)}
+                numPages={numPages}
+                onConfirm={(settings) => toggleAudioNarrator(settings)}
             />
         </motion.div >
     );
