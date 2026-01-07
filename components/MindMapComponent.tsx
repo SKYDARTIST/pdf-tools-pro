@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Download, Loader2 } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
 interface MindMapNode {
     id: string;
@@ -18,11 +19,48 @@ interface MindMapProps {
 const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
     const [scale, setScale] = React.useState(1);
     const [isDragging, setIsDragging] = React.useState(false);
+    const [isExporting, setIsExporting] = useState(false);
+    const mapRef = useRef<HTMLDivElement>(null);
 
     const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
-    const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
+    const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.1)); // Expanded zoom out
     const handleReset = () => {
         setScale(1);
+    };
+
+    const handleExport = async () => {
+        if (!mapRef.current) return;
+        setIsExporting(true);
+        try {
+            // Temporarily reset scale for high-quality export
+            const originalScale = scale;
+            setScale(1.5); // Higher res export
+
+            // Wait for scale transition if any (though we don't have one on scale state directly, 
+            // framer-motion might need a tick)
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const dataUrl = await toPng(mapRef.current, {
+                backgroundColor: '#000000',
+                quality: 1,
+                pixelRatio: 2,
+                filter: (node) => {
+                    // Filter out UI buttons from export
+                    return !(node instanceof HTMLElement && node.classList.contains('z-10'));
+                }
+            });
+
+            const link = document.createElement('a');
+            link.download = `neural-mindmap-${Date.now()}.png`;
+            link.href = dataUrl;
+            link.click();
+
+            setScale(originalScale);
+        } catch (error) {
+            console.error('Export failed:', error);
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     // Optimized parser and layout engine for radial distribution
@@ -94,7 +132,10 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
     }, [data]);
 
     return (
-        <div className="w-full h-full min-h-[600px] bg-black/5 dark:bg-white/5 rounded-[40px] relative overflow-hidden p-0 cursor-grab active:cursor-grabbing flex items-center justify-center">
+        <div
+            ref={mapRef}
+            className="w-full h-full min-h-[600px] bg-black rounded-[40px] relative overflow-hidden p-0 cursor-grab active:cursor-grabbing flex items-center justify-center border border-white/5"
+        >
             {/* The actual draggable viewport */}
             <motion.div
                 drag
@@ -133,7 +174,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                                 initial={{ pathLength: 0, opacity: 0 }}
                                 animate={{ pathLength: 1, opacity: 0.2 }}
                                 transition={{ duration: 1.5 }}
-                                className="text-black dark:text-white"
+                                className="text-white"
                             />
                         );
                     })}
@@ -150,7 +191,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                                 cx={node.x}
                                 cy={node.y}
                                 r={node.id === 'root' ? 65 : 45}
-                                className={`${node.id === 'root' ? 'fill-black dark:fill-white' : 'fill-white dark:fill-black border-2 border-black/10 dark:border-white/10'}`}
+                                className={`${node.id === 'root' ? 'fill-white' : 'fill-black border-2 border-white/20'}`}
                             />
                             <foreignObject
                                 x={node.x - 90}
@@ -160,7 +201,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                                 style={{ pointerEvents: 'none' }}
                             >
                                 <div className="w-full h-full flex items-center justify-center p-3">
-                                    <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight text-center ${node.id === 'root' ? 'text-white dark:text-black' : 'text-gray-900 dark:text-white'}`}>
+                                    <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight text-center ${node.id === 'root' ? 'text-black' : 'text-white'}`}>
                                         {node.text}
                                     </span>
                                 </div>
@@ -174,38 +215,46 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             <div className="absolute top-10 right-10 flex flex-col gap-2 z-10">
                 <button
                     onClick={handleZoomIn}
-                    className="p-4 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
+                    className="p-4 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl hover:bg-white/20 transition-all active:scale-95 text-white"
                 >
-                    <ZoomIn className="w-5 h-5 text-black dark:text-white" />
+                    <ZoomIn className="w-5 h-5" />
                 </button>
                 <button
                     onClick={handleZoomOut}
-                    className="p-4 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
+                    className="p-4 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl hover:bg-white/20 transition-all active:scale-95 text-white"
                 >
-                    <ZoomOut className="w-5 h-5 text-black dark:text-white" />
+                    <ZoomOut className="w-5 h-5" />
                 </button>
                 <button
                     onClick={handleReset}
-                    className="p-4 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
+                    className="p-4 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl hover:bg-white/20 transition-all active:scale-95 text-white"
                 >
-                    <RotateCcw className="w-5 h-5 text-black dark:text-white" />
+                    <RotateCcw className="w-5 h-5" />
+                </button>
+                <div className="w-full h-px bg-white/10 my-1" />
+                <button
+                    onClick={handleExport}
+                    disabled={isExporting}
+                    className="p-4 bg-emerald-500/20 backdrop-blur-xl border border-emerald-500/30 rounded-2xl shadow-xl hover:bg-emerald-500/30 transition-all active:scale-95 text-emerald-400 disabled:opacity-50"
+                >
+                    {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                 </button>
             </div>
 
             {/* Instruction Banner */}
-            <div className="absolute top-10 left-10 pointer-events-none">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500/40">Neural Plane Control: Active</span>
+            <div className="absolute top-10 left-10 pointer-events-none z-10">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Neural Plane Control: Active</span>
             </div>
 
             {/* Legend */}
-            <div className="absolute bottom-10 left-10 flex flex-col gap-3 p-6 bg-black/5 dark:bg-white/5 rounded-[30px] backdrop-blur-md z-10">
+            <div className="absolute bottom-10 left-10 flex flex-col gap-3 p-6 bg-white/5 border border-white/10 rounded-[30px] backdrop-blur-md z-10">
                 <div className="flex items-center gap-3">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Neural Sync Status: Active</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Neural Sync Status: Active</span>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Structural Integrity: Optimized</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/50">Structural Integrity: Optimized</span>
                 </div>
             </div>
         </div>

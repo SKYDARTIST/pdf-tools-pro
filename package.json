@@ -18,6 +18,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "framer-motion": "^12.23.26",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^0.562.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.530",
