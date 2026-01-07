@@ -468,14 +468,6 @@ const AntiGravityWorkspace: React.FC = () => {
               tag: "VISION"
             },
             {
-              title: "Neural Reconstruction",
-              desc: "AI-powered scanner repair",
-              icon: Scan,
-              path: "/scanner?protocol=reconstruction",
-              color: "text-amber-500",
-              tag: "REPAIR"
-            },
-            {
               title: "Neural Redact",
               desc: "Vision-based PII obscuring",
               icon: EyeOff,
