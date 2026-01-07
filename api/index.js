@@ -176,61 +176,23 @@ ${documentText || "No text content - analyzing image only."}`;
                     });
                 }
 
-                // v1.8: Fast Guard - 5s timeout for visuals to ensure snappy demo
-                let result;
-                if (type === 'visual') {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    try {
-                        // Use a promise race for reliable timeout
-                        result = await Promise.race([
-                            model.generateContent(contents),
-                            new Promise((_, reject) => setTimeout(() => reject(new Error("NEURAL_TIMEOUT")), 5000))
-                        ]);
-                        clearTimeout(timeoutId);
-                    } catch (err) {
-                        if (err.message === "NEURAL_TIMEOUT" || err.name === 'AbortError') {
-                            console.log("⏱️ Neural Visual Timeout: Triggering Simulation.");
-                            throw new Error("NEURAL_TIMEOUT");
-                        }
-                        throw err;
-                    }
-                } else {
-                    result = await model.generateContent(contents);
-                }
-
+                const result = await model.generateContent(contents);
                 const response = await result.response;
-
-                // v1.6: Dynamic Response Handling
                 const text = response.text();
 
-                // Refined Safety Check (only if result is text)
-                const lowerText = text.toLowerCase();
-                if (lowerText.length < 200 && (lowerText.includes("i can't help") || lowerText.includes("safety"))) {
-                    return res.status(400).json({ error: "Safety Violation: Asset discarded by Neural Guard." });
+                // Safety check for visual content
+                if (type === 'visual') {
+                    const lowerText = text.toLowerCase();
+                    if (lowerText.length < 200 && (lowerText.includes("i can't help") || lowerText.includes("safety"))) {
+                        return res.status(400).json({ error: "Safety Violation: Asset discarded by Neural Guard." });
+                    }
                 }
 
                 return res.status(200).json({ text: text });
 
             } catch (err) {
-                if (err.message === "NEURAL_TIMEOUT") break;
                 errors.push(`${modelName}: ${err.message}`);
             }
-        }
-
-        // v1.7: NEURAL_SIMULATION FALLBACK (High-Relevance & High-Speed)
-        if (type === 'visual') {
-            const lowerPrompt = prompt.toLowerCase();
-
-            // Use keyword search for ALL prompts - more reliable than hardcoded IDs
-            // This ensures images always load and are contextually relevant
-            const keywords = prompt.split(' ').filter(w => w.length > 2).slice(0, 4).join(',');
-            const query = encodeURIComponent(keywords);
-
-            // Use source.unsplash.com for reliable, fast, contextual images
-            const finalUrl = `https://source.unsplash.com/1024x1024/?${query}&sig=${Date.now()}`;
-
-            return res.status(200).json({ text: finalUrl, note: "Neural Intelligence Active." });
         }
 
         return res.status(500).json({
