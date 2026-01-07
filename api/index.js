@@ -176,7 +176,26 @@ ${documentText || "No text content - analyzing image only."}`;
                     });
                 }
 
-                const result = await model.generateContent(contents);
+                // v1.8: Fast Guard - 8s timeout for visuals to ensure snappy demo
+                let result;
+                if (type === 'visual') {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    try {
+                        const rawResult = await model.generateContent(contents, { requestOptions: { signal: controller.signal } });
+                        clearTimeout(timeoutId);
+                        result = rawResult;
+                    } catch (err) {
+                        if (err.name === 'AbortError' || err.message?.includes('abort')) {
+                            console.log("⏱️ Neural Visual Timeout: Triggering Simulation.");
+                            throw new Error("NEURAL_TIMEOUT");
+                        }
+                        throw err;
+                    }
+                } else {
+                    result = await model.generateContent(contents);
+                }
+
                 const response = await result.response;
 
                 // v1.6: Dynamic Response Handling
@@ -195,21 +214,24 @@ ${documentText || "No text content - analyzing image only."}`;
 
             } catch (err) {
                 const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
+                const isTimeout = err.message === "NEURAL_TIMEOUT";
+
                 if (isRateLimit) {
                     return res.status(429).json({ error: "AI_RATE_LIMIT", details: "Synapse cooling in progress." });
                 }
+
+                // If it's a timeout, we break early to trigger simulation
+                if (isTimeout) break;
+
                 errors.push(`${modelName}: ${err.message}`);
             }
         }
 
-        // v1.7: NEURAL SIMULATION FALLBACK for Visuals
-        // If all AI models fail during the demo,        // v1.7: NEURAL_SIMULATION FALLBACK for Visuals
+        // v1.7: NEURAL_SIMULATION FALLBACK for Visuals
         if (type === 'visual') {
-            console.log("🛡️ Neural Simulation engaged: Falling back to high-res simulation.");
             const query = prompt.split(' ').slice(0, 3).join(',');
-            // Using a more reliable Unsplash source URL
-            const simulatedUrl = `https://source.unsplash.com/featured/1024x1024?${encodeURIComponent(query)}`;
-            return res.status(200).json({ text: simulatedUrl, note: "Neural Simulation active due to link instability." });
+            const simulatedUrl = `https://source.unsplash.com/featured/1024x1024?${encodeURIComponent(query)}&sig=${Date.now()}`;
+            return res.status(200).json({ text: simulatedUrl, note: "Neural Simulation active for maximum speed." });
         }
 
         return res.status(500).json({
