@@ -75,6 +75,14 @@ const NeuralVisualScreen: React.FC = () => {
     const [recentDocs, setRecentDocs] = useState<FileHistoryEntry[]>([]);
     const [useContext, setUseContext] = useState(false);
 
+    // Watchdog: Clear image loading state if it takes more than 5s
+    useEffect(() => {
+        if (isImageLoading) {
+            const timer = setTimeout(() => setIsImageLoading(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [isImageLoading]);
+
     useEffect(() => {
         setRecentDocs(FileHistoryManager.getRecent(5));
     }, []);
