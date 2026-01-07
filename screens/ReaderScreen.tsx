@@ -156,17 +156,17 @@ const ReaderScreen: React.FC = () => {
             - Root: The absolute central concept (MAX 1).
             - Level 1: Primary strategic pillars (MAX 5).
             - Level 2: Critical evidentiary sub-nodes (MAX 3 per pillar).
-            - LABEL LIMIT: Each node MUST be between 1-3 words maximum. No sentences.
+            - LABEL LIMIT: Each node MUST be 1-2 words maximum. No sentences. Use punchy, nouns/verbs.
             
             OUTPUT FORMAT:
             A simple indented list using dashes (-). No bolding, no extra text, no symbols except dashes for hierarchy.
             
             Example:
-            Quantum Computing
-            - Superposition
-              - Qubit States
-              - Vector Mapping
-            - Entanglement
+            Artificial Intelligence
+            - Neural Networks
+              - Backpropagation
+              - Training Sets
+            - Machine Learning
             `;
 
             const response = await askGemini(prompt, text, "mindmap");
