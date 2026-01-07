@@ -26,7 +26,6 @@ const ToolsScreen: React.FC = () => {
         { title: 'Rotate', desc: 'Fix orientation', icon: RotateCw, path: '/rotate', cat: 'popular' },
         { title: 'Watermark', desc: 'Add brand layer', icon: Droplet, path: '/watermark', cat: 'security' },
         { title: 'Get Images', desc: 'Export PDF visuals', icon: FileImage, path: '/extract-images', cat: 'convert' },
-        { title: 'Repair', desc: 'Fix corrupted data', icon: Wrench, path: '/repair', cat: 'popular' },
         { title: 'Remove', desc: 'Delete specific pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
         { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },

@@ -12,7 +12,6 @@ import ScannerScreen from './screens/ScannerScreen';
 import WatermarkScreen from './screens/WatermarkScreen';
 import SignScreen from './screens/SignScreen';
 import ViewScreen from './screens/ViewScreen';
-import RepairScreen from './screens/RepairScreen';
 import ExtractTextScreen from './screens/ExtractTextScreen';
 import AISettingsScreen from './screens/AISettingsScreen';
 import ReaderScreen from './screens/ReaderScreen';
@@ -105,7 +104,6 @@ const App: React.FC = () => {
               <Route path="/watermark" element={<WatermarkScreen />} />
               <Route path="/sign" element={<SignScreen />} />
               <Route path="/view" element={<ViewScreen />} />
-              <Route path="/repair" element={<RepairScreen />} />
               <Route path="/extract-text" element={<ExtractTextScreen />} />
               <Route path="/reader" element={<ReaderScreen />} />
               <Route path="/rotate" element={<RotateScreen />} />

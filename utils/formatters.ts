@@ -37,7 +37,7 @@ export const getOperationName = (operation: string): string => {
         'watermark': 'Watermarked',
         'image-to-pdf': 'Converted',
         'extract-text': 'Extracted',
-        'repair': 'Repaired',
+        'rotate': 'Rotated',
     };
     return names[operation] || operation;
 };
