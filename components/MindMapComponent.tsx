@@ -185,7 +185,6 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                             <text
                                 x={node.x}
                                 y={node.y}
-                                dy=".35em"
                                 textAnchor="middle"
                                 fill={node.id === 'root' ? '#000000' : '#ffffff'}
                                 style={{
@@ -198,7 +197,15 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                                     paintOrder: 'stroke'
                                 }}
                             >
-                                {node.text}
+                                {node.text.split(' ').map((word, i, arr) => (
+                                    <tspan
+                                        key={i}
+                                        x={node.x}
+                                        dy={i === 0 ? (arr.length > 1 ? '-0.3em' : '0.35em') : '1.1em'}
+                                    >
+                                        {word}
+                                    </tspan>
+                                ))}
                             </text>
                         </g>
                     ))}
