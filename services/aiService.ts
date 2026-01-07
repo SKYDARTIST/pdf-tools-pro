@@ -6,7 +6,7 @@
 
 const aiCache = new Map<string, string>();
 
-export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' = 'chat', image?: string | string[]): Promise<string> => {
+export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
   // @ts-ignore - Vite env variables
   const localApiKey = import.meta.env?.VITE_GEMINI_API_KEY;
 
@@ -26,7 +26,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
         'Content-Type': 'application/json',
         'x-ag-signature': 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE'
       },
-      body: JSON.stringify({ prompt, documentText: documentText || "", type, image }),
+      body: JSON.stringify({ prompt, documentText: documentText || "", type, image, mimeType }),
     });
 
     if (response.status === 429) {

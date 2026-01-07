@@ -106,7 +106,8 @@ CRITICAL:
                     DOCUMENT TEXT:
                     ${documentText || "No context provided."}`;
                 } else if (type === 'table') {
-                    promptPayload = `Extract tables from image/text into JSON: [{ "tableName": "Name", "headers": [], "rows": [[]] }]\nONLY JSON.`;
+                    // v1.7: Respect the frontend prompt for more versatile extraction (Handwriting, JSON, etc.)
+                    promptPayload = prompt || `Extract all structured data from image/text into JSON format. ONLY output the raw JSON.`;
                 } else if (type === 'scrape') {
                     // Fetch inside the loop to allow model retries
                     const scrapeResponse = await fetch(prompt.trim());

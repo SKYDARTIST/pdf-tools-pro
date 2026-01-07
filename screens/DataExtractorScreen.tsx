@@ -53,6 +53,7 @@ const DataExtractorScreen: React.FC = () => {
         try {
             let text = "";
             let imageBase64 = "";
+            let fileMime = file.type || 'image/jpeg';
 
             if (file.type === "application/pdf") {
                 const buffer = await file.arrayBuffer();
@@ -68,25 +69,67 @@ const DataExtractorScreen: React.FC = () => {
 
             let prompt = "";
             if (format === 'markdown') {
-                prompt = `Perform a high-level Neural Transcription of this ${file.type.includes('pdf') ? 'document' : 'image'}. 
-                If it is handwriting, notes, or a whiteboard, convert it into clean, structured Markdown. 
-                Focus on legibility and preserving the logical flow. 
-                Output ONLY the markdown content.`;
+                prompt = `You are reading handwritten notes or a document. Your job is to transcribe EVERYTHING you see into clean, readable Markdown format.
+
+RULES:
+- Read every single word, line by line, from top to bottom
+- Use bullet points (-) for lists
+- Use **bold** for headings or emphasized text
+- Preserve the logical structure and flow
+- Do NOT summarize - transcribe everything
+- If you see arrows (→), convert them to bullet points
+- If text is unclear, make your best guess but transcribe it
+
+Output ONLY the markdown text. No explanations.`;
+            } else if (format === 'json') {
+                prompt = `You are reading handwritten notes or a document. Extract the content into a simple, readable JSON format.
+
+Create a JSON object with this structure:
+{
+  "content": "Full transcription of all text, word for word, preserving line breaks with \\n",
+  "mainPoints": ["key point 1", "key point 2", ...],
+  "type": "handwritten notes" or "typed document" or "table"
+}
+
+CRITICAL: The "content" field MUST contain EVERY word you see. Do not summarize.
+Output ONLY valid JSON. No markdown wrappers.`;
             } else {
-                prompt = `Extract all tabular or structured data from this ${file.type.includes('pdf') ? 'document' : 'image'} and convert it into a clean ${format.toUpperCase()} format. 
-                Ensure all headers and values are correctly mapped. 
-                Output ONLY the raw ${format.toUpperCase()} content. No explanations.`;
+                prompt = `You are reading handwritten notes or a document. Convert the content to CSV format.
+
+IF you see a clear table with columns:
+- First row: column headers
+- Following rows: data
+
+IF you see handwritten notes or paragraphs:
+- Create a simple 2-column CSV: "Line", "Content"
+- Each bullet point or sentence gets its own row
+
+CRITICAL: Include ALL text content. Do not omit anything.
+Output ONLY raw CSV data.`;
             }
 
-            const response = await askGemini(prompt, text || "Vision Extraction Protocol Active.", "table", imageBase64 || undefined);
+            // @ts-ignore - passing extra mimeType for backend precision
+            const response = await askGemini(prompt, text || "Vision Extraction Protocol Active.", "table", imageBase64 || undefined, fileMime);
+
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
             }
-            setExtractedData(response);
+
+            // v1.8 Response Cleaning: Remove AI markdown wrappers (```json, ```markdown, etc.)
+            const cleanedResponse = response
+                .replace(/^```[a-z]*\n/i, '')
+                .replace(/\n```$/i, '')
+                .trim();
+
+            if (!cleanedResponse || cleanedResponse === '[]' || cleanedResponse === '{}') {
+                throw new Error("Neural sensor returned no clear data. The handwriting might be too faint or obscured.");
+            }
+
+            setExtractedData(cleanedResponse);
             recordAIUsage();
-        } catch (err) {
-            setError("Extraction failed. Visual data may be too obscured or file corrupted.");
+        } catch (err: any) {
+            setError(err.message || "Extraction failed. Visual data may be too obscured or file corrupted.");
             console.error(err);
         } finally {
             setIsExtracting(false);
