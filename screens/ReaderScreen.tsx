@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import UpgradeModal from '../components/UpgradeModal';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
@@ -43,6 +44,7 @@ const ReaderScreen: React.FC = () => {
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
     const [isAuditing, setIsAuditing] = useState(false);
@@ -107,8 +109,10 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
-        if (!canUseAI()) {
-            navigate('/pricing');
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
             return;
         }
 
@@ -153,8 +157,10 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
-        if (!canUseAI()) {
-            navigate('/pricing');
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
             return;
         }
 
@@ -251,8 +257,10 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
-        if (!canUseAI()) {
-            navigate('/pricing');
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
             return;
         }
 
@@ -293,8 +301,10 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
-        if (!canUseAI()) {
-            navigate('/pricing');
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
             return;
         }
 
@@ -764,6 +774,11 @@ const ReaderScreen: React.FC = () => {
             <AIReportModal
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
+            />
+
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
             />
         </motion.div >
     );
