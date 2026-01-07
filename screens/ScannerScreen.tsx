@@ -80,6 +80,7 @@ const ScannerScreen: React.FC = () => {
   };
 
   const bakeFilters = (imageData: string, filters: ScanFilters): Promise<string> => {
+    console.log('🔥 BAKING FILTERS:', filters);
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -88,10 +89,50 @@ const ScannerScreen: React.FC = () => {
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          // Apply filters to canvas context
-          const filterString = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) grayscale(${filters.grayscale}%)`;
-          ctx.filter = filterString;
+          // Draw the original image first
           ctx.drawImage(img, 0, 0);
+
+          // Get pixel data for manipulation
+          const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageDataObj.data;
+
+          // Convert filter percentages to multipliers
+          const brightnessFactor = filters.brightness / 100;
+          const contrastFactor = filters.contrast / 100;
+          const grayscaleFactor = filters.grayscale / 100;
+
+          // Apply pixel-level transformations
+          for (let i = 0; i < data.length; i += 4) {
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+
+            // Apply grayscale if needed
+            if (grayscaleFactor > 0) {
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              r = r * (1 - grayscaleFactor) + gray * grayscaleFactor;
+              g = g * (1 - grayscaleFactor) + gray * grayscaleFactor;
+              b = b * (1 - grayscaleFactor) + gray * grayscaleFactor;
+            }
+
+            // Apply contrast (centered around 128)
+            r = ((r - 128) * contrastFactor) + 128;
+            g = ((g - 128) * contrastFactor) + 128;
+            b = ((b - 128) * contrastFactor) + 128;
+
+            // Apply brightness
+            r = r * brightnessFactor;
+            g = g * brightnessFactor;
+            b = b * brightnessFactor;
+
+            // Clamp values to 0-255 range
+            data[i] = Math.max(0, Math.min(255, r));
+            data[i + 1] = Math.max(0, Math.min(255, g));
+            data[i + 2] = Math.max(0, Math.min(255, b));
+          }
+
+          // Put the modified pixel data back
+          ctx.putImageData(imageDataObj, 0, 0);
           resolve(canvas.toDataURL('image/jpeg', 0.9));
         } else {
           resolve(imageData);
@@ -125,13 +166,16 @@ const ScannerScreen: React.FC = () => {
         askGemini("Suggest a professional filename for this document.", undefined, 'naming', capturedImage)
       ]);
 
-      setAppliedFilters(filters);
+      console.log('🎨 AI Returned Filters:', filters);
 
       // Force grayscale if in Document mode
       if (scannerMode === 'document') {
-        setAppliedFilters(prev => prev ? { ...prev, grayscale: 100 } : null);
+        const updatedFilters = { ...filters, grayscale: 100 };
+        console.log('📄 Document Mode - Forcing Grayscale:', updatedFilters);
+        setAppliedFilters(updatedFilters);
       } else {
-        // In Photo mode, we prefer color (0), but trust AI if it strongly suggests B&W
+        console.log('📸 Photo Mode - Using AI Filters:', filters);
+        setAppliedFilters(filters);
       }
 
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
@@ -168,7 +212,9 @@ const ScannerScreen: React.FC = () => {
   const handleDownload = async () => {
     if (!capturedImage) return;
     try {
+      console.log('💾 Download initiated with filters:', appliedFilters);
       const baked = appliedFilters ? await bakeFilters(capturedImage, appliedFilters) : capturedImage;
+      console.log('✅ Filters baked successfully');
       const finalName = suggestedName ? `${suggestedName}.jpg` : `scan_${Date.now()}.jpg`;
       downloadBlob(dataURLToBlob(baked), finalName, 'image/jpeg');
     } catch (err) {
@@ -448,9 +494,12 @@ const ScannerScreen: React.FC = () => {
 
                 <button
                   onClick={async () => {
+                    console.log('📄 Assemble PDF clicked with filters:', appliedFilters);
                     let finalImage = capturedImage;
                     if (appliedFilters) {
+                      console.log('🔥 Baking filters before PDF assembly...');
                       finalImage = await bakeFilters(capturedImage, appliedFilters);
+                      console.log('✅ Filters baked, navigating to PDF assembly');
                     }
                     navigate('/image-to-pdf', { state: { capturedImage: finalImage } });
                   }}

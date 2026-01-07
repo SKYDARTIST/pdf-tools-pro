@@ -20,12 +20,15 @@ const ImageToPdfScreen: React.FC = () => {
     // Check if we arrived with a captured image from the scanner
     const state = location.state as { capturedImage?: string } | null;
     if (state?.capturedImage) {
+      console.log('📥 ImageToPdfScreen received image data, length:', state.capturedImage.length);
       const handleIncomingScan = async () => {
         try {
           // Convert base64 data URL to a File object
           const res = await fetch(state.capturedImage!);
           const blob = await res.blob();
           const file = new File([blob], `scan_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+          console.log('📦 Converted to File object, size:', file.size);
 
           const newItem: FileItem = {
             id: Math.random().toString(36).substr(2, 9),
