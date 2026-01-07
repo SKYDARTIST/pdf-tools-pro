@@ -323,7 +323,12 @@ const ReaderScreen: React.FC = () => {
                 text = await extractTextFromPdf(buffer);
                 setFluidContent(text);
             }
-            const response = await askGemini("Synthesize this document into a professional, high-fidelity executive outline. Use clear headings and bullet points. Focus on key decisions, findings, and actionable data. Output as markdown.", text, "outline");
+            const isBriefing = protocol === 'briefing';
+            const contextPrompt = isBriefing
+                ? "Synthesize this document into a high-fidelity Strategic Executive Summary. Focus on macro-level insights, key architectural decisions, and the 'bottom line' for an elite decision-maker. Output as markdown."
+                : "Synthesize this document into a professional, high-fidelity executive outline. Use clear headings and bullet points. Focus on key decisions, findings, and actionable data. Output as markdown.";
+
+            const response = await askGemini(contextPrompt, text, "outline");
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
@@ -551,7 +556,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             }`}
                                     >
                                         <BookOpen size={12} />
-                                        {isGeneratingOutline ? "Thinking" : "Outline"}
+                                        {isGeneratingOutline ? "Thinking" : (protocol === 'briefing' ? "Summary" : "Outline")}
                                     </motion.button>
 
                                     <motion.button
@@ -682,7 +687,9 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             <div className="flex justify-between items-center mb-8">
                                                 <div className="flex items-center gap-2">
                                                     <BookOpen size={16} className="text-black dark:text-white" />
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">Neural Executive Outline</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">
+                                                        {protocol === 'briefing' ? "Strategic Executive Summary" : "Neural Executive Outline"}
+                                                    </span>
                                                 </div>
                                                 <button
                                                     onClick={() => setIsOutlineMode(false)}
