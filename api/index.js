@@ -75,23 +75,34 @@ export default async function handler(req, res) {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nSuggest a professional filename for this document. NO extension, max 40 chars, underscores. CONTEXT: ${documentText || prompt}`;
                 } else if (type === 'polisher') {
                     promptPayload = `${SYSTEM_INSTRUCTION}
- 
-Initialize Neural Reconstruction Protocol. Analyze this scan for visual impurities: shadows, warped perspective, and lighting gradients.
- 
-Suggest corrective filters in JSON format: 
-{ 
-  "brightness": number (80-150), 
-  "contrast": number (80-150), 
-  "grayscale": number (0 or 100), 
-  "sharpness": number (100-150), 
+
+**NEURAL SCAN ENHANCEMENT PROTOCOL**
+
+Analyze this scanned image and provide AGGRESSIVE optimization filters to transform it into a professional, high-contrast document scan.
+
+**CRITICAL REQUIREMENTS:**
+1. **Always enhance** - Never return neutral values (100/100/0). Every scan needs improvement.
+2. **Boost contrast** - Typical documents need 110-140% contrast for crisp text.
+3. **Adjust brightness** - Compensate for lighting: 85-95% for bright scans, 105-120% for dark scans.
+4. **Force B&W for documents** - Set grayscale=100 for any text document, receipt, or form.
+5. **Detect shadows** - If you see hand shadows, uneven lighting, or dark corners, set shadowPurge=true.
+
+**Output JSON format:**
+{
+  "brightness": number (85-120, never 100),
+  "contrast": number (110-140, never 100),
+  "grayscale": number (0 or 100),
+  "sharpness": number (110-150),
   "shadowPurge": boolean,
-  "reason": "string" 
+  "reason": "Brief explanation of adjustments"
 }
- 
-CRITICAL: 
-1. If the scan has significant lighting shadows (hand-cast shadows, uneven room light), set "shadowPurge" to true.
-2. For B&W documents, grayscale=100. For color/photos, grayscale=0.
-3. Suggest values that "flatten" the document look like a high-end office scanner.`;
+
+**Examples:**
+- Newspaper/document → brightness: 110, contrast: 130, grayscale: 100
+- Receipt with shadows → brightness: 115, contrast: 135, grayscale: 100, shadowPurge: true
+- Color photo → brightness: 95, contrast: 115, grayscale: 0
+
+Analyze the image and return ONLY the JSON object with visible enhancements.`;
                 } else if (type === 'audio_script') {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT.
                     
@@ -128,42 +139,42 @@ ${documentText || "No text content - analyzing image only."}`;
 
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nClean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
                 } else {
-                promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
                 }
 
-                    let contents = [{ text: promptPayload }];
-                    if (image) {
-                        const images = Array.isArray(image) ? image : [image];
-                        images.forEach(img => {
-                            contents.push({
-                                inlineData: {
-                                    data: img.includes('base64,') ? img.split('base64,')[1] : img,
-                                    mimeType
-                                }
-                            });
+                let contents = [{ text: promptPayload }];
+                if (image) {
+                    const images = Array.isArray(image) ? image : [image];
+                    images.forEach(img => {
+                        contents.push({
+                            inlineData: {
+                                data: img.includes('base64,') ? img.split('base64,')[1] : img,
+                                mimeType
+                            }
                         });
-                    }
-
-                    const result = await model.generateContent(contents);
-                    const response = await result.response;
-                    return res.status(200).json({ text: response.text() });
-                } catch (err) {
-                    const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
-                    if (isRateLimit) {
-                        return res.status(429).json({ error: "AI_RATE_LIMIT", details: "Synapse cooling in progress." });
-                    }
-                    errors.push(`${modelName}: ${err.message}`);
+                    });
                 }
+
+                const result = await model.generateContent(contents);
+                const response = await result.response;
+                return res.status(200).json({ text: response.text() });
+            } catch (err) {
+                const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
+                if (isRateLimit) {
+                    return res.status(429).json({ error: "AI_RATE_LIMIT", details: "Synapse cooling in progress." });
+                }
+                errors.push(`${modelName}: ${err.message}`);
             }
+        }
 
         return res.status(500).json({
-                error: "Neural Sync Failed.",
-                details: errors.join(" | ")
-            });
-        } catch (error) {
-            const isRateLimit = error.message?.includes('429') || error.message?.includes('Quota');
-            res.status(isRateLimit ? 429 : 500).json({
-                error: isRateLimit ? "AI_RATE_LIMIT" : (error.message || "Protocol Failure")
-            });
-        }
+            error: "Neural Sync Failed.",
+            details: errors.join(" | ")
+        });
+    } catch (error) {
+        const isRateLimit = error.message?.includes('429') || error.message?.includes('Quota');
+        res.status(isRateLimit ? 429 : 500).json({
+            error: isRateLimit ? "AI_RATE_LIMIT" : (error.message || "Protocol Failure")
+        });
     }
+}

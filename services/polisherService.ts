@@ -21,6 +21,20 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
         try {
             const cleanJson = response.replace(/```json|```/g, '').trim();
             const filters: ScanFilters = JSON.parse(cleanJson);
+
+            // Intelligent fallback: If AI returns neutral values, apply visible enhancements
+            if (filters.brightness === 100 && filters.contrast === 100 && filters.grayscale === 0) {
+                console.warn('⚠️ AI returned neutral values, applying intelligent defaults');
+                return {
+                    brightness: 110,
+                    contrast: 130,
+                    grayscale: 100, // Assume document scan
+                    sharpness: 120,
+                    shadowPurge: true,
+                    reason: "Auto-enhanced: AI returned neutral values"
+                };
+            }
+
             return filters;
         } catch (parseErr) {
             console.error("Polisher Parse Error:", parseErr);
@@ -33,10 +47,10 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
 };
 
 const defaultFilters: ScanFilters = {
-    brightness: 100,
-    contrast: 100,
-    grayscale: 0,
-    sharpness: 100,
-    shadowPurge: false,
-    reason: "Standard optimization"
+    brightness: 110,
+    contrast: 130,
+    grayscale: 100,
+    sharpness: 120,
+    shadowPurge: true,
+    reason: "Standard document optimization"
 };
