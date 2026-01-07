@@ -63,10 +63,10 @@ export default async function handler(req, res) {
                 const model = genAI.getGenerativeModel({
                     model: modelName,
                     safetySettings: [
-                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_LOW_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_LOW_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_LOW_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_LOW_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
                     ]
                 }, { apiVersion: 'v1beta' }); // Switched to v1beta for better image support
 
@@ -182,12 +182,15 @@ ${documentText || "No text content - analyzing image only."}`;
                 // v1.6: Dynamic Response Handling
                 const text = response.text();
 
-                // If it's a safety block, Gemini might throw or return a specific string
-                if (text.toLowerCase().includes("i can't help with that") || text.toLowerCase().includes("safety")) {
+                // Refined Safety Check: Only block if it explicitly looks like a refusal
+                const lowerText = text.toLowerCase();
+                const representsRefusal = lowerText.includes("i can't help") || lowerText.includes("policy") || lowerText.includes("safety") || lowerText.includes("prohibited") || lowerText.includes("blocked");
+
+                // Guard: If it's a long description (likely a real result) or doesn't look like a refusal, it's safe.
+                if (representsRefusal && text.length < 200) {
                     return res.status(400).json({ error: "Safety Violation: Asset discarded by Neural Guard." });
                 }
 
-                // SUCCESS: Return the text (or simulated URL)
                 return res.status(200).json({ text: text });
 
             } catch (err) {
