@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Download, Eye, EyeOff, User, Mail, CreditCard, Fingerprint } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
+import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
@@ -20,6 +22,7 @@ const SmartRedactScreen: React.FC = () => {
         identifiers: true
     });
     const [isCooling, setIsCooling] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const toggleFilter = (key: keyof typeof filters) => {
         setFilters(prev => ({ ...prev, [key]: !prev[key] }));
@@ -194,6 +197,13 @@ const SmartRedactScreen: React.FC = () => {
 
     const startRedaction = async () => {
         if (!file) return;
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
+            return;
+        }
+
         setStatus('scanning');
         try {
             let contentToProcess = "";
@@ -240,6 +250,7 @@ const SmartRedactScreen: React.FC = () => {
             // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
             const finalSanitized = localRegexSanitize(response);
             setRedactedContent(finalSanitized);
+            recordAIUsage();
             setStatus('done');
         } catch (error) {
             console.error("Redaction Failed:", error);
@@ -443,6 +454,10 @@ const SmartRedactScreen: React.FC = () => {
                 )}
             </div>
             <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+            />
         </motion.div>
     );
 };

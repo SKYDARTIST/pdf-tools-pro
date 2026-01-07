@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileSpreadsheet, FileUp, Loader2, Bot, Download, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
+import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
@@ -18,6 +20,7 @@ const TableExtractorScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +37,14 @@ const TableExtractorScreen: React.FC = () => {
         }
     };
 
+
     const processFile = async (selected: File) => {
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
+            return;
+        }
+
         setFile(selected);
         setIsProcessing(true);
         setStatus('analyzing');
@@ -57,6 +67,7 @@ const TableExtractorScreen: React.FC = () => {
             }
 
             setTables(extractedTables);
+            recordAIUsage();
             setStatus('done');
         } catch (err) {
             console.error("Extraction Failed:", err);
@@ -271,6 +282,10 @@ const TableExtractorScreen: React.FC = () => {
             <AIReportModal
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
+            />
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
             />
         </motion.div>
     );

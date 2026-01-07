@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, GitMerge, ListCheck, Loader2, Sparkles, Check, X, AlertCircle } from 'lucide-react';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
+import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
+import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
@@ -21,6 +23,7 @@ const NeuralDiffScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
@@ -36,6 +39,12 @@ const NeuralDiffScreen: React.FC = () => {
 
         if (!hasConsent) {
             setShowConsent(true);
+            return;
+        }
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
             return;
         }
 
@@ -65,6 +74,7 @@ const NeuralDiffScreen: React.FC = () => {
                 return;
             }
             setDiffResult(response);
+            recordAIUsage();
         } catch (err) {
             setError("Analysis failed. Ensure both files are readable PDFs.");
             console.error(err);
@@ -221,6 +231,10 @@ const NeuralDiffScreen: React.FC = () => {
             <AIReportModal
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
+            />
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
             />
         </motion.div >
     );

@@ -10,6 +10,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import ToolGuide from '../components/ToolGuide';
+import UpgradeModal from '../components/UpgradeModal';
 import NeuralPulse from '../components/NeuralPulse';
 
 const ScannerScreen: React.FC = () => {
@@ -28,6 +29,7 @@ const ScannerScreen: React.FC = () => {
   const [showConsent, setShowConsent] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [scannerMode, setScannerMode] = useState<'document' | 'photo'>('photo');
 
   useEffect(() => {
@@ -107,8 +109,10 @@ const ScannerScreen: React.FC = () => {
       return;
     }
 
-    if (!canUseAI()) {
-      navigate('/pricing');
+
+    const aiCheck = canUseAI();
+    if (!aiCheck.allowed) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -478,6 +482,10 @@ const ScannerScreen: React.FC = () => {
       <AIReportModal
         isOpen={showReport}
         onClose={() => setShowReport(false)}
+      />
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
       />
     </motion.div>
   );

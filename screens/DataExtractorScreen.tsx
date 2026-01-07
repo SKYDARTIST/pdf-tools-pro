@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
+import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
 
 const DataExtractorScreen: React.FC = () => {
@@ -21,6 +22,7 @@ const DataExtractorScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -38,8 +40,10 @@ const DataExtractorScreen: React.FC = () => {
             return;
         }
 
-        if (!canUseAI()) {
-            navigate('/pricing');
+
+        const aiCheck = canUseAI();
+        if (!aiCheck.allowed) {
+            setShowUpgradeModal(true);
             return;
         }
 
@@ -267,6 +271,10 @@ const DataExtractorScreen: React.FC = () => {
             <AIReportModal
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
+            />
+            <UpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
             />
         </motion.div >
     );
