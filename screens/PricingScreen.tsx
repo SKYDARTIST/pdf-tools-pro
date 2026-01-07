@@ -15,7 +15,7 @@ const PricingScreen: React.FC = () => {
       features: [
         '3 PDF tasks/day',
         '1 AI doc/week',
-        'Try before buy'
+        'Zero Watermarks'
       ],
       cta: 'Current Plan',
       disabled: true
@@ -28,6 +28,7 @@ const PricingScreen: React.FC = () => {
       features: [
         'UNLIMITED PDF tasks',
         '10 AI docs/month',
+        'Zero Watermarks Ever',
         'Lifetime access',
         'All PDF tools'
       ],

@@ -111,8 +111,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 <div className="space-y-4">
                                     <Feature icon={Zap} text="Unlimited Daily Tasks" />
                                     <Feature icon={Sparkles} text="All 14 Neural Tools" />
+                                    <Feature icon={Check} text="Zero Watermarks • All Plans" />
                                     <Feature icon={Shield} text="100% Private Processing" />
-                                    <Feature icon={Check} text="Zero Ads • Zero Watermarks" />
                                 </div>
 
                                 {/* Comparison Card */}

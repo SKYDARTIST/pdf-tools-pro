@@ -140,6 +140,10 @@ const MergeScreen: React.FC = () => {
           <div className="text-technical">Protocol Assets / Sequence Management</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Merge</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Arrange and unify multi-stream data into a single carrier</p>
+          <div className="pt-2 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Zero Watermark Protocol Active</span>
+          </div>
         </div>
 
         <ToolGuide

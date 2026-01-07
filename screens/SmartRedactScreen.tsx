@@ -271,6 +271,10 @@ const SmartRedactScreen: React.FC = () => {
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                         Automated PII Neutralization via Neural Pattern Recognition
                     </p>
+                    <div className="pt-2 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Zero Watermark Protocol: Verified Clean Output</span>
+                    </div>
                 </div>
 
                 {!file ? (

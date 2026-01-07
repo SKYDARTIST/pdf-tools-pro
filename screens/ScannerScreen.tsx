@@ -264,6 +264,9 @@ const ScannerScreen: React.FC = () => {
             <NeuralPulse color="bg-emerald-500" size="md" />
             <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Offline Acquisition</span>
           </div>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+            <span className="text-emerald-500 font-black text-[7px] tracking-[0.2em] uppercase">Zero Watermark Protocol Active</span>
+          </div>
           <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
         </div>
         <div className="flex gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">

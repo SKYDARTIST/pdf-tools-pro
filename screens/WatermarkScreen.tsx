@@ -74,6 +74,10 @@ const WatermarkScreen: React.FC = () => {
           <div className="text-technical">Protocol Assets / Intellectual Property</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Watermark</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Embed permanent identification markers to protect structural asset ownership</p>
+          <div className="pt-2 flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Zero Watermark Protocol: Professional Clean Output</span>
+          </div>
         </div>
 
         <ToolGuide
