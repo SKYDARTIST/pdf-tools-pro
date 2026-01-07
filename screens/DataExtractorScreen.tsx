@@ -69,42 +69,56 @@ const DataExtractorScreen: React.FC = () => {
 
             let prompt = "";
             if (format === 'markdown') {
-                prompt = `You are reading handwritten notes or a document. Your job is to transcribe EVERYTHING you see into clean, readable Markdown format.
+                prompt = `Extract ALL content from this document into Markdown format.
 
-RULES:
-- Read every single word, line by line, from top to bottom
-- Use bullet points (-) for lists
-- Use **bold** for headings or emphasized text
-- Preserve the logical structure and flow
-- Do NOT summarize - transcribe everything
-- If you see arrows (→), convert them to bullet points
-- If text is unclear, make your best guess but transcribe it
+CRITICAL RULES:
+1. If you see a TABLE, extract EVERY SINGLE ROW - do not skip any rows
+2. For invoices/receipts, include ALL line items, fees, and charges
+3. Transcribe every word, number, and detail from top to bottom
+4. Use markdown tables for tabular data when possible
+5. Use bullet points (-) for lists
+6. Use **bold** for headings
 
-Output ONLY the markdown text. No explanations.`;
+FORBIDDEN: Do NOT summarize. Do NOT write "..." or "etc." Do NOT skip rows.
+
+Output ONLY the complete markdown transcription.`;
             } else if (format === 'json') {
-                prompt = `You are reading handwritten notes or a document. Extract the content into a simple, readable JSON format.
+                prompt = `Extract ALL content from this document into JSON format.
 
-Create a JSON object with this structure:
+For INVOICES/TABLES:
 {
-  "content": "Full transcription of all text, word for word, preserving line breaks with \\n",
-  "mainPoints": ["key point 1", "key point 2", ...],
-  "type": "handwritten notes" or "typed document" or "table"
+  "documentType": "invoice" or "receipt" or "table",
+  "header": { "company": "...", "date": "...", "invoiceNumber": "..." },
+  "lineItems": [
+    { "description": "...", "quantity": "...", "amount": "..." }
+  ],
+  "totals": { "subtotal": "...", "tax": "...", "total": "..." },
+  "fullText": "Complete verbatim transcription of all text"
 }
 
-CRITICAL: The "content" field MUST contain EVERY word you see. Do not summarize.
-Output ONLY valid JSON. No markdown wrappers.`;
+For NOTES/TEXT:
+{
+  "content": "Complete word-for-word transcription with \\n for line breaks",
+  "mainPoints": ["point 1", "point 2", ...],
+  "type": "handwritten notes" or "typed document"
+}
+
+CRITICAL: Extract EVERY row from tables. Do NOT skip any data.
+Output ONLY valid JSON.`;
             } else {
-                prompt = `You are reading handwritten notes or a document. Convert the content to CSV format.
+                prompt = `Extract ALL content from this document into CSV format.
 
-IF you see a clear table with columns:
-- First row: column headers
-- Following rows: data
+For TABLES/INVOICES:
+- First row: Extract the exact column headers
+- Following rows: Extract EVERY SINGLE ROW from the table
+- Do NOT skip any rows or use "..." 
+- Include all line items, fees, charges, totals
 
-IF you see handwritten notes or paragraphs:
-- Create a simple 2-column CSV: "Line", "Content"
-- Each bullet point or sentence gets its own row
+For TEXT/NOTES:
+- Use format: "Line","Content"
+- Each sentence or bullet point gets its own row
 
-CRITICAL: Include ALL text content. Do not omit anything.
+CRITICAL: Extract the COMPLETE table. Count the rows and make sure you include ALL of them.
 Output ONLY raw CSV data.`;
             }
 
