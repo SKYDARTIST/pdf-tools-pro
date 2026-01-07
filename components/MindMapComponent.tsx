@@ -32,32 +32,40 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
         if (!mapRef.current) return;
         setIsExporting(true);
         try {
-            // Temporarily reset scale for high-quality export
+            // Temporarily set a neutral scale for high-quality export
             const originalScale = scale;
-            setScale(1.5); // Higher res export
+            setScale(1);
 
-            // Wait for scale transition if any (though we don't have one on scale state directly, 
-            // framer-motion might need a tick)
+            // Allow time for re-render and font loading
             await new Promise(resolve => setTimeout(resolve, 500));
 
             const dataUrl = await toPng(mapRef.current, {
                 backgroundColor: '#000000',
                 quality: 1,
-                pixelRatio: 2,
+                pixelRatio: 3, // Ultra-high res
+                skipAutoScale: true,
                 filter: (node) => {
-                    // Filter out UI buttons from export
-                    return !(node instanceof HTMLElement && node.classList.contains('z-10'));
+                    // Filter out UI buttons and instruction banners
+                    if (node instanceof HTMLElement) {
+                        const isUI = node.classList.contains('z-10') ||
+                            node.classList.contains('pointer-events-none') ||
+                            node.tagName === 'BUTTON' ||
+                            node.closest('.z-10'); // Catch children as well
+                        return !isUI;
+                    }
+                    return true;
                 }
             });
 
             const link = document.createElement('a');
-            link.download = `neural-mindmap-${Date.now()}.png`;
+            link.download = `anti-gravity-mindmap-${Date.now()}.png`;
             link.href = dataUrl;
             link.click();
 
             setScale(originalScale);
         } catch (error) {
-            console.error('Export failed:', error);
+            console.error('Neural Export Failed:', error);
+            alert('Neuro-Link export interrupted. Please synchronize and try again.');
         } finally {
             setIsExporting(false);
         }
@@ -103,7 +111,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             if (!parent) return;
 
             const angle = (startAngle + endAngle) / 2;
-            const distance = level === 1 ? 280 : 200; // Optimal spacing
+            const distance = level === 1 ? 300 : 220; // Slightly more air
 
             node.x = parent.x + Math.cos(angle) * distance;
             node.y = parent.y + Math.sin(angle) * distance;
@@ -155,7 +163,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                     viewBox="-1000 -1000 2000 2000"
                     width="2000"
                     height="2000"
-                    className="overflow-visible"
+                    style={{ overflow: 'visible' }}
                 >
                     {/* Connections */}
                     {nodes.map(node => {
@@ -163,50 +171,48 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                         const parent = nodes.find(n => n.id === node.parent);
                         if (!parent) return null;
                         return (
-                            <motion.line
+                            <line
                                 key={`line-${node.id}`}
                                 x1={parent.x}
                                 y1={parent.y}
                                 x2={node.x}
                                 y2={node.y}
-                                stroke="currentColor"
+                                stroke="rgba(255,255,255,0.2)"
                                 strokeWidth="3"
-                                initial={{ pathLength: 0, opacity: 0 }}
-                                animate={{ pathLength: 1, opacity: 0.2 }}
-                                transition={{ duration: 1.5 }}
-                                className="text-white"
                             />
                         );
                     })}
 
                     {/* Nodes */}
                     {nodes.map(node => (
-                        <motion.g
-                            key={node.id}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.1 }}
-                        >
+                        <g key={node.id}>
                             <circle
                                 cx={node.x}
                                 cy={node.y}
-                                r={node.id === 'root' ? 65 : 45}
-                                className={`${node.id === 'root' ? 'fill-white' : 'fill-black border-2 border-white/20'}`}
+                                r={node.id === 'root' ? 70 : 50}
+                                fill={node.id === 'root' ? '#ffffff' : '#000000'}
+                                stroke="rgba(255,255,255,0.2)"
+                                strokeWidth="2"
                             />
-                            <foreignObject
-                                x={node.x - 90}
-                                y={node.y - 90}
-                                width="180"
-                                height="180"
-                                style={{ pointerEvents: 'none' }}
+                            <text
+                                x={node.x}
+                                y={node.y}
+                                dy=".35em"
+                                textAnchor="middle"
+                                fill={node.id === 'root' ? '#000000' : '#ffffff'}
+                                style={{
+                                    fontSize: node.id === 'root' ? '12px' : '10px',
+                                    fontWeight: '900',
+                                    textTransform: 'uppercase',
+                                    fontFamily: 'SF Pro Display, system-ui, sans-serif',
+                                    pointerEvents: 'none',
+                                    letterSpacing: '-0.02em',
+                                    paintOrder: 'stroke'
+                                }}
                             >
-                                <div className="w-full h-full flex items-center justify-center p-3">
-                                    <span className={`text-[11px] font-black uppercase tracking-tighter leading-tight text-center ${node.id === 'root' ? 'text-black' : 'text-white'}`}>
-                                        {node.text}
-                                    </span>
-                                </div>
-                            </foreignObject>
-                        </motion.g>
+                                {node.text}
+                            </text>
+                        </g>
                     ))}
                 </svg>
             </motion.div>
