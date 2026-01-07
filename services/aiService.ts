@@ -42,8 +42,12 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
     const data = await response.json();
     const result = data.text || "No response content.";
 
-    // Store in cache if successful
-    if (result && !result.startsWith('AI_ERROR') && !result.startsWith('BACKEND_ERROR')) {
+    // Store in cache if successful (do not cache errors or rate limits)
+    const isError = result.startsWith('AI_ERROR') ||
+      result.startsWith('BACKEND_ERROR') ||
+      result.startsWith('AI_RATE_LIMIT');
+
+    if (result && !isError) {
       aiCache.set(cacheKey, result);
     }
 
