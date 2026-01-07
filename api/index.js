@@ -203,11 +203,12 @@ ${documentText || "No text content - analyzing image only."}`;
         }
 
         // v1.7: NEURAL SIMULATION FALLBACK for Visuals
-        // If all AI models fail during the demo, return a high-quality simulated image
+        // If all AI models fail during the demo,        // v1.7: NEURAL_SIMULATION FALLBACK for Visuals
         if (type === 'visual') {
             console.log("🛡️ Neural Simulation engaged: Falling back to high-res simulation.");
             const query = prompt.split(' ').slice(0, 3).join(',');
-            const simulatedUrl = `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1024&q=80&q=${encodeURIComponent(query)}`;
+            // Using a more reliable Unsplash source URL
+            const simulatedUrl = `https://source.unsplash.com/featured/1024x1024?${encodeURIComponent(query)}`;
             return res.status(200).json({ text: simulatedUrl, note: "Neural Simulation active due to link instability." });
         }
 

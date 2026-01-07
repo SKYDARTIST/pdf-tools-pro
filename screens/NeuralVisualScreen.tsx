@@ -322,20 +322,38 @@ const NeuralVisualScreen: React.FC = () => {
                             </button>
                         </header>
 
-                        <div className="monolith-card overflow-hidden bg-black aspect-square relative shadow-2xl group">
+                        <div className="monolith-card overflow-hidden bg-black/5 dark:bg-white/5 aspect-square relative shadow-2xl group border border-black/5 dark:border-white/5">
+                            {(isGenerating || isImageLoading) && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 bg-white/10 backdrop-blur-sm">
+                                    <div className="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-500 animate-pulse">Syncing Pixels...</p>
+                                </div>
+                            )}
                             <img
                                 src={result}
                                 alt="Generated Visual"
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                onLoad={() => setIsImageLoading(false)}
+                                className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                                 <motion.button
                                     whileHover={{ scale: 1.1 }}
-                                    onClick={() => {
-                                        const link = document.createElement('a');
-                                        link.href = result;
-                                        link.download = `neural_visual_${Date.now()}.jpg`;
-                                        link.click();
+                                    onClick={async () => {
+                                        try {
+                                            const res = await fetch(result);
+                                            const blob = await res.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const link = document.createElement('a');
+                                            link.href = url;
+                                            link.download = `neural_asset_${Date.now()}.png`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            window.URL.revokeObjectURL(url);
+                                        } catch (e) {
+                                            // Fallback to direct link if fetch fails
+                                            window.open(result, '_blank');
+                                        }
                                     }}
                                     className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center shadow-2xl"
                                 >
