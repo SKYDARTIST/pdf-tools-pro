@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic } from 'lucide-react';
+import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic, Info } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import UpgradeModal from '../components/UpgradeModal';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -15,6 +15,7 @@ import { Flag } from 'lucide-react';
 import NeuralPulse from '../components/NeuralPulse';
 import ToolGuide from '../components/ToolGuide';
 import MindMapSettingsModal from '../components/MindMapSettingsModal';
+import NeuralProtocolBrief from '../components/NeuralProtocolBrief';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -53,6 +54,8 @@ const ReaderScreen: React.FC = () => {
     const [auditData, setAuditData] = useState<string | null>(null);
     const [outlineData, setOutlineData] = useState<string | null>(null);
     const [isOutlineMode, setIsOutlineMode] = useState(false);
+    const [showBrief, setShowBrief] = useState(false);
+    const [briefType, setBriefType] = useState<'audit' | 'briefing' | 'reader'>('reader');
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -472,6 +475,16 @@ const ReaderScreen: React.FC = () => {
                                             <Shield size={16} fill={isAuditing ? "currentColor" : "none"} />
                                             {isAuditing ? "Synthesizing Risk Map" : "Neural Audit Protocol"}
                                         </motion.button>
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => {
+                                                setBriefType('audit');
+                                                setShowBrief(true);
+                                            }}
+                                            className="p-4 rounded-[20px] bg-emerald-500/5 border-2 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 transition-all"
+                                        >
+                                            <Info size={16} />
+                                        </motion.button>
                                     </div>
                                 )}
 
@@ -487,6 +500,16 @@ const ReaderScreen: React.FC = () => {
                                         >
                                             {isGeneratingAudio ? <Loader2 size={16} className="animate-spin" /> : isAudioPlaying ? <Square size={16} fill="currentColor" /> : <Headphones size={16} />}
                                             {isAudioPlaying ? "Halt Intake" : "Execute Briefing Podcast"}
+                                        </motion.button>
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => {
+                                                setBriefType('briefing');
+                                                setShowBrief(true);
+                                            }}
+                                            className="p-4 rounded-[20px] bg-indigo-500/5 border-2 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 transition-all"
+                                        >
+                                            <Info size={16} />
                                         </motion.button>
                                     </div>
                                 )}
@@ -843,6 +866,11 @@ const ReaderScreen: React.FC = () => {
                 numPages={numPages}
                 onClose={() => setShowMindMapSettings(false)}
                 onConfirm={(settings) => generateMindMap(settings)}
+            />
+            <NeuralProtocolBrief
+                isOpen={showBrief}
+                onClose={() => setShowBrief(false)}
+                type={briefType}
             />
         </motion.div >
     );
