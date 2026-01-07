@@ -23,15 +23,16 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
             const filters: ScanFilters = JSON.parse(cleanJson);
 
             // Intelligent fallback: If AI returns neutral values, apply visible enhancements
+            // BUT preserve color unless it's clearly a document
             if (filters.brightness === 100 && filters.contrast === 100 && filters.grayscale === 0) {
                 console.warn('⚠️ AI returned neutral values, applying intelligent defaults');
                 return {
                     brightness: 110,
-                    contrast: 130,
-                    grayscale: 100, // Assume document scan
-                    sharpness: 120,
-                    shadowPurge: true,
-                    reason: "Auto-enhanced: AI returned neutral values"
+                    contrast: 125,
+                    grayscale: 0, // Keep color by default
+                    sharpness: 115,
+                    shadowPurge: false,
+                    reason: "Auto-enhanced: Brightness and contrast boost"
                 };
             }
 
@@ -48,9 +49,9 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
 
 const defaultFilters: ScanFilters = {
     brightness: 110,
-    contrast: 130,
-    grayscale: 100,
-    sharpness: 120,
-    shadowPurge: true,
-    reason: "Standard document optimization"
+    contrast: 125,
+    grayscale: 0, // Keep color by default
+    sharpness: 115,
+    shadowPurge: false,
+    reason: "Standard enhancement"
 };
