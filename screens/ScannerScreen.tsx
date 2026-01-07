@@ -2,8 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getPolisherProtocol, getReconstructionProtocol, ScanFilters } from '../services/polisherService';
+import { useNavigate } from 'react-router-dom';
+import { getReconstructionProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import AIOptInModal from '../components/AIOptInModal';
@@ -15,8 +15,6 @@ import NeuralPulse from '../components/NeuralPulse';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const protocol = searchParams.get('protocol');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
@@ -193,18 +191,13 @@ const ScannerScreen: React.FC = () => {
     setIsPolishing(true);
     setError(null);
     try {
-      // Use different protocols based on scanner mode
-      const isReconstruction = protocol === 'reconstruction';
-
-      // Parallel execution for better speed
+      // Always use aggressive reconstruction protocol for best quality
       const [filters, nameSuggestion] = await Promise.all([
-        isReconstruction
-          ? getReconstructionProtocol(undefined, capturedImage)
-          : getPolisherProtocol(undefined, capturedImage),
+        getReconstructionProtocol(undefined, capturedImage),
         askGemini("Suggest a professional filename for this document.", undefined, 'naming', capturedImage)
       ]);
 
-      console.log(`🎨 ${isReconstruction ? '🔥 RECONSTRUCTION' : '📸 STANDARD'} Mode - AI Returned Filters:`, filters);
+      console.log('🎨 AI Returned Filters:', filters);
 
       // Apply filters from AI (color is always preserved via polisherService)
       setAppliedFilters(filters);
@@ -325,27 +318,15 @@ const ScannerScreen: React.FC = () => {
                 >
                   <div className="w-full max-w-sm space-y-6">
                     <ToolGuide
-                      title={protocol === 'ocr' ? "Neural OCR Protocol" : "Neural Reconstruction Protocol"}
-                      description={protocol === 'ocr' ? "Extract and interact with text data from physical assets. Convert static images into live interactive lexical streams." : "Acquire and reconstruct physical documents with AI-powered Shadow Purge technology, smart naming, and automated perspective correction."}
-                      steps={protocol === 'ocr' ? [
-                        "Capture a high-fidelity image of the source text.",
-                        "Activate Neural OCR to decouple text from the visual layer.",
-                        "Initialize the Data Chat to query the document content.",
-                        "Export structured text or JSON payloads."
-                      ] : protocol === 'reconstruction' ? [
-                        "Position the physical asset within the optical guides.",
-                        "Execute High-Fidelity Capture for structural analysis.",
-                        "Engage Neural Reconstruction to purge shadows & fix geometry.",
-                        "Assemble the restored asset into a secure PDF container."
-                      ] : [
+                      title="Neural Scanner"
+                      description="Capture and enhance physical documents with AI-powered image optimization, smart naming, and professional-grade quality enhancement."
+                      steps={[
                         "Align your document within the visual guide markers.",
                         "Capture the high-fidelity scan using the trigger.",
-                        "Activate Neural Reconstruction for shadow & perspective repair.",
-                        "Assemble into a multi-page PDF or export as high-end JPEG."
+                        "Activate Neural Enhancement for optimal quality.",
+                        "Assemble into a multi-page PDF or export as high-quality JPEG."
                       ]}
-                      useCases={protocol === 'ocr' ? [
-                        "Data Retrieval", "Handwriting Digitization", "Code Extraction", "Rapid Translation"
-                      ] : [
+                      useCases={[
                         "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
                       ]}
                     />
@@ -404,23 +385,15 @@ const ScannerScreen: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight text-white">
-                        {protocol === 'reconstruction' ? "Expert Restoration Protocol" : "Neural Reconstruction"}
+                        Neural Enhancement
                       </span>
                       {appliedFilters.shadowPurge && (
                         <span className="px-1.5 py-0.5 bg-violet-500 rounded text-[6px] font-black uppercase tracking-widest animate-pulse">Shadow Purge Active</span>
                       )}
                     </div>
-                    {protocol === 'reconstruction' ? (
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 opacity-80">
-                        <span className="text-[6px] font-black tracking-widest uppercase flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-white" /> Luminosity Balance: OK</span>
-                        <span className="text-[6px] font-black tracking-widest uppercase flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-white" /> Shadow Suppression: ACTIVE</span>
-                        <span className="text-[6px] font-black tracking-widest uppercase flex items-center gap-1"><div className="w-1 h-1 rounded-full bg-white" /> Geometry Fix: +2.4°</span>
-                      </div>
-                    ) : (
-                      <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate">
-                        {appliedFilters.reason}
-                      </p>
-                    )}
+                    <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate mt-1">
+                      {appliedFilters.reason}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1 border-l border-white/20 pl-2">
                     <button
@@ -510,7 +483,7 @@ const ScannerScreen: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <Wand2 size={20} className={isPolishing ? 'animate-spin' : ''} />
                 <span className="font-black text-[10px] uppercase tracking-[0.3em]">
-                  {protocol === 'reconstruction' ? "Run Repair Protocol" : "Neural Enhance"}
+                  Neural Enhance
                 </span>
               </button>
             ) : (
