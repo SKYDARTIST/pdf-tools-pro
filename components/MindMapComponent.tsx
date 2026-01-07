@@ -21,6 +21,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
     const [isDragging, setIsDragging] = React.useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const mapRef = useRef<HTMLDivElement>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
 
     const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
     const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.1)); // Expanded zoom out
@@ -29,31 +30,19 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
     };
 
     const handleExport = async () => {
-        if (!mapRef.current) return;
+        if (!svgRef.current) return;
         setIsExporting(true);
         try {
-            // Temporarily set a neutral scale for high-quality export
-            const originalScale = scale;
-            setScale(1);
-
-            // Allow time for re-render and font loading
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const dataUrl = await toPng(mapRef.current, {
+            // High-fidelity capture of the absolute 2000x2000 plane
+            const dataUrl = await toPng(svgRef.current, {
                 backgroundColor: '#000000',
                 quality: 1,
-                pixelRatio: 3, // Ultra-high res
-                skipAutoScale: true,
-                filter: (node) => {
-                    // Filter out UI buttons and instruction banners
-                    if (node instanceof HTMLElement) {
-                        const isUI = node.classList.contains('z-10') ||
-                            node.classList.contains('pointer-events-none') ||
-                            node.tagName === 'BUTTON' ||
-                            node.closest('.z-10'); // Catch children as well
-                        return !isUI;
-                    }
-                    return true;
+                pixelRatio: 2, // Large 4000x4000 output
+                width: 2000,
+                height: 2000,
+                style: {
+                    transform: 'none',
+                    margin: '0',
                 }
             });
 
@@ -61,8 +50,6 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             link.download = `anti-gravity-mindmap-${Date.now()}.png`;
             link.href = dataUrl;
             link.click();
-
-            setScale(originalScale);
         } catch (error) {
             console.error('Neural Export Failed:', error);
             alert('Neuro-Link export interrupted. Please synchronize and try again.');
@@ -160,6 +147,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                 onDragEnd={() => setIsDragging(false)}
             >
                 <svg
+                    ref={svgRef}
                     viewBox="-1000 -1000 2000 2000"
                     width="2000"
                     height="2000"
