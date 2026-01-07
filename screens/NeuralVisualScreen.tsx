@@ -69,6 +69,7 @@ const NeuralVisualScreen: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [showUpgrade, setShowUpgrade] = useState(false);
     const [step, setStep] = useState<'triage' | 'prompt' | 'result'>('triage');
+    const [isImageLoading, setIsImageLoading] = useState(false);
 
     const [selectedDoc, setSelectedDoc] = useState<FileHistoryEntry | null>(null);
     const [recentDocs, setRecentDocs] = useState<FileHistoryEntry[]>([]);
@@ -100,6 +101,7 @@ const NeuralVisualScreen: React.FC = () => {
 
             if (response.status === 'success' && response.imageUrl) {
                 setResult(response.imageUrl);
+                setIsImageLoading(true);
                 setStep('result');
             } else if (response.status === 'quota_exceeded') {
                 setShowUpgrade(true);
