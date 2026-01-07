@@ -419,20 +419,37 @@ const ReaderScreen: React.FC = () => {
                         <>
                             {/* Optimized 2-Tier Control Hub */}
                             <div className="monolith-card p-4 space-y-4 shadow-xl border-none">
-                                {/* Tier 0: Neural Elite Protocols (AI Pack Shared) */}
-                                <div className="flex items-center gap-2">
-                                    <motion.button
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={runNeuralAudit}
-                                        className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${auditData || isAuditing
-                                            ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
-                                            : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10'
-                                            }`}
-                                    >
-                                        <Shield size={16} fill={isAuditing ? "currentColor" : "none"} />
-                                        {isAuditing ? "Synthesizing Risk Map" : "Neural Audit Protocol"}
-                                    </motion.button>
-                                </div>
+                                {protocol === 'audit' && (
+                                    <div className="flex items-center gap-2">
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={runNeuralAudit}
+                                            className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${auditData || isAuditing
+                                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
+                                                : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10'
+                                                }`}
+                                        >
+                                            <Shield size={16} fill={isAuditing ? "currentColor" : "none"} />
+                                            {isAuditing ? "Synthesizing Risk Map" : "Neural Audit Protocol"}
+                                        </motion.button>
+                                    </div>
+                                )}
+
+                                {protocol === 'briefing' && (
+                                    <div className="flex items-center gap-2">
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={toggleAudioNarrator}
+                                            className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${isAudioPlaying
+                                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
+                                                : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10'
+                                                }`}
+                                        >
+                                            {isGeneratingAudio ? <Loader2 size={16} className="animate-spin" /> : isAudioPlaying ? <Square size={16} fill="currentColor" /> : <Headphones size={16} />}
+                                            {isAudioPlaying ? "Halt Intake" : "Execute Briefing Podcast"}
+                                        </motion.button>
+                                    </div>
+                                )}
                                 {/* Tier 1: Neural & AI Intelligence Tools */}
                                 <div className="flex flex-wrap items-center gap-2 sm:gap-1.5">
                                     <motion.button
@@ -462,15 +479,16 @@ const ReaderScreen: React.FC = () => {
 
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
-                                        onClick={toggleAudioNarrator}
-                                        className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isAudioPlaying
-                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                        onClick={generateMindMap}
+                                        className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
+                                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                             : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                             }`}
                                     >
-                                        {isGeneratingAudio ? <Loader2 size={12} className="animate-spin" /> : isAudioPlaying ? <Square size={12} fill="currentColor" /> : <Mic size={12} />}
-                                        {isAudioPlaying ? "Stop" : "Podcast"}
+                                        <GitBranch size={12} />
+                                        {isGeneratingMindMap ? "Projecting" : "Mind Map"}
                                     </motion.button>
+
 
                                 </div>
 
