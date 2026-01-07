@@ -65,7 +65,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             if (!parent) return;
 
             const angle = (startAngle + endAngle) / 2;
-            const distance = level === 1 ? 180 : 120; // More space for main branches
+            const distance = level === 1 ? 220 : 160; // Increased spacing
 
             node.x = parent.x + Math.cos(angle) * distance;
             node.y = parent.y + Math.sin(angle) * distance;
@@ -94,11 +94,11 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
     }, [data]);
 
     return (
-        <div className="w-full h-full min-h-[500px] bg-black/5 dark:bg-white/5 rounded-[40px] relative overflow-hidden flex items-center justify-center p-8 cursor-grab active:cursor-grabbing">
-            <svg viewBox="0 0 800 600" className="w-full h-full max-w-4xl overflow-visible">
+        <div className="w-full h-full min-h-[600px] bg-black/5 dark:bg-white/5 rounded-[40px] relative overflow-hidden flex items-center justify-center p-8 cursor-grab active:cursor-grabbing">
+            <svg viewBox="0 0 1200 900" className="w-full h-full max-w-6xl overflow-visible">
                 <motion.g
                     drag
-                    dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
+                    dragConstraints={{ left: -2000, right: 2000, top: -2000, bottom: 2000 }}
                     style={{ scale }}
                     initial={{ x: 0, y: 0 }}
                     onDragStart={() => setIsDragging(true)}
@@ -117,10 +117,10 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                                 x2={node.x}
                                 y2={node.y}
                                 stroke="currentColor"
-                                strokeWidth="1"
+                                strokeWidth="3"
                                 initial={{ pathLength: 0, opacity: 0 }}
-                                animate={{ pathLength: 1, opacity: 0.1 }}
-                                transition={{ duration: 1 }}
+                                animate={{ pathLength: 1, opacity: 0.2 }}
+                                transition={{ duration: 1.5 }}
                                 className="text-black dark:text-white"
                             />
                         );
@@ -137,17 +137,18 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                             <circle
                                 cx={node.x}
                                 cy={node.y}
-                                r={node.id === 'root' ? 40 : 25}
-                                className={`${node.id === 'root' ? 'fill-black dark:fill-white' : 'fill-white dark:fill-black border border-black/10 dark:border-white/10'}`}
+                                r={node.id === 'root' ? 60 : 40}
+                                className={`${node.id === 'root' ? 'fill-black dark:fill-white' : 'fill-white dark:fill-black border-2 border-black/10 dark:border-white/10'}`}
                             />
                             <foreignObject
-                                x={node.x - 60}
-                                y={node.y + (node.id === 'root' ? 45 : 30)}
-                                width="120"
-                                height="60"
+                                x={node.x - 80}
+                                y={node.y - 80}
+                                width="160"
+                                height="160"
+                                style={{ pointerEvents: 'none' }}
                             >
-                                <div className="text-center">
-                                    <span className={`text-[8px] font-black uppercase tracking-tighter leading-none ${node.id === 'root' ? 'text-black dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                                <div className="w-full h-full flex items-center justify-center p-3">
+                                    <span className={`text-[10px] font-black uppercase tracking-tighter leading-tight text-center ${node.id === 'root' ? 'text-white dark:text-black' : 'text-gray-900 dark:text-white'}`}>
                                         {node.text}
                                     </span>
                                 </div>
@@ -161,29 +162,33 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             <div className="absolute top-10 right-10 flex flex-col gap-2">
                 <button
                     onClick={handleZoomIn}
-                    className="p-3 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
+                    className="p-3 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
                 >
                     <ZoomIn className="w-4 h-4 text-black dark:text-white" />
                 </button>
                 <button
                     onClick={handleZoomOut}
-                    className="p-3 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
+                    className="p-3 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
                 >
                     <ZoomOut className="w-4 h-4 text-black dark:text-white" />
                 </button>
                 <button
                     onClick={handleReset}
-                    className="p-3 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
+                    className="p-3 bg-white dark:bg-[#0a0a0a] border border-black/10 dark:border-white/10 rounded-2xl shadow-xl hover:scale-110 transition-transform active:scale-95"
                 >
                     <RotateCcw className="w-4 h-4 text-black dark:text-white" />
                 </button>
             </div>
 
             {/* Legend */}
-            <div className="absolute bottom-10 left-10 flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Neural Connect Success</span>
+            <div className="absolute bottom-10 left-10 flex flex-col gap-3 p-6 bg-black/5 dark:bg-white/5 rounded-[30px] backdrop-blur-md">
+                <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Neural Sync Status: Active</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Structural Integrity: Optimized</span>
                 </div>
             </div>
         </div>

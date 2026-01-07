@@ -14,6 +14,7 @@ import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import NeuralPulse from '../components/NeuralPulse';
 import ToolGuide from '../components/ToolGuide';
+import MindMapSettingsModal from '../components/MindMapSettingsModal';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -42,6 +43,7 @@ const ReaderScreen: React.FC = () => {
     const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
+    const [showMindMapSettings, setShowMindMapSettings] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -100,15 +102,14 @@ const ReaderScreen: React.FC = () => {
         setIsMindMapMode(false);
     };
 
-    const generateMindMap = async () => {
+    const generateMindMap = async (settings?: { range: string; focus: string }) => {
         if (!file || isGeneratingMindMap) return;
 
         if (!hasConsent) {
-            setPendingAction(() => generateMindMap);
+            setPendingAction(() => () => generateMindMap(settings));
             setShowConsent(true);
             return;
         }
-
 
         const aiCheck = canUseAI();
         if (!aiCheck.allowed) {
@@ -116,23 +117,61 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
+        if (!settings && !mindMapData) {
+            setShowMindMapSettings(true);
+            return;
+        }
+
         setIsMindMapMode(true);
         setIsFluidMode(false);
 
-        if (mindMapData) return;
+        if (mindMapData && !settings) return;
 
+        setShowMindMapSettings(false);
         setIsGeneratingMindMap(true);
         try {
-            let text = fluidContent;
-            if (!text) {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer);
-                setFluidContent(text);
+            let text = "";
+            let startPage = 1;
+            let endPage = numPages; // Default to all pages
+
+            if (settings?.range) {
+                const parts = settings.range.split('-').map(p => parseInt(p.trim()));
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    startPage = Math.max(1, parts[0]);
+                    endPage = Math.min(parts[1], numPages);
+                } else if (parts.length === 1 && !isNaN(parts[0])) {
+                    startPage = Math.max(1, parts[0]);
+                    endPage = Math.min(parts[0] + 9, numPages); // Default to 10 pages from start
+                }
             }
-            const response = await askGemini("Extract a hierarchical mind map structure from this PDF. Use a simple indented list. STRICT LIMITS: Max 5 level-1 branches and 3 level-2 sub-branches per node. Group similar concepts together to ensure a clean, focused hierarchy. Output only the indented list.", text, "mindmap");
+
+            const buffer = await file.arrayBuffer();
+            text = await extractTextFromPdf(buffer, startPage, endPage);
+
+            const prompt = `Perform a high-fidelity Neural Mind Map Synthesis. 
+            Target Range: Pages ${startPage} to ${endPage}.
+            Strategic Focus: ${settings?.focus || "Core document architecture and key thematic pillars"}.
+            
+            STRUCTURE RULES:
+            - Root: The absolute central concept (MAX 1).
+            - Level 1: Primary strategic pillars (MAX 5).
+            - Level 2: Critical evidentiary sub-nodes (MAX 3 per pillar).
+            
+            OUTPUT FORMAT:
+            A simple indented list using dashes (-). No bolding, no extra text, no symbols except dashes for hierarchy.
+            
+            Example:
+            Central Concept
+            - First Pillar
+              - Sub-point A
+              - Sub-point B
+            - Second Pillar
+            `;
+
+            const response = await askGemini(prompt, text, "mindmap");
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
-                setMindMapData(null);
+                setMindMapData('');
                 return;
             }
             setMindMapData(response);
@@ -479,7 +518,7 @@ const ReaderScreen: React.FC = () => {
 
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
-                                        onClick={generateMindMap}
+                                        onClick={() => generateMindMap()}
                                         className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
                                             ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
                                             : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
@@ -797,6 +836,12 @@ const ReaderScreen: React.FC = () => {
             <UpgradeModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
+            />
+            <MindMapSettingsModal
+                isOpen={showMindMapSettings}
+                numPages={numPages}
+                onClose={() => setShowMindMapSettings(false)}
+                onConfirm={(settings) => generateMindMap(settings)}
             />
         </motion.div >
     );

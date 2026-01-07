@@ -5,13 +5,16 @@ const PDFJS_VERSION = '5.4.530';
 // unpkg usually supports the modern .mjs worker for PDF.js v5+
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
 
-export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer): Promise<string> => {
+export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: number, endPage?: number): Promise<string> => {
     try {
         const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
         const pdf = await loadingTask.promise;
         let fullText = '';
 
-        for (let i = 1; i <= pdf.numPages; i++) {
+        const start = startPage || 1;
+        const end = Math.min(endPage || pdf.numPages, pdf.numPages);
+
+        for (let i = start; i <= end; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
             const pageText = (textContent.items as any[])
