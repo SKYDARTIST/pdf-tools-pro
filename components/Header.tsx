@@ -75,7 +75,10 @@ const Header: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-1 min-w-0">
-        <TaskCounter onUpgradeClick={() => setShowUpgradeModal(true)} />
+        <TaskCounter
+          variant="header"
+          onUpgradeClick={() => setShowUpgradeModal(true)}
+        />
 
         <div className="w-[1px] h-5 bg-gray-900/10 dark:bg-white/10 mx-0.5 hidden xs:block" />
 

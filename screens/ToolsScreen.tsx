@@ -53,7 +53,7 @@ const ToolsScreen: React.FC = () => {
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Select operation for data manipulation</p>
                 </motion.div>
 
-                <TaskCounter />
+                <TaskCounter variant="inline" />
 
                 {/* Search Interaction */}
                 <motion.div
