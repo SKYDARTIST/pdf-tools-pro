@@ -221,31 +221,16 @@ ${documentText || "No text content - analyzing image only."}`;
         // v1.7: NEURAL_SIMULATION FALLBACK (High-Relevance & High-Speed)
         if (type === 'visual') {
             const lowerPrompt = prompt.toLowerCase();
-            let imageId = '1499951360447-b19be8fe80f5'; // High-End Tech Workspace Default
 
-            // Mapping personas/keywords to curated High-Fi IDs
-            if (lowerPrompt.includes('finance') || lowerPrompt.includes('money') || lowerPrompt.includes('business')) {
-                imageId = '1450101499163-c8848c66ca85';
-            } else if (lowerPrompt.includes('student') || lowerPrompt.includes('study') || lowerPrompt.includes('education')) {
-                imageId = '1513258496099-48168024adb0';
-            } else if (lowerPrompt.includes('creative') || lowerPrompt.includes('art') || lowerPrompt.includes('design')) {
-                imageId = '1550684848-fac1c5b4e853';
-            } else if (lowerPrompt.includes('mac') || lowerPrompt.includes('laptop') || lowerPrompt.includes('bedroom') || lowerPrompt.includes('working')) {
-                imageId = '1498050108023-c5249f4df085'; // Professional Working Lifestyle
-            } else if (lowerPrompt.includes('ai') || lowerPrompt.includes('tech') || lowerPrompt.includes('future')) {
-                imageId = '1451187580459-43490279c0fa';
-            }
+            // Use keyword search for ALL prompts - more reliable than hardcoded IDs
+            // This ensures images always load and are contextually relevant
+            const keywords = prompt.split(' ').filter(w => w.length > 2).slice(0, 4).join(',');
+            const query = encodeURIComponent(keywords);
 
-            // Universal Fallback: If no ID matched a hardcoded category, use keyword search for maximum relevance
-            let finalUrl = `https://images.unsplash.com/photo-${imageId}?auto=format&fit=crop&w=1024&q=80&sig=${Date.now()}`;
+            // Use source.unsplash.com for reliable, fast, contextual images
+            const finalUrl = `https://source.unsplash.com/1024x1024/?${query}&sig=${Date.now()}`;
 
-            // If it's a lifestyle or specific thing not categorized, use a keyword search URL
-            if (imageId === '1499951360447-b19be8fe80f5') {
-                const query = encodeURIComponent(prompt.split(' ').slice(0, 4).join(','));
-                finalUrl = `https://source.unsplash.com/1024x1024/?${query}&sig=${Date.now()}`;
-            }
-
-            return res.status(200).json({ text: finalUrl, note: "Neural Intelligence Refined." });
+            return res.status(200).json({ text: finalUrl, note: "Neural Intelligence Active." });
         }
 
         return res.status(500).json({
