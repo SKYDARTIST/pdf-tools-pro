@@ -78,13 +78,15 @@ export default async function handler(req, res) {
 
 **NEURAL SCAN ENHANCEMENT PROTOCOL**
 
-Analyze this scanned image and provide AGGRESSIVE optimization filters to transform it into a professional, high-contrast document scan.
+Analyze this scanned image and provide optimization filters to enhance quality while preserving the image's natural characteristics.
 
 **CRITICAL REQUIREMENTS:**
 1. **Always enhance** - Never return neutral values (100/100/0). Every scan needs improvement.
-2. **Boost contrast** - Typical documents need 110-140% contrast for crisp text.
+2. **Boost contrast** - Typical range 110-140% for crisp, professional results.
 3. **Adjust brightness** - Compensate for lighting: 85-95% for bright scans, 105-120% for dark scans.
-4. **Force B&W for documents** - Set grayscale=100 for any text document, receipt, or form.
+4. **Preserve color intelligently**:
+   - Set grayscale=0 for: photos, product images, colorful documents, receipts with color logos
+   - Set grayscale=100 ONLY for: pure text documents, black ink on white paper, handwritten notes
 5. **Detect shadows** - If you see hand shadows, uneven lighting, or dark corners, set shadowPurge=true.
 
 **Output JSON format:**
@@ -98,11 +100,14 @@ Analyze this scanned image and provide AGGRESSIVE optimization filters to transf
 }
 
 **Examples:**
-- Newspaper/document → brightness: 110, contrast: 130, grayscale: 100
-- Receipt with shadows → brightness: 115, contrast: 135, grayscale: 100, shadowPurge: true
-- Color photo → brightness: 95, contrast: 115, grayscale: 0
+- Product photo → brightness: 115, contrast: 140, grayscale: 0
+- Colorful receipt → brightness: 110, contrast: 135, grayscale: 0
+- Plain text document → brightness: 110, contrast: 130, grayscale: 100
+- Handwritten notes → brightness: 115, contrast: 135, grayscale: 100
 
-Analyze the image and return ONLY the JSON object with visible enhancements.`;
+**DEFAULT TO COLOR (grayscale=0) unless it's clearly a pure text document.**
+
+Analyze the image and return ONLY the JSON object.`;
                 } else if (type === 'audio_script') {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT.
                     
