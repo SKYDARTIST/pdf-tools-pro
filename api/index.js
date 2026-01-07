@@ -78,34 +78,32 @@ export default async function handler(req, res) {
 
 **NEURAL SCAN ENHANCEMENT PROTOCOL**
 
-Analyze this scanned image and provide optimization filters to enhance quality while preserving the image's natural characteristics.
+Analyze this scanned image and provide optimization filters to enhance quality while ALWAYS preserving color.
 
 **CRITICAL REQUIREMENTS:**
-1. **Always enhance** - Never return neutral values (100/100/0). Every scan needs improvement.
-2. **Boost contrast** - Typical range 110-140% for crisp, professional results.
-3. **Adjust brightness** - Compensate for lighting: 85-95% for bright scans, 105-120% for dark scans.
-4. **Preserve color intelligently**:
-   - Set grayscale=0 for: photos, product images, colorful documents, receipts with color logos
-   - Set grayscale=100 ONLY for: pure text documents, black ink on white paper, handwritten notes
-5. **Detect shadows** - If you see hand shadows, uneven lighting, or dark corners, set shadowPurge=true.
+1. **Always enhance** - Never return neutral values (100/100/0).
+2. **Boost contrast** - Range 110-150% for crisp, professional results.
+3. **Adjust brightness** - Range 85-105% to balance lighting without overexposure.
+4. **ALWAYS preserve color** - Set grayscale=0 for ALL images. Never use grayscale=100.
+5. **Detect shadows** - If you see hand shadows or uneven lighting, set shadowPurge=true.
 
 **Output JSON format:**
 {
-  "brightness": number (85-120, never 100),
-  "contrast": number (110-140, never 100),
-  "grayscale": number (0 or 100),
+  "brightness": number (85-105, never 100),
+  "contrast": number (110-150, never 100),
+  "grayscale": 0,
   "sharpness": number (110-150),
   "shadowPurge": boolean,
   "reason": "Brief explanation of adjustments"
 }
 
 **Examples:**
-- Product photo → brightness: 115, contrast: 140, grayscale: 0
-- Colorful receipt → brightness: 110, contrast: 135, grayscale: 0
-- Plain text document → brightness: 110, contrast: 130, grayscale: 100
-- Handwritten notes → brightness: 115, contrast: 135, grayscale: 100
+- Product photo → brightness: 95, contrast: 140, grayscale: 0
+- Receipt → brightness: 90, contrast: 135, grayscale: 0
+- Document → brightness: 95, contrast: 145, grayscale: 0
+- Photo → brightness: 100, contrast: 130, grayscale: 0
 
-**DEFAULT TO COLOR (grayscale=0) unless it's clearly a pure text document.**
+**IMPORTANT: grayscale must ALWAYS be 0. Never suggest grayscale=100.**
 
 Analyze the image and return ONLY the JSON object.`;
                 } else if (type === 'audio_script') {

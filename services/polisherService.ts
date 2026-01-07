@@ -22,17 +22,20 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
             const cleanJson = response.replace(/```json|```/g, '').trim();
             const filters: ScanFilters = JSON.parse(cleanJson);
 
+            // Force color preservation - NEVER apply grayscale
+            filters.grayscale = 0;
+
             // Intelligent fallback: If AI returns neutral values, apply visible enhancements
             // BUT preserve color unless it's clearly a document
-            if (filters.brightness === 100 && filters.contrast === 100 && filters.grayscale === 0) {
+            if (filters.brightness === 100 && filters.contrast === 100) {
                 console.warn('⚠️ AI returned neutral values, applying intelligent defaults');
                 return {
-                    brightness: 115,
+                    brightness: 95,
                     contrast: 140,
-                    grayscale: 0, // Keep color by default
+                    grayscale: 0, // Always keep color
                     sharpness: 120,
                     shadowPurge: false,
-                    reason: "Auto-enhanced: Professional brightness and contrast boost"
+                    reason: "Auto-enhanced: Contrast boost with color preservation"
                 };
             }
 
@@ -48,10 +51,10 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
 };
 
 const defaultFilters: ScanFilters = {
-    brightness: 115,
+    brightness: 95,
     contrast: 140,
-    grayscale: 0, // Keep color by default
+    grayscale: 0, // Always keep color
     sharpness: 120,
     shadowPurge: false,
-    reason: "Professional enhancement"
+    reason: "Professional enhancement with color preservation"
 };
