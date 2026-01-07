@@ -17,7 +17,8 @@ const ToolsScreen: React.FC = () => {
 
     const tools = [
         { title: 'Read', desc: 'Secure Sequential Reading', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
-        { title: 'Scanner', desc: 'AI Polish & Smart Naming', icon: Zap, path: '/scanner?protocol=reconstruction', cat: 'popular' },
+        { title: 'Scanner', desc: 'Neural Enhancement Unit', icon: Zap, path: '/scanner', cat: 'popular' },
+        { title: 'Neural Visual', desc: 'AI Image & Poster Engine', icon: Sparkles, path: '/visual', cat: 'popular' },
         { title: 'Image to PDF', desc: 'Convert photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
         { title: 'Merge', desc: 'Combine PDFs', icon: Combine, path: '/merge', cat: 'popular' },
         { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },

@@ -63,10 +63,10 @@ export default async function handler(req, res) {
                 const model = genAI.getGenerativeModel({
                     model: modelName,
                     safetySettings: [
-                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_LOW_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_LOW_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_LOW_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_LOW_AND_ABOVE" },
                     ]
                 }, { apiVersion: 'v1' });
 
@@ -141,6 +141,24 @@ ${documentText || "No text content - analyzing image only."}`;
                         .substring(0, 10000);
 
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nClean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
+                } else if (type === 'visual') {
+                    // NEURAL VISUAL (Nano Banana) SAFETY PROTOCOL
+                    const BANNED_KEYWORDS = ['18+', 'nude', 'nsfw', 'porn', 'sex', 'violence', 'blood', 'gore', 'kill', 'attack', 'weapon', 'drug', 'abuse', 'illegal'];
+                    const lowerPrompt = prompt.toLowerCase();
+                    const isBanned = BANNED_KEYWORDS.some(word => lowerPrompt.includes(word));
+
+                    if (isBanned) {
+                        return res.status(400).json({ error: "Safety Violation: Prohibited content requested." });
+                    }
+
+                    // Strict instruction for image generation
+                    promptPayload = `Generate a professional, high-quality image based on this request. ADHERE TO SAFETY POLICIES: NO VIOLENCE, NO NSFW, NO HATE. REQUEST: ${prompt}`;
+
+                    // Specific model for visuals
+                    if (modelName !== 'gemini-2.5-flash-image' && modelName !== 'imagen-3' && modelName !== 'gemini-1.5-flash') {
+                        // Skip if model doesn't support visuals (simplified for simulation)
+                        continue;
+                    }
                 } else {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
                 }
@@ -160,7 +178,18 @@ ${documentText || "No text content - analyzing image only."}`;
 
                 const result = await model.generateContent(contents);
                 const response = await result.response;
-                return res.status(200).json({ text: response.text() });
+
+                // v1.6: Dynamic Response Handling
+                // If the model is an image generator, it might return a different structure
+                // For this prototype, we extract the first text/image response
+                const text = response.text();
+
+                // If it's a safety block, Gemini might throw or return a specific string
+                if (text.toLowerCase().includes("i can't help with that") || text.toLowerCase().includes("safety")) {
+                    return res.status(400).json({ error: "Safety Violation: Asset discarded by Neural Guard." });
+                }
+
+                return res.status(200).json({ text: text });
             } catch (err) {
                 const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota');
                 if (isRateLimit) {
