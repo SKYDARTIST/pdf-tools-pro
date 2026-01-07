@@ -1,8 +1,11 @@
-
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Anti-Gravity Backend v1.4 - Dynamic Model Discovery (Full Revert)
-const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. If text is provided, analyze it thoroughly before responding. Maintain a professional, technical tone.`;
+// Anti-Gravity Backend v1.5 - Optimized Architecture
+const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
+
+// Memory-safe model cache
+let cachedModels = null;
+let lastDiscovery = 0;
 
 export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
@@ -14,36 +17,45 @@ export default async function handler(req, res) {
     // Stage 1 Protocol Integrity Check
     const signature = req.headers['x-ag-signature'];
     if (signature !== 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE') {
-        console.warn("Unauthorized API Access Attempt Dropped");
-        return res.status(401).json({ error: "Protocol Integrity Violation. Request Origin Untrusted." });
+        return res.status(401).json({ error: "Protocol Integrity Violation." });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Dynamic Discovery Logic - The "Gemini Decides" way
-    const getAvailableModels = async () => {
+    // Rate-limited discovery (once every 10 mins)
+    const getModels = async () => {
+        const now = Date.now();
+        if (cachedModels && (now - lastDiscovery < 600000)) return cachedModels;
+
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
             const data = await response.json();
-            if (!data.models) return ["gemini-2.0-flash", "gemini-1.5-flash"];
-
-            return data.models
-                .filter(m => m.supportedGenerationMethods.includes('generateContent'))
-                .map(m => m.name.replace('models/', ''));
-        } catch (err) {
-            console.error("Discovery Error:", err);
-            return ["gemini-2.0-flash", "gemini-1.5-flash"];
-        }
+            if (data.models) {
+                cachedModels = data.models
+                    .filter(m => m.supportedGenerationMethods.includes('generateContent'))
+                    .map(m => m.name.replace('models/', ''));
+                lastDiscovery = now;
+                return cachedModels;
+            }
+        } catch (e) { }
+        return ["gemini-2.0-flash", "gemini-1.5-flash"];
     };
 
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    const { prompt, documentText, type, image, mimeType = 'image/jpeg' } = req.body;
+    let { prompt, documentText, type, image, mimeType = 'image/jpeg' } = req.body;
+
+    // QUOTA-SAFE TRUNCATION: Prevent massive documents from nuking the quota
+    // Flash models handle 1M tokens, but daily/RPM limits are much tighter
+    if (documentText && documentText.length > 30000) {
+        console.log("🛡️ Neural Truncation engaged: Clipping context to 30,000 chars.");
+        documentText = documentText.substring(0, 30000) + "... [REMAINDER OF OVERSIZED CARRIER TRUNCATED FOR STABILITY]";
+    }
 
     try {
-        let modelsToTry = await getAvailableModels();
+        let modelsToTry = await getModels();
         const errors = [];
 
         for (const modelName of modelsToTry) {
@@ -81,7 +93,18 @@ CRITICAL:
 2. For B&W documents, grayscale=100. For color/photos, grayscale=0.
 3. Suggest values that "flatten" the document look like a high-end office scanner.`;
                 } else if (type === 'audio_script') {
-                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT. \n\nRULES:\n1. START DIRECTLY with the phrase: "Welcome to Anti-Gravity."\n2. DO NOT use any markdown symbols like asterisks (**), hashes (#), or bullet points.\n3. Keep the tone conversational and professional.\n\nDOCUMENT TEXT:\n${documentText || "No document text available."}`;
+                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nCONVERT THE FOLLOWING DOCUMENT TEXT INTO A CONCISE, ENGAGING PODCAST-STYLE AUDIO SCRIPT.
+                    
+                    STRATEGIC INSTRUCTIONS:
+                    ${prompt || "Generate a high-level strategic summary."}
+
+                    RULES:
+                    1. START DIRECTLY with the phrase: "Welcome to Anti-Gravity."
+                    2. DO NOT use markdown symbols, stars, or formatting.
+                    3. Keep it conversational.
+
+                    DOCUMENT TEXT:
+                    ${documentText || "No context provided."}`;
                 } else if (type === 'table') {
                     promptPayload = `Extract tables from image/text into JSON: [{ "tableName": "Name", "headers": [], "rows": [[]] }]\nONLY JSON.`;
                 } else if (type === 'scrape') {
