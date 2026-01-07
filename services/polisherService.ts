@@ -69,17 +69,17 @@ export const getReconstructionProtocol = async (sampleText?: string, imageBase64
             filters.grayscale = 0;
 
             // AGGRESSIVE enhancements for reconstruction
-            // Boost AI suggestions by 10-15% for more dramatic effect
+            // Boost AI suggestions for more dramatic effect
             return {
                 brightness: Math.min(120, filters.brightness + 10),
                 contrast: Math.min(180, filters.contrast + 20),
                 grayscale: 0,
                 sharpness: Math.min(150, filters.sharpness + 30),
                 shadowPurge: true, // Always enable shadow removal
-                perspectiveCorrection: true, // Enable perspective correction
-                autoCrop: true, // Enable auto-crop
-                textEnhancement: true, // Enable text enhancement
-                reason: "Neural Reconstruction: Perspective correction + shadow removal + text enhancement"
+                perspectiveCorrection: false, // Disabled - too complex for simple implementation
+                autoCrop: false, // Disabled - requires better edge detection
+                textEnhancement: true, // Keep this - works well
+                reason: "Neural Reconstruction: Aggressive filters + text enhancement"
             };
         } catch (parseErr) {
             console.error("Reconstruction Parse Error:", parseErr);
@@ -106,8 +106,8 @@ const reconstructionDefaults: ScanFilters = {
     grayscale: 0,
     sharpness: 140,
     shadowPurge: true,
-    perspectiveCorrection: true,
-    autoCrop: true,
-    textEnhancement: true,
-    reason: "Neural Reconstruction: Professional document restoration with perspective correction"
+    perspectiveCorrection: false, // Disabled for now
+    autoCrop: false, // Disabled for now
+    textEnhancement: true, // Keep enabled
+    reason: "Neural Reconstruction: Aggressive enhancement + text sharpening"
 };
