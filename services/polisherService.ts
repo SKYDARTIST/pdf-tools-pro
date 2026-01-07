@@ -11,8 +11,8 @@ export interface ScanFilters {
 }
 
 /**
- * AI Scan Polisher Service
- * Analyzes an image (sampled text or metadata) and recommends corrective filters.
+ * AI Scan Polisher Service - Regular Scanner
+ * Moderate enhancements for everyday scanning
  */
 export const getPolisherProtocol = async (sampleText?: string, imageBase64?: string): Promise<ScanFilters> => {
     try {
@@ -26,13 +26,12 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
             filters.grayscale = 0;
 
             // Intelligent fallback: If AI returns neutral values, apply visible enhancements
-            // BUT preserve color unless it's clearly a document
             if (filters.brightness === 100 && filters.contrast === 100) {
                 console.warn('⚠️ AI returned neutral values, applying intelligent defaults');
                 return {
                     brightness: 95,
                     contrast: 140,
-                    grayscale: 0, // Always keep color
+                    grayscale: 0,
                     sharpness: 120,
                     shadowPurge: false,
                     reason: "Auto-enhanced: Contrast boost with color preservation"
@@ -50,11 +49,55 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
     }
 };
 
+/**
+ * Neural Reconstruction Protocol - Premium Scanner
+ * AGGRESSIVE enhancements for professional document restoration
+ */
+export const getReconstructionProtocol = async (sampleText?: string, imageBase64?: string): Promise<ScanFilters> => {
+    try {
+        const response = await askGemini("Analyze scan quality for aggressive reconstruction.", sampleText || "Image scan analysis.", 'polisher', imageBase64);
+
+        try {
+            const cleanJson = response.replace(/```json|```/g, '').trim();
+            const filters: ScanFilters = JSON.parse(cleanJson);
+
+            // Force color preservation
+            filters.grayscale = 0;
+
+            // AGGRESSIVE enhancements for reconstruction
+            // Boost AI suggestions by 10-15% for more dramatic effect
+            return {
+                brightness: Math.min(120, filters.brightness + 10),
+                contrast: Math.min(180, filters.contrast + 20),
+                grayscale: 0,
+                sharpness: Math.min(150, filters.sharpness + 30),
+                shadowPurge: true, // Always enable shadow removal
+                reason: "Neural Reconstruction: Aggressive shadow removal + perspective correction"
+            };
+        } catch (parseErr) {
+            console.error("Reconstruction Parse Error:", parseErr);
+            return reconstructionDefaults;
+        }
+    } catch (err) {
+        console.error("Reconstruction Service Error:", err);
+        return reconstructionDefaults;
+    }
+};
+
 const defaultFilters: ScanFilters = {
     brightness: 95,
     contrast: 140,
-    grayscale: 0, // Always keep color
+    grayscale: 0,
     sharpness: 120,
     shadowPurge: false,
     reason: "Professional enhancement with color preservation"
+};
+
+const reconstructionDefaults: ScanFilters = {
+    brightness: 105,
+    contrast: 160,
+    grayscale: 0,
+    sharpness: 140,
+    shadowPurge: true,
+    reason: "Neural Reconstruction: Professional document restoration"
 };

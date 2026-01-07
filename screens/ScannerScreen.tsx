@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getPolisherProtocol, ScanFilters } from '../services/polisherService';
+import { getPolisherProtocol, getReconstructionProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import AIOptInModal from '../components/AIOptInModal';
@@ -160,16 +160,20 @@ const ScannerScreen: React.FC = () => {
     setIsPolishing(true);
     setError(null);
     try {
+      // Use different protocols based on scanner mode
+      const isReconstruction = protocol === 'reconstruction';
+
       // Parallel execution for better speed
       const [filters, nameSuggestion] = await Promise.all([
-        getPolisherProtocol(undefined, capturedImage),
+        isReconstruction
+          ? getReconstructionProtocol(undefined, capturedImage)
+          : getPolisherProtocol(undefined, capturedImage),
         askGemini("Suggest a professional filename for this document.", undefined, 'naming', capturedImage)
       ]);
 
-      console.log('🎨 AI Returned Filters:', filters);
+      console.log(`🎨 ${isReconstruction ? '🔥 RECONSTRUCTION' : '📸 STANDARD'} Mode - AI Returned Filters:`, filters);
 
       // Apply filters from AI (color is always preserved via polisherService)
-      console.log(`📸 ${scannerMode === 'document' ? 'Document' : 'Photo'} Mode - Using AI Filters:`, filters);
       setAppliedFilters(filters);
 
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
