@@ -17,9 +17,25 @@ export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: n
         for (let i = start; i <= end; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
-            const pageText = (textContent.items as any[])
-                .map((item) => item.str)
-                .join(' ');
+
+            let lastY: number | null = null;
+            let pageText = '';
+
+            // Sorted by transform[5] (Y coordinate) descending, then transform[4] (X)
+            const items = textContent.items as any[];
+
+            for (const item of items) {
+                const currentY = item.transform[5];
+
+                if (lastY !== null && Math.abs(currentY - lastY) > 2) {
+                    pageText += '\n';
+                } else if (lastY !== null) {
+                    pageText += ' ';
+                }
+
+                pageText += item.str;
+                lastY = currentY;
+            }
 
             if (pageText.trim()) {
                 fullText += `[PAGE ${i}]\n${pageText}\n\n`;
