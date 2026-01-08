@@ -564,45 +564,44 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                     </div>
                                 )}
                                 {/* Tier 1: Neural & AI Intelligence Tools */}
-                                <div className="flex flex-wrap items-center gap-2 sm:gap-1.5">
+                                <div className="flex flex-wrap items-center gap-3">
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
                                         onClick={toggleFluidMode}
-                                        className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
-                                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
-                                            : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                        className={`flex items-center justify-center gap-3 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
+                                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl neural-glow'
+                                            : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                             }`}
                                     >
-                                        {isFluidMode ? <Zap size={12} fill="currentColor" /> : <Zap size={12} />}
-                                        {isFluidMode ? "Classic" : "Fluid"}
+                                        <Zap size={14} fill={isFluidMode ? "currentColor" : "none"} />
+                                        {isFluidMode ? "Neural Reflow" : "Fluid Mode"}
                                     </motion.button>
 
+                                    <div className="flex gap-2 flex-1 min-w-[200px]">
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={generateOutline}
+                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
+                                                ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl'
+                                                : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                                }`}
+                                        >
+                                            <BookOpen size={14} />
+                                            {isGeneratingOutline ? "Thinking" : (protocol === 'briefing' ? "Summary" : "Outline")}
+                                        </motion.button>
 
-                                    <motion.button
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={generateOutline}
-                                        className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
-                                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
-                                            : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
-                                            }`}
-                                    >
-                                        <BookOpen size={12} />
-                                        {isGeneratingOutline ? "Thinking" : (protocol === 'briefing' ? "Summary" : "Outline")}
-                                    </motion.button>
-
-                                    <motion.button
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => generateMindMap()}
-                                        className={`flex items-center justify-center gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
-                                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/20 dark:shadow-white/20'
-                                            : 'bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
-                                            }`}
-                                    >
-                                        <GitBranch size={12} />
-                                        {isGeneratingMindMap ? "Projecting" : "Mind Map"}
-                                    </motion.button>
-
-
+                                        <motion.button
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => generateMindMap()}
+                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
+                                                ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl neural-glow'
+                                                : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                                                }`}
+                                        >
+                                            <GitBranch size={14} />
+                                            {isGeneratingMindMap ? "Projecting" : "Mind Map"}
+                                        </motion.button>
+                                    </div>
                                 </div>
 
                                 {/* Divider Line */}

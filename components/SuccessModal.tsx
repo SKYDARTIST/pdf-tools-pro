@@ -99,15 +99,23 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                 <X size={20} className="text-slate-400 dark:text-slate-500" />
                             </button>
 
-                            {/* Success icon */}
-                            <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                className="w-24 h-24 mx-auto mb-8 bg-black dark:bg-white text-white dark:text-black rounded-[32px] flex items-center justify-center shadow-2xl"
-                            >
-                                <CheckCircle size={44} />
-                            </motion.div>
+                            {/* Success icon with Neural Pulse */}
+                            <div className="relative mb-12 flex justify-center">
+                                <motion.div
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.1, 0.3] }}
+                                    transition={{ repeat: Infinity, duration: 4 }}
+                                    className="absolute inset-0 bg-emerald-500 rounded-full blur-3xl"
+                                />
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                                    className="w-24 h-24 bg-black dark:bg-white text-white dark:text-black rounded-[32px] flex items-center justify-center shadow-2xl relative z-10 neural-glow"
+                                >
+                                    <CheckCircle size={44} />
+                                </motion.div>
+                            </div>
 
                             {/* Title */}
                             <h3 className="text-3xl font-black text-gray-900 dark:text-white text-center uppercase tracking-tighter leading-none mb-3">

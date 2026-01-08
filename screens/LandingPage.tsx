@@ -44,32 +44,41 @@ const LandingPage: React.FC = () => {
                         transition={{ duration: 1 }}
                         className="space-y-6"
                     >
-                        <div className="flex justify-center mb-8">
+                        <div className="flex justify-center mb-12 relative">
+                            {/* Abstract Blueprint Grid Behind Logo */}
+                            <div className="absolute inset-x-0 -top-20 h-64 opacity-[0.03] dark:opacity-[0.07] pointer-events-none -z-10">
+                                <svg viewBox="0 0 400 400" className="w-full h-full animate-[pulse_8s_infinite]">
+                                    <path d="M0 200 H400 M200 0 V400 M100 0 V400 M300 0 V400 M0 100 H400 M0 300 H400" stroke="currentColor" strokeWidth="1" fill="none" />
+                                    <circle cx="200" cy="200" r="100" stroke="currentColor" strokeWidth="0.5" fill="none" />
+                                    <circle cx="200" cy="200" r="150" stroke="currentColor" strokeWidth="0.5" fill="none" strokeDasharray="10 10" />
+                                </svg>
+                            </div>
+
                             <motion.div
                                 animate={{ rotate: [0, 5, -5, 0] }}
-                                transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-                                className="px-6 py-2 bg-black/5 dark:bg-white/5 rounded-full border border-black/5 dark:border-white/5 flex items-center gap-2"
+                                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+                                className="px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl neural-glow"
                             >
                                 <NeuralPulse color="bg-emerald-500" size="sm" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.3em]">Neural Protocol Ready</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Neural Link: Active</span>
                             </motion.div>
                         </div>
 
-                        <h1 className="text-7xl font-black uppercase tracking-tighter leading-[0.85] text-gray-900 dark:text-white">
-                            LOCAL AI.<br />NO CLOUD.
+                        <h1 className="text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm">
+                            ANTIGRAVITY.<br />AI PDF.
                         </h1>
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed max-w-[280px] mx-auto">
-                                The local-first, zero-login AI PDF suite for high-performance builders.
+                                The local-first, zero-login AI workspace built for the next generation.
                             </p>
-                            <div className="flex flex-col items-center gap-2">
-                                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-full">
-                                    PRIVACY BY DESIGN • EDGE COMPUTING
-                                </span>
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">
-                                    $2.99 LIFETIME vs <span className="line-through opacity-40">$240/YEAR</span>
-                                </span>
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
+                                    PRIVACY BY DESIGN • EDGE NEURAL
+                                </div>
+                                <div className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter">
+                                    $2.99 LIFETIME PASS • <span className="opacity-40">STRICT PRIVACY</span>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -79,36 +88,34 @@ const LandingPage: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="space-y-6"
+                        className="space-y-8"
                     >
                         <motion.button
-                            whileHover={{ scale: 1.05, y: -4 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ scale: 1.02, y: -4 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/workspace')}
-                            className="w-full bg-black dark:bg-white text-white dark:text-black py-8 rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden"
+                            className="w-full bg-black dark:bg-white text-white dark:text-black py-9 rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
                         >
-                            <motion.div
-                                animate={{ x: ['-200%', '200%'] }}
-                                transition={{ repeat: Infinity, duration: 4, ease: "linear", repeatDelay: 1 }}
-                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-black/10 to-transparent skew-x-12"
-                            />
-                            <span className="text-sm font-black uppercase tracking-[0.3em] ml-2">Enter Workspace</span>
-                            <ArrowRight size={20} className="ml-4 group-hover:translate-x-2 transition-transform" />
+                            <span className="text-sm font-black uppercase tracking-[0.4em] relative z-10">Launch Workspace</span>
+                            <ArrowRight size={20} className="ml-5 group-hover:translate-x-2 transition-transform relative z-10" />
                         </motion.button>
 
-                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-[0.4em] opacity-40">
-                            Instant Access • No Account Required • Local-First
-                        </p>
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.5em] opacity-40">
+                                v2026.1.0 Protocol
+                            </div>
+                            <div className="h-[1px] w-12 bg-black/10 dark:bg-white/10" />
+                        </div>
 
-                        <div className="flex justify-center gap-12 pt-8 opacity-40">
+                        <div className="flex justify-center gap-14 pt-4 opacity-30 group-hover:opacity-100 transition-opacity">
                             {[
                                 { icon: Shield, label: 'Secure' },
-                                { icon: Cpu, label: 'Neural' },
-                                { icon: Sparkles, label: 'Elite' }
+                                { icon: Cpu, label: 'Edge AI' },
+                                { icon: Sparkles, label: 'Local' }
                             ].map((item, i) => (
-                                <div key={i} className="flex flex-col items-center gap-2">
-                                    <item.icon size={16} />
-                                    <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
+                                <div key={i} className="flex flex-col items-center gap-3">
+                                    <item.icon size={18} />
+                                    <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
                                 </div>
                             ))}
                         </div>

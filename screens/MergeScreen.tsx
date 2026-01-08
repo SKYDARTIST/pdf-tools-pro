@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, FileText, Download, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, FileText, Download, Loader2, ChevronUp, ChevronDown, Shield } from 'lucide-react';
 import { mergePdfs, downloadBlob } from '../services/pdfService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
@@ -140,9 +140,11 @@ const MergeScreen: React.FC = () => {
           <div className="text-technical">Protocol Assets / Sequence Management</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Merge</h1>
           <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Arrange and unify multi-stream data into a single carrier</p>
-          <div className="pt-2 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Zero Watermark Protocol Active</span>
+          <div className="pt-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full neural-glow">
+              <Shield size={10} className="text-emerald-500" fill="currentColor" />
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Elite: Zero Watermark Protocol</span>
+            </div>
           </div>
         </div>
 

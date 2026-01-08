@@ -44,7 +44,7 @@ const BottomNav: React.FC = () => {
                                 {active && (
                                     <motion.div
                                         layoutId="navIndicator"
-                                        className="absolute inset-0 bg-black dark:bg-white rounded-full z-0 shadow-lg"
+                                        className="absolute inset-0 bg-black dark:bg-white rounded-full z-0 shadow-lg neural-glow"
                                         transition={{ type: "spring", stiffness: 400, damping: 35 }}
                                     />
                                 )}

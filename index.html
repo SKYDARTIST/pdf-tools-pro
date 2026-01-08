@@ -26,6 +26,7 @@
         :root {
             --mouse-x: 50%;
             --mouse-y: 50%;
+            --accent-glow: rgba(16, 185, 129, 0.2);
         }
 
         * {
@@ -42,9 +43,9 @@
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
             /* Reactive Grid Layer */
-            background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(0, 0, 0, 0.05) 0%, transparent 60%),
-                radial-gradient(#E5E5E5 1.5px, transparent 1.5px);
-            background-size: 100% 100%, 24px 24px;
+            background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+                radial-gradient(#E5E5E5 1px, transparent 1px);
+            background-size: 100% 100%, 32px 32px;
             background-attachment: fixed;
         }
 
@@ -60,76 +61,155 @@
             display: none;
         }
 
+        /* Scanline Overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.02) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.5;
+        }
+
+        .dark body::before {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(255, 255, 255, 0.01) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 3px, 3px 100%;
+            opacity: 0.3;
+        }
+
         /* Monolith Card Foundations */
         .monolith-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            border-radius: 28px;
-            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.04);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            border-radius: 40px;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
         }
 
         .dark .monolith-card {
-            background: rgba(10, 10, 10, 0.7);
-            border-color: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 32px -1px rgba(0, 0, 0, 0.4);
+            background: rgba(5, 5, 5, 0.6);
+            border-color: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.5);
+        }
+
+        .monolith-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .monolith-card:hover::after {
+            opacity: 1;
         }
 
         .monolith-card:hover {
-            transform: translateY(-4px) scale(1.01);
+            transform: translateY(-8px);
             border-color: rgba(0, 0, 0, 0.1);
-            box-shadow: 0 12px 48px -4px rgba(0, 0, 0, 0.08);
-        }
-
-        .monolith-card:active {
-            transform: translateY(2px) scale(0.98);
-            box-shadow: 0 5px 10px -2px rgba(0, 0, 0, 0.1);
-            transition: all 0.1s ease;
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.1);
         }
 
         .dark .monolith-card:hover {
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 12px 64px -4px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 40px 100px -25px rgba(0, 0, 0, 0.8);
         }
 
-        /* Glass Floating Elements */
-        .monolith-glass {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+        /* Neural Glow Pulse */
+        @keyframes neural-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+            }
         }
 
-        .dark .monolith-glass {
-            background: rgba(0, 0, 0, 0.7);
-            border-color: rgba(255, 255, 255, 0.08);
+        .neural-glow {
+            animation: neural-glow 4s infinite ease-in-out;
         }
 
         /* Technical Typography */
         .text-technical {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.2em;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.4em;
             text-transform: uppercase;
-            opacity: 0.5;
+            opacity: 0.4;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        /* Accent Colors (Strict B&W) */
-        .accent-monolith {
-            background-color: #000000;
-            color: #FFFFFF;
+        .text-technical::before {
+            content: "";
+            height: 1px;
+            width: 20px;
+            background: currentColor;
+            opacity: 0.3;
         }
 
-        .dark .accent-monolith {
-            background-color: #FFFFFF;
-            color: #000000;
+        /* Premium Buttons */
+        .btn-neural {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Animation Helpers */
-        .spring-transition {
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .btn-neural::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(16, 185, 129, 0.3), transparent 30%);
+            animation: rotate 4s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn-neural:hover::before {
+            opacity: 1;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Glass Floating Overlay */
+        .monolith-glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .monolith-glass {
+            background: rgba(0, 0, 0, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
         }
     </style>
     <script type="importmap">

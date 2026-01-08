@@ -254,6 +254,20 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
     subscription.tier = tier;
     subscription.purchaseToken = purchaseToken;
     saveSubscription(subscription);
+
+    // Sync with TaskLimitManager if it exists (legacy support)
+    try {
+        import('../utils/TaskLimitManager').then(m => {
+            if (tier === SubscriptionTier.PRO || tier === SubscriptionTier.PREMIUM || tier === SubscriptionTier.LIFETIME) {
+                m.default.upgradeToPro();
+            }
+        });
+    } catch (e) {
+        console.warn("TaskLimitManager sync failed");
+    }
+
+    // Persist to Supabase so it's not overwritten on next reload
+    syncUsageToServer(subscription);
 };
 
 // Add AI Pack Credits
@@ -261,6 +275,7 @@ export const addAiPackCredits = (amount: number = 100): void => {
     const subscription = getSubscription();
     subscription.aiPackCredits = (subscription.aiPackCredits || 0) + amount;
     saveSubscription(subscription);
+    syncUsageToServer(subscription);
 };
 
 // Get limits for current tier

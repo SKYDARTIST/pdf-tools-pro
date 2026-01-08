@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Crown, Zap, Shield, Sparkles, Check } from 'lucide-react';
 import TaskLimitManager from '../utils/TaskLimitManager';
+import { upgradeTier, SubscriptionTier } from '../services/subscriptionService';
 
 interface UpgradeModalProps {
     isOpen: boolean;
@@ -21,6 +22,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
         // TODO: Integrate payment system (Stripe/Paddle)
         // For now, just upgrade locally for testing
         TaskLimitManager.upgradeToPro();
+        upgradeTier(SubscriptionTier.PRO);
         onClose();
         window.location.reload(); // Refresh to update UI
     };

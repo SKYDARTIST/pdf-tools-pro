@@ -231,16 +231,26 @@ const AntiGravityWorkspace: React.FC = () => {
             <div className="relative">
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                className="w-56 h-56 border-t-2 border-l-2 border-black/20 dark:border-white/20 rounded-full"
+                transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                className="w-64 h-64 border-t-2 border-l-2 border-emerald-500 rounded-full blur-[2px]"
+              />
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+                className="absolute inset-4 border-b-2 border-r-2 border-black/10 dark:border-white/20 rounded-full"
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Activity size={64} className="text-gray-900 dark:text-white animate-pulse" />
               </div>
             </div>
-            <div className="text-center space-y-4">
-              <h3 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Processing...</h3>
-              <div className="text-technical animate-pulse">Neural Layer Deconstruction</div>
+            <div className="text-center space-y-6">
+              <h3 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Analyzing...</h3>
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-technical text-emerald-500 animate-pulse">Neural Layer Deconstruction Active</div>
+                <div className="text-[8px] font-mono text-gray-400 uppercase tracking-widest opacity-40">
+                  SHA-256 CHECK: {Math.random().toString(36).substring(7).toUpperCase()}...
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
@@ -257,22 +267,23 @@ const AntiGravityWorkspace: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="monolith-card p-6 bg-amber-500/10 border-amber-500/30 flex items-center justify-between gap-4"
+                className="p-8 bg-amber-500/10 border border-amber-500/20 rounded-[32px] flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-                    <Zap size={18} className="text-amber-500" fill="currentColor" />
+                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                <div className="flex items-center gap-6">
+                  <div className="w-14 h-14 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg neural-glow">
+                    <Zap size={24} fill="currentColor" />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-500">Low Neural Credits</div>
-                    <p className="text-[9px] font-bold text-amber-500/80 uppercase tracking-widest">
+                    <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 dark:text-amber-500">Low Neural Budget</div>
+                    <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
                       Your AI authorization is nearing exhaustion. Synchronize more credits to maintain protocol stability.
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => window.location.hash = '#/pricing'}
-                  className="px-6 py-3 bg-amber-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg hover:brightness-110"
+                  onClick={() => navigate('/pricing')}
+                  className="px-8 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
                 >
                   Top Up Logic
                 </button>
