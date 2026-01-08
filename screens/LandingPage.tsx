@@ -67,8 +67,7 @@ const LandingPage: React.FC = () => {
                         <motion.h1
                             animate={{ y: [0, -12, 0] }}
                             transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                            style={{ fontSize: 'clamp(2.5rem, 11vw, 5rem)' }}
-                            className="font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm px-2"
+                            className="text-[9.2vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm px-4"
                         >
                             ANTIGRAVITY<br />AI PDF
                         </motion.h1>
