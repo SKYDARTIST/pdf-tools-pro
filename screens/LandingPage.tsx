@@ -64,8 +64,8 @@ const LandingPage: React.FC = () => {
                             </motion.div>
                         </div>
 
-                        <h1 className="text-[12vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tight leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm">
-                            ANTIGRAVITY.<br />AI PDF.
+                        <h1 className="text-[10vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm">
+                            ANTIGRAVITY<br />AI PDF
                         </h1>
 
                         <div className="space-y-6">
