@@ -16,13 +16,16 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 1200,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'pdf-vendor': ['pdfjs-dist', 'pdf-lib'],
-            'ui-vendor': ['framer-motion', 'lucide-react', 'react', 'react-dom'],
-            'ai-vendor': ['@google/generative-ai']
+          manualChunks(id) {
+            if (id.includes('pdfjs-dist') || id.includes('pdf-lib')) {
+              return 'pdf-core';
+            }
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
           }
         }
       }
