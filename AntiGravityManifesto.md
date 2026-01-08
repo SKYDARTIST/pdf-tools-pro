@@ -10,9 +10,9 @@ Based on an analysis of "Award-Winning" competitors (like Notewise), we have cod
 - **Competitor Failure**: Hiding the standard "Share"/Export button behind a paywall or forcing "Collaboration" logins.
 - **Anti-Gravity Protocol**: A PDF tool's job is to let you share files. Our "Quick JPEG" and "Assemble PDF" buttons produce standard files immediately. No muscle-memory traps.
 
-## 3. Atomic Reliability (Offline First)
-- **Competitor Failure**: 5-hour sync times and data loss during updates.
-- **Anti-Gravity Protocol**: Because we process locally (AI Polishing, Merging, Splitting), there is no "Sync" delay. If you have a signal or not, the tool works. Update safety is guaranteed by our ephemeral processing model.
+## 3. Atomic Reliability (Privacy First)
+- **Competitor Failure**: 5-hour sync times and data loss during cloud-dependent updates.
+- **Anti-Gravity Protocol**: Because we use an ephemeral processing model (Transient Neural Logic), your data is never stored in the cloud. We prioritize local processing for non-AI tasks, and our "Private Link" for AI ensures your documents are processed in memory and immediately forgotten. No "Sync" delay, no persistent storage.
 
 ## 4. Honest Feature Set
 - **Competitor Failure**: Claiming an app is "Free" then paywalling the basic ability to import a PDF.

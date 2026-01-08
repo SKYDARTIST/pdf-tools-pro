@@ -136,8 +136,8 @@ const LandingPage: React.FC = () => {
                         <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Neural Trust Protocol</div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {[
-                                { title: "ZERO-CLOUD", desc: "100% On-Device" },
-                                { title: "AIR-GAPPED", desc: "No Internet Req." },
+                                { title: "ZERO-DATA", desc: "No Trace Left" },
+                                { title: "EPHEMERAL", desc: "Transient Brain" },
                                 { title: "TRUSTED", desc: "50k+ Builders" },
                                 { title: "ELITE", desc: "Privacy First" }
                             ].map((badge, i) => (
@@ -163,13 +163,13 @@ const LandingPage: React.FC = () => {
                                 The Privacy<br className="hidden sm:block" /> Manifesto.
                             </h2>
                             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
-                                In 2026, Adobe and Foxit are tied to "Cloud-First" strategies that require your data to leave your device. Anti-Gravity is different. We have no servers. We cannot see your documents. We cannot sell your data.
+                                In 2026, Adobe and Foxit are tied to "Cloud-First" strategies that require your data to leave your device for storage. Anti-Gravity is different. We have no storage servers. We cannot see your documents. We cannot sell your data.
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
                                 {[
                                     { title: "ZERO KNOWLEDGE", desc: "Absolute data isolation." },
-                                    { title: "AIRPLANE MODE", desc: "100% Offline performance." },
-                                    { title: "EDGE AI", desc: "Local neural processing." }
+                                    { title: "ZERO STORAGE", desc: "No server-side memory." },
+                                    { title: "EDGE NEURAL", desc: "Private AI processing." }
                                 ].map((item, i) => (
                                     <div key={i} className="flex items-start gap-5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
@@ -189,7 +189,7 @@ const LandingPage: React.FC = () => {
                                 <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Technical Advantage</div>
                                 <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none">INSTANT SPEED.<br />ZERO RISK.</h3>
                                 <p className="text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
-                                    Because we process locally, there is no upload latency. Large PDFs are analyzed instantly by your device's own hardware. This is the future of secure document intelligence.
+                                    By using an ephemeral processing model, we eliminate traditional upload bottlenecks. Your documents are analyzed through a secure, transient link that clears immediately after each operation. This is the future of secure document intelligence.
                                 </p>
                                 <div className="pt-10 flex items-center justify-between border-t border-black/10 dark:border-white/10">
                                     <div className="text-left">
