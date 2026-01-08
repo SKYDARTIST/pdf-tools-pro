@@ -8,6 +8,9 @@ import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
+import AIOptInModal from '../components/AIOptInModal';
+import AIReportModal from '../components/AIReportModal';
+import { Flag } from 'lucide-react';
 
 const SmartRedactScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -23,6 +26,9 @@ const SmartRedactScreen: React.FC = () => {
     });
     const [isCooling, setIsCooling] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showConsent, setShowConsent] = useState(false);
+    const [showReport, setShowReport] = useState(false);
+    const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
 
     const toggleFilter = (key: keyof typeof filters) => {
         setFilters(prev => ({ ...prev, [key]: !prev[key] }));
@@ -197,6 +203,11 @@ const SmartRedactScreen: React.FC = () => {
 
     const startRedaction = async () => {
         if (!file) return;
+
+        if (!hasConsent) {
+            setShowConsent(true);
+            return;
+        }
 
         const aiCheck = canUseAI();
         if (!aiCheck.allowed) {
@@ -432,6 +443,14 @@ const SmartRedactScreen: React.FC = () => {
                                                 <Download size={14} />
                                                 Image
                                             </button>
+                                            <button
+                                                onClick={() => setShowReport(true)}
+                                                className="px-4 py-3 bg-rose-500/10 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-rose-500/10 hover:bg-rose-500 hover:text-white transition-all ml-2"
+                                                title="Report AI Content"
+                                            >
+                                                <Flag size={14} />
+                                                Flag
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -461,6 +480,20 @@ const SmartRedactScreen: React.FC = () => {
             <UpgradeModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
+            />
+            <AIOptInModal
+                isOpen={showConsent}
+                onClose={() => setShowConsent(false)}
+                onAccept={() => {
+                    localStorage.setItem('ai_neural_consent', 'true');
+                    setHasConsent(true);
+                    setShowConsent(false);
+                    startRedaction();
+                }}
+            />
+            <AIReportModal
+                isOpen={showReport}
+                onClose={() => setShowReport(false)}
             />
         </motion.div>
     );

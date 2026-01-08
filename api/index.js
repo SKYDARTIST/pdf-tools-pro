@@ -14,18 +14,55 @@ let cachedModels = null;
 let lastDiscovery = 0;
 
 export default async function handler(req, res) {
+    const origin = req.headers.origin;
+    const allowedOrigins = [
+        'http://localhost:5173',
+        'https://pdf-tools-pro.vercel.app',
+        'https://pdf-tools-pro-git-main-cryptobullas-projects.vercel.app',
+        'https://pdf-tools-pro-skydartist-projects.vercel.app'
+    ];
+
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-ag-signature, x-ag-device-id, x-ag-integrity-token');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    const signature = req.headers['x-ag-signature'];
+    const deviceId = req.headers['x-ag-device-id'];
+    const integrityToken = req.headers['x-ag-integrity-token'];
+
+    // Protocol Integrity Check
+    if (signature !== 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE') {
+        return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
+    }
+
+    if (!deviceId) {
+        return res.status(401).json({ error: 'MISSING_IDENTITY', details: 'Device identification payload is empty.' });
+    }
+
+    // Play Integrity Verification (Simulation)
+    if (!integrityToken) {
+        return res.status(401).json({ error: 'INTEGRITY_FAILURE', details: 'Play Integrity token missing. Session discarded.' });
+    }
+
+    try {
+        const decoded = JSON.parse(Buffer.from(integrityToken, 'base64').toString());
+        if (decoded.deviceId !== deviceId) {
+            return res.status(401).json({ error: 'INTEGRITY_MISMATCH', details: 'Device ID does not match integrity payload.' });
+        }
+    } catch (e) {
+        return res.status(401).json({ error: 'INTEGRITY_CORRUPTION', details: 'Integrity payload is malformed.' });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
     if (!apiKey) {
         return res.status(500).json({ error: "Missing API Key" });
-    }
-
-    // Stage 1 Protocol Integrity Check
-    const signature = req.headers['x-ag-signature'];
-    const deviceId = req.headers['x-ag-device-id'];
-
-    if (signature !== 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE') {
-        return res.status(401).json({ error: "Protocol Integrity Violation." });
     }
 
     // Stage 2: Neural Credit Verification (Supabase)
