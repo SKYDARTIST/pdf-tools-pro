@@ -17,13 +17,13 @@ const LandingPage: React.FC = () => {
                         <Zap size={20} className="text-white dark:text-black" fill="currentColor" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[14px] font-black uppercase tracking-tighter leading-none">Anti-Gravity</span>
+                        <span className="text-[14px] font-black uppercase tracking-tighter leading-none">ANTI-GRAVITY</span>
                         <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">OS 2.0.1</span>
                     </div>
                 </div>
                 <div className="text-right">
-                    <div className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">Authenticated Pulse</div>
-                    <div className="text-[10px] font-black uppercase tracking-widest">Built By Cryptobulla</div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">AUTHENTICATED PULSE</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest">BUILT BY CRYPTOBULLA</div>
                 </div>
             </header>
 
@@ -64,9 +64,14 @@ const LandingPage: React.FC = () => {
                             </motion.div>
                         </div>
 
-                        <h1 className="text-[8.8vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm">
+                        <motion.h1
+                            animate={{ y: [0, -12, 0] }}
+                            transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+                            style={{ fontSize: 'clamp(2.5rem, 11vw, 5rem)' }}
+                            className="font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm px-2"
+                        >
                             ANTIGRAVITY<br />AI PDF
-                        </h1>
+                        </motion.h1>
 
                         <div className="space-y-6">
                             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed max-w-[280px] mx-auto">
