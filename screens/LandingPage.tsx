@@ -21,9 +21,9 @@ const LandingPage: React.FC = () => {
                         <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">OS 2.0.1</span>
                     </div>
                 </div>
-                <div className="text-right">
-                    <div className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">AUTHENTICATED PULSE</div>
-                    <div className="text-[10px] font-black uppercase tracking-widest">BUILT BY CRYPTOBULLA</div>
+                <div className="text-right ml-auto">
+                    <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">AUTH PROTOCOL</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap">BUILT BY CRYPTOBULLA</div>
                 </div>
             </header>
 
@@ -67,7 +67,8 @@ const LandingPage: React.FC = () => {
                         <motion.h1
                             animate={{ y: [0, -12, 0] }}
                             transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                            className="text-[9.2vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm px-4"
+                            className="text-[8.5vw] xs:text-5xl sm:text-7xl font-black uppercase leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm px-2"
+                            style={{ letterSpacing: '-0.07em' }}
                         >
                             ANTIGRAVITY<br />AI PDF
                         </motion.h1>
