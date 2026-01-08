@@ -57,14 +57,14 @@ const LandingPage: React.FC = () => {
                             <motion.div
                                 animate={{ rotate: [0, 5, -5, 0] }}
                                 transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                                className="px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl neural-glow"
+                                className="px-5 sm:px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl neural-glow"
                             >
                                 <NeuralPulse color="bg-emerald-500" size="sm" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.4em]">Neural Link: Active</span>
                             </motion.div>
                         </div>
 
-                        <h1 className="text-[10vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm">
+                        <h1 className="text-[8.8vw] xs:text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm">
                             ANTIGRAVITY<br />AI PDF
                         </h1>
 
