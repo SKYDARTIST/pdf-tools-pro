@@ -41,8 +41,8 @@ export default async function handler(req, res) {
                 console.error("Supabase Sync Error:", error);
             } else if (usage) {
                 const canUse = usage.ai_pack_credits > 0 ||
-                    (usage.tier === 'free' && usage.ai_docs_weekly < 2) ||
-                    (usage.tier === 'pro' && usage.ai_docs_monthly < 15);
+                    (usage.tier === 'free' && usage.ai_docs_weekly < 1) ||
+                    (usage.tier === 'pro' && usage.ai_docs_monthly < 10);
 
                 if (!canUse) {
                     return res.status(403).json({ error: "NEURAL_LINK_EXHAUSTED", details: "You have reached your AI operation quota for this period." });
