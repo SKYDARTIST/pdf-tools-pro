@@ -7,6 +7,7 @@ import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 
 const STAMPS = [
   { id: 'approved', label: 'APPROVED', color: '#10b981' },
@@ -111,7 +112,6 @@ const SignScreen: React.FC = () => {
       const signatureBlob = await (await fetch(signatureDataUrl)).blob();
 
       // Load PDF and add signature
-      const { PDFDocument } = await import('pdf-lib');
       const arrayBuffer = await file.arrayBuffer();
       const pdfDoc = await PDFDocument.load(arrayBuffer);
 
@@ -137,7 +137,6 @@ const SignScreen: React.FC = () => {
       if (selectedStamp) {
         const stamp = STAMPS.find(s => s.id === selectedStamp);
         if (stamp) {
-          const { rgb, degrees, StandardFonts } = await import('pdf-lib');
           const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
           const fontSize = 40;
           const text = stamp.label;
