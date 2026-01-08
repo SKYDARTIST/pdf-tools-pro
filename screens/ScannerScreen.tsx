@@ -203,7 +203,7 @@ const ScannerScreen: React.FC = () => {
       setAppliedFilters(filters);
 
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
-      recordAIUsage();
+      await recordAIUsage();
     } catch (err) {
       console.error("Enhancement failed", err);
       setError("Enhancement failed. Please try again.");

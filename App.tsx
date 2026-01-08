@@ -33,12 +33,17 @@ import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
 import AiPackNotification from './components/AiPackNotification';
-import { getAiPackNotification, ackAiNotification } from './services/subscriptionService';
+import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
 
 const App: React.FC = () => {
   const location = useLocation();
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
+
+  // Sync with Supabase on mount
+  React.useEffect(() => {
+    initSubscription();
+  }, []);
 
   // Global AI Notification Listener
   React.useEffect(() => {

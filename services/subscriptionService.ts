@@ -1,3 +1,5 @@
+import { fetchUserUsage, syncUsageToServer } from './usageService';
+
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
     FREE = 'free',
@@ -38,6 +40,16 @@ const PREMIUM_LIMITS = {
     operationsPerDay: Infinity,
     aiDocsPerMonth: Infinity,
     maxFileSize: 200 * 1024 * 1024, // 200MB
+};
+
+// Initialize subscription from Supabase or localStorage
+export const initSubscription = async (): Promise<UserSubscription> => {
+    const supabaseUsage = await fetchUserUsage();
+    if (supabaseUsage) {
+        saveSubscription(supabaseUsage);
+        return supabaseUsage;
+    }
+    return getSubscription();
 };
 
 // Get current subscription from localStorage
@@ -221,7 +233,7 @@ export const recordOperation = (): void => {
 };
 
 // Record an AI usage
-export const recordAIUsage = (): void => {
+export const recordAIUsage = async (): Promise<void> => {
     const subscription = getSubscription();
 
     if (subscription.aiPackCredits > 0) {
@@ -233,6 +245,7 @@ export const recordAIUsage = (): void => {
     }
 
     saveSubscription(subscription);
+    await syncUsageToServer(subscription);
 };
 
 // Upgrade user to a tier

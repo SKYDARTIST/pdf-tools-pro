@@ -141,7 +141,7 @@ Output ONLY raw CSV data.`;
             }
 
             setExtractedData(cleanedResponse);
-            recordAIUsage();
+            await recordAIUsage();
         } catch (err: any) {
             setError(err.message || "Extraction failed. Visual data may be too obscured or file corrupted.");
             console.error(err);

@@ -1,7 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@supabase/supabase-js';
 
-// Anti-Gravity Backend v1.5 - Optimized Architecture
+// Anti-Gravity Backend v2.0 - Secure Hybrid Architecture
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
+
+const supabase = createClient(
+    process.env.SUPABASE_URL || 'https://eydbnogluccjhmofsnhu.supabase.co',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZGJub2dsdWNjamhtb2Zzbmh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODgwMTgsImV4cCI6MjA4MzQ2NDAxOH0.acvpbJi0N0eWE6J8ohjvkJWCxV7cg6IEUpWAYlILl48'
+);
 
 // Memory-safe model cache
 let cachedModels = null;
@@ -16,8 +22,42 @@ export default async function handler(req, res) {
 
     // Stage 1 Protocol Integrity Check
     const signature = req.headers['x-ag-signature'];
+    const deviceId = req.headers['x-ag-device-id'];
+
     if (signature !== 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE') {
         return res.status(401).json({ error: "Protocol Integrity Violation." });
+    }
+
+    // Stage 2: Neural Credit Verification (Supabase)
+    if (deviceId && deviceId !== 'null') {
+        try {
+            const { data: usage, error } = await supabase
+                .from('ag_user_usage')
+                .select('*')
+                .eq('device_id', deviceId)
+                .single();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error("Supabase Sync Error:", error);
+            } else if (usage) {
+                const canUse = usage.ai_pack_credits > 0 ||
+                    (usage.tier === 'free' && usage.ai_docs_weekly < 2) ||
+                    (usage.tier === 'pro' && usage.ai_docs_monthly < 15);
+
+                if (!canUse) {
+                    return res.status(403).json({ error: "NEURAL_LINK_EXHAUSTED", details: "You have reached your AI operation quota for this period." });
+                }
+
+                // Deduct credits on the server side
+                if (usage.ai_pack_credits > 0) {
+                    await supabase.from('ag_user_usage').update({ ai_pack_credits: usage.ai_pack_credits - 1 }).eq('device_id', deviceId);
+                } else if (usage.tier === 'free') {
+                    await supabase.from('ag_user_usage').update({ ai_docs_weekly: usage.ai_docs_weekly + 1 }).eq('device_id', deviceId);
+                }
+            }
+        } catch (e) {
+            console.warn("Usage check bypassed due to transient database sync issue.");
+        }
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);

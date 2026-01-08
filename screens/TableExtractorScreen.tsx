@@ -67,7 +67,7 @@ const TableExtractorScreen: React.FC = () => {
             }
 
             setTables(extractedTables);
-            recordAIUsage();
+            await recordAIUsage();
             setStatus('done');
         } catch (err) {
             console.error("Extraction Failed:", err);

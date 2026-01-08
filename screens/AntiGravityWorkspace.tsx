@@ -137,7 +137,7 @@ const AntiGravityWorkspace: React.FC = () => {
         neuralSignature: neuralSignature.replace(/\n|"/g, '')
       });
 
-      recordAIUsage(); // Record successful AI document extraction
+      await recordAIUsage(); // Record successful AI document extraction
     } catch (error) {
       console.error('Error processing PDF:', error);
       setAnalysis(`Document "${selected.name}" processed. AI is ready for your questions.`);

@@ -183,7 +183,7 @@ const ReaderScreen: React.FC = () => {
                 return;
             }
             setMindMapData(response);
-            recordAIUsage();
+            await recordAIUsage();
         } catch (error) {
             console.error("Mind Map Generation Failed:", error);
         } finally {
@@ -266,7 +266,7 @@ const ReaderScreen: React.FC = () => {
             }
 
             setAudioScript(response);
-            recordAIUsage();
+            await recordAIUsage();
             startSpeaking(response);
         } catch (error) {
             console.error("Audio Generation Failed:", error);
@@ -365,7 +365,7 @@ const ReaderScreen: React.FC = () => {
                 return;
             }
             setOutlineData(response);
-            recordAIUsage();
+            await recordAIUsage();
         } catch (error) {
             console.error("Outline Generation Failed:", error);
         } finally {
@@ -418,7 +418,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                 return;
             }
             setAuditData(response);
-            recordAIUsage();
+            await recordAIUsage();
         } catch (error) {
             console.error("Audit Failed:", error);
         } finally {

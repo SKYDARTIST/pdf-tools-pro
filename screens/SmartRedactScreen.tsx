@@ -250,7 +250,7 @@ const SmartRedactScreen: React.FC = () => {
             // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
             const finalSanitized = localRegexSanitize(response);
             setRedactedContent(finalSanitized);
-            recordAIUsage();
+            await recordAIUsage();
             setStatus('done');
         } catch (error) {
             console.error("Redaction Failed:", error);
