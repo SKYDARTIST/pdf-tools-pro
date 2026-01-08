@@ -1,6 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://eydbnogluccjhmofsnhu.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZGJub2dsdWNjamhtb2Zzbmh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODgwMTgsImV4cCI6MjA4MzQ2NDAxOH0.acvpbJi0N0eWE6J8ohjvkJWCxV7cg6IEUpWAYlILl48';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase credentials missing. Local-only mode active.');
+}
+
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
