@@ -16,17 +16,10 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
-      chunkSizeWarningLimit: 1200,
+      chunkSizeWarningLimit: 2000,
       rollupOptions: {
         output: {
-          manualChunks(id) {
-            if (id.includes('pdfjs-dist') || id.includes('pdf-lib')) {
-              return 'pdf-core';
-            }
-            if (id.includes('node_modules')) {
-              return 'vendor';
-            }
-          }
+          manualChunks: undefined
         }
       }
     }

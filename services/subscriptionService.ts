@@ -1,4 +1,5 @@
 import { fetchUserUsage, syncUsageToServer } from './usageService';
+import TaskLimitManager from '../utils/TaskLimitManager';
 
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
@@ -255,13 +256,11 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
     subscription.purchaseToken = purchaseToken;
     saveSubscription(subscription);
 
-    // Sync with TaskLimitManager if it exists (legacy support)
+    // Sync with TaskLimitManager
     try {
-        import('../utils/TaskLimitManager').then(m => {
-            if (tier === SubscriptionTier.PRO || tier === SubscriptionTier.PREMIUM || tier === SubscriptionTier.LIFETIME) {
-                m.default.upgradeToPro();
-            }
-        });
+        if (tier === SubscriptionTier.PRO || tier === SubscriptionTier.PREMIUM || tier === SubscriptionTier.LIFETIME) {
+            TaskLimitManager.upgradeToPro();
+        }
     } catch (e) {
         console.warn("TaskLimitManager sync failed");
     }

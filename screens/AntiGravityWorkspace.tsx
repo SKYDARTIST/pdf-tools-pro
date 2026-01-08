@@ -10,6 +10,8 @@ import AIReportModal from '../components/AIReportModal';
 import NeuralPulse from '../components/NeuralPulse';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import ToolGuide from '../components/ToolGuide';
+import { PDFDocument } from 'pdf-lib';
+import { extractTextFromPdf, renderMultiplePagesToImages } from '../utils/pdfExtractor';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -74,12 +76,10 @@ const AntiGravityWorkspace: React.FC = () => {
       } else {
         // 1. EXTRACT RAW METADATA
         const arrayBuffer = await selected.arrayBuffer();
-        const { PDFDocument } = await import('pdf-lib');
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const pageCount = pdfDoc.getPageCount();
 
         // 2. EXTRACT NEURAL PAYLOAD (Full Text)
-        const { extractTextFromPdf, renderMultiplePagesToImages } = await import('../utils/pdfExtractor');
         extractedText = await extractTextFromPdf(arrayBuffer.slice(0));
         console.log(`Extracted Text Length: ${extractedText.length}`);
 

@@ -9,6 +9,7 @@ import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
+import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { Flag } from 'lucide-react';
 
 const TableExtractorScreen: React.FC = () => {
@@ -53,7 +54,6 @@ const TableExtractorScreen: React.FC = () => {
             let extractedTables: ExtractedTable[] = [];
 
             if (selected.type === 'application/pdf') {
-                const { extractTextFromPdf } = await import('../utils/pdfExtractor');
                 const arrayBuffer = await selected.arrayBuffer();
                 const text = await extractTextFromPdf(arrayBuffer);
                 extractedTables = await extractTablesFromDocument(text);
