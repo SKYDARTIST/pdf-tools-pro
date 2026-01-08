@@ -14,6 +14,18 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    build: {
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'pdf-vendor': ['pdfjs-dist', 'pdf-lib'],
+            'ui-vendor': ['framer-motion', 'lucide-react', 'react', 'react-dom'],
+            'ai-vendor': ['@google/generative-ai']
+          }
+        }
+      }
     }
   };
 });
