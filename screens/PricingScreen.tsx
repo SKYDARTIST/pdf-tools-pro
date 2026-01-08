@@ -226,7 +226,7 @@ const PricingScreen: React.FC = () => {
                       { f: "Data Privacy", c: "Cloud Sync (Shared)", l: "Local Only (Isolated)" },
                       { f: "Login Barrier", c: "Mandatory", l: "Zero Required" },
                       { f: "Processing Speed", c: "Server Latency", l: "Instant Edge Power" },
-                      { f: "Offline Work", c: "Laggy / Impossible", l: "Secure Edge Link" },
+                      { f: "Privacy Model", c: "Cloud Sync (Risk)", l: "Secure Edge Link" },
                       { f: "Cost Strategy", c: "$240/Year Sub", l: "$2.99 Lifetime" },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-white/5 dark:border-black/5 last:border-0 hover:bg-white/5 dark:hover:bg-black/5 transition-colors">

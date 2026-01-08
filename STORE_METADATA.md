@@ -24,7 +24,7 @@ This document contains high-conversion marketing copy designed to beat the "corp
 
 *   AI PDF Editor
 *   Chat with Document
-*   Offline PDF Tools
+*   Private PDF Tools
 *   Ad-Free PDF
 *   Gemini AI
 *   No Subscription PDF

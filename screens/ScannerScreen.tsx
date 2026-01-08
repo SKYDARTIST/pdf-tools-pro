@@ -262,7 +262,7 @@ const ScannerScreen: React.FC = () => {
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-2 mb-1">
             <NeuralPulse color="bg-emerald-500" size="md" />
-            <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Offline Acquisition</span>
+            <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Secure Acquisition</span>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
             <span className="text-emerald-500 font-black text-[7px] tracking-[0.2em] uppercase">Zero Watermark Protocol Active</span>
