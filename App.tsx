@@ -84,7 +84,7 @@ const App: React.FC = () => {
   const isLandingPage = location.pathname === '/';
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden max-w-md mx-auto shadow-2xl border-x border-slate-200 dark:border-[#1a1a1a]">
+    <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
       {!isLandingPage && <Header />}
       <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
         <AnimatePresence mode="wait">
