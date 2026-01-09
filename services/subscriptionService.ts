@@ -58,7 +58,15 @@ export const initSubscription = async (): Promise<UserSubscription> => {
 export const getSubscription = (): UserSubscription => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-        return JSON.parse(stored);
+        const subscription = JSON.parse(stored);
+
+        // RETROACTIVE TRIAL: Add trial start date to existing users who don't have it
+        if (!subscription.trialStartDate) {
+            subscription.trialStartDate = new Date().toISOString();
+            saveSubscription(subscription);
+        }
+
+        return subscription;
     }
 
     // Default free tier with 20-day trial
