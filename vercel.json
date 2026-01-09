@@ -1,19 +1,35 @@
 {
     "headers": [
         {
-            "source": "/(.*\\.env.*|\\.git/.*)",
+            "source": "/(.*\\.env.*|\\.git/.*|wp-admin.*|phpmyadmin.*)",
             "headers": [
                 {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
+                    "key": "X-Robots-Tag",
+                    "value": "noindex"
                 }
             ]
         }
     ],
-    "routes": [
+    "redirects": [
         {
-            "src": "/(.*\\.env.*|\\.git/.*|wp-admin.*|phpmyadmin.*)",
-            "status": 404
+            "source": "/:path(.*\\.env.*)",
+            "destination": "/404",
+            "permanent": false
+        },
+        {
+            "source": "/:path(\\.git/.*)",
+            "destination": "/404",
+            "permanent": false
+        },
+        {
+            "source": "/wp-admin/:path*",
+            "destination": "/404",
+            "permanent": false
+        },
+        {
+            "source": "/phpmyadmin/:path*",
+            "destination": "/404",
+            "permanent": false
         }
     ],
     "rewrites": [
