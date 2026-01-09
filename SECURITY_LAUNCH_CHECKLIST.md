@@ -64,3 +64,30 @@ I have already implemented the following in your code:
 * [x] **CORS Restrictions**: API only accepts requests from production URL.
 
 **Status:** Technical security is now at 95% completion. Steps 1-3 above require your manual action!
+
+## 6. Infrastructure Security Audit (Bot Attack Prevention)
+
+Automated bots constantly scan for exposed credentials and config files. Verify these paths return **404** on your production site:
+
+**Test these URLs on your deployed site:**
+```
+https://your-domain.vercel.app/.env
+https://your-domain.vercel.app/.env.local
+https://your-domain.vercel.app/.git/config
+https://your-domain.vercel.app/wp-admin
+https://your-domain.vercel.app/phpmyadmin
+```
+
+**Expected Result:** All should return **404 Not Found** or redirect to your homepage.
+
+**What I've implemented:**
+* [x] **Explicit 404 routes** in `vercel.json` for `.env`, `.git`, `wp-admin`, `phpmyadmin`
+* [x] **`.gitignore` protection** for all environment files
+* [x] **Security headers** to prevent MIME-type sniffing attacks
+
+**Action Required:**
+1. After your next deployment, manually test each URL above
+2. If any return file contents instead of 404, contact support immediately
+
+> [!WARNING]
+> Even if Vercel blocks these by default, explicit rules in `vercel.json` provide defense-in-depth. Never rely on "platform defaults" for security.

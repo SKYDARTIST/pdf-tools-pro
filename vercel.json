@@ -1,4 +1,21 @@
 {
+    "headers": [
+        {
+            "source": "/(.*\\.env.*|\\.git/.*)",
+            "headers": [
+                {
+                    "key": "X-Content-Type-Options",
+                    "value": "nosniff"
+                }
+            ]
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*\\.env.*|\\.git/.*|wp-admin.*|phpmyadmin.*)",
+            "status": 404
+        }
+    ],
     "rewrites": [
         {
             "source": "/api/(.*)",
