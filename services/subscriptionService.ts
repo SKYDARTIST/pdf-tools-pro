@@ -18,6 +18,7 @@ export interface UserSubscription {
     lastOperationReset: string; // ISO date
     lastAiWeeklyReset: string; // ISO date
     lastAiMonthlyReset: string; // ISO date
+    trialStartDate?: string; // ISO date - when the 20-day trial started
     purchaseToken?: string;
     lastNotifiedCredits?: number;
 }
@@ -60,7 +61,7 @@ export const getSubscription = (): UserSubscription => {
         return JSON.parse(stored);
     }
 
-    // Default free tier
+    // Default free tier with 20-day trial
     const now = new Date().toISOString();
     return {
         tier: SubscriptionTier.FREE,
@@ -71,6 +72,7 @@ export const getSubscription = (): UserSubscription => {
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
+        trialStartDate: now, // Start 20-day trial immediately
     };
 };
 
@@ -79,8 +81,29 @@ export const saveSubscription = (subscription: UserSubscription): void => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
 };
 
+// Check if user is within the 20-day trial period
+export const isInTrialPeriod = (): boolean => {
+    const subscription = getSubscription();
+
+    // If no trial start date, they're an old user - no trial
+    if (!subscription.trialStartDate) {
+        return false;
+    }
+
+    const trialStart = new Date(subscription.trialStartDate);
+    const now = new Date();
+    const daysSinceTrialStart = Math.floor((now.getTime() - trialStart.getTime()) / (24 * 60 * 60 * 1000));
+
+    return daysSinceTrialStart < 20;
+};
+
 // Check if user can perform a PDF operation
 export const canPerformOperation = (): { allowed: boolean; reason?: string } => {
+    // 20-DAY TRIAL: Unlimited operations
+    if (isInTrialPeriod()) {
+        return { allowed: true };
+    }
+
     const subscription = getSubscription();
 
     // Reset daily counter if needed
@@ -173,6 +196,11 @@ export const ackAiNotification = (): void => {
 
 // Check if user can use AI
 export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: number; warning?: boolean } => {
+    // 20-DAY TRIAL: Unlimited AI usage
+    if (isInTrialPeriod()) {
+        return { allowed: true };
+    }
+
     const subscription = getSubscription();
     const now = new Date();
     const warning = isNearAiLimit();
