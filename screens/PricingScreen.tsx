@@ -83,11 +83,11 @@ const PricingScreen: React.FC = () => {
               className={`monolith-card p-10 flex flex-col relative group ${tier.popular ? 'border-2 border-black dark:border-white shadow-2xl' : ''}`}
             >
               {tier.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                  <div className="px-5 py-1.5 bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl whitespace-nowrap">
+                <div className="absolute -top-4 inset-x-0 flex justify-center items-center gap-1.5 px-4 pointer-events-none">
+                  <div className="px-4 py-1.5 bg-black dark:bg-white text-white dark:text-black text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl shadow-black/20 whitespace-nowrap border border-white/10">
                     {tier.badge || 'MOST POPULAR'}
                   </div>
-                  <div className="px-4 py-1.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-xl animate-pulse">
+                  <div className="px-3 py-1.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl shadow-emerald-500/30 border border-emerald-400/20 animate-pulse">
                     70% OFF
                   </div>
                 </div>
