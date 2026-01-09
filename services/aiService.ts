@@ -25,7 +25,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-ag-signature': 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+        'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
         'x-ag-device-id': getDeviceId(),
         'x-ag-integrity-token': integrityToken
       },

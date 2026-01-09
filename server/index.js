@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3001;
 
 // INITIALIZE GEMINI
 const apiKey = process.env.GEMINI_API_KEY;
-console.log(`🔑 API Key Loaded: ${apiKey ? (apiKey.substring(0, 5) + '...') : 'MISSING'}`);
+console.log(`🔑 API Key: ${apiKey ? 'LOADED' : 'MISSING'}`);
 const genAI = new GoogleGenerativeAI(apiKey || '');
 
 const SYSTEM_INSTRUCTION = `

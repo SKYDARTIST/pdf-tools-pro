@@ -4,10 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 // Anti-Gravity Backend v2.0 - Secure Hybrid Architecture
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
 
-const supabase = createClient(
-    process.env.SUPABASE_URL || 'https://eydbnogluccjhmofsnhu.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5ZGJub2dsdWNjamhtb2Zzbmh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODgwMTgsImV4cCI6MjA4MzQ2NDAxOH0.acvpbJi0N0eWE6J8ohjvkJWCxV7cg6IEUpWAYlILl48'
-);
+// Supabase credentials - MUST be set in Vercel environment variables
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️ Supabase credentials not configured. Usage tracking will be disabled.');
+}
+
+const supabase = supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 // Memory-safe model cache
 let cachedModels = null;
@@ -15,11 +22,10 @@ let lastDiscovery = 0;
 
 export default async function handler(req, res) {
     const origin = req.headers.origin;
+    // CORS: Restrict to production URL only (localhost allowed for development)
     const allowedOrigins = [
         'http://localhost:5173',
-        'https://pdf-tools-pro.vercel.app',
-        'https://pdf-tools-pro-git-main-cryptobullas-projects.vercel.app',
-        'https://pdf-tools-pro-skydartist-projects.vercel.app'
+        'https://pdf-tools-pro.vercel.app'
     ];
 
     if (origin && allowedOrigins.includes(origin)) {
@@ -36,8 +42,10 @@ export default async function handler(req, res) {
     const deviceId = req.headers['x-ag-device-id'];
     const integrityToken = req.headers['x-ag-integrity-token'];
 
-    // Protocol Integrity Check
-    if (signature !== 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE') {
+    // Protocol Integrity Check - signature must match environment variable
+    const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+
+    if (signature !== expectedSignature) {
         return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
     }
 
@@ -66,7 +74,7 @@ export default async function handler(req, res) {
     }
 
     // Stage 2: Neural Credit Verification (Supabase)
-    if (deviceId && deviceId !== 'null') {
+    if (supabase && deviceId && deviceId !== 'null') {
         try {
             const { data: usage, error } = await supabase
                 .from('ag_user_usage')
