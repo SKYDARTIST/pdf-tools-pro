@@ -130,6 +130,11 @@ export const isNearAiLimit = (): boolean => {
 
 // Get the latest notification message if a milestone is hit
 export const getAiPackNotification = (): { message: string; type: 'milestone' | 'warning' | 'exhausted' } | null => {
+    // TEMPORARILY DISABLED FOR 20-DAY TESTING PERIOD (15-20 testers)
+    // Re-enable after testing is complete
+    return null;
+
+    /* ORIGINAL CODE - UNCOMMENT AFTER TESTING:
     const subscription = getSubscription();
     // Only notify if user actually has/had an AI pack
     if (subscription.aiPackCredits === undefined && (subscription.lastNotifiedCredits === undefined || subscription.lastNotifiedCredits === 0)) {
@@ -156,6 +161,7 @@ export const getAiPackNotification = (): { message: string; type: 'milestone' | 
     }
 
     return null;
+    */
 };
 
 // Acknowledge a notification to prevent re-rendering
