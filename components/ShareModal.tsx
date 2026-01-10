@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Link2, Download, Share2, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
+import { downloadFile } from '../services/downloadService';
 
 interface ShareModalProps {
     isOpen: boolean;
@@ -34,12 +35,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
             } else {
                 // Fallback: download the file
                 const blob = new Blob([fileData], { type: fileType });
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                link.click();
-                window.URL.revokeObjectURL(url);
+                await downloadFile(blob, fileName);
             }
         } catch (err) {
             console.error('Error sharing:', err);
@@ -47,21 +43,15 @@ const ShareModal: React.FC<ShareModalProps> = ({
     };
 
     const handleEmailShare = () => {
-        // Create blob URL for email attachment
-        const blob = new Blob([fileData], { type: fileType });
-        const url = window.URL.createObjectURL(blob);
-
         // Open email client with subject
         window.location.href = `mailto:?subject=${encodeURIComponent(fileName)}&body=${encodeURIComponent('Please find the attached PDF file.')}`;
 
         // Note: Email clients don't support direct file attachments via mailto
+        // Note: Email clients don't support direct file attachments via mailto
         // User will need to manually attach the downloaded file
-        setTimeout(() => {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.click();
-            window.URL.revokeObjectURL(url);
+        setTimeout(async () => {
+            const blob = new Blob([fileData], { type: fileType });
+            await downloadFile(blob, fileName);
         }, 100);
     };
 
@@ -79,14 +69,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
         }
     };
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         const blob = new Blob([fileData], { type: fileType });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.click();
-        window.URL.revokeObjectURL(url);
+        await downloadFile(blob, fileName);
     };
 
     return (

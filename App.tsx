@@ -87,13 +87,13 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
       {!isLandingPage && <Header />}
       <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.1, ease: "linear" }}
           >
             <Routes location={location}>
               <Route path="/" element={<LandingPage />} />

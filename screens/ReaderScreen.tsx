@@ -19,6 +19,7 @@ import ToolGuide from '../components/ToolGuide';
 import MindMapSettingsModal from '../components/MindMapSettingsModal';
 import NeuralProtocolBrief from '../components/NeuralProtocolBrief';
 import BriefingSettingsModal from '../components/BriefingSettingsModal';
+import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
 // Configure PDF.js worker - using CDN fallback for maximum reliability if local fails
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -44,7 +45,6 @@ const ReaderScreen: React.FC = () => {
     const [isCooling, setIsCooling] = useState<boolean>(false);
     const [audioScript, setAudioScript] = useState<string>('');
     const [isGeneratingAudio, setIsGeneratingAudio] = useState<boolean>(false);
-    const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [showMindMapSettings, setShowMindMapSettings] = useState(false);
@@ -193,7 +193,11 @@ const ReaderScreen: React.FC = () => {
 
     const toggleAudioNarrator = async (settings?: { range: string; focus: string }) => {
         if (isAudioPlaying) {
-            window.speechSynthesis.cancel();
+            try {
+                await TextToSpeech.stop();
+            } catch (e) {
+                window.speechSynthesis?.cancel();
+            }
             setIsAudioPlaying(false);
             return;
         }
@@ -275,52 +279,83 @@ const ReaderScreen: React.FC = () => {
         }
     };
 
-    const startSpeaking = (text: string) => {
-        window.speechSynthesis.cancel();
+    const startSpeaking = async (text: string) => {
+        try {
+            await TextToSpeech.stop();
+        } catch (e) { }
+        window.speechSynthesis?.cancel();
 
-        // Sanitize text: Remove markdown symbols (*, #, _, etc.) that browsers read literally
+        // Sanitize text: Remove markdown symbols (*, #, _, etc.)
         let sanitizedText = text
-            .replace(/\*\*/g, '') // Remove double asterisks
-            .replace(/\*/g, '')   // Remove single asterisks
-            .replace(/#/g, '')    // Remove hashes
-            .replace(/__/g, '')   // Remove double underscores
-            .replace(/_/g, '')    // Remove single underscores
+            .replace(/\*\*/g, '')
+            .replace(/\*/g, '')
+            .replace(/#/g, '')
+            .replace(/__/g, '')
+            .replace(/_/g, '')
             .trim();
 
-        // Ensure the "Welcome to Anti-Gravity" greeting is included if missing
         if (!sanitizedText.toLowerCase().startsWith("welcome to anti-gravity")) {
             sanitizedText = "Welcome to Anti-Gravity. " + sanitizedText;
         }
 
-        // Chunking mechanism for long scripts (browser limits)
-        const chunks = sanitizedText.match(/[^.!?]+[.!?]+/g) || [sanitizedText];
-        let currentChunk = 0;
-
-        const speakNextChunk = () => {
-            if (currentChunk >= chunks.length) {
-                setIsAudioPlaying(false);
-                return;
-            }
-
-            const utterance = new SpeechSynthesisUtterance(chunks[currentChunk].trim());
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-
-            utterance.onend = () => {
-                currentChunk++;
-                speakNextChunk();
-            };
-
-            utterance.onerror = (e) => {
-                console.error("Speech Synthesis Error:", e);
-                setIsAudioPlaying(false);
-            };
-
-            window.speechSynthesis.speak(utterance);
-        };
-
         setIsAudioPlaying(true);
-        speakNextChunk();
+
+        try {
+            // Attempt Native Hardware Synthesis first (for Android/iOS)
+            await TextToSpeech.speak({
+                text: sanitizedText,
+                lang: 'en-US',
+                rate: 1.0,
+                pitch: 1.0,
+                volume: 1.0,
+                category: 'ambient',
+            });
+            setIsAudioPlaying(false);
+        } catch (err) {
+            console.log("Native TTS failed or not present, falling back to browser engine.");
+
+            // Browser Fallback (Legacy/Desktop)
+            const chunks = sanitizedText.match(/[^.!?]+[.!?]+/g) || [sanitizedText];
+            let currentChunk = 0;
+
+            const speakNextChunk = () => {
+                if (currentChunk >= chunks.length) {
+                    setIsAudioPlaying(false);
+                    return;
+                }
+
+                const UtteranceClass = (window as any).SpeechSynthesisUtterance ||
+                    (window as any).webkitSpeechSynthesisUtterance ||
+                    (typeof SpeechSynthesisUtterance !== 'undefined' ? SpeechSynthesisUtterance : null);
+
+                if (!UtteranceClass) {
+                    console.error("No Speech synthesis engine available on this device.");
+                    setIsAudioPlaying(false);
+                    return;
+                }
+
+                const utterance = new UtteranceClass(chunks[currentChunk].trim());
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                utterance.onend = () => {
+                    currentChunk++;
+                    speakNextChunk();
+                };
+
+                utterance.onerror = (e: any) => {
+                    setIsAudioPlaying(false);
+                    window.speechSynthesis?.cancel();
+                };
+
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    setIsAudioPlaying(false);
+                }
+            };
+            speakNextChunk();
+        }
     };
 
 
@@ -427,8 +462,12 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
     };
 
     useEffect(() => {
+        // Neural Warmup: Initialize voices for mobile browsers
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+        }
         return () => {
-            window.speechSynthesis.cancel();
+            window.speechSynthesis?.cancel();
         };
     }, []);
 
@@ -539,28 +578,30 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                 )}
 
                                 {protocol === 'briefing' && (
-                                    <div className="flex items-center gap-2">
-                                        <motion.button
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => toggleAudioNarrator()}
-                                            className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${isAudioPlaying
-                                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
-                                                : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10'
-                                                }`}
-                                        >
-                                            {isGeneratingAudio ? <Loader2 size={16} className="animate-spin" /> : isAudioPlaying ? <Square size={16} fill="currentColor" /> : <Headphones size={16} />}
-                                            {isAudioPlaying ? "Halt Intake" : "Execute Briefing Podcast"}
-                                        </motion.button>
-                                        <motion.button
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => {
-                                                setBriefType('briefing');
-                                                setShowBrief(true);
-                                            }}
-                                            className="p-4 rounded-[20px] bg-indigo-500/5 border-2 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 transition-all"
-                                        >
-                                            <Info size={16} />
-                                        </motion.button>
+                                    <div className="flex flex-col gap-2 flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <motion.button
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => toggleAudioNarrator()}
+                                                className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${isAudioPlaying
+                                                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
+                                                    : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10'
+                                                    }`}
+                                            >
+                                                {isGeneratingAudio ? <Loader2 size={16} className="animate-spin" /> : isAudioPlaying ? <Square size={16} fill="currentColor" /> : <Headphones size={16} />}
+                                                {isAudioPlaying ? "Halt Intake" : "Execute Briefing Podcast"}
+                                            </motion.button>
+                                            <motion.button
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => {
+                                                    setBriefType('briefing');
+                                                    setShowBrief(true);
+                                                }}
+                                                className="p-4 rounded-[20px] bg-indigo-500/5 border-2 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 transition-all"
+                                            >
+                                                <Info size={16} />
+                                            </motion.button>
+                                        </div>
                                     </div>
                                 )}
                                 {/* Tier 1: Neural & AI Intelligence Tools */}

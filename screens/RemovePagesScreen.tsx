@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, FileText, Download, Loader2, FileUp, CheckCircle } from 'lucide-react';
-import { downloadBlob, removePagesFromPdf } from '../services/pdfService';
+import { removePagesFromPdf } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
@@ -87,7 +88,8 @@ const RemovePagesScreen: React.FC = () => {
         try {
             const result = await removePagesFromPdf(file.file, Array.from(selectedPages));
             const fileName = `edited_${file.name}`;
-            downloadBlob(result, fileName, 'application/pdf');
+            const blob = new Blob([result as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
             // Add to file history
             FileHistoryManager.addEntry({
@@ -110,10 +112,7 @@ const RemovePagesScreen: React.FC = () => {
             });
             setShowSuccessModal(true);
 
-            // Reset
-            setFile(null);
-            setSelectedPages(new Set());
-            setPageCount(0);
+            // Reset deferred
         } catch (err) {
             alert('Error removing pages: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
@@ -280,7 +279,12 @@ const RemovePagesScreen: React.FC = () => {
             {successData && (
                 <SuccessModal
                     isOpen={showSuccessModal}
-                    onClose={() => setShowSuccessModal(false)}
+                    onClose={() => {
+                        setShowSuccessModal(false);
+                        setFile(null);
+                        setSelectedPages(new Set());
+                        setPageCount(0);
+                    }}
                     operation="Remove Pages"
                     fileName={successData.fileName}
                     originalSize={successData.originalSize}
@@ -288,6 +292,9 @@ const RemovePagesScreen: React.FC = () => {
                     metadata={{ pagesRemoved: successData.pagesRemoved }}
                     onViewFiles={() => {
                         setShowSuccessModal(false);
+                        setFile(null);
+                        setSelectedPages(new Set());
+                        setPageCount(0);
                         navigate('/my-files');
                     }}
                 />

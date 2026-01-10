@@ -7,7 +7,9 @@ import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
+import { downloadFile } from '../services/downloadService';
 
 const STAMPS = [
   { id: 'approved', label: 'APPROVED', color: '#10b981' },
@@ -25,6 +27,7 @@ const SignScreen: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -172,12 +175,7 @@ const SignScreen: React.FC = () => {
       const pdfBytes = await pdfDoc.save();
       const fileName = `signed_${file.name}`;
       const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      await downloadFile(blob, fileName);
 
       // Increment task counter
       TaskLimitManager.incrementTask();
@@ -192,12 +190,15 @@ const SignScreen: React.FC = () => {
       });
 
       // Reset and navigate
-      setTimeout(() => {
-        setIsProcessing(false);
-        setFile(null);
-        clearCanvas();
-        navigate('/');
-      }, 500);
+      // Show success modal
+      setSuccessData({
+        isOpen: true,
+        fileName,
+        originalSize: file.size,
+        finalSize: pdfBytes.length
+      });
+
+      setIsProcessing(false);
     } catch (error) {
       console.error('Error signing PDF:', error);
       alert('Error applying signature: ' + (error instanceof Error ? error.message : 'Unknown error'));
@@ -357,6 +358,27 @@ const SignScreen: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
       />
+
+      {successData && (
+        <SuccessModal
+          isOpen={successData.isOpen}
+          onClose={() => {
+            setSuccessData(null);
+            setFile(null);
+            clearCanvas();
+          }}
+          operation="Digital Signature"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setSuccessData(null);
+            setFile(null);
+            clearCanvas();
+            navigate('/my-files');
+          }}
+        />
+      )}
     </motion.div>
   );
 };

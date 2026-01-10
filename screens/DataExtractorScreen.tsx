@@ -9,7 +9,10 @@ import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import UpgradeModal from '../components/UpgradeModal';
+import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
+import SuccessModal from '../components/SuccessModal';
+import { compressImage } from '../utils/imageProcessor';
 
 const DataExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -23,6 +26,7 @@ const DataExtractorScreen: React.FC = () => {
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -60,11 +64,12 @@ const DataExtractorScreen: React.FC = () => {
                 text = await extractTextFromPdf(buffer);
             } else {
                 // Handle Image (Vision Mode)
-                imageBase64 = await new Promise((resolve) => {
+                const rawBase64 = await new Promise<string>((resolve) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result as string);
                     reader.readAsDataURL(file);
                 });
+                imageBase64 = await compressImage(rawBase64);
             }
 
             let prompt = "";
@@ -150,15 +155,19 @@ Output ONLY raw CSV data.`;
         }
     };
 
-    const downloadData = () => {
+    const downloadData = async () => {
         const mimeType = format === 'json' ? 'application/json' : format === 'csv' ? 'text/csv' : 'text/markdown';
         const blob = new Blob([extractedData], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
         const ext = format === 'markdown' ? 'md' : format;
-        a.download = `extracted_data.${ext}`;
-        a.click();
+        await downloadFile(blob, `extracted_data.${ext}`);
+
+        // Show success modal
+        setSuccessData({
+            isOpen: true,
+            fileName: `extracted_data.${ext}`,
+            originalSize: file?.size || 0,
+            finalSize: blob.size
+        });
     };
 
     return (
@@ -288,7 +297,7 @@ Output ONLY raw CSV data.`;
                                         <span className="text-[8px] font-black uppercase tracking-widest">Flag</span>
                                     </button>
                                     <button
-                                        onClick={() => setExtractedData('')}
+                                        onClick={() => { setExtractedData(''); setFile(null); setError(''); }}
                                         className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
                                     >
                                         <X size={18} className="text-gray-400" />
@@ -333,6 +342,29 @@ Output ONLY raw CSV data.`;
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
             />
+
+            {successData && (
+                <SuccessModal
+                    isOpen={successData.isOpen}
+                    onClose={() => {
+                        setSuccessData(null);
+                        setFile(null);
+                        setExtractedData('');
+                        setError('');
+                    }}
+                    operation="Data Extraction"
+                    fileName={successData.fileName}
+                    originalSize={successData.originalSize}
+                    finalSize={successData.finalSize}
+                    onViewFiles={() => {
+                        setSuccessData(null);
+                        setFile(null);
+                        setExtractedData('');
+                        setError('');
+                        navigate('/my-files');
+                    }}
+                />
+            )}
         </motion.div >
     );
 };

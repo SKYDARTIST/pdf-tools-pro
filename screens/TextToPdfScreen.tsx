@@ -2,17 +2,22 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Type, Download, Loader2, AlignLeft, Bold } from 'lucide-react';
-import { createPdfFromText, downloadBlob } from '../services/pdfService';
+import { createPdfFromText } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
+import { useNavigate } from 'react-router-dom';
 
 const TextToPdfScreen: React.FC = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+  const navigate = useNavigate();
 
   const handleGenerate = async () => {
     if (!title || !content) return;
@@ -26,7 +31,16 @@ const TextToPdfScreen: React.FC = () => {
     try {
       const result = await createPdfFromText(title, content);
       const fileName = `${title.replace(/\s+/g, '_')}.pdf`;
-      downloadBlob(result, fileName, 'application/pdf');
+      const blob = new Blob([result as any], { type: 'application/pdf' });
+      await downloadFile(blob, fileName);
+
+      // Show success modal
+      setSuccessData({
+        isOpen: true,
+        fileName,
+        originalSize: content.length,
+        finalSize: result.length
+      });
 
       // Increment task count
       TaskLimitManager.incrementTask();
@@ -40,9 +54,7 @@ const TextToPdfScreen: React.FC = () => {
         status: 'success'
       });
 
-      // Clear
-      setTitle('');
-      setContent('');
+      // Clear deferred
     } catch (err) {
       alert('Error generating PDF');
     } finally {
@@ -134,6 +146,27 @@ const TextToPdfScreen: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
       />
+
+      {successData && (
+        <SuccessModal
+          isOpen={successData.isOpen}
+          operation="Document Synthesis"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setSuccessData(null);
+            setTitle('');
+            setContent('');
+            navigate('/my-files');
+          }}
+          onClose={() => {
+            setSuccessData(null);
+            setTitle('');
+            setContent('');
+          }}
+        />
+      )}
     </motion.div>
   );
 };

@@ -6,12 +6,14 @@ import { useNavigate } from 'react-router-dom';
 import { getReconstructionProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import { downloadFile } from '../services/downloadService';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import ToolGuide from '../components/ToolGuide';
 import UpgradeModal from '../components/UpgradeModal';
 import NeuralPulse from '../components/NeuralPulse';
+import { compressImage } from '../utils/imageProcessor';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -82,17 +84,33 @@ const ScannerScreen: React.FC = () => {
     return new Promise(async (resolve) => {
       const img = new Image();
       img.onload = async () => {
+        // Step 0: Calculate target dimensions (max 1800px)
+        const MAX_DIM = 1800;
+        let targetWidth = img.width;
+        let targetHeight = img.height;
+
+        if (targetWidth > MAX_DIM || targetHeight > MAX_DIM) {
+          if (targetWidth > targetHeight) {
+            targetHeight = Math.round((targetHeight * MAX_DIM) / targetWidth);
+            targetWidth = MAX_DIM;
+          } else {
+            targetWidth = Math.round((targetWidth * MAX_DIM) / targetHeight);
+            targetHeight = MAX_DIM;
+          }
+          console.log(`📏 Resizing scan from ${img.width}x${img.height} to ${targetWidth}x${targetHeight}`);
+        }
+
         let canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
         let ctx = canvas.getContext('2d');
         if (!ctx) {
           resolve(imageData);
           return;
         }
 
-        // Draw the original image first
-        ctx.drawImage(img, 0, 0);
+        // Draw and scaling happens here
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
         // Step 1: Apply advanced processing if enabled (reconstruction mode)
         if (filters.perspectiveCorrection || filters.autoCrop || filters.textEnhancement) {
@@ -167,7 +185,9 @@ const ScannerScreen: React.FC = () => {
 
         // Put the modified pixel data back
         ctx.putImageData(imageDataObj, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.9));
+        const bakedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        console.log(`✅ Filter bake complete. Result length: ${bakedDataUrl.length}`);
+        resolve(bakedDataUrl);
       };
       img.src = imageData;
     });
@@ -191,10 +211,11 @@ const ScannerScreen: React.FC = () => {
     setIsPolishing(true);
     setError(null);
     try {
+      const compressedImage = await compressImage(capturedImage);
       // Always use aggressive reconstruction protocol for best quality
       const [filters, nameSuggestion] = await Promise.all([
-        getReconstructionProtocol(undefined, capturedImage),
-        askGemini("Suggest a professional filename for this document.", undefined, 'naming', capturedImage)
+        getReconstructionProtocol(undefined, compressedImage),
+        askGemini("Suggest a professional filename for this document.", undefined, 'naming', compressedImage)
       ]);
 
       console.log('🎨 AI Returned Filters:', filters);
@@ -222,17 +243,6 @@ const ScannerScreen: React.FC = () => {
     return new Blob([u8arr], { type: mime });
   };
 
-  const downloadBlob = (blob: Blob, filename: string, type: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   const handleDownload = async () => {
     if (!capturedImage) return;
     try {
@@ -240,7 +250,8 @@ const ScannerScreen: React.FC = () => {
       const baked = appliedFilters ? await bakeFilters(capturedImage, appliedFilters) : capturedImage;
       console.log('✅ Filters baked successfully');
       const finalName = suggestedName ? `${suggestedName}.jpg` : `scan_${Date.now()}.jpg`;
-      downloadBlob(dataURLToBlob(baked), finalName, 'image/jpeg');
+      const blob = dataURLToBlob(baked);
+      await downloadFile(blob, finalName);
     } catch (err) {
       console.error("Download failed", err);
       setError("Download failed. Please try again.");
@@ -501,7 +512,7 @@ const ScannerScreen: React.FC = () => {
 
                 <button
                   onClick={async () => {
-                    console.log('📄 Assemble PDF clicked with filters:', appliedFilters);
+                    console.log('📄 [Scanner] Assemble PDF button triggered');
                     let finalImage = capturedImage;
                     if (appliedFilters) {
                       console.log('🔥 Baking filters before PDF assembly...');

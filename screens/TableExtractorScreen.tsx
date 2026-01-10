@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileSpreadsheet, FileUp, Loader2, Bot, Download, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
+import { downloadFile } from '../services/downloadService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import UpgradeModal from '../components/UpgradeModal';
 import ToolGuide from '../components/ToolGuide';
@@ -11,6 +12,8 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { Flag } from 'lucide-react';
+import { compressImage } from '../utils/imageProcessor';
+import SuccessModal from '../components/SuccessModal';
 
 const TableExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -23,6 +26,7 @@ const TableExtractorScreen: React.FC = () => {
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -59,10 +63,11 @@ const TableExtractorScreen: React.FC = () => {
                 extractedTables = await extractTablesFromDocument(text);
             } else if (selected.type.startsWith('image/')) {
                 const reader = new FileReader();
-                const imageBase64 = await new Promise<string>((resolve) => {
+                const rawBase64 = await new Promise<string>((resolve) => {
                     reader.onload = () => resolve(reader.result as string);
                     reader.readAsDataURL(selected);
                 });
+                const imageBase64 = await compressImage(rawBase64);
                 extractedTables = await extractTablesFromDocument(undefined, imageBase64);
             }
 
@@ -77,24 +82,32 @@ const TableExtractorScreen: React.FC = () => {
         }
     };
 
-    const downloadCSV = (table: ExtractedTable) => {
+    const downloadCSV = async (table: ExtractedTable) => {
         const csv = tableToCSV(table);
+        const fileName = `${table.tableName || 'extracted_table'}.csv`;
         const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${table.tableName || 'extracted_table'}.csv`;
-        a.click();
+        await downloadFile(blob, fileName);
+
+        setSuccessData({
+            isOpen: true,
+            fileName,
+            originalSize: file?.size || 0,
+            finalSize: blob.size
+        });
     };
 
-    const downloadJSON = () => {
+    const downloadJSON = async () => {
         const json = JSON.stringify(tables, null, 2);
+        const fileName = `extracted_data.json`;
         const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `extracted_data.json`;
-        a.click();
+        await downloadFile(blob, fileName);
+
+        setSuccessData({
+            isOpen: true,
+            fileName,
+            originalSize: file?.size || 0,
+            finalSize: blob.size
+        });
     };
 
     return (
@@ -287,6 +300,29 @@ const TableExtractorScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
             />
+
+            {successData && (
+                <SuccessModal
+                    isOpen={successData.isOpen}
+                    onClose={() => {
+                        setSuccessData(null);
+                        setStatus('idle');
+                        setTables([]);
+                        setFile(null);
+                    }}
+                    operation="Table Extraction"
+                    fileName={successData.fileName}
+                    originalSize={successData.originalSize}
+                    finalSize={successData.finalSize}
+                    onViewFiles={() => {
+                        setSuccessData(null);
+                        setStatus('idle');
+                        setTables([]);
+                        setFile(null);
+                        navigate('/my-files');
+                    }}
+                />
+            )}
         </motion.div>
     );
 };

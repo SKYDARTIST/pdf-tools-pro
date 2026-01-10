@@ -2,17 +2,22 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Scissors, FileText, Download, Loader2, FileUp } from 'lucide-react';
-import { splitPdf, downloadBlob } from '../services/pdfService';
+import { splitPdf } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
+import { useNavigate } from 'react-router-dom';
 
 const SplitScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -38,11 +43,13 @@ const SplitScreen: React.FC = () => {
     setIsProcessing(true);
     try {
       const results = await splitPdf(file.file);
-      // For simplicity in the demo, we download them one by one or the first one
-      // In a real app, we'd probably zip them
-      results.forEach((data, index) => {
-        downloadBlob(data, `page_${index + 1}_${file.name}`, 'application/pdf');
-      });
+      for (let i = 0; i < results.length; i++) {
+        const data = results[i];
+        const blob = new Blob([data as any], { type: 'application/pdf' });
+        await downloadFile(blob, `page_${i + 1}_${file.name}`);
+        // Small delay between multiple downloads
+        if (results.length > 1) await new Promise(r => setTimeout(r, 200));
+      }
 
       // Increment task counter
       TaskLimitManager.incrementTask();
@@ -55,8 +62,13 @@ const SplitScreen: React.FC = () => {
         status: 'success'
       });
 
-      // Clear file
-      setFile(null);
+      // Clear file removed - deferred
+      setSuccessData({
+        isOpen: true,
+        fileName: file.name,
+        originalSize: file.size,
+        finalSize: results.reduce((acc, r) => acc + r.length, 0)
+      });
     } catch (err) {
       alert('Error splitting PDF');
 
@@ -166,6 +178,25 @@ const SplitScreen: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
       />
+
+      {successData && (
+        <SuccessModal
+          isOpen={successData.isOpen}
+          onClose={() => {
+            setSuccessData(null);
+            setFile(null);
+          }}
+          operation="Page Extraction"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setSuccessData(null);
+            setFile(null);
+            navigate('/my-files');
+          }}
+        />
+      )}
     </motion.div>
   );
 };

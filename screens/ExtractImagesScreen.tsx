@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
+import { downloadFile } from '../services/downloadService';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -18,8 +19,8 @@ const ExtractImagesScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedImages, setExtractedImages] = useState<string[]>([]);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -73,7 +74,13 @@ const ExtractImagesScreen: React.FC = () => {
             // Increment task count
             TaskLimitManager.incrementTask();
 
-            setShowSuccessModal(true);
+            // Show success modal
+            setSuccessData({
+                isOpen: true,
+                fileName: `extracted_images_${file.name}`,
+                originalSize: file.size,
+                finalSize: images.length * 102400 // Estimate 100kb per image for UI
+            });
         } catch (err) {
             alert('Error extracting images: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
@@ -87,11 +94,18 @@ const ExtractImagesScreen: React.FC = () => {
         }
     };
 
-    const downloadImage = (imageData: string, index: number) => {
-        const link = document.createElement('a');
-        link.href = imageData;
-        link.download = `page_${index + 1}.png`;
-        link.click();
+    const downloadImage = async (imageData: string, index: number) => {
+        try {
+            // Convert Data URL (Base64) to Blob
+            const response = await fetch(imageData);
+            const blob = await response.blob();
+            const fileName = `page_${index + 1}.png`;
+
+            await downloadFile(blob, fileName);
+        } catch (err) {
+            console.error("Failed to download image:", err);
+            alert("Download failed.");
+        }
     };
 
     const downloadAllImages = () => {
@@ -236,17 +250,27 @@ const ExtractImagesScreen: React.FC = () => {
             }
 
             {/* Success Modal */}
-            <SuccessModal
-                isOpen={showSuccessModal}
-                onClose={() => setShowSuccessModal(false)}
-                operation="Extract Images"
-                fileName={file?.name || ''}
-                metadata={{ imagesConverted: extractedImages.length }}
-                onViewFiles={() => {
-                    setShowSuccessModal(false);
-                    navigate('/my-files');
-                }}
-            />
+            {successData && (
+                <SuccessModal
+                    isOpen={successData.isOpen}
+                    operation="Extract Images"
+                    fileName={successData.fileName}
+                    originalSize={successData.originalSize}
+                    finalSize={successData.finalSize}
+                    metadata={{ imagesConverted: extractedImages.length }}
+                    onViewFiles={() => {
+                        setSuccessData(null);
+                        setFile(null);
+                        setExtractedImages([]);
+                        navigate('/my-files');
+                    }}
+                    onClose={() => {
+                        setSuccessData(null);
+                        setFile(null);
+                        setExtractedImages([]);
+                    }}
+                />
+            )}
 
             <UpgradeModal
                 isOpen={showUpgradeModal}

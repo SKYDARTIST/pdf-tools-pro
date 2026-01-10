@@ -7,6 +7,9 @@ import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
+import { useNavigate } from 'react-router-dom';
+import { downloadFile } from '../services/downloadService';
 
 // Configure PDF.js worker - using local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -25,6 +28,8 @@ const ExtractTextScreen: React.FC = () => {
   const [replaceText, setReplaceText] = useState('');
   const [isApplyingEdit, setIsApplyingEdit] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+  const navigate = useNavigate();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -99,17 +104,13 @@ const ExtractTextScreen: React.FC = () => {
       const modifiedBytes = await replaceTextInPdf(originalBuffer, findText, replaceText);
       if (modifiedBytes) {
         const blob = new Blob([modifiedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `edited_${file.name}`;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        // Increment task count
-        TaskLimitManager.incrementTask();
-
-        alert('Global Neural Modification Synchronized. Modified document is ready.');
+        // Show success modal
+        setSuccessData({
+          isOpen: true,
+          fileName: `edited_${file.name}`,
+          originalSize: file.size,
+          finalSize: modifiedBytes.length
+        });
       } else {
         alert(`No occurrences of "${findText}" found in the document.`);
       }
@@ -269,6 +270,31 @@ const ExtractTextScreen: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
       />
+
+      {successData && (
+        <SuccessModal
+          isOpen={successData.isOpen}
+          onClose={() => {
+            setSuccessData(null);
+            setText(null);
+            setStats(null);
+            setFile(null);
+            setShowEdit(false);
+          }}
+          operation="Text Modification"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setSuccessData(null);
+            setText(null);
+            setStats(null);
+            setFile(null);
+            setShowEdit(false);
+            navigate('/my-files');
+          }}
+        />
+      )}
     </motion.div>
   );
 };

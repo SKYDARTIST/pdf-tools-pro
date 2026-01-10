@@ -1,5 +1,50 @@
-
 import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
+
+/**
+ * Downsize a File or Blob image if it exceeds max dimensions.
+ * Uses a canvas to resize while maintaining aspect ratio.
+ */
+const downsizeImage = async (file: File, maxSize: number = 1600): Promise<ArrayBuffer> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      } else {
+        // No resize needed, but we still need to convert to ArrayBuffer
+        // To keep it simple and consistent with the canvas path below, 
+        // we'll just draw it once. This also strips metadata which helps size.
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error("Canvas context failed"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Blob conversion failed"));
+          return;
+        }
+        blob.arrayBuffer().then(resolve).catch(reject);
+      }, 'image/jpeg', 0.85); // 85% quality is optimal for docs
+    };
+    img.onerror = () => reject(new Error("Failed to load image for downsizing"));
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 /**
  * Standard error wrapper to prevent silent app crashes reported in rival app reviews.
@@ -53,12 +98,71 @@ export const addWatermark = async (file: File, text: string): Promise<Uint8Array
 export const createPdfFromText = async (title: string, content: string): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const pdfDoc = await PDFDocument.create();
-    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-    const page = pdfDoc.addPage();
-    const { height } = page.getSize();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    page.drawText(title, { x: 50, y: height - 40, size: 24, font: timesRomanFont });
-    page.drawText(content, { x: 50, y: height - 80, size: 12, font: timesRomanFont, maxWidth: 500, lineHeight: 18 });
+    let page = pdfDoc.addPage([600, 800]);
+    const { width, height } = page.getSize();
+    const margin = 50;
+    const maxWidth = width - margin * 2;
+    let y = height - margin;
+
+    // Draw Title
+    page.drawText(title, {
+      x: margin,
+      y: y,
+      size: 18,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+    y -= 40;
+
+    const fontSize = 10;
+    const lineHeight = fontSize * 1.5;
+    const lines = content.split('\n');
+
+    for (const line of lines) {
+      if (!line.trim()) {
+        y -= lineHeight;
+        if (y < margin) {
+          page = pdfDoc.addPage([600, 800]);
+          y = height - margin;
+        }
+        continue;
+      }
+
+      const words = line.split(' ');
+      let currentLine = "";
+
+      for (const word of words) {
+        const testLine = currentLine + word + " ";
+        const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+
+        if (testWidth > maxWidth) {
+          page.drawText(currentLine, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+          y -= lineHeight;
+          currentLine = word + " ";
+
+          if (y < margin) {
+            page = pdfDoc.addPage([600, 800]);
+            y = height - margin;
+          }
+        } else {
+          currentLine = testLine;
+        }
+      }
+
+      // Draw the remaining part of the line
+      if (currentLine) {
+        page.drawText(currentLine, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
+        y -= lineHeight;
+        if (y < margin) {
+          page = pdfDoc.addPage([600, 800]);
+          y = height - margin;
+        }
+      }
+    }
+
     return await pdfDoc.save();
   });
 };
@@ -82,32 +186,28 @@ export const imageToPdf = async (images: File[]): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const pdfDoc = await PDFDocument.create();
     for (const image of images) {
-      console.log(`Processing image: ${image.name}, type: ${image.type}, size: ${image.size}`);
-      const arrayBuffer = await image.arrayBuffer();
+      console.log(`Processing image: ${image.name}, type: ${image.type}, size: ${Math.round(image.size / 1024)} KB`);
+
+      // Step: Downsize image to prevent OOM on mobile
+      let arrayBuffer: ArrayBuffer;
+      try {
+        console.log(`📉 Downsizing/Optimizing ${image.name}...`);
+        arrayBuffer = await downsizeImage(image);
+        console.log(`✅ ${image.name} optimized: ${Math.round(arrayBuffer.byteLength / 1024)} KB`);
+      } catch (err) {
+        console.warn(`Downsizing failed for ${image.name}, using original:`, err);
+        arrayBuffer = await image.arrayBuffer();
+      }
+
       let embeddedImage;
 
       try {
-        if (image.type === 'image/jpeg' || image.type === 'image/jpg') {
-          try {
-            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
-          } catch (e) {
-            console.warn(`JPG embedding failed for ${image.name}, trying PNG fallback...`);
-            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-          }
-        } else if (image.type === 'image/png') {
-          try {
-            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-          } catch (e) {
-            console.warn(`PNG embedding failed for ${image.name}, trying JPG fallback...`);
-            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
-          }
-        } else {
-          // Attempt generic embedding if type is unknown or mismatched
-          try {
-            embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
-          } catch {
-            embeddedImage = await pdfDoc.embedPng(arrayBuffer);
-          }
+        // Since downsizeImage converts to JPEG, we mainly use embedJpg
+        try {
+          embeddedImage = await pdfDoc.embedJpg(arrayBuffer);
+        } catch (e) {
+          console.warn(`JPG embedding failed for ${image.name}, trying PNG fallback...`);
+          embeddedImage = await pdfDoc.embedPng(arrayBuffer);
         }
       } catch (err) {
         console.error(`Failed to embed image ${image.name} even with fallback:`, err);
@@ -115,16 +215,17 @@ export const imageToPdf = async (images: File[]): Promise<Uint8Array> => {
       }
 
       if (embeddedImage) {
+        console.log(`📄 Adding page for ${image.name} (${embeddedImage.width}x${embeddedImage.height})`);
         const page = pdfDoc.addPage([embeddedImage.width, embeddedImage.height]);
         page.drawImage(embeddedImage, { x: 0, y: 0, width: embeddedImage.width, height: embeddedImage.height });
       }
     }
 
-    if (pdfDoc.getPageCount() === 0) {
-      throw new Error("No valid images could be processed. Please ensure your files are valid JPEG or PNG images.");
-    }
-
-    return await pdfDoc.save();
+    console.log(`✅ All images embedded. Total pages: ${pdfDoc.getPageCount()}`);
+    console.log('💾 Saving PDF document...');
+    const result = await pdfDoc.save();
+    console.log(`✅ Save complete. Bytes: ${result.length}`);
+    return result;
   });
 };
 
@@ -161,12 +262,4 @@ export const repairPdf = async (file: File): Promise<Uint8Array> => {
 };
 
 
-export const downloadBlob = (data: any, fileName: string, mimeType: string) => {
-  const blob = new Blob([data], { type: mimeType });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  window.URL.revokeObjectURL(url);
-};
+

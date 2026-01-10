@@ -10,7 +10,10 @@ import ToolGuide from '../components/ToolGuide';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
-import { Flag } from 'lucide-react';
+import { Flag, Download } from 'lucide-react';
+import { createPdfFromText } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
+import SuccessModal from '../components/SuccessModal';
 
 const NeuralDiffScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -24,6 +27,7 @@ const NeuralDiffScreen: React.FC = () => {
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
@@ -78,6 +82,29 @@ const NeuralDiffScreen: React.FC = () => {
         } catch (err) {
             setError("Analysis failed. Ensure both files are readable PDFs.");
             console.error(err);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    const handleExport = async () => {
+        if (!diffResult) return;
+        setIsAnalyzing(true);
+        try {
+            const pdfBytes = await createPdfFromText("Neural Diff Report", diffResult);
+            const fileName = `Neural_Diff_${Date.now()}.pdf`;
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
+
+            setSuccessData({
+                isOpen: true,
+                fileName,
+                originalSize: diffResult.length,
+                finalSize: pdfBytes.length
+            });
+        } catch (err) {
+            console.error("Export failed:", err);
+            setError("PDF export failed. Neural link too complex.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -201,7 +228,11 @@ const NeuralDiffScreen: React.FC = () => {
                             </div>
 
                             <div className="pt-8 border-t border-black/5 dark:border-white/5 flex gap-4">
-                                <button className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                                <button
+                                    onClick={handleExport}
+                                    className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Download size={14} />
                                     Export PDF Report
                                 </button>
                                 <button
@@ -236,6 +267,26 @@ const NeuralDiffScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
             />
+
+            {successData && (
+                <SuccessModal
+                    isOpen={successData.isOpen}
+                    onClose={() => {
+                        setSuccessData(null);
+                        setFile1(null);
+                        setFile2(null);
+                        setDiffResult('');
+                    }}
+                    operation="Neural Diff"
+                    fileName={successData.fileName}
+                    originalSize={successData.originalSize}
+                    finalSize={successData.finalSize}
+                    onViewFiles={() => {
+                        setSuccessData(null);
+                        navigate('/my-files');
+                    }}
+                />
+            )}
         </motion.div >
     );
 };

@@ -2,18 +2,23 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Stamp, FileText, Download, Loader2, FileUp, Type } from 'lucide-react';
-import { addWatermark, downloadBlob } from '../services/pdfService';
+import { addWatermark } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
+import { useNavigate } from 'react-router-dom';
 
 const WatermarkScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
   const [text, setText] = useState('CONFIDENTIAL');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+  const navigate = useNavigate();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -33,7 +38,8 @@ const WatermarkScreen: React.FC = () => {
     setIsProcessing(true);
     try {
       const result = await addWatermark(file.file, text);
-      downloadBlob(result, `stamped_${file.name}`, 'application/pdf');
+      const blob = new Blob([result as any], { type: 'application/pdf' });
+      await downloadFile(blob, `stamped_${file.name}`);
 
       // Increment task counter
       TaskLimitManager.incrementTask();
@@ -46,8 +52,15 @@ const WatermarkScreen: React.FC = () => {
         status: 'success'
       });
 
-      // Clear file
-      setFile(null);
+      // Show success modal
+      setSuccessData({
+        isOpen: true,
+        fileName: `stamped_${file.name}`,
+        originalSize: file.size,
+        finalSize: result.length
+      });
+
+      // Clear file deferred
     } catch (err) {
       alert('Error applying watermark');
 
@@ -188,6 +201,25 @@ const WatermarkScreen: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
       />
+
+      {successData && (
+        <SuccessModal
+          isOpen={successData.isOpen}
+          onClose={() => {
+            setSuccessData(null);
+            setFile(null);
+          }}
+          operation="Brand Layer Synthesis"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setSuccessData(null);
+            setFile(null);
+            navigate('/my-files');
+          }}
+        />
+      )}
     </motion.div>
   );
 };

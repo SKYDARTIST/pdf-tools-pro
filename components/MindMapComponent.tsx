@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ZoomIn, ZoomOut, RotateCcw, Download, Loader2 } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { downloadFile } from '../services/downloadService';
 
 interface MindMapNode {
     id: string;
@@ -29,34 +29,92 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
         setScale(1);
     };
 
+
     const handleExport = async () => {
         if (!svgRef.current) return;
+
         setIsExporting(true);
         try {
-            // High-fidelity capture of the absolute 2000x2000 plane
-            const dataUrl = await toPng(svgRef.current, {
-                backgroundColor: '#000000',
-                quality: 1,
-                pixelRatio: 2, // Large 4000x4000 output
-                width: 2000,
-                height: 2000,
-                style: {
-                    transform: 'none',
-                    margin: '0',
-                }
+            // Manual canvas export to avoid CORS issues on Android
+            const canvas = document.createElement('canvas');
+            canvas.width = 2000;
+            canvas.height = 2000;
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                throw new Error('Canvas not supported');
+            }
+
+            // Black background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 2000, 2000);
+
+            // Translate to center
+            ctx.translate(1000, 1000);
+
+            // Draw connections first
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 3;
+            nodes.forEach(node => {
+                if (!node.parent) return;
+                const parent = nodes.find(n => n.id === node.parent);
+                if (!parent) return;
+
+                ctx.beginPath();
+                ctx.moveTo(parent.x, parent.y);
+                ctx.lineTo(node.x, node.y);
+                ctx.stroke();
             });
 
-            const link = document.createElement('a');
-            link.download = `anti-gravity-mindmap-${Date.now()}.png`;
-            link.href = dataUrl;
-            link.click();
+            // Draw nodes
+            ctx.font = 'bold 10px SF Pro Display, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            nodes.forEach(node => {
+                const isRoot = node.id === 'root';
+                const radius = isRoot ? 70 : 50;
+
+                // Circle
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = isRoot ? '#ffffff' : '#000000';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Text
+                ctx.fillStyle = isRoot ? '#000000' : '#ffffff';
+                ctx.font = isRoot ? 'bold 12px SF Pro Display' : 'bold 10px SF Pro Display';
+
+                const words = node.text.split(' ');
+                const lineHeight = 12;
+                const startY = words.length > 1 ? node.y - (lineHeight / 2) : node.y;
+
+                words.forEach((word, i) => {
+                    ctx.fillText(word, node.x, startY + (i * lineHeight));
+                });
+            });
+
+            // Convert canvas to blob
+            const blob = await new Promise<Blob>((resolve, reject) => {
+                canvas.toBlob((blob) => {
+                    if (blob) resolve(blob);
+                    else reject(new Error('Failed to create blob'));
+                }, 'image/png', 1);
+            });
+
+            // Use cross-platform download
+            await downloadFile(blob, `anti-gravity-mindmap-${Date.now()}.png`);
         } catch (error) {
             console.error('Neural Export Failed:', error);
-            alert('Neuro-Link export interrupted. Please synchronize and try again.');
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsExporting(false);
         }
     };
+
 
     // Optimized parser and layout engine for radial distribution
     const nodes = useMemo(() => {

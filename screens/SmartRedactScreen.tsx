@@ -11,6 +11,11 @@ import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
+import { downloadFile } from '../services/downloadService';
+import SuccessModal from '../components/SuccessModal';
+import { useNavigate } from 'react-router-dom';
+import { compressImage } from '../utils/imageProcessor';
+import { createPdfFromText } from '../services/pdfService';
 
 const SmartRedactScreen: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -29,6 +34,8 @@ const SmartRedactScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+    const navigate = useNavigate();
 
     const toggleFilter = (key: keyof typeof filters) => {
         setFilters(prev => ({ ...prev, [key]: !prev[key] }));
@@ -62,86 +69,39 @@ const SmartRedactScreen: React.FC = () => {
         }
     };
 
-    const handleExport = (format: 'txt' | 'pdf' | 'image') => {
+    const handleExport = async (format: 'txt' | 'pdf' | 'image') => {
         if (!redactedContent) return;
         const fileName = `sanitized_${file?.name.split('.')[0]}`;
 
         if (format === 'txt') {
             const blob = new Blob([redactedContent], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            await downloadFile(blob, `${fileName}.txt`);
         } else if (format === 'pdf') {
-            exportToPdf(redactedContent, fileName);
+            await exportToPdf(redactedContent, fileName);
         } else if (format === 'image') {
-            exportToImage(redactedContent, fileName);
+            await exportToImage(redactedContent, fileName);
         }
     };
 
     const exportToPdf = async (text: string, fileName: string) => {
         try {
-            const pdfDoc = await PDFDocument.create();
-            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-            let page = pdfDoc.addPage([600, 800]);
-            const { width, height } = page.getSize();
-            const fontSize = 10;
-            const margin = 50;
-            const maxWidth = width - margin * 2;
+            const pdfBytes = await createPdfFromText("Sanitized Document Report", text);
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, `${fileName}.pdf`);
 
-            const lines = text.split('\n');
-            let y = height - margin;
-
-            for (const line of lines) {
-                // Simple wrapping logic
-                const words = line.split(' ');
-                let currentLine = "";
-
-                for (const word of words) {
-                    const testLine = currentLine + word + " ";
-                    const testLineWidth = font.widthOfTextAtSize(testLine, fontSize);
-
-                    if (testLineWidth > maxWidth) {
-                        page.drawText(currentLine, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-                        y -= fontSize * 1.5;
-                        currentLine = word + " ";
-
-                        if (y < margin) {
-                            page = pdfDoc.addPage([600, 800]);
-                            y = height - margin;
-                        }
-                    } else {
-                        currentLine = testLine;
-                    }
-                }
-
-                page.drawText(currentLine, { x: margin, y, size: fontSize, font, color: rgb(0, 0, 0) });
-                y -= fontSize * 1.5;
-
-                if (y < margin) {
-                    page = pdfDoc.addPage([600, 800]);
-                    y = height - margin;
-                }
-            }
-
-            const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes] as any, { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${fileName}.pdf`;
-            a.click();
-            URL.revokeObjectURL(url);
+            // Show success modal
+            setSuccessData({
+                isOpen: true,
+                fileName: `${fileName}.pdf`,
+                originalSize: file?.size || 0,
+                finalSize: pdfBytes.length
+            });
         } catch (error) {
             console.error("PDF Export Failed:", error);
         }
     };
 
-    const exportToImage = (text: string, fileName: string) => {
+    const exportToImage = async (text: string, fileName: string) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
@@ -186,10 +146,16 @@ const SmartRedactScreen: React.FC = () => {
         });
 
         const url = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${fileName}.png`;
-        a.click();
+        const blob = await (await fetch(url)).blob();
+        await downloadFile(blob, `${fileName}.png`);
+
+        // Show success modal
+        setSuccessData({
+            isOpen: true,
+            fileName: `${fileName}.png`,
+            originalSize: file?.size || 0,
+            finalSize: blob.size
+        });
     };
 
     const fileToBase64 = (file: File): Promise<string> => {
@@ -224,7 +190,8 @@ const SmartRedactScreen: React.FC = () => {
                 const buffer = await file.arrayBuffer();
                 contentToProcess = await extractTextFromPdf(buffer);
             } else if (file.type.startsWith('image/')) {
-                imageBase64 = await fileToBase64(file);
+                const rawBase64 = await fileToBase64(file);
+                imageBase64 = await compressImage(rawBase64);
                 contentToProcess = "Analyzing image for PII vectors.";
             }
 
@@ -495,6 +462,31 @@ const SmartRedactScreen: React.FC = () => {
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
             />
+
+            {successData && (
+                <SuccessModal
+                    isOpen={successData.isOpen}
+                    onClose={() => {
+                        setSuccessData(null);
+                        setFile(null);
+                        setRedactedContent('');
+                        setStatus('idle');
+                        setShowPreview(false);
+                    }}
+                    operation="Smart Redaction"
+                    fileName={successData.fileName}
+                    originalSize={successData.originalSize}
+                    finalSize={successData.finalSize}
+                    onViewFiles={() => {
+                        setSuccessData(null);
+                        setFile(null);
+                        setRedactedContent('');
+                        setStatus('idle');
+                        setShowPreview(false);
+                        navigate('/my-files');
+                    }}
+                />
+            )}
         </motion.div>
     );
 };

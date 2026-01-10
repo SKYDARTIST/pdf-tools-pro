@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileUp, Hash, Download, Loader2, FileText, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { downloadBlob } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
-import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
+import ShareModal from '../components/ShareModal';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
@@ -94,7 +94,8 @@ const PageNumbersScreen: React.FC = () => {
                 size: pdfBytes.length
             });
 
-            downloadBlob(pdfBytes, fileName, 'application/pdf');
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
             FileHistoryManager.addEntry({
                 fileName,
@@ -106,8 +107,7 @@ const PageNumbersScreen: React.FC = () => {
 
             setShowSuccessModal(true);
             TaskLimitManager.incrementTask();
-            setFile(null);
-            setPageCount(0);
+            // Reset deferred
         } catch (err) {
             alert('Error adding page numbers: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
@@ -283,13 +283,19 @@ const PageNumbersScreen: React.FC = () => {
                 <>
                     <SuccessModal
                         isOpen={showSuccessModal}
-                        onClose={() => setShowSuccessModal(false)}
+                        onClose={() => {
+                            setShowSuccessModal(false);
+                            setFile(null);
+                            setPageCount(0);
+                        }}
                         operation="Add Page Numbers"
                         fileName={processedFile.name}
                         originalSize={file?.size}
                         finalSize={processedFile.size}
                         onViewFiles={() => {
                             setShowSuccessModal(false);
+                            setFile(null);
+                            setPageCount(0);
                             navigate('/my-files');
                         }}
                         onShare={() => {

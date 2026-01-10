@@ -164,31 +164,32 @@ export const enhanceText = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
 const applyUnsharpMask = (imageData: ImageData): ImageData => {
     const { width, height, data } = imageData;
     const output = new ImageData(width, height);
-    const amount = 1.5; // Sharpening strength
+    const amount = 0.25; // Subtle sharpening
 
-    // Simple 3x3 sharpening kernel
     const kernel = [
         0, -1, 0,
-        -1, 5, -1,
+        -1, 4, -1,
         0, -1, 0
     ];
 
     for (let y = 1; y < height - 1; y++) {
         for (let x = 1; x < width - 1; x++) {
+            const idx = (y * width + x) * 4;
+
             for (let c = 0; c < 3; c++) {
-                let sum = 0;
+                let highPass = 0;
                 for (let ky = -1; ky <= 1; ky++) {
                     for (let kx = -1; kx <= 1; kx++) {
-                        const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                        const kidx = ((y + ky) * width + (x + kx)) * 4 + c;
                         const kernelIdx = (ky + 1) * 3 + (kx + 1);
-                        sum += data[idx] * kernel[kernelIdx];
+                        highPass += data[kidx] * kernel[kernelIdx];
                     }
                 }
 
-                const idx = (y * width + x) * 4 + c;
-                output.data[idx] = Math.max(0, Math.min(255, sum * amount));
+                const val = data[idx + c] + (highPass * amount);
+                output.data[idx + c] = Math.max(0, Math.min(255, val));
             }
-            output.data[(y * width + x) * 4 + 3] = 255; // Alpha
+            output.data[idx + 3] = 255;
         }
     }
 
@@ -198,41 +199,50 @@ const applyUnsharpMask = (imageData: ImageData): ImageData => {
 const applyAdaptiveThreshold = (imageData: ImageData): ImageData => {
     const { width, height, data } = imageData;
     const output = new ImageData(width, height);
-    const blockSize = 15; // Window size for local threshold
+    const blockSize = 40; // Wider window for background detection
 
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const luminance = (r + g + b) / 3;
 
-            // Convert to grayscale
-            const gray = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-
-            // Calculate local mean
+            // Simple local mean calculation (sub-sampled for speed)
             let sum = 0;
             let count = 0;
-            for (let dy = -blockSize; dy <= blockSize; dy++) {
-                for (let dx = -blockSize; dx <= blockSize; dx++) {
+            const step = 10;
+            for (let dy = -blockSize; dy <= blockSize; dy += step) {
+                for (let dx = -blockSize; dx <= blockSize; dx += step) {
                     const ny = Math.max(0, Math.min(height - 1, y + dy));
                     const nx = Math.max(0, Math.min(width - 1, x + dx));
                     const nidx = (ny * width + nx) * 4;
-                    sum += 0.299 * data[nidx] + 0.587 * data[nidx + 1] + 0.114 * data[nidx + 2];
+                    sum += (data[nidx] + data[nidx + 1] + data[nidx + 2]) / 3;
                     count++;
                 }
             }
             const localMean = sum / count;
 
-            // Apply threshold with slight bias for text
-            const threshold = localMean - 10;
-            const value = gray > threshold ? 255 : 0;
-
-            // Keep some color information for non-text areas
-            const factor = value / 255;
-            output.data[idx] = data[idx] * factor + value * (1 - factor);
-            output.data[idx + 1] = data[idx + 1] * factor + value * (1 - factor);
-            output.data[idx + 2] = data[idx + 2] * factor + value * (1 - factor);
+            // BACKGROUND LEVELER: 
+            // If the pixel is brighter than the local average, push it toward white
+            // If it's darker (text), leave it alone (don't crush it)
+            if (luminance > localMean - 5) {
+                // Background area: Lighten it to clean up shadows/yellowing
+                const gain = 1.1;
+                output.data[idx] = Math.min(255, r * gain);
+                output.data[idx + 1] = Math.min(255, g * gain);
+                output.data[idx + 2] = Math.min(255, b * gain);
+            } else {
+                // Text/Detail area: Keep original to avoid artifacts
+                output.data[idx] = r;
+                output.data[idx + 1] = g;
+                output.data[idx + 2] = b;
+            }
             output.data[idx + 3] = 255;
         }
     }
 
     return output;
 };
+

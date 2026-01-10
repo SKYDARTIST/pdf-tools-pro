@@ -2,19 +2,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, Reorder } from 'framer-motion';
 import { Image as ImageIcon, Plus, Trash2, Download, Loader2, GripVertical, FileUp } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
-import { imageToPdf, downloadBlob } from '../services/pdfService';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { imageToPdf } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
+import SuccessModal from '../components/SuccessModal';
 
 const ImageToPdfScreen: React.FC = () => {
   const location = useLocation();
   const [items, setItems] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if we arrived with a captured image from the scanner
@@ -76,9 +80,23 @@ const ImageToPdfScreen: React.FC = () => {
 
     setIsProcessing(true);
     try {
+      console.log('🔄 Starting PDF conversion for', items.length, 'items');
       const result = await imageToPdf(items.map(f => f.file));
       const fileName = `scanned_doc_${Date.now()}.pdf`;
-      downloadBlob(result, fileName, 'application/pdf');
+      const blob = new Blob([result as any], { type: 'application/pdf' });
+
+      const originalSize = items.reduce((acc, item) => acc + item.size, 0);
+      const finalSize = result.length;
+
+      console.log('📶 Triggering download for', fileName, 'size:', finalSize);
+      await downloadFile(blob, fileName, () => {
+        setSuccessData({
+          isOpen: true,
+          fileName,
+          originalSize,
+          finalSize
+        });
+      });
 
       // Increment task count
       TaskLimitManager.incrementTask();
@@ -87,16 +105,15 @@ const ImageToPdfScreen: React.FC = () => {
       FileHistoryManager.addEntry({
         fileName,
         operation: 'image-to-pdf',
-        originalSize: items.reduce((acc, item) => acc + item.size, 0),
-        finalSize: result.length,
+        originalSize,
+        finalSize,
         status: 'success'
       });
 
-      // Clear
-      setItems([]);
+      // Clear deferred
     } catch (err) {
-      console.error('Conversion error:', err);
-      alert(err instanceof Error ? err.message : 'Error converting images to PDF');
+      console.error('❌ Conversion error:', err);
+      alert(err instanceof Error ? `ERROR: ${err.message}` : 'Error converting images to PDF. Your device might be out of memory.');
     } finally {
       setIsProcessing(false);
     }
@@ -201,6 +218,25 @@ const ImageToPdfScreen: React.FC = () => {
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
       />
+
+      {successData && (
+        <SuccessModal
+          isOpen={successData.isOpen}
+          operation="Visual Aggregation"
+          fileName={successData.fileName}
+          originalSize={successData.originalSize}
+          finalSize={successData.finalSize}
+          onViewFiles={() => {
+            setSuccessData(null);
+            setItems([]);
+            navigate('/my-files');
+          }}
+          onClose={() => {
+            setSuccessData(null);
+            setItems([]);
+          }}
+        />
+      )}
     </motion.div>
   );
 };

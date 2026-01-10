@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Crown, Zap, Moon, Sun, Sparkles } from 'lucide-react';
 import TaskCounter from './TaskCounter';
@@ -93,17 +93,21 @@ const Header: React.FC = () => {
           className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all"
           aria-label="Toggle dark mode"
         >
-          <motion.div
-            initial={false}
-            animate={{ rotate: isDark ? 180 : 0 }}
-            transition={{ type: "spring", stiffness: 200 }}
-          >
-            {isDark ? (
-              <Sun size={15} className="text-white" />
-            ) : (
-              <Moon size={15} className="text-gray-900" />
-            )}
-          </motion.div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={isDark ? 'dark' : 'light'}
+              initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+              animate={{ rotate: 0, opacity: 1, scale: 1 }}
+              exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+              transition={{ duration: 0.2, ease: "circOut" }}
+            >
+              {isDark ? (
+                <Sun size={15} className="text-white" />
+              ) : (
+                <Moon size={15} className="text-gray-900" />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </motion.button>
 
         <motion.button

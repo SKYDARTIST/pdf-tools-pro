@@ -33,6 +33,11 @@
             --mouse-x: 50%;
             --mouse-y: 50%;
             --accent-glow: rgba(16, 185, 129, 0.2);
+            --grid-light: #E5E5E5;
+            --grid-dark: #1A1A1A;
+            --glow-light: rgba(16, 185, 129, 0.05);
+            --glow-dark: rgba(255, 255, 255, 0.03);
+            --glow-radius: 50%;
         }
 
         * {
@@ -48,18 +53,46 @@
             line-height: 1.5;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
-            /* Reactive Grid Layer */
-            background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-                radial-gradient(#E5E5E5 1px, transparent 1px);
-            background-size: 100% 100%, 32px 32px;
-            background-attachment: fixed;
+            transition: background-color 0.1s ease, color 0.1s ease;
         }
 
         .dark body {
             background-color: #000000;
             color: #FFFFFF;
-            background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.03) 0%, transparent 60%),
-                radial-gradient(#1A1A1A 1.5px, transparent 1.5px);
+        }
+
+        /* Hardware Accelerated Background Layers */
+        .neural-background {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            will-change: opacity;
+            transition: opacity 0.1s ease;
+        }
+
+        #bg-light {
+            background-image:
+                radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--glow-light) 0%, transparent 50%),
+                radial-gradient(var(--grid-light) 1px, transparent 1px);
+            background-size: 100% 100%, 32px 32px;
+            opacity: 1;
+        }
+
+        #bg-dark {
+            background-image:
+                radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--glow-dark) 0%, transparent 50%),
+                radial-gradient(var(--grid-dark) 1px, transparent 1px);
+            background-size: 100% 100%, 32px 32px;
+            opacity: 0;
+        }
+
+        .dark #bg-light {
+            opacity: 0;
+        }
+
+        .dark #bg-dark {
+            opacity: 1;
         }
 
         /* Hide scrollbars for app-like behavior */
@@ -96,7 +129,9 @@
             border: 1px solid rgba(0, 0, 0, 0.04);
             border-radius: 40px;
             box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
-            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: background-color 0.1s ease, border-color 0.1s ease;
+            transform: translateZ(0);
+            backface-visibility: hidden;
             position: relative;
         }
 
@@ -209,6 +244,9 @@
             -webkit-backdrop-filter: blur(32px);
             border: 1px solid rgba(0, 0, 0, 0.05);
             box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.1s ease, border-color 0.1s ease;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         .dark .monolith-glass {
@@ -222,6 +260,8 @@
 </head>
 
 <body>
+    <div id="bg-light" class="neural-background"></div>
+    <div id="bg-dark" class="neural-background"></div>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>

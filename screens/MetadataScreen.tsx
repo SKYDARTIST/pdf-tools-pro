@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileUp, FileText, Download, Loader2, Info, Calendar, User, Tag } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
-import { downloadBlob } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
-import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
+import ShareModal from '../components/ShareModal';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
@@ -90,7 +90,8 @@ const MetadataScreen: React.FC = () => {
                 size: pdfBytes.length
             });
 
-            downloadBlob(pdfBytes, fileName, 'application/pdf');
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
             FileHistoryManager.addEntry({
                 fileName,
@@ -102,11 +103,7 @@ const MetadataScreen: React.FC = () => {
 
             setShowSuccessModal(true);
             TaskLimitManager.incrementTask();
-            setFile(null);
-            setTitle('');
-            setAuthor('');
-            setSubject('');
-            setKeywords('');
+            // Reset deferred
         } catch (err) {
             alert('Error updating metadata: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
@@ -271,13 +268,25 @@ const MetadataScreen: React.FC = () => {
                 <>
                     <SuccessModal
                         isOpen={showSuccessModal}
-                        onClose={() => setShowSuccessModal(false)}
+                        onClose={() => {
+                            setShowSuccessModal(false);
+                            setFile(null);
+                            setTitle('');
+                            setAuthor('');
+                            setSubject('');
+                            setKeywords('');
+                        }}
                         operation="Update Metadata"
                         fileName={processedFile.name}
                         originalSize={file?.size}
                         finalSize={processedFile.size}
                         onViewFiles={() => {
                             setShowSuccessModal(false);
+                            setFile(null);
+                            setTitle('');
+                            setAuthor('');
+                            setSubject('');
+                            setKeywords('');
                             navigate('/my-files');
                         }}
                         onShare={() => {

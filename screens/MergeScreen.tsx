@@ -111,8 +111,7 @@ const MergeScreen: React.FC = () => {
       // Increment task counter
       TaskLimitManager.incrementTask();
 
-      // Clear files after successful merge
-      setFiles([]);
+      // Clear files deferred
     } catch (err) {
       alert('Error merging PDFs: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
@@ -262,13 +261,17 @@ const MergeScreen: React.FC = () => {
         {successData && (
           <SuccessModal
             isOpen={showSuccessModal}
-            onClose={() => setShowSuccessModal(false)}
+            onClose={() => {
+              setShowSuccessModal(false);
+              setFiles([]);
+            }}
             operation="PDF Merge"
             fileName={successData.fileName}
             originalSize={successData.originalSize}
             finalSize={successData.finalSize}
             onViewFiles={() => {
               setShowSuccessModal(false);
+              setFiles([]);
               navigate('/my-files');
             }}
           />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileUp, RotateCw, Download, Loader2, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PDFDocument, degrees } from 'pdf-lib';
-import { downloadBlob } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import ShareModal from '../components/ShareModal';
@@ -15,8 +15,6 @@ const RotateScreen: React.FC = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [pageCount, setPageCount] = useState(0);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rotation, setRotation] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
@@ -74,7 +72,8 @@ const RotateScreen: React.FC = () => {
             });
 
             // Download
-            downloadBlob(pdfBytes, fileName, 'application/pdf');
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
             // Add to history
             FileHistoryManager.addEntry({
@@ -91,10 +90,7 @@ const RotateScreen: React.FC = () => {
             // Show success modal
             setShowSuccessModal(true);
 
-            // Reset
-            setFile(null);
-            setPageCount(0);
-            setRotation(0);
+            // Reset deferred
         } catch (err) {
             alert('Error rotating PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
@@ -246,13 +242,19 @@ const RotateScreen: React.FC = () => {
                 <>
                     <SuccessModal
                         isOpen={showSuccessModal}
-                        onClose={() => setShowSuccessModal(false)}
+                        onClose={() => {
+                            setShowSuccessModal(false);
+                            setFile(null);
+                            setPageCount(0);
+                        }}
                         operation="Rotate Pages"
                         fileName={processedFile.name}
                         originalSize={file?.size}
                         finalSize={processedFile.size}
                         onViewFiles={() => {
                             setShowSuccessModal(false);
+                            setFile(null);
+                            setPageCount(0);
                             navigate('/my-files');
                         }}
                         onShare={() => {
