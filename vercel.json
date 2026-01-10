@@ -1,4 +1,30 @@
 {
+    "builds": [
+        {
+            "src": "api/**/*.js",
+            "use": "@vercel/node"
+        },
+        {
+            "src": "package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
+            "handle": "filesystem"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
+        }
+    ],
     "headers": [
         {
             "source": "/(.*\\.env.*|\\.git/.*|wp-admin.*|phpmyadmin.*)",
@@ -30,12 +56,6 @@
             "source": "/phpmyadmin/:path*",
             "destination": "/404",
             "permanent": false
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/api",
-            "destination": "/api/index"
         }
     ]
 }
