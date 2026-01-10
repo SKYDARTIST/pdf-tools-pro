@@ -22,18 +22,21 @@ let lastDiscovery = 0;
 
 export default async function handler(req, res) {
     const origin = req.headers.origin;
-    // CORS: Allow production URL, localhost dev, and Capacitor apps
-    const allowedOrigins = [
-        'http://localhost:5173',           // Web development
-        'https://pdf-tools-pro.vercel.app', // Production web
-        'https://localhost',                // Capacitor Android
-        'capacitor://localhost',            // Capacitor iOS
-        'http://localhost'                  // Capacitor fallback
-    ];
 
-    if (origin && allowedOrigins.includes(origin)) {
+    // CORS: Allow production URL, localhost dev, and Capacitor apps
+    // Use pattern matching for localhost to catch all variations
+    const isLocalhost = origin && (
+        origin.startsWith('http://localhost') ||
+        origin.startsWith('https://localhost') ||
+        origin.startsWith('capacitor://localhost')
+    );
+    const isProduction = origin === 'https://pdf-tools-pro.vercel.app';
+
+    if (isLocalhost || isProduction) {
         res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
+
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-ag-signature, x-ag-device-id, x-ag-integrity-token');
 
