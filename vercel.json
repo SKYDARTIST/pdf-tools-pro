@@ -32,10 +32,5 @@
             "permanent": false
         }
     ],
-    "rewrites": [
-        {
-            "source": "/:path*",
-            "destination": "/index.html"
-        }
-    ]
+    "rewrites": []
 }
