@@ -1,4 +1,10 @@
 {
+    "outputDirectory": "dist",
+    "functions": {
+        "api/index.js": {
+            "runtime": "nodejs20.x"
+        }
+    },
     "headers": [
         {
             "source": "/(.*\\.env.*|\\.git/.*|wp-admin.*|phpmyadmin.*)",
@@ -35,6 +41,10 @@
     "rewrites": [
         {
             "source": "/api",
+            "destination": "/api/index"
+        },
+        {
+            "source": "/api/:path*",
             "destination": "/api/index"
         }
     ]
