@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, FileText, Download, Loader2, ChevronUp, ChevronDown, Shield } from 'lucide-react';
-import { mergePdfs, downloadBlob } from '../services/pdfService';
+import { mergePdfs } from '../services/pdfService';
+import { downloadFile } from '../services/downloadService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import SuccessModal from '../components/SuccessModal';
@@ -86,8 +87,17 @@ const MergeScreen: React.FC = () => {
       setProgress(100);
       setCurrentStep('Complete!');
 
-      // Download the file
-      downloadBlob(result, fileName, 'application/pdf');
+      // Download the file (works on web and mobile)
+      const blob = new Blob([new Uint8Array(result)], { type: 'application/pdf' });
+      await downloadFile(blob, fileName, () => {
+        // Show success modal after download completes
+        setSuccessData({
+          fileName,
+          originalSize,
+          finalSize: result.length
+        });
+        setShowSuccessModal(true);
+      });
 
       // Add to file history
       FileHistoryManager.addEntry({
@@ -100,14 +110,6 @@ const MergeScreen: React.FC = () => {
 
       // Increment task counter
       TaskLimitManager.incrementTask();
-
-      // Show success modal
-      setSuccessData({
-        fileName,
-        originalSize,
-        finalSize: result.length
-      });
-      setShowSuccessModal(true);
 
       // Clear files after successful merge
       setFiles([]);

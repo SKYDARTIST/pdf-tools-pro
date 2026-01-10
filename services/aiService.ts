@@ -18,7 +18,18 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
   }
 
   try {
-    const backendUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/index' : '/api';
+    // ANDROID/CAPACITOR FIX: 
+    // Capacitor serves the app from https://localhost/, but we need to use production API
+    // Check if we're in a real browser (development) or Capacitor (production mobile app)
+    const isCapacitor = !!(window as any).Capacitor;
+    const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
+
+    const backendUrl = isDevelopment
+      ? 'http://localhost:3000/api/index'
+      : 'https://pdf-tools-pro.vercel.app/api';
+
+    console.log('🔍 Backend URL:', backendUrl, '| Capacitor:', isCapacitor, '| Dev:', isDevelopment);
+
     const integrityToken = await getIntegrityToken();
 
     const response = await fetch(backendUrl, {

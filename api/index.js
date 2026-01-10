@@ -22,10 +22,13 @@ let lastDiscovery = 0;
 
 export default async function handler(req, res) {
     const origin = req.headers.origin;
-    // CORS: Restrict to production URL only (localhost allowed for development)
+    // CORS: Allow production URL, localhost dev, and Capacitor apps
     const allowedOrigins = [
-        'http://localhost:5173',
-        'https://pdf-tools-pro.vercel.app'
+        'http://localhost:5173',           // Web development
+        'https://pdf-tools-pro.vercel.app', // Production web
+        'https://localhost',                // Capacitor Android
+        'capacitor://localhost',            // Capacitor iOS
+        'http://localhost'                  // Capacitor fallback
     ];
 
     if (origin && allowedOrigins.includes(origin)) {
