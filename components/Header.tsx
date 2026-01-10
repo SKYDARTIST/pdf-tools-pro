@@ -10,6 +10,7 @@ const Header: React.FC = () => {
   const location = useLocation();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const isHome = location.pathname === '/' || location.pathname === '/workspace';
 
   useEffect(() => {
@@ -18,6 +19,16 @@ const Header: React.FC = () => {
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
+    // Detect Android WebView
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroidDevice = ua.includes('android') || ua.includes('wv');
+    setIsAndroid(isAndroidDevice);
+
+    // Add Android class for CSS-level optimizations
+    if (isAndroidDevice) {
+      document.documentElement.classList.add('is-android');
+    }
+
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
@@ -96,10 +107,10 @@ const Header: React.FC = () => {
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={isDark ? 'dark' : 'light'}
-              initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+              initial={isAndroid ? false : { rotate: -90, opacity: 0, scale: 0.5 }}
               animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.2, ease: "circOut" }}
+              exit={isAndroid ? { opacity: 0 } : { rotate: 90, opacity: 0, scale: 0.5 }}
+              transition={{ duration: isAndroid ? 0 : 0.2, ease: "circOut" }}
             >
               {isDark ? (
                 <Sun size={15} className="text-white" />

@@ -95,6 +95,14 @@
             opacity: 1;
         }
 
+        /* Android WebView Optimizations - Instant Transitions */
+        .is-android body,
+        .is-android .neural-background,
+        .is-android .monolith-card,
+        .is-android .monolith-glass {
+            transition-duration: 0s !important;
+        }
+
         /* Hide scrollbars for app-like behavior */
         ::-webkit-scrollbar {
             display: none;
