@@ -26,7 +26,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
 
     const backendUrl = isDevelopment
       ? 'http://localhost:3000/api/index'
-      : 'https://pdf-tools-pro.vercel.app/api';
+      : 'https://pdf-tools-pro.vercel.app/api/index';
 
     console.log('🔍 Backend URL:', backendUrl, '| Capacitor:', isCapacitor, '| Dev:', isDevelopment);
 
