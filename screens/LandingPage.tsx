@@ -163,7 +163,7 @@ const LandingPage: React.FC = () => {
                                 The Privacy<br className="hidden sm:block" /> Manifesto.
                             </h2>
                             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
-                                In 2026, Adobe and Foxit are tied to "Cloud-First" strategies that require your data to leave your device for storage. Anti-Gravity is different. We have no storage servers. We cannot see your documents. We cannot sell your data.
+                                In 2026, traditional cloud-first PDF suites are tied to "Cloud-First" strategies that require your data to leave your device for storage. Anti-Gravity is different. We have no storage servers. We cannot see your documents. We cannot sell your data.
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
                                 {[

@@ -163,7 +163,7 @@ const PricingScreen: React.FC = () => {
 
           <div className="space-y-4 relative z-10 text-center">
             <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">THE EDGE ADVANTAGE</h4>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs "Cloud Giants"</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs "Legacy Cloud Suites"</p>
           </div>
 
           <div className="space-y-12 relative z-10">
@@ -217,7 +217,7 @@ const PricingScreen: React.FC = () => {
                   <thead>
                     <tr className="border-b border-white/10 dark:border-black/10">
                       <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Feature</th>
-                      <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Cloud Giants</th>
+                      <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Legacy Platforms</th>
                       <th className="p-6 text-[9px] font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
                     </tr>
                   </thead>
