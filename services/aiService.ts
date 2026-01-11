@@ -28,14 +28,10 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       ? 'http://localhost:3000/api/index'
       : 'https://pdf-tools-pro-indol.vercel.app/api/index';
 
-    console.log('🔍 Backend URL:', backendUrl, '| Capacitor:', isCapacitor, '| Dev:', isDevelopment);
-    console.log('🔍 Request type:', type, '| Prompt length:', prompt?.length);
-
     const integrityToken = await getIntegrityToken();
 
     let response: Response;
     try {
-      console.log('📡 Starting fetch request...');
       response = await fetch(backendUrl, {
         method: 'POST',
         headers: {
@@ -46,10 +42,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
         },
         body: JSON.stringify({ prompt, documentText: documentText || "", type, image, mimeType }),
       });
-      console.log('📡 Fetch completed, status:', response.status);
     } catch (fetchError: any) {
-      console.error('📡 FETCH FAILED:', fetchError.name, fetchError.message);
-      console.error('📡 Fetch error details:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)));
       throw new Error(`Network request failed: ${fetchError.message}`);
     }
 
@@ -77,12 +70,6 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
 
     return result;
   } catch (err: any) {
-    // Detailed error logging for debugging
-    console.error("Backend Proxy Failure:", err);
-    console.error("Error name:", err.name);
-    console.error("Error message:", err.message);
-    console.error("Error cause:", err.cause);
-
     const isRateLimit = err.message?.includes('AI_RATE_LIMIT') ||
       err.message?.includes('429') ||
       err.message?.toLowerCase().includes('quota exceeded');
@@ -91,7 +78,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
     }
 
-    // More descriptive error message
+    // More descriptive error message for user
     const details = err.message || 'Security proxy is unreachable.';
     return `BACKEND_ERROR: ${details} (Access via secure edge protocol failed)`;
   }
