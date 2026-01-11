@@ -50,11 +50,16 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
+    // Ensure POST method
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
     const signature = req.headers['x-ag-signature'];
     const deviceId = req.headers['x-ag-device-id'];
     const integrityToken = req.headers['x-ag-integrity-token'];
 
-    // Get the request type early to allow guidance bypass
+    // Get the request type from body (body is now guaranteed to be parsed for POST)
     const requestType = req.body?.type;
 
     // GUIDANCE BYPASS: Skip all validation for guidance requests (free for everyone)
@@ -146,9 +151,6 @@ export default async function handler(req, res) {
         return ["gemini-2.0-flash", "gemini-1.5-flash"];
     };
 
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
 
     let { prompt, documentText, type, image, mimeType = 'image/jpeg' } = req.body;
 

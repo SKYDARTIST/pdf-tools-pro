@@ -20,28 +20,38 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
   try {
     // ANDROID/CAPACITOR FIX: 
     // Capacitor serves the app from https://localhost/, but we need to use production API
-    // Check if we're in a real browser (development) or Capacitor (production mobile app)
     const isCapacitor = !!(window as any).Capacitor;
     const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
 
+    // Always use production URL for Capacitor builds
     const backendUrl = isDevelopment
       ? 'http://localhost:3000/api/index'
       : 'https://pdf-tools-pro-indol.vercel.app/api/index';
 
     console.log('🔍 Backend URL:', backendUrl, '| Capacitor:', isCapacitor, '| Dev:', isDevelopment);
+    console.log('🔍 Request type:', type, '| Prompt length:', prompt?.length);
 
     const integrityToken = await getIntegrityToken();
 
-    const response = await fetch(backendUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
-        'x-ag-device-id': getDeviceId(),
-        'x-ag-integrity-token': integrityToken
-      },
-      body: JSON.stringify({ prompt, documentText: documentText || "", type, image, mimeType }),
-    });
+    let response: Response;
+    try {
+      console.log('📡 Starting fetch request...');
+      response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+          'x-ag-device-id': getDeviceId(),
+          'x-ag-integrity-token': integrityToken
+        },
+        body: JSON.stringify({ prompt, documentText: documentText || "", type, image, mimeType }),
+      });
+      console.log('📡 Fetch completed, status:', response.status);
+    } catch (fetchError: any) {
+      console.error('📡 FETCH FAILED:', fetchError.name, fetchError.message);
+      console.error('📡 Fetch error details:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)));
+      throw new Error(`Network request failed: ${fetchError.message}`);
+    }
 
     if (response.status === 429) {
       return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
