@@ -54,29 +54,37 @@ export default async function handler(req, res) {
     const deviceId = req.headers['x-ag-device-id'];
     const integrityToken = req.headers['x-ag-integrity-token'];
 
-    // Protocol Integrity Check - signature must match environment variable
-    const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+    // Get the request type early to allow guidance bypass
+    const requestType = req.body?.type;
 
-    if (signature !== expectedSignature) {
-        return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
-    }
+    // GUIDANCE BYPASS: Skip all validation for guidance requests (free for everyone)
+    const isGuidanceRequest = requestType === 'guidance';
 
-    if (!deviceId) {
-        return res.status(401).json({ error: 'MISSING_IDENTITY', details: 'Device identification payload is empty.' });
-    }
+    if (!isGuidanceRequest) {
+        // Protocol Integrity Check - signature must match environment variable
+        const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
 
-    // Play Integrity Verification (Simulation)
-    if (!integrityToken) {
-        return res.status(401).json({ error: 'INTEGRITY_FAILURE', details: 'Play Integrity token missing. Session discarded.' });
-    }
-
-    try {
-        const decoded = JSON.parse(Buffer.from(integrityToken, 'base64').toString());
-        if (decoded.deviceId !== deviceId) {
-            return res.status(401).json({ error: 'INTEGRITY_MISMATCH', details: 'Device ID does not match integrity payload.' });
+        if (signature !== expectedSignature) {
+            return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
         }
-    } catch (e) {
-        return res.status(401).json({ error: 'INTEGRITY_CORRUPTION', details: 'Integrity payload is malformed.' });
+
+        if (!deviceId) {
+            return res.status(401).json({ error: 'MISSING_IDENTITY', details: 'Device identification payload is empty.' });
+        }
+
+        // Play Integrity Verification (Simulation)
+        if (!integrityToken) {
+            return res.status(401).json({ error: 'INTEGRITY_FAILURE', details: 'Play Integrity token missing. Session discarded.' });
+        }
+
+        try {
+            const decoded = JSON.parse(Buffer.from(integrityToken, 'base64').toString());
+            if (decoded.deviceId !== deviceId) {
+                return res.status(401).json({ error: 'INTEGRITY_MISMATCH', details: 'Device ID does not match integrity payload.' });
+            }
+        } catch (e) {
+            return res.status(401).json({ error: 'INTEGRITY_CORRUPTION', details: 'Integrity payload is malformed.' });
+        }
     }
 
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;

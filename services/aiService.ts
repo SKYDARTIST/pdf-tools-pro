@@ -67,7 +67,11 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
 
     return result;
   } catch (err: any) {
+    // Detailed error logging for debugging
     console.error("Backend Proxy Failure:", err);
+    console.error("Error name:", err.name);
+    console.error("Error message:", err.message);
+    console.error("Error cause:", err.cause);
 
     const isRateLimit = err.message?.includes('AI_RATE_LIMIT') ||
       err.message?.includes('429') ||
@@ -77,6 +81,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
     }
 
+    // More descriptive error message
     const details = err.message || 'Security proxy is unreachable.';
     return `BACKEND_ERROR: ${details} (Access via secure edge protocol failed)`;
   }
