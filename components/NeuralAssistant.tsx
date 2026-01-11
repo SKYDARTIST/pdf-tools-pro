@@ -93,7 +93,7 @@ const NeuralAssistant: React.FC = () => {
         `.trim();
 
         try {
-            const response = await askGemini(userMsg, systemPrompt, 'chat');
+            const response = await askGemini(userMsg, systemPrompt, type === 'guidance' ? 'guidance' : 'chat');
 
             // Parse for actions
             let cleanText = response;

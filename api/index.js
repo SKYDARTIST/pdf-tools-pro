@@ -28,7 +28,10 @@ export default async function handler(req, res) {
     const isLocalhost = origin && (
         origin.startsWith('http://localhost') ||
         origin.startsWith('https://localhost') ||
-        origin.startsWith('capacitor://localhost')
+        origin.startsWith('capacitor://localhost') ||
+        origin.startsWith('http://192.168.') || // Allow local network testing
+        origin.startsWith('http://172.') ||   // Allow other local subnet
+        origin.startsWith('http://10.')       // Allow corporate subnet
     );
     const isProduction = origin === 'https://pdf-tools-pro.vercel.app';
 
@@ -80,7 +83,7 @@ export default async function handler(req, res) {
     }
 
     // Stage 2: Neural Credit Verification (Supabase)
-    if (supabase && deviceId && deviceId !== 'null') {
+    if (supabase && deviceId && deviceId !== 'null' && type !== 'guidance') {
         try {
             const { data: usage, error } = await supabase
                 .from('ag_user_usage')

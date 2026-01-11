@@ -9,7 +9,7 @@ const aiCache = new Map<string, string>();
 import { getDeviceId } from './usageService';
 import { getIntegrityToken } from './integrityService';
 
-export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
+export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' | 'guidance' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
   // Neuro-Caching Logic
   const cacheKey = `${type}:${prompt}:${documentText?.substring(0, 500)}:${image ? 'img' : 'no-img'}`;
   if (aiCache.has(cacheKey)) {
