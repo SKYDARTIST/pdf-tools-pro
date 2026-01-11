@@ -99,7 +99,7 @@ export default async function handler(req, res) {
     }
 
     // Stage 2: Neural Credit Verification (Supabase)
-    if (supabase && deviceId && deviceId !== 'null' && type !== 'guidance') {
+    if (supabase && deviceId && deviceId !== 'null' && requestType !== 'guidance') {
         try {
             const { data: usage, error } = await supabase
                 .from('ag_user_usage')
