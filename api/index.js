@@ -23,19 +23,22 @@ let lastDiscovery = 0;
 export default async function handler(req, res) {
     const origin = req.headers.origin;
 
-    // CORS: Allow production URL, localhost dev, and Capacitor apps
-    // Use pattern matching for localhost to catch all variations
-    const isLocalhost = origin && (
-        origin.startsWith('http://localhost') ||
+    // CORS: Allow all recognized origins (production, localhost, Capacitor, local network)
+    // Since we verify requests via x-ag-signature, we can be permissive with CORS
+    const allowedOrigin = origin && (
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        origin.includes('192.168.') ||
+        origin.includes('172.') ||
+        origin.includes('10.') ||
+        origin.includes('pdf-tools-pro') ||
+        origin.includes('vercel.app') ||
+        origin.startsWith('capacitor://') ||
         origin.startsWith('https://localhost') ||
-        origin.startsWith('capacitor://localhost') ||
-        origin.startsWith('http://192.168.') || // Allow local network testing
-        origin.startsWith('http://172.') ||   // Allow other local subnet
-        origin.startsWith('http://10.')       // Allow corporate subnet
+        origin.startsWith('http://localhost')
     );
-    const isProduction = origin === 'https://pdf-tools-pro.vercel.app';
 
-    if (isLocalhost || isProduction) {
+    if (allowedOrigin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
         res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
