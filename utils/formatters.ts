@@ -32,7 +32,6 @@ export const getOperationName = (operation: string): string => {
     const names: Record<string, string> = {
         'merge': 'Merged',
         'split': 'Split',
-        'compress': 'Compressed',
         'sign': 'Signed',
         'watermark': 'Watermarked',
         'image-to-pdf': 'Converted',
@@ -47,7 +46,6 @@ export const getOperationColor = (operation: string): string => {
     const colors: Record<string, string> = {
         'merge': 'bg-violet-500/20 text-violet-600 dark:text-violet-400 border-violet-500/20',
         'split': 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/20',
-        'compress': 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
         'sign': 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
         'watermark': 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/20',
         'image-to-pdf': 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/20',

@@ -120,6 +120,24 @@ const ToolsScreen: React.FC = () => {
                                     <h3 className="text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-0.5 mt-1 leading-none">{tool.title}</h3>
                                     <p className="text-[7px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight leading-tight line-clamp-2 max-w-[100px]">{tool.desc}</p>
                                 </div>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.2, rotate: 15 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.dispatchEvent(new CustomEvent('neural-assistant-sync', {
+                                            detail: {
+                                                query: `Tell me about the ${tool.title} Protocol. What are its use cases and how do I use it?`,
+                                                guidance: true
+                                            }
+                                        }));
+                                    }}
+                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                                    title="Neural Guidance"
+                                >
+                                    <Sparkles size={10} />
+                                </motion.button>
                             </motion.button>
                         ))}
                     </motion.div>

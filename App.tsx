@@ -29,10 +29,12 @@ import LandingPage from './screens/LandingPage';
 import LegalScreen from './screens/LegalScreen';
 import NeuralDiffScreen from './screens/NeuralDiffScreen';
 import DataExtractorScreen from './screens/DataExtractorScreen';
+import ProtocolGuideScreen from './screens/ProtocolGuideScreen';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
 import AiPackNotification from './components/AiPackNotification';
+import NeuralAssistant from './components/NeuralAssistant';
 import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
 
 const App: React.FC = () => {
@@ -125,6 +127,7 @@ const App: React.FC = () => {
               <Route path="/data-extractor" element={<DataExtractorScreen />} />
               <Route path="/pricing" element={<PricingScreen />} />
               <Route path="/legal/:type" element={<LegalScreen />} />
+              <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
             </Routes>
           </motion.div>
         </AnimatePresence>
@@ -149,6 +152,7 @@ const App: React.FC = () => {
           setActiveNotification(null);
         }}
       />
+      {!isLandingPage && <NeuralAssistant />}
     </div>
   );
 };

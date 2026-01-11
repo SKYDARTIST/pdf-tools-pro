@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle
+  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle, HelpCircle
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
@@ -82,7 +82,7 @@ const HomeScreen: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { icon: LayoutGrid, label: 'Standard Tools', path: '/tools', desc: 'Core Assets' },
-              { icon: Shield, label: 'Secure Vault', path: '/my-files', desc: 'File History' }
+              { icon: HelpCircle, label: 'Protocol Guide', path: '/protocol-guide', desc: 'Operational Archive' }
             ].map((action, i) => (
               <motion.div
                 key={action.label}

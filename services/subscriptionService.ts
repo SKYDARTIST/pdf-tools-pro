@@ -203,7 +203,12 @@ export const ackAiNotification = (): void => {
 };
 
 // Check if user can use AI
-export const canUseAI = (): { allowed: boolean; reason?: string; remaining?: number; warning?: boolean } => {
+export const canUseAI = (operationType: 'document' | 'guidance' = 'document'): { allowed: boolean; reason?: string; remaining?: number; warning?: boolean } => {
+    // GUIDANCE: Always allowed for all users (Zero Cost to users)
+    if (operationType === 'guidance') {
+        return { allowed: true };
+    }
+
     // 20-DAY TRIAL: Unlimited AI usage
     if (isInTrialPeriod()) {
         return { allowed: true };
@@ -276,7 +281,10 @@ export const recordOperation = (): void => {
 };
 
 // Record an AI usage
-export const recordAIUsage = async (): Promise<void> => {
+export const recordAIUsage = async (operationType: 'document' | 'guidance' = 'document'): Promise<void> => {
+    // Skip recording for guidance
+    if (operationType === 'guidance') return;
+
     const subscription = getSubscription();
 
     if (subscription.aiPackCredits > 0) {

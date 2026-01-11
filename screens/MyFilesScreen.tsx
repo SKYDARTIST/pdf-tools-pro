@@ -34,7 +34,7 @@ const MyFilesScreen: React.FC = () => {
         }
     };
 
-    const operations = ['all', 'merge', 'split', 'compress', 'sign', 'watermark', 'image-to-pdf'];
+    const operations = ['all', 'merge', 'split', 'sign', 'watermark', 'image-to-pdf'];
 
     return (
         <motion.div

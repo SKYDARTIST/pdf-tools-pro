@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, LayoutGrid, FolderOpen, Settings } from 'lucide-react';
+import { Home, LayoutGrid, FolderOpen, BookOpen, Settings } from 'lucide-react';
 
 const BottomNav: React.FC = () => {
     const navigate = useNavigate();
@@ -10,14 +10,14 @@ const BottomNav: React.FC = () => {
     const navItems = [
         { path: '/workspace', icon: Home, label: 'Home' },
         { path: '/tools', icon: LayoutGrid, label: 'Tools' },
+        { path: '/protocol-guide', icon: BookOpen, label: 'Guide' },
         { path: '/my-files', icon: FolderOpen, label: 'Files' },
-        { path: '/ai-settings', icon: Settings, label: 'Settings' },
     ];
 
     const isPathActive = (path: string) => {
         if (path === '/tools') {
             return location.pathname === '/tools' ||
-                (!['/workspace', '/', '/my-files', '/ai-settings', '/pricing', '/ag-workspace'].includes(location.pathname));
+                (!['/workspace', '/', '/my-files', '/ai-settings', '/pricing', '/ag-workspace', '/protocol-guide'].includes(location.pathname));
         }
         return location.pathname === path;
     };

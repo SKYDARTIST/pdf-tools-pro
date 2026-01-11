@@ -3,7 +3,7 @@
 export interface FileHistoryEntry {
     id: string;
     fileName: string;
-    operation: 'merge' | 'split' | 'compress' | 'sign' | 'watermark' | 'image-to-pdf' | 'extract-text' | 'repair' | 'metadata';
+    operation: 'merge' | 'split' | 'sign' | 'watermark' | 'image-to-pdf' | 'extract-text' | 'repair' | 'metadata';
     originalSize?: number;
     finalSize?: number;
     timestamp: number;

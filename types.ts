@@ -10,7 +10,6 @@ export interface FileItem {
 export enum ToolType {
   MERGE = 'merge',
   SPLIT = 'split',
-  COMPRESS = 'compress',
   IMAGE_TO_PDF = 'image-to-pdf',
   PDF_TO_IMAGE = 'pdf-to-image',
   WATERMARK = 'watermark'
