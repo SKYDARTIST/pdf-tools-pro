@@ -40,7 +40,7 @@ const NeuralAssistant: React.FC = () => {
             const { query, guidance } = e.detail || {};
             if (query) {
                 setIsOpen(true);
-                handleSend(query, guidance ? 'guidance' : 'document');
+                handleSend(query);
             }
         };
 
@@ -55,11 +55,12 @@ const NeuralAssistant: React.FC = () => {
         { label: 'Merge Payloads 📑', query: 'What is the best way to combine multiple PDF files?' }
     ];
 
-    const handleSend = async (customQuery?: string, type: 'document' | 'guidance' = 'document') => {
+    const handleSend = async (customQuery?: string) => {
         const query = customQuery || input;
         if (!query.trim() || isLoading) return;
 
-        // Guidance is always available for all users (Protocol Transparency)
+        // ALL ASSISTANT INTERACTIONS ARE FREE (Protocol Transparency)
+        const type = 'guidance';
         const check = canUseAI(type);
         if (!check.allowed) {
             setMessages(prev => [...prev, { role: 'bot', text: `Authorization Failed: ${check.reason}` }]);
@@ -93,7 +94,7 @@ const NeuralAssistant: React.FC = () => {
         `.trim();
 
         try {
-            const response = await askGemini(userMsg, systemPrompt, type === 'guidance' ? 'guidance' : 'chat');
+            const response = await askGemini(userMsg, systemPrompt, 'guidance');
 
             // Parse for actions
             let cleanText = response;
