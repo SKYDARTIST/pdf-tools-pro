@@ -103,7 +103,7 @@ const ToolsScreen: React.FC = () => {
                         className="grid grid-cols-2 gap-4"
                     >
                         {filtered.map((tool, i) => (
-                            <motion.button
+                            <motion.div
                                 key={tool.title}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -111,7 +111,10 @@ const ToolsScreen: React.FC = () => {
                                 whileHover={{ y: -4, scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => navigate(tool.path)}
-                                className="monolith-card p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner"
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && navigate(tool.path)}
+                                className="monolith-card cursor-pointer p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner relative"
                             >
                                 <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
                                     <tool.icon size={18} className="transition-colors" strokeWidth={2.5} />
@@ -133,12 +136,12 @@ const ToolsScreen: React.FC = () => {
                                             }
                                         }));
                                     }}
-                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 z-20"
                                     title="Neural Guidance"
                                 >
                                     <Sparkles size={10} />
                                 </motion.button>
-                            </motion.button>
+                            </motion.div>
                         ))}
                     </motion.div>
                 </AnimatePresence>
