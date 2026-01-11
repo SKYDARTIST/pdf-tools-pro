@@ -7,9 +7,19 @@ import NeuralPulse from '../components/NeuralPulse';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
+    const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 20;
+        const y = (e.clientY / window.innerHeight - 0.5) * 20;
+        setMousePos({ x, y });
+    };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col overflow-x-hidden">
+        <div
+            onMouseMove={handleMouseMove}
+            className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col overflow-x-hidden selection:bg-emerald-500 selection:text-white"
+        >
             {/* Minimalist Landing Header */}
             <header className="px-8 py-10 flex justify-between items-center relative z-20">
                 <div className="flex items-center gap-4">
@@ -21,19 +31,32 @@ const LandingPage: React.FC = () => {
                         <span className="text-[8px] font-black uppercase tracking-[0.4em] opacity-40">OS 2.0.1</span>
                     </div>
                 </div>
-                <div className="text-right ml-auto">
-                    <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mb-1">AUTH PROTOCOL</div>
-                    <div className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap">BUILT BY CRYPTOBULLA</div>
-                </div>
+                <a
+                    href="https://x.com/Cryptobullaaa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-right ml-auto group transition-transform hover:scale-105"
+                >
+                    <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 group-hover:text-emerald-500 group-hover:opacity-100 transition-all">AUTH PROTOCOL</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap group-hover:text-emerald-500 transition-colors">BUILT BY CRYPTOBULLA</div>
+                </a>
             </header>
 
             {/* Hero Section */}
             <main className="flex-1 flex flex-col items-center justify-center px-8 relative">
                 {/* Background Tech Pulse */}
                 <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none select-none overflow-hidden">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[30rem] font-black tracking-[-0.1em] leading-none text-black dark:text-white opacity-10">
+                    <motion.div
+                        style={{
+                            x: mousePos.x * -2,
+                            y: mousePos.y * -2,
+                            rotateX: mousePos.y * 0.1,
+                            rotateY: mousePos.x * -0.1
+                        }}
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[35rem] font-black tracking-[-0.1em] leading-none text-black dark:text-white opacity-10"
+                    >
                         AG
-                    </div>
+                    </motion.div>
                 </div>
 
                 <div className="relative z-10 max-w-sm w-full space-y-16 text-center">
@@ -55,20 +78,30 @@ const LandingPage: React.FC = () => {
                             </div>
 
                             <motion.div
-                                animate={{ rotate: [0, 5, -5, 0] }}
-                                transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-                                className="px-5 sm:px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl neural-glow"
+                                animate={{
+                                    rotate: [0, 5, -5, 0],
+                                    boxShadow: [
+                                        "0 0 20px rgba(16, 185, 129, 0.1)",
+                                        "0 0 40px rgba(16, 185, 129, 0.3)",
+                                        "0 0 20px rgba(16, 185, 129, 0.1)"
+                                    ]
+                                }}
+                                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                                className="px-5 sm:px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl backdrop-blur-md"
                             >
                                 <NeuralPulse color="bg-emerald-500" size="sm" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Neural Link: Active</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500 dark:text-emerald-400">Neural Link: Active</span>
                             </motion.div>
                         </div>
 
                         <motion.h1
-                            animate={{ y: [0, -12, 0] }}
-                            transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                            className="text-[8.5vw] xs:text-5xl sm:text-7xl font-black uppercase leading-[0.82] text-gray-900 dark:text-white drop-shadow-sm px-2"
-                            style={{ letterSpacing: '-0.07em' }}
+                            style={{
+                                rotateX: mousePos.y * 0.2,
+                                rotateY: mousePos.x * -0.2,
+                                filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
+                                letterSpacing: '-0.08em'
+                            }}
+                            className="text-[10vw] xs:text-6xl sm:text-8xl font-black uppercase leading-[0.8] text-gray-900 dark:text-white drop-shadow-2xl px-2"
                         >
                             ANTIGRAVITY<br />AI PDF
                         </motion.h1>
@@ -96,13 +129,17 @@ const LandingPage: React.FC = () => {
                         className="space-y-8"
                     >
                         <motion.button
-                            whileHover={{ scale: 1.02, y: -4 }}
+                            whileHover={{
+                                scale: 1.02,
+                                y: -8,
+                                boxShadow: "0 40px 80px -20px rgba(16, 185, 129, 0.4)"
+                            }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/workspace')}
-                            className="w-full bg-black dark:bg-white text-white dark:text-black py-9 rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
+                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-10 rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
                         >
-                            <span className="text-sm font-black uppercase tracking-[0.4em] relative z-10">Launch Workspace</span>
-                            <ArrowRight size={20} className="ml-5 group-hover:translate-x-2 transition-transform relative z-10" />
+                            <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10">Initialize Workspace</span>
+                            <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10" />
                         </motion.button>
 
                         <div className="flex flex-col items-center gap-2">
@@ -204,6 +241,36 @@ const LandingPage: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Communication Protocol / Contact Section */}
+                <div className="w-full max-w-sm mx-auto pt-24 pb-32 px-8 text-center">
+                    <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        className="p-10 monolith-glass rounded-[48px] border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden group"
+                    >
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50" />
+                        <div className="space-y-6 relative z-10">
+                            <div className="flex justify-center mb-4">
+                                <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500">
+                                    <MessageSquare size={24} />
+                                </div>
+                            </div>
+                            <h3 className="text-xl font-black uppercase tracking-tighter text-emerald-500">Built By Cryptobulla</h3>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                                Connect with the architect behind the neural link for collaboration and updates.
+                            </p>
+                            <a
+                                href="https://x.com/Cryptobullaaa"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20"
+                            >
+                                <Twitter size={14} fill="currentColor" />
+                                Initiate Contact
+                            </a>
+                        </div>
+                    </motion.div>
                 </div>
             </main>
 

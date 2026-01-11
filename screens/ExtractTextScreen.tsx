@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileSearch, FileUp, Copy, Check, Loader2, Edit3, Download, RefreshCcw } from 'lucide-react';
+import { FileSearch, FileUp, Copy, Check, Loader2, Edit3, Share2, RefreshCcw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { replaceTextInPdf } from '../utils/pdfEditor';
 import ToolGuide from '../components/ToolGuide';
@@ -240,8 +240,8 @@ const ExtractTextScreen: React.FC = () => {
                       onClick={handleApplyEdit}
                       className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 disabled:opacity-20"
                     >
-                      {isApplyingEdit ? <RefreshCcw className="animate-spin" size={16} /> : <Download size={16} />}
-                      {isApplyingEdit ? 'Injecting Data...' : 'Apply Neural Inject & Save'}
+                      {isApplyingEdit ? <RefreshCcw className="animate-spin" size={16} /> : <Share2 size={16} />}
+                      {isApplyingEdit ? 'Injecting Data...' : 'Apply Neural Inject & Share'}
                     </button>
                   </div>
                 </motion.div>

@@ -1,9 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { getReconstructionProtocol, ScanFilters } from '../services/polisherService';
+import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Share2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getReconstructionProtocol, getPolisherProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import { downloadFile } from '../services/downloadService';
@@ -30,7 +30,8 @@ const ScannerScreen: React.FC = () => {
   const [showReport, setShowReport] = useState(false);
   const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [scannerMode, setScannerMode] = useState<'document' | 'photo'>('photo');
+  const [isSharing, setIsSharing] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     async function setupCamera() {
@@ -53,6 +54,22 @@ const ScannerScreen: React.FC = () => {
     };
   }, []);
 
+  // Handle Direct-Share Inbound
+  useEffect(() => {
+    const sharedFile = (location.state as any)?.sharedFile;
+    if (sharedFile && sharedFile.type.includes('image')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedImage(reader.result as string);
+        setIsCapturing(false);
+      };
+      reader.readAsDataURL(sharedFile);
+
+      // Clear state so it doesn't reload on every mount
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   const handleCapture = () => {
     if (!videoRef.current) return;
     setIsCapturing(true);
@@ -67,7 +84,7 @@ const ScannerScreen: React.FC = () => {
 
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const dataUrl = canvas.toDataURL('image/jpeg', 1.0); // MAX FIDELITY SOURCE
 
       // Simulate premium processing delay
       setTimeout(() => {
@@ -84,8 +101,8 @@ const ScannerScreen: React.FC = () => {
     return new Promise(async (resolve) => {
       const img = new Image();
       img.onload = async () => {
-        // Step 0: Calculate target dimensions (max 1800px)
-        const MAX_DIM = 1800;
+        // Step 0: Calculate target dimensions (Pro-grade 4000px cap)
+        const MAX_DIM = 4000;
         let targetWidth = img.width;
         let targetHeight = img.height;
 
@@ -97,7 +114,7 @@ const ScannerScreen: React.FC = () => {
             targetWidth = Math.round((targetWidth * MAX_DIM) / targetHeight);
             targetHeight = MAX_DIM;
           }
-          console.log(`📏 Resizing scan from ${img.width}x${img.height} to ${targetWidth}x${targetHeight}`);
+          console.log(`📏 High-Fidelity Resize: ${img.width}x${img.height} -> ${targetWidth}x${targetHeight}`);
         }
 
         let canvas = document.createElement('canvas');
@@ -132,10 +149,10 @@ const ScannerScreen: React.FC = () => {
             }
           }
 
-          // Text enhancement
+          // Text & Detail enhancement
           if (filters.textEnhancement) {
-            console.log('📝 Applying text enhancement...');
-            canvas = enhanceText(canvas);
+            console.log(`📝 Applying text enhancement (Intensity: ${filters.sharpness})...`);
+            canvas = enhanceText(canvas, filters.sharpness);
             ctx = canvas.getContext('2d');
             if (!ctx) {
               resolve(imageData);
@@ -167,10 +184,12 @@ const ScannerScreen: React.FC = () => {
             b = b * (1 - grayscaleFactor) + gray * grayscaleFactor;
           }
 
-          // Apply contrast (centered around 128)
-          r = ((r - 128) * contrastFactor) + 128;
-          g = ((g - 128) * contrastFactor) + 128;
-          b = ((b - 128) * contrastFactor) + 128;
+          // Apply contrast (centered around 128) - with a slight extra "Studio" boost
+          const studioBoost = 1.1;
+          const finalContrast = contrastFactor * studioBoost;
+          r = ((r - 128) * finalContrast) + 128;
+          g = ((g - 128) * finalContrast) + 128;
+          b = ((b - 128) * finalContrast) + 128;
 
           // Apply brightness
           r = r * brightnessFactor;
@@ -185,7 +204,7 @@ const ScannerScreen: React.FC = () => {
 
         // Put the modified pixel data back
         ctx.putImageData(imageDataObj, 0, 0);
-        const bakedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const bakedDataUrl = canvas.toDataURL('image/jpeg', 1.0); // ABSOLUTE lossless export
         console.log(`✅ Filter bake complete. Result length: ${bakedDataUrl.length}`);
         resolve(bakedDataUrl);
       };
@@ -212,9 +231,10 @@ const ScannerScreen: React.FC = () => {
     setError(null);
     try {
       const compressedImage = await compressImage(capturedImage);
-      // Always use aggressive reconstruction protocol for best quality
+      const protocolFn = getPolisherProtocol;
+
       const [filters, nameSuggestion] = await Promise.all([
-        getReconstructionProtocol(undefined, compressedImage),
+        protocolFn(undefined, compressedImage),
         askGemini("Suggest a professional filename for this document.", undefined, 'naming', compressedImage)
       ]);
 
@@ -243,18 +263,21 @@ const ScannerScreen: React.FC = () => {
     return new Blob([u8arr], { type: mime });
   };
 
-  const handleDownload = async () => {
-    if (!capturedImage) return;
+  const handleShare = async () => {
+    if (!capturedImage || isSharing) return;
+    setIsSharing(true);
     try {
-      console.log('💾 Download initiated with filters:', appliedFilters);
+      console.log('💾 Share initiated with filters:', appliedFilters);
       const baked = appliedFilters ? await bakeFilters(capturedImage, appliedFilters) : capturedImage;
       console.log('✅ Filters baked successfully');
       const finalName = suggestedName ? `${suggestedName}.jpg` : `scan_${Date.now()}.jpg`;
       const blob = dataURLToBlob(baked);
       await downloadFile(blob, finalName);
     } catch (err) {
-      console.error("Download failed", err);
-      setError("Download failed. Please try again.");
+      console.error("Share failed", err);
+      setError("Share failed. Please try again.");
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -270,7 +293,7 @@ const ScannerScreen: React.FC = () => {
         <button onClick={() => navigate(-1)} className="p-2 text-white hover:bg-white/10 rounded-xl transition-colors">
           <X size={24} />
         </button>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center flex-1">
           <div className="flex items-center gap-2 mb-1">
             <NeuralPulse color="bg-emerald-500" size="md" />
             <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Secure Acquisition</span>
@@ -279,20 +302,6 @@ const ScannerScreen: React.FC = () => {
             <span className="text-emerald-500 font-black text-[7px] tracking-[0.2em] uppercase">Zero Watermark Protocol Active</span>
           </div>
           <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
-        </div>
-        <div className="flex gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
-          <button
-            onClick={() => setScannerMode('photo')}
-            className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${scannerMode === 'photo' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
-          >
-            Photo
-          </button>
-          <button
-            onClick={() => setScannerMode('document')}
-            className={`px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${scannerMode === 'document' ? 'bg-white text-black shadow-lg' : 'text-white/40 hover:text-white'}`}
-          >
-            Doc
-          </button>
         </div>
         <button onClick={() => setFlash(!flash)} className={`p-2 transition-all ${flash ? 'text-white' : 'text-white/30'}`}>
           <Zap size={22} fill={flash ? "currentColor" : "none"} />
@@ -348,7 +357,7 @@ const ScannerScreen: React.FC = () => {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setShowGuide(false)}
-                      className="w-full h-20 bg-white text-black rounded-[32px] font-black uppercase tracking-[0.4em] text-xs shadow-2xl hover:bg-emerald-500 hover:text-white transition-all"
+                      className="w-full h-20 bg-white text-black rounded-full font-black uppercase tracking-[0.4em] text-xs shadow-2xl hover:bg-emerald-500 hover:text-white transition-all"
                     >
                       Initialize Acquisition
                     </motion.button>
@@ -492,7 +501,7 @@ const ScannerScreen: React.FC = () => {
               <button
                 onClick={handleNeuralEnhance}
                 disabled={isPolishing}
-                className="h-20 px-8 bg-violet-600 rounded-3xl flex items-center gap-4 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all group overflow-hidden relative"
+                className="h-20 px-8 bg-violet-600 rounded-full flex items-center gap-4 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all group overflow-hidden relative"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <Wand2 size={20} className={isPolishing ? 'animate-spin' : ''} />
@@ -503,11 +512,11 @@ const ScannerScreen: React.FC = () => {
             ) : (
               <div className="flex gap-4">
                 <button
-                  onClick={handleDownload}
-                  className="h-20 px-6 bg-white/10 rounded-3xl flex flex-col items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10"
+                  onClick={handleShare}
+                  className="h-20 px-6 bg-white/10 rounded-full flex flex-col items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10"
                 >
-                  <Download size={20} />
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-2">Quick JPEG</span>
+                  <Share2 size={20} />
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-2">Share JPEG</span>
                 </button>
 
                 <button
@@ -521,7 +530,7 @@ const ScannerScreen: React.FC = () => {
                     }
                     navigate('/image-to-pdf', { state: { capturedImage: finalImage } });
                   }}
-                  className="h-20 px-10 bg-white rounded-3xl flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                  className="h-20 px-10 bg-white rounded-full flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
                 >
                   <div className="flex items-center gap-4">
                     <FileCheck size={20} />

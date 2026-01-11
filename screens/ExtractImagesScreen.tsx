@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileUp, Image as ImageIcon, Download, Loader2, FileText, Package } from 'lucide-react';
+import { FileUp, Image as ImageIcon, Share2, Loader2, FileText, Package } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import FileHistoryManager from '../utils/FileHistoryManager';
@@ -9,7 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
-import { downloadFile } from '../services/downloadService';
+import { downloadFile, downloadMultipleFiles, saveBase64ToCache } from '../services/downloadService';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -18,14 +20,23 @@ const ExtractImagesScreen: React.FC = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [extractedImages, setExtractedImages] = useState<string[]>([]);
+    const [extractedAssets, setExtractedAssets] = useState<{ uri: string; displayUrl: string }[]>([]);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+
+    // NO OP: Filesystem assets are permanent until app is closed or cleared
+    React.useEffect(() => {
+        return () => {
+            // Cleanup if needed
+        };
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
-            setExtractedImages([]);
+            // Cleanup old ObjectURLs
+            extractedAssets.forEach(asset => URL.revokeObjectURL(asset.url));
+            setExtractedAssets([]);
         }
     };
 
@@ -42,11 +53,15 @@ const ExtractImagesScreen: React.FC = () => {
         try {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const images: string[] = [];
+            const assets: { uri: string; displayUrl: string }[] = [];
+            console.log("🛠️ Starting visual scan of carrier:", pdf.numPages, "pages identified.");
 
             for (let i = 1; i <= pdf.numPages; i++) {
+                console.log(`📸 Processing layer ${i}/${pdf.numPages}...`);
                 const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 2.0 });
+
+                // HIGH QUALITY: Use scale 1.5 for a perfect balance of crispness and stability
+                const viewport = page.getViewport({ scale: 1.5 });
 
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
@@ -55,19 +70,35 @@ const ExtractImagesScreen: React.FC = () => {
 
                 if (context) {
                     await page.render({ canvasContext: context, viewport, canvasFactory: undefined } as any).promise;
-                    const imageData = canvas.toDataURL('image/png');
-                    images.push(imageData);
+
+                    // HIGH QUALITY: Use JPEG at 85% quality (Industry standard for mobile docs)
+                    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+                    // Force browser garbage collection by clearing canvas
+                    canvas.width = 0;
+                    canvas.height = 0;
+
+                    // Atomic Save to Disk (Frees up RAM immediately)
+                    const fileName = `page_${i}.jpg`;
+                    const uri = await saveBase64ToCache(base64, fileName);
+
+                    assets.push({
+                        uri,
+                        displayUrl: Capacitor.convertFileSrc(uri)
+                    });
+
+                    console.log(`✅ Layer ${i} saved to disk. Memory cleared.`);
                 }
             }
 
-            setExtractedImages(images);
+            setExtractedAssets(assets);
 
             // Add to history
             FileHistoryManager.addEntry({
                 fileName: `extracted_images_${file.name}`,
                 operation: 'split',
                 originalSize: file.size,
-                finalSize: images.length * 100000, // Approximate
+                finalSize: assets.length * 100000, // Approximate
                 status: 'success'
             });
 
@@ -79,7 +110,7 @@ const ExtractImagesScreen: React.FC = () => {
                 isOpen: true,
                 fileName: `extracted_images_${file.name}`,
                 originalSize: file.size,
-                finalSize: images.length * 102400 // Estimate 100kb per image for UI
+                finalSize: assets.length * 102400 // Estimate 100kb per image for UI
             });
         } catch (err) {
             alert('Error extracting images: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -94,24 +125,40 @@ const ExtractImagesScreen: React.FC = () => {
         }
     };
 
-    const downloadImage = async (imageData: string, index: number) => {
+    const downloadImage = async (uri: string, index: number) => {
         try {
-            // Convert Data URL (Base64) to Blob
-            const response = await fetch(imageData);
-            const blob = await response.blob();
-            const fileName = `page_${index + 1}.png`;
-
-            await downloadFile(blob, fileName);
+            await Share.share({
+                title: 'Anti-Gravity Asset',
+                url: uri,
+                dialogTitle: 'Save Asset'
+            });
         } catch (err) {
-            console.error("Failed to download image:", err);
-            alert("Download failed.");
+            console.error("Failed to share image:", err);
         }
     };
 
-    const downloadAllImages = () => {
-        extractedImages.forEach((img, index) => {
-            setTimeout(() => downloadImage(img, index), index * 100);
-        });
+    const downloadAllImages = async () => {
+        if (extractedAssets.length === 0) return;
+        setIsProcessing(true);
+        try {
+            console.log("📂 Mass Download Protocol: Handing over URIs to native share service.");
+
+            // On Mobile, we use the Native Share sheet for the whole collection
+            const uris = extractedAssets.map(a => a.uri);
+
+            await Share.share({
+                title: `${uris.length} Extracted Images`,
+                files: uris,
+                dialogTitle: 'Save All Assets'
+            });
+
+            setSuccessData(null);
+        } catch (err) {
+            console.error("❌ Multi-download failed:", err);
+            alert("Failed to package assets. The collection might be too large for the system bridge.");
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -170,16 +217,19 @@ const ExtractImagesScreen: React.FC = () => {
                         <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                {extractedImages.length > 0 ? `${extractedImages.length} ASSETS DECOUPLED` : 'AWAITING SCAN'}
+                                {extractedAssets.length > 0 ? `${extractedAssets.length} ASSETS DECOUPLED` : 'AWAITING SCAN'}
                             </p>
                         </div>
-                        <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
+                        <button onClick={() => {
+                            setFile(null);
+                            setExtractedAssets([]);
+                        }} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
                             Change
                         </button>
                     </motion.div>
 
                     {/* Extract Button */}
-                    {extractedImages.length === 0 && (
+                    {extractedAssets.length === 0 && (
                         <button
                             onClick={handleExtractImages}
                             disabled={isProcessing}
@@ -205,37 +255,37 @@ const ExtractImagesScreen: React.FC = () => {
                     )}
 
                     {/* Extracted Images Grid */}
-                    {extractedImages.length > 0 && (
+                    {extractedAssets.length > 0 && (
                         <>
                             <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                    Extracted Images ({extractedImages.length})
+                                    Extracted Images ({extractedAssets.length})
                                 </h3>
                                 <button
                                     onClick={downloadAllImages}
                                     className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-bold text-xs transition-colors"
                                 >
                                     <Package size={16} />
-                                    Download All
+                                    Share All
                                 </button>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                                {extractedImages.map((img, index) => (
+                                {extractedAssets.map((asset, index) => (
                                     <div
                                         key={index}
                                         className="relative group bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
                                     >
                                         <img
-                                            src={img}
+                                            src={asset.displayUrl}
                                             alt={`Page ${index + 1}`}
                                             className="w-full h-auto"
                                         />
                                         <button
-                                            onClick={() => downloadImage(img, index)}
+                                            onClick={() => downloadImage(asset.uri, index)}
                                             className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                                         >
-                                            <Download size={24} className="text-white" />
+                                            <Share2 size={24} className="text-white" />
                                         </button>
                                         <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs font-bold px-2 py-1 rounded">
                                             Page {index + 1}
@@ -257,17 +307,14 @@ const ExtractImagesScreen: React.FC = () => {
                     fileName={successData.fileName}
                     originalSize={successData.originalSize}
                     finalSize={successData.finalSize}
-                    metadata={{ imagesConverted: extractedImages.length }}
+                    metadata={{ imagesConverted: extractedAssets.length }}
                     onViewFiles={() => {
                         setSuccessData(null);
-                        setFile(null);
-                        setExtractedImages([]);
                         navigate('/my-files');
                     }}
+                    onDownload={downloadAllImages}
                     onClose={() => {
                         setSuccessData(null);
-                        setFile(null);
-                        setExtractedImages([]);
                     }}
                 />
             )}

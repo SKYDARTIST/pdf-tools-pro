@@ -4,11 +4,23 @@ import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
  * Downsize a File or Blob image if it exceeds max dimensions.
  * Uses a canvas to resize while maintaining aspect ratio.
  */
-const downsizeImage = async (file: File, maxSize: number = 1600): Promise<ArrayBuffer> => {
+const downsizeImage = async (file: File, maxSize: number = 4000): Promise<ArrayBuffer> => {
+  const arrayBuffer = await file.arrayBuffer();
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       let { width, height } = img;
+
+      // OPTIMIZATION: If image is already within bounds and it's a JPEG, avoid re-encoding
+      // This preserves 100% of the contrast and sharpening from the scanner.
+      if (width <= maxSize && height <= maxSize && file.type === 'image/jpeg') {
+        console.log('💎 Preserving original pixel-perfect asset (No re-encode)');
+        resolve(arrayBuffer);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
       if (width > maxSize || height > maxSize) {
         if (width > height) {
           height = Math.round((height * maxSize) / width);
@@ -17,13 +29,8 @@ const downsizeImage = async (file: File, maxSize: number = 1600): Promise<ArrayB
           width = Math.round((width * maxSize) / height);
           height = maxSize;
         }
-      } else {
-        // No resize needed, but we still need to convert to ArrayBuffer
-        // To keep it simple and consistent with the canvas path below, 
-        // we'll just draw it once. This also strips metadata which helps size.
       }
 
-      const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
@@ -39,7 +46,7 @@ const downsizeImage = async (file: File, maxSize: number = 1600): Promise<ArrayB
           return;
         }
         blob.arrayBuffer().then(resolve).catch(reject);
-      }, 'image/jpeg', 0.85); // 85% quality is optimal for docs
+      }, 'image/jpeg', 0.92);
     };
     img.onerror = () => reject(new Error("Failed to load image for downsizing"));
     img.src = URL.createObjectURL(file);

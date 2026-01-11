@@ -35,10 +35,14 @@ import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
 import AiPackNotification from './components/AiPackNotification';
 import NeuralAssistant from './components/NeuralAssistant';
+import PullToRefresh from './components/PullToRefresh';
 import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
+import { Filesystem } from '@capacitor/filesystem';
+import { useNavigate } from 'react-router-dom';
 
 const App: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
 
@@ -83,54 +87,89 @@ const App: React.FC = () => {
     };
   }, []);
 
+  // Neural Direct-Share Listener
+  React.useEffect(() => {
+    const handleSharedFile = async (e: any) => {
+      const { path, type } = e.detail;
+      try {
+        const fileData = await Filesystem.readFile({
+          path: path
+        });
+
+        // Convert to Blob/File for compatibility with existing tools
+        const blob = await (await fetch(`data:${type};base64,${fileData.data}`)).blob();
+        const file = new File([blob], path.split('/').pop() || 'shared_asset', { type });
+
+        if (type.includes('pdf')) {
+          navigate('/reader', { state: { sharedFile: file } });
+        } else if (type.includes('image')) {
+          navigate('/scanner', { state: { sharedFile: file } });
+        }
+      } catch (err) {
+        console.error('Neural Share Error:', err);
+      }
+    };
+
+    window.addEventListener('neuralSharedFile', handleSharedFile);
+    return () => window.removeEventListener('neuralSharedFile', handleSharedFile);
+  }, [navigate]);
+
+  const handleGlobalRefresh = async () => {
+    // Artificial delay for neural synchronization feel
+    await new Promise(resolve => setTimeout(resolve, 800));
+    window.location.reload();
+  };
+
   const isLandingPage = location.pathname === '/';
 
   return (
     <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
       {!isLandingPage && <Header />}
       <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
-        <AnimatePresence>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1, ease: "linear" }}
-          >
-            <Routes location={location}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/workspace" element={<HomeScreen />} />
-              <Route path="/tools" element={<ToolsScreen />} />
-              <Route path="/merge" element={<MergeScreen />} />
-              <Route path="/split" element={<SplitScreen />} />
-              <Route path="/remove-pages" element={<RemovePagesScreen />} />
-              <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
+        <PullToRefresh onRefresh={handleGlobalRefresh}>
+          <AnimatePresence>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1, ease: "linear" }}
+            >
+              <Routes location={location}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/workspace" element={<HomeScreen />} />
+                <Route path="/tools" element={<ToolsScreen />} />
+                <Route path="/merge" element={<MergeScreen />} />
+                <Route path="/split" element={<SplitScreen />} />
+                <Route path="/remove-pages" element={<RemovePagesScreen />} />
+                <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
 
-              <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
-              <Route path="/scanner" element={<ScannerScreen />} />
-              <Route path="/watermark" element={<WatermarkScreen />} />
-              <Route path="/sign" element={<SignScreen />} />
-              <Route path="/view" element={<ViewScreen />} />
-              <Route path="/extract-text" element={<ExtractTextScreen />} />
-              <Route path="/reader" element={<ReaderScreen />} />
-              <Route path="/rotate" element={<RotateScreen />} />
-              <Route path="/page-numbers" element={<PageNumbersScreen />} />
-              <Route path="/extract-images" element={<ExtractImagesScreen />} />
-              <Route path="/metadata" element={<MetadataScreen />} />
-              <Route path="/ai-settings" element={<AISettingsScreen />} />
-              <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
-              <Route path="/table-extractor" element={<TableExtractorScreen />} />
-              <Route path="/my-files" element={<MyFilesScreen />} />
-              <Route path="/smart-redact" element={<SmartRedactScreen />} />
-              <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
-              <Route path="/neural-diff" element={<NeuralDiffScreen />} />
-              <Route path="/data-extractor" element={<DataExtractorScreen />} />
-              <Route path="/pricing" element={<PricingScreen />} />
-              <Route path="/legal/:type" element={<LegalScreen />} />
-              <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
-            </Routes>
-          </motion.div>
-        </AnimatePresence>
+                <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
+                <Route path="/scanner" element={<ScannerScreen />} />
+                <Route path="/watermark" element={<WatermarkScreen />} />
+                <Route path="/sign" element={<SignScreen />} />
+                <Route path="/view" element={<ViewScreen />} />
+                <Route path="/extract-text" element={<ExtractTextScreen />} />
+                <Route path="/reader" element={<ReaderScreen />} />
+                <Route path="/rotate" element={<RotateScreen />} />
+                <Route path="/page-numbers" element={<PageNumbersScreen />} />
+                <Route path="/extract-images" element={<ExtractImagesScreen />} />
+                <Route path="/metadata" element={<MetadataScreen />} />
+                <Route path="/ai-settings" element={<AISettingsScreen />} />
+                <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
+                <Route path="/table-extractor" element={<TableExtractorScreen />} />
+                <Route path="/my-files" element={<MyFilesScreen />} />
+                <Route path="/smart-redact" element={<SmartRedactScreen />} />
+                <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
+                <Route path="/neural-diff" element={<NeuralDiffScreen />} />
+                <Route path="/data-extractor" element={<DataExtractorScreen />} />
+                <Route path="/pricing" element={<PricingScreen />} />
+                <Route path="/legal/:type" element={<LegalScreen />} />
+                <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </PullToRefresh>
       </main>
       {!isLandingPage && <BottomNav />}
       <AnimatePresence>

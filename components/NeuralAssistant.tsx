@@ -178,7 +178,7 @@ const NeuralAssistant: React.FC = () => {
                                                 whileHover={{ scale: 1.02 }}
                                                 whileTap={{ scale: 0.98 }}
                                                 onClick={() => navigate(m.action!.path)}
-                                                className="flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20"
+                                                className="flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20"
                                             >
                                                 <Rocket size={12} />
                                                 Launch {m.action.name}
@@ -189,7 +189,7 @@ const NeuralAssistant: React.FC = () => {
                             ))}
                             {isLoading && (
                                 <div className="flex justify-start">
-                                    <div className="bg-black/5 dark:bg-white/5 p-5 rounded-2xl rounded-tl-none animate-pulse flex flex-col gap-3">
+                                    <div className="bg-black/5 dark:bg-white/5 p-5 rounded-full rounded-tl-none animate-pulse flex flex-col gap-3">
                                         <div className="text-[8px] font-black uppercase tracking-widest opacity-30">Decrypting...</div>
                                         <div className="flex gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
@@ -216,7 +216,7 @@ const NeuralAssistant: React.FC = () => {
 
                         {/* Input */}
                         <div className="p-6 border-t border-black/5 dark:border-white/10 bg-black/2 dark:bg-white/2 shrink-0">
-                            <div className="relative flex items-center gap-3 bg-black/5 dark:bg-white/5 rounded-2xl px-5 py-4 border border-black/5 dark:border-white/10">
+                            <div className="relative flex items-center gap-3 bg-black/5 dark:bg-white/5 rounded-full px-5 py-4 border border-black/5 dark:border-white/10">
                                 <input
                                     type="text"
                                     placeholder="ASK ABOUT PROTOCOLS..."
@@ -228,7 +228,7 @@ const NeuralAssistant: React.FC = () => {
                                 <button
                                     onClick={() => handleSend()}
                                     disabled={isLoading}
-                                    className="w-10 h-10 bg-black dark:bg-white text-white dark:text-black rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-all disabled:opacity-30"
+                                    className="w-10 h-10 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all disabled:opacity-30"
                                 >
                                     <Zap size={16} fill="currentColor" />
                                 </button>

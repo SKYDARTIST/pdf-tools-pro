@@ -54,7 +54,7 @@ const AIReportModal: React.FC<AIReportModalProps> = ({ isOpen, onClose, contentI
                                 <>
                                     {/* Header */}
                                     <div className="p-10 pb-8 bg-red-500/10 dark:bg-white/5 text-center">
-                                        <div className="w-16 h-16 mx-auto mb-6 bg-red-500 text-white rounded-2xl flex items-center justify-center">
+                                        <div className="w-16 h-16 mx-auto mb-6 bg-red-500 text-white rounded-full flex items-center justify-center">
                                             <Flag size={32} />
                                         </div>
                                         <h2 className="text-3xl font-black uppercase tracking-tighter leading-none mb-3">
@@ -81,9 +81,9 @@ const AIReportModal: React.FC<AIReportModalProps> = ({ isOpen, onClose, contentI
                                                 <button
                                                     key={r}
                                                     onClick={() => setReason(r)}
-                                                    className={`w-full p-4 rounded-2xl border text-left transition-all ${reason === r
-                                                            ? 'bg-black dark:bg-white border-transparent text-white dark:text-black'
-                                                            : 'bg-transparent border-black/5 dark:border-white/5 text-gray-500 hover:border-black/20 dark:hover:border-white/20'
+                                                    className={`w-full p-4 rounded-full border text-left transition-all ${reason === r
+                                                        ? 'bg-black dark:bg-white border-transparent text-white dark:text-black'
+                                                        : 'bg-transparent border-black/5 dark:border-white/5 text-gray-500 hover:border-black/20 dark:hover:border-white/20'
                                                         }`}
                                                 >
                                                     <span className="text-[10px] font-black uppercase tracking-widest">{r}</span>

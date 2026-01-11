@@ -10,7 +10,7 @@ import ToolGuide from '../components/ToolGuide';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
-import { Flag, Download } from 'lucide-react';
+import { Flag, Share2 } from 'lucide-react';
 import { createPdfFromText } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import SuccessModal from '../components/SuccessModal';
@@ -142,7 +142,7 @@ const NeuralDiffScreen: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* File 1 */}
                     <label className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-[40px] cursor-pointer transition-all h-64 ${file1 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}>
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 shadow-xl ${file1 ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-xl ${file1 ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}>
                             {file1 ? <Check size={24} /> : <FileUp size={24} />}
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center">
@@ -153,7 +153,7 @@ const NeuralDiffScreen: React.FC = () => {
 
                     {/* File 2 */}
                     <label className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-[40px] cursor-pointer transition-all h-64 ${file2 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}>
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 shadow-xl ${file2 ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-xl ${file2 ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}>
                             {file2 ? <Check size={24} /> : <FileUp size={24} />}
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center">
@@ -172,7 +172,7 @@ const NeuralDiffScreen: React.FC = () => {
                             whileTap={{ scale: 0.95 }}
                             onClick={runNeuralDiff}
                             disabled={isAnalyzing}
-                            className="bg-black dark:bg-white text-white dark:text-black px-12 py-6 rounded-[32px] text-xs font-black uppercase tracking-[0.3em] flex items-center gap-4 shadow-2xl"
+                            className="bg-black dark:bg-white text-white dark:text-black px-12 py-6 rounded-full text-xs font-black uppercase tracking-[0.3em] flex items-center gap-4 shadow-2xl"
                         >
                             {isAnalyzing ? <Loader2 size={18} className="animate-spin" /> : <GitMerge size={18} />}
                             {isAnalyzing ? "Executing Analysis..." : "Execute Neural Diff"}
@@ -181,7 +181,7 @@ const NeuralDiffScreen: React.FC = () => {
                 )}
 
                 {error && (
-                    <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center gap-4 text-rose-500">
+                    <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center gap-4 text-rose-500">
                         <AlertCircle size={20} />
                         <span className="text-[10px] font-black uppercase tracking-widest">{error}</span>
                     </div>
@@ -201,7 +201,7 @@ const NeuralDiffScreen: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => setShowReport(true)}
-                                    className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors flex items-center gap-2 mr-2"
+                                    className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-full transition-colors flex items-center gap-2 mr-2"
                                     title="Report AI Content"
                                 >
                                     <Flag size={14} />
@@ -230,14 +230,14 @@ const NeuralDiffScreen: React.FC = () => {
                             <div className="pt-8 border-t border-black/5 dark:border-white/5 flex gap-4">
                                 <button
                                     onClick={handleExport}
-                                    className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
                                 >
-                                    <Download size={14} />
-                                    Export PDF Report
+                                    <Share2 size={14} />
+                                    Share PDF Report
                                 </button>
                                 <button
                                     onClick={() => navigate('/workspace')}
-                                    className="flex-1 py-4 bg-emerald-500/10 text-emerald-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-colors"
+                                    className="flex-1 py-4 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-colors"
                                 >
                                     Finish Task
                                 </button>

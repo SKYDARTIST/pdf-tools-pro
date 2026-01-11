@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Stamp, FileText, Download, Loader2, FileUp, Type } from 'lucide-react';
+import { Type, Image as ImageIcon, Share2, Loader2, Settings2, Shield } from 'lucide-react';
 import { addWatermark } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
@@ -113,7 +113,7 @@ const WatermarkScreen: React.FC = () => {
               whileHover={{ scale: 1.1, rotate: 10 }}
               className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center shadow-2xl mb-6"
             >
-              <Stamp size={32} />
+              <ImageIcon size={32} />
             </motion.div>
             <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Stamping</span>
             <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
@@ -127,7 +127,7 @@ const WatermarkScreen: React.FC = () => {
               className="monolith-card p-6 flex items-center gap-5 border-none shadow-xl"
             >
               <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shrink-0">
-                <FileText size={28} />
+                <Settings2 size={28} />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-black uppercase tracking-tighter truncate">{file.name}</h3>
@@ -190,8 +190,8 @@ const WatermarkScreen: React.FC = () => {
           <Loader2 className="animate-spin" size={20} />
         ) : (
           <>
-            <Download size={18} strokeWidth={3} />
-            <span>Execute Stamping</span>
+            <Share2 size={18} strokeWidth={3} />
+            <span>Bake & Share PDF</span>
           </>
         )}
       </button>

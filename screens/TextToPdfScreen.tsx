@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Type, Download, Loader2, AlignLeft, Bold } from 'lucide-react';
+import { Type, Share2, Loader2, AlignLeft, Bold } from 'lucide-react';
 import { createPdfFromText } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
@@ -133,8 +133,8 @@ const TextToPdfScreen: React.FC = () => {
               <Loader2 className="animate-spin" size={20} />
             ) : (
               <>
-                <Download size={18} strokeWidth={3} />
-                <span>Execute Synthesis</span>
+                <Share2 size={18} strokeWidth={3} />
+                <span>Synthesize & Share Asset</span>
               </>
             )}
           </button>

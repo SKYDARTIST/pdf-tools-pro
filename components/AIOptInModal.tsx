@@ -89,7 +89,7 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
                                 <div className="space-y-4 pt-4">
                                     <button
                                         onClick={onAccept}
-                                        className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
+                                        className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
                                     >
                                         Accept Protocol
                                         <ArrowRight size={14} className="inline-block ml-2 group-hover:translate-x-1 transition-transform" />
@@ -113,7 +113,7 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
 
 const ConsentItem: React.FC<{ icon: any; title: string; desc: string }> = ({ icon: Icon, title, desc }) => (
     <div className="flex gap-4">
-        <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
             <Icon size={18} className="text-black dark:text-white" />
         </div>
         <div>

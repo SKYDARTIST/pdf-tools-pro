@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileUp, Hash, Download, Loader2, FileText, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { FileUp, Hash, Share2, Loader2, FileText, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
@@ -269,8 +269,8 @@ const PageNumbersScreen: React.FC = () => {
                                 <Loader2 className="animate-spin" size={20} />
                             ) : (
                                 <>
-                                    <Download size={18} strokeWidth={3} />
-                                    <span>Execute Indexing</span>
+                                    <Share2 size={18} strokeWidth={3} />
+                                    <span>Index & Share Asset</span>
                                 </>
                             )}
                         </button>
@@ -298,7 +298,7 @@ const PageNumbersScreen: React.FC = () => {
                             setPageCount(0);
                             navigate('/my-files');
                         }}
-                        onShare={() => {
+                        onDownload={() => {
                             setShowSuccessModal(false);
                             setShowShareModal(true);
                         }}

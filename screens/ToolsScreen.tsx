@@ -39,17 +39,17 @@ const ToolsScreen: React.FC = () => {
     });
 
     return (
-        <div className="min-h-screen bg-transparent pb-32 pt-24 max-w-md mx-auto px-6">
-            <div className="space-y-12">
+        <div className="min-h-screen bg-transparent pb-32 pt-40 max-w-md mx-auto px-6">
+            <div className="space-y-16">
                 {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="space-y-3"
+                    className="space-y-4"
                 >
-                    <div className="text-technical">Protocol Assets</div>
+                    <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Protocol Assets</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tools</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Select operation for data manipulation</p>
+                    <p className="text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Select operation for data manipulation</p>
                 </motion.div>
 
                 <TaskCounter variant="inline" />
@@ -66,7 +66,7 @@ const ToolsScreen: React.FC = () => {
                         type="search"
                         placeholder="SEARCH PROTOCOLS..."
                         aria-label="Search tools"
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[24px] py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:bg-white dark:focus:bg-black focus:border-black/10 dark:focus:border-white/10 shadow-sm transition-all"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -84,7 +84,7 @@ const ToolsScreen: React.FC = () => {
                             key={cat}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setActiveCategory(cat as any)}
-                            className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all ${activeCategory === cat
+                            className={`px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all ${activeCategory === cat
                                 ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl ring-4 ring-black/5 dark:ring-white/5'
                                 : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:bg-black/10 dark:hover:bg-white/10'
                                 }`}
@@ -114,9 +114,9 @@ const ToolsScreen: React.FC = () => {
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => e.key === 'Enter' && navigate(tool.path)}
-                                className="monolith-card cursor-pointer p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner relative"
+                                className="monolith-glass rounded-[40px] cursor-pointer p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner relative"
                             >
-                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
                                     <tool.icon size={18} className="transition-colors" strokeWidth={2.5} />
                                 </div>
                                 <div className="min-w-0 px-1">

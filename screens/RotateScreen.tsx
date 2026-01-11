@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileUp, RotateCw, Download, Loader2, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileUp, RotateCw, Share2, Loader2, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
@@ -257,7 +257,7 @@ const RotateScreen: React.FC = () => {
                             setPageCount(0);
                             navigate('/my-files');
                         }}
-                        onShare={() => {
+                        onDownload={() => {
                             setShowSuccessModal(false);
                             setShowShareModal(true);
                         }}

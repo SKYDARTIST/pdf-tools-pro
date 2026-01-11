@@ -57,17 +57,17 @@ const PricingScreen: React.FC = () => {
       <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none"
         style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
-      <div className="p-6 space-y-12 relative z-10">
+      <div className="p-6 space-y-16 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="pt-12 text-center"
+          className="pt-40 text-center"
         >
-          <h1 className="text-5xl font-black text-black dark:text-white uppercase tracking-tighter leading-none mb-4">
+          <h1 className="text-5xl font-black text-black dark:text-white uppercase tracking-tighter leading-none mb-6">
             Protocol Access
           </h1>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
+          <p className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-500">
             Select Your Authorization Level
           </p>
         </motion.div>
@@ -80,14 +80,14 @@ const PricingScreen: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, type: "spring", stiffness: 100, damping: 20 }}
-              className={`monolith-card p-10 flex flex-col relative group ${tier.popular ? 'border-2 border-black dark:border-white shadow-2xl' : ''}`}
+              className={`monolith-glass rounded-[40px] p-8 flex flex-col relative group transition-all duration-500 ${tier.popular ? 'bg-black/80 dark:bg-white text-white dark:text-black border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10'}`}
             >
               {tier.popular && (
                 <div className="absolute -top-4 inset-x-0 flex justify-center items-center gap-1.5 px-4 pointer-events-none">
-                  <div className="px-4 py-1.5 bg-black dark:bg-white text-white dark:text-black text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl shadow-black/20 whitespace-nowrap border border-white/10">
-                    {tier.badge || 'MOST POPULAR'}
+                  <div className="px-4 py-1.5 bg-emerald-500 text-white text-[8px] font-mono font-black uppercase tracking-[0.2em] rounded-full shadow-2xl shadow-emerald-500/30 border border-emerald-400/20">
+                    {tier.badge || 'PRO AUTHORIZED'}
                   </div>
-                  <div className="px-3 py-1.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl shadow-emerald-500/30 border border-emerald-400/20 animate-pulse">
+                  <div className="px-3 py-1.5 bg-black dark:bg-white text-white dark:text-black text-[8px] font-mono font-black uppercase tracking-[0.2em] rounded-full shadow-2xl border border-white/10 animate-pulse">
                     70% OFF
                   </div>
                 </div>
@@ -95,10 +95,10 @@ const PricingScreen: React.FC = () => {
 
               {/* Header */}
               <div className="mb-10">
-                <h3 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mb-4">{tier.name}</h3>
+                <h3 className={`text-[9px] font-mono font-black uppercase tracking-[0.3em] mb-4 ${tier.popular ? 'text-emerald-400' : 'text-gray-500'}`}>{tier.name}</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-black dark:text-white tabular-nums tracking-tighter">{tier.price}</span>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{tier.period}</span>
+                  <span className={`text-5xl font-mono font-black tabular-nums tracking-tighter ${tier.popular ? 'text-white dark:text-black' : 'text-black dark:text-white'}`}>{tier.price}</span>
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-widest opacity-40">{tier.period}</span>
                 </div>
               </div>
 
@@ -106,18 +106,18 @@ const PricingScreen: React.FC = () => {
               <div className="space-y-6 mb-12 flex-1">
                 {tier.features.map((feature, i) => (
                   <div key={i} className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <Check size={16} className="text-black dark:text-white" strokeWidth={3} />
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-colors ${tier.popular ? 'bg-emerald-500/20 text-emerald-400' : 'bg-black/5 dark:bg-white/5 text-gray-400'}`}>
+                      <Check size={14} strokeWidth={3} />
                     </div>
-                    <span className="text-[12px] font-black uppercase tracking-tight text-gray-700 dark:text-gray-300">{feature}</span>
+                    <span className={`text-[11px] font-mono font-bold uppercase tracking-tight ${tier.popular ? 'text-white/80 dark:text-black/80' : 'text-gray-500 dark:text-gray-400'}`}>{feature}</span>
                   </div>
                 ))}
               </div>
 
               {/* CTA */}
               <motion.button
-                whileHover={{ scale: tier.disabled ? 1 : 1.05 }}
-                whileTap={{ scale: tier.disabled ? 1 : 0.95 }}
+                whileHover={{ scale: tier.disabled ? 1 : 1.02 }}
+                whileTap={{ scale: tier.disabled ? 1 : 0.98 }}
                 disabled={tier.disabled}
                 onClick={() => {
                   if (tier.name === 'PRO') {
@@ -130,18 +130,18 @@ const PricingScreen: React.FC = () => {
                     navigate('/ag-workspace');
                   }
                 }}
-                className={`w-full py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] transition-all relative overflow-hidden shadow-lg ${tier.disabled
+                className={`w-full py-5 rounded-3xl font-mono font-black text-[10px] uppercase tracking-[0.2em] transition-all relative overflow-hidden shadow-lg ${tier.disabled
                   ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed'
                   : tier.popular
-                    ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl hover:brightness-110 active:scale-95'
-                    : 'bg-black/5 dark:bg-white/5 text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10'
+                    ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95'
+                    : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
                   }`}
               >
                 {tier.cta}
               </motion.button>
               {tier.name === 'AI PACK' && (
-                <div className="mt-4 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-                  <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-relaxed text-center">
+                <div className="mt-6 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
+                  <p className="text-[8px] font-mono font-bold text-emerald-500/60 uppercase tracking-widest leading-relaxed text-center">
                     HARD USER LOGIC: 100 Massive PDFs (50pg+ each) analyzed for ~$1.50 in base cost. Your $4.99 pack is high-efficiency.
                   </p>
                 </div>
@@ -155,7 +155,7 @@ const PricingScreen: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.6 }}
-          className="monolith-card p-12 space-y-16 border-none bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative"
+          className="monolith-glass rounded-[40px] p-12 space-y-16 border-none bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative"
         >
           <div className="absolute top-0 right-0 p-12 opacity-5">
             <Zap size={160} />
@@ -163,30 +163,30 @@ const PricingScreen: React.FC = () => {
 
           <div className="space-y-4 relative z-10 text-center">
             <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">THE EDGE ADVANTAGE</h4>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs "Legacy Cloud Suites"</p>
+            <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs "Legacy Cloud Suites"</p>
           </div>
 
           <div className="space-y-12 relative z-10">
             {/* Savings Catalyst Chart */}
             <div className="space-y-6">
               <div className="flex justify-between items-end border-b border-white/10 dark:border-black/10 pb-4">
-                <span className="text-[10px] font-black uppercase tracking-widest opacity-60">3-Year Projected Cost</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Savings: $717.01</span>
+                <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-60">3-Year Projected Cost</span>
+                <span className="text-[9px] font-mono font-black uppercase tracking-widest text-emerald-500">Savings: $717.01</span>
               </div>
 
               <div className="space-y-8 pt-4">
                 {/* Standard Subscription */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Standard Subscription (Avg $20/mo)</span>
-                    <span className="text-xl font-black tabular-nums tracking-tighter opacity-80">$720.00</span>
+                    <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-40">Standard Subscription (Avg $20/mo)</span>
+                    <span className="text-xl font-mono font-black tabular-nums tracking-tighter opacity-80">$720.00</span>
                   </div>
-                  <div className="h-3 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
                       transition={{ duration: 2, ease: "easeOut", delay: 0.8 }}
-                      className="h-full bg-gradient-to-r from-red-900 to-red-500"
+                      className="h-full bg-red-500/40"
                     />
                   </div>
                 </div>
@@ -194,10 +194,10 @@ const PricingScreen: React.FC = () => {
                 {/* Anti-Gravity Lifetime */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Anti-Gravity Lifetime</span>
-                    <span className="text-xl font-black tabular-nums tracking-tighter text-emerald-500">$2.99</span>
+                    <span className="text-[9px] font-mono font-black uppercase tracking-widest text-emerald-500">Anti-Gravity Lifetime</span>
+                    <span className="text-xl font-mono font-black tabular-nums tracking-tighter text-emerald-500">$2.99</span>
                   </div>
-                  <div className="h-3 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: "0.4%" }}
@@ -211,17 +211,17 @@ const PricingScreen: React.FC = () => {
 
             {/* Combat Comparison Table */}
             <div className="pt-8 space-y-6">
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-60 block border-b border-white/10 dark:border-black/10 pb-4">Protocol Combat Checklist</span>
+              <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-60 block border-b border-white/10 dark:border-black/10 pb-4">Protocol Combat Checklist</span>
               <div className="bg-white/5 dark:bg-black/5 rounded-3xl overflow-hidden border border-white/10 dark:border-black/10">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/10 dark:border-black/10">
-                      <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Feature</th>
-                      <th className="p-6 text-[9px] font-black uppercase tracking-widest opacity-40">Legacy Platforms</th>
-                      <th className="p-6 text-[9px] font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
+                      <th className="p-6 text-[8px] font-mono font-black uppercase tracking-widest opacity-40">Feature</th>
+                      <th className="p-6 text-[8px] font-mono font-black uppercase tracking-widest opacity-40">Legacy Platforms</th>
+                      <th className="p-6 text-[8px] font-mono font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
                     </tr>
                   </thead>
-                  <tbody className="text-[10px] font-bold uppercase tracking-tight">
+                  <tbody className="text-[9px] font-mono font-bold uppercase tracking-tight">
                     {[
                       { f: "Data Privacy", c: "Cloud Sync (Shared)", l: "Local Only (Isolated)" },
                       { f: "Login Barrier", c: "Mandatory", l: "Zero Required" },
@@ -256,12 +256,12 @@ const PricingScreen: React.FC = () => {
                 <Sparkles size={20} className="text-emerald-500" />
               </div>
               <div className="space-y-1">
-                <h5 className="text-[10px] font-black uppercase tracking-[0.3em]">Transparency Audit: Why $2.99?</h5>
-                <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Zero Maintenance Philosophy</p>
+                <h5 className="text-[9px] font-mono font-black uppercase tracking-[0.3em]">Transparency Audit: Why $2.99?</h5>
+                <p className="text-[8px] font-mono font-bold uppercase tracking-widest opacity-40">Zero Maintenance Philosophy</p>
               </div>
             </div>
 
-            <p className="text-[11px] font-medium leading-relaxed opacity-70">
+            <p className="text-[11px] font-mono font-medium leading-relaxed opacity-70 text-white/70 dark:text-black/70">
               Unlike big corporations, <span className="text-white dark:text-black font-black">Anti-Gravity is Local-First.</span> We don't maintain massive server farms to process your basic PDF tasks—your device does the work. Since our maintenance costs are near zero, we don't need to trap you in a monthly subscription. You pay once for the software, and you own the utility forever.
               <br /><br />
               <span className="text-emerald-500 font-black italic">Fair Pricing. Infinite Trust. No Subscriptions.</span>

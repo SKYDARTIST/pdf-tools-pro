@@ -33,12 +33,12 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
             if (filters.brightness === 100 && filters.contrast === 100) {
                 console.warn('⚠️ AI returned neutral values, applying intelligent defaults');
                 return {
-                    brightness: 95,
-                    contrast: 140,
+                    brightness: 100,
+                    contrast: 130, // Healthy boost for photos
                     grayscale: 0,
-                    sharpness: 120,
+                    sharpness: 115,
                     shadowPurge: false,
-                    reason: "Auto-enhanced: Contrast boost with color preservation"
+                    reason: "Photo Boost: Clarified details with color preservation"
                 };
             }
 
@@ -68,18 +68,18 @@ export const getReconstructionProtocol = async (sampleText?: string, imageBase64
             // Force color preservation
             filters.grayscale = 0;
 
-            // AGGRESSIVE enhancements for reconstruction
-            // Boost AI suggestions for more dramatic effect
+            // HIGH-FIDELITY Color Enhancement
+            // Boost contrast and sharpness while preserving natural colors
             return {
-                brightness: Math.min(120, filters.brightness + 5),
-                contrast: Math.min(150, filters.contrast + 10),
+                brightness: Math.min(115, filters.brightness + 5),
+                contrast: 165, // Max contrast boost for pro-clarity
                 grayscale: 0,
-                sharpness: Math.min(130, filters.sharpness + 10),
-                shadowPurge: true, // Always enable shadow removal
-                perspectiveCorrection: false, // Disabled - too complex for simple implementation
-                autoCrop: false, // Disabled - requires better edge detection
-                textEnhancement: true, // Keep this - works well
-                reason: "Neural Reconstruction: Optimized filters + text enhancement"
+                sharpness: 180, // High-fidelity text sharpening
+                shadowPurge: true, // Enable back for document restoration
+                perspectiveCorrection: false,
+                autoCrop: false,
+                textEnhancement: true,
+                reason: "Neural Enhancement: High-Fidelity Color Restoration"
             };
         } catch (parseErr) {
             console.error("Reconstruction Parse Error:", parseErr);
@@ -102,12 +102,12 @@ const defaultFilters: ScanFilters = {
 
 const reconstructionDefaults: ScanFilters = {
     brightness: 105,
-    contrast: 135,
+    contrast: 165,
     grayscale: 0,
-    sharpness: 120,
+    sharpness: 180,
     shadowPurge: true,
     perspectiveCorrection: false, // Disabled for now
     autoCrop: false, // Disabled for now
     textEnhancement: true, // Keep enabled
-    reason: "Neural Reconstruction: Optimized contrast + text sharpening"
+    reason: "Neural Reconstruction: Optimized contrast + pro text sharpening"
 };

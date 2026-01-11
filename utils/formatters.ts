@@ -1,10 +1,12 @@
 // Format bytes to human-readable file size
 export const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (typeof bytes !== 'number' || isNaN(bytes) || bytes <= 0) return '0 Bytes';
 
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    if (i < 0) return '0 Bytes';
 
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };

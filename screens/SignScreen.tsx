@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { PenTool, Download, Loader2, FileUp, Eraser, CheckCircle2, Bookmark, Stamp as StampIcon } from 'lucide-react';
+import { PenTool, Share2, Loader2, FileUp, Eraser, CheckCircle2, Bookmark, Stamp as StampIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
@@ -347,8 +347,8 @@ const SignScreen: React.FC = () => {
           <Loader2 className="animate-spin" size={20} />
         ) : (
           <>
-            <Download size={18} strokeWidth={3} />
-            <span>Execute Authorization</span>
+            <Share2 size={18} strokeWidth={3} />
+            <span>Authorize & Share PDF</span>
           </>
         )}
       </button>

@@ -118,7 +118,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 </div>
 
                                 {/* Comparison Card */}
-                                <div className="p-8 bg-black/5 dark:bg-white/5 rounded-[32px] space-y-4 border border-black/[0.03] dark:border-white/[0.03]">
+                                <div className="p-8 bg-black/5 dark:bg-white/5 rounded-[40px] space-y-4 border border-black/[0.03] dark:border-white/[0.03]">
                                     <div className="flex items-center justify-between">
                                         <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Standard Apps</span>
                                         <span className="text-xs font-black text-red-500 uppercase tracking-tighter">$100/YEAR</span>
@@ -133,7 +133,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 <div className="space-y-4 pt-4">
                                     <button
                                         onClick={handleUpgrade}
-                                        className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-3xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
+                                        className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
                                     >
                                         <motion.div
                                             animate={{ x: ['-100%', '200%'] }}
@@ -163,7 +163,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
 const Feature: React.FC<{ icon: any; text: string }> = ({ icon: Icon, text }) => (
     <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center flex-shrink-0">
             <Icon size={18} className="text-black dark:text-white" />
         </div>
         <span className="text-[11px] font-black uppercase tracking-tight text-gray-900 dark:text-white">{text}</span>

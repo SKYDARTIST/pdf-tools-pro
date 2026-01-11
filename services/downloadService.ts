@@ -2,6 +2,29 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 
+export const saveBase64ToCache = async (base64Data: string, filename: string): Promise<string> => {
+    // If we're on Android and the direct bridge is available, use it for large payloads
+    if (Capacitor.getPlatform() === 'android' && (window as any).AndroidDownloadBridge?.saveToCache) {
+        console.log("🌁 Using Native saveToCache for stability...");
+        try {
+            const nativePath = (window as any).AndroidDownloadBridge.saveToCache(base64Data, filename);
+            if (nativePath) {
+                // Ensure it's a file:// URI for Capacitor.convertFileSrc
+                return nativePath.startsWith('file://') ? nativePath : `file://${nativePath}`;
+            }
+        } catch (e) {
+            console.error("Bridge saveToCache failed, falling back to Filesystem:", e);
+        }
+    }
+
+    const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64Data,
+        directory: Directory.Cache
+    });
+    return result.uri;
+};
+
 /**
  * ANTI-GRAVITY DOWNLOAD SERVICE
  * Cross-platform file download handler for web and mobile
@@ -16,7 +39,6 @@ export const downloadFile = async (
     console.log('💾 Download initiated:', filename, 'Platform:', platform, 'Mime:', blob.type, 'Size:', blob.size);
 
     if (platform === 'web') {
-        // Web browser download
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -25,24 +47,15 @@ export const downloadFile = async (
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
         if (showSuccessModal) showSuccessModal();
     } else {
-        // Android - Use JavaScript Bridge to native Android code
+        // Android/Mobile - Use "Native Share" flow for 100% stability + flexibility
         try {
-            console.log('📱 Mobile download - using JavaScript Bridge...');
-
-            // Check if Android bridge is available
-            if (!(window as any).AndroidDownloadBridge) {
-                throw new Error('Download bridge not available');
-            }
-
             // Convert blob to base64
             const reader = new FileReader();
             const base64Data = await new Promise<string>((resolve, reject) => {
                 reader.onloadend = () => {
                     const result = reader.result as string;
-                    // Remove data URL prefix (e.g., "data:image/png;base64,")
                     const base64 = result.split(',')[1];
                     resolve(base64);
                 };
@@ -50,20 +63,21 @@ export const downloadFile = async (
                 reader.readAsDataURL(blob);
             });
 
-            console.log('✅ Base64 encoded, length:', base64Data.length);
-            console.log('📤 Passing to Android bridge via window.AndroidDownloadBridge.downloadFile...');
-            // Call native Android download method
-            (window as any).AndroidDownloadBridge.downloadFile(
-                base64Data,
-                filename,
-                blob.type || 'application/octet-stream'
-            );
+            console.log('📱 Preparing mobile asset via Native Cache...');
+            // Centralize caching via our optimized bridge-enabled helper
+            const uri = await saveBase64ToCache(base64Data, filename);
 
-            console.log('✅ Bridge call executed for:', filename);
+            console.log('📡 Triggering Native Share Sheet:', uri);
+            await Share.share({
+                title: filename,
+                url: uri,
+                dialogTitle: 'Save / Share Asset',
+            });
+
             if (showSuccessModal) showSuccessModal();
         } catch (error) {
-            console.error('❌ Download failed:', error);
-            alert(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error('❌ Share-to-Save failed:', error);
+            alert(`Share failed: ${error instanceof Error ? error.message : 'System resource limit'}`);
         }
     }
 };
@@ -78,47 +92,19 @@ export const downloadMultipleFiles = async (
     const platform = Capacitor.getPlatform();
 
     if (platform === 'web') {
-        // Web: Download each file sequentially
         for (const file of files) {
             await downloadFile(file.blob, file.filename);
-            // Small delay to prevent browser blocking multiple downloads
             await new Promise(resolve => setTimeout(resolve, 100));
         }
         if (showSuccessModal) showSuccessModal();
     } else {
-        // Mobile: Save all files and show share dialog for the folder
+        // Mobile: Prioritize Native Bridge for stability
         try {
-            const savedFiles: string[] = [];
-
             for (const file of files) {
-                const reader = new FileReader();
-                const base64Data = await new Promise<string>((resolve, reject) => {
-                    reader.onloadend = () => {
-                        const base64 = (reader.result as string).split(',')[1];
-                        resolve(base64);
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file.blob);
-                });
-
-                const result = await Filesystem.writeFile({
-                    path: file.filename,
-                    data: base64Data,
-                    directory: Directory.Documents,
-                });
-
-                savedFiles.push(result.uri);
+                await downloadFile(file.blob, file.filename);
+                // Large delay between bridge calls to prevent buffer congestion
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
-
-            console.log(`✅ ${savedFiles.length} files saved`);
-
-            // Share notification
-            await Share.share({
-                title: 'Anti-Gravity PDF',
-                text: `${savedFiles.length} files saved to Documents`,
-                dialogTitle: 'Files Ready',
-            });
-
             if (showSuccessModal) showSuccessModal();
         } catch (error) {
             console.error('❌ Multi-download failed:', error);

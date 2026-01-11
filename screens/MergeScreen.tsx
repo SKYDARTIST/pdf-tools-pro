@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, FileText, Download, Loader2, ChevronUp, ChevronDown, Shield } from 'lucide-react';
+import { Plus, Trash2, FileText, Share2, Loader2, ChevronUp, ChevronDown, Shield } from 'lucide-react';
 import { mergePdfs } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import TaskLimitManager from '../utils/TaskLimitManager';
@@ -156,7 +156,7 @@ const MergeScreen: React.FC = () => {
             "Initialize the data stream by uploading multiple PDF files.",
             "Arrange the operational order using the navigation controls.",
             "Validate the sequence of document payloads.",
-            "Execute Confluence to synthesize the final output."
+            "Process the confluence protocol and share the unified carrier."
           ]}
           useCases={[
             "Report Assembly", "Document Archiving", "Binder Collaboration", "Sequential Batching"
@@ -238,8 +238,8 @@ const MergeScreen: React.FC = () => {
             <Loader2 className="animate-spin" size={20} />
           ) : (
             <>
-              <Download size={18} strokeWidth={3} />
-              <span>Execute Confluence</span>
+              <Share2 size={18} strokeWidth={3} />
+              <span>Confluence & Share</span>
             </>
           )}
         </button>

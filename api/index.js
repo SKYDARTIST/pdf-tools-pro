@@ -23,20 +23,26 @@ let lastDiscovery = 0;
 export default async function handler(req, res) {
     const origin = req.headers.origin;
 
-    // CORS: Allow all recognized origins (production, localhost, Capacitor, local network)
-    // Since we verify requests via x-ag-signature, we can be permissive with CORS
-    const allowedOrigin = origin && (
+    // CORS: Allow specific origins. Local network IPs allowed only outside of production.
+    const isLocalhost = origin && (
         origin.includes('localhost') ||
         origin.includes('127.0.0.1') ||
+        origin.startsWith('capacitor://')
+    );
+
+    const isProduction = origin && (
+        origin.includes('pdf-tools-pro.vercel.app')
+    );
+
+    const isLocalNetwork = origin && (
         origin.includes('192.168.') ||
         origin.includes('172.') ||
-        origin.includes('10.') ||
-        origin.includes('pdf-tools-pro') ||
-        origin.includes('vercel.app') ||
-        origin.startsWith('capacitor://') ||
-        origin.startsWith('https://localhost') ||
-        origin.startsWith('http://localhost')
+        origin.includes('10.')
     );
+
+    // Only allow local network IPs if we are NOT in production
+    const isDevEnv = process.env.VERCEL_ENV !== 'production';
+    const allowedOrigin = isLocalhost || isProduction || (isDevEnv && isLocalNetwork);
 
     if (allowedOrigin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
@@ -67,9 +73,9 @@ export default async function handler(req, res) {
 
     if (!isGuidanceRequest) {
         // Protocol Integrity Check - signature must match environment variable
-        const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+        const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE;
 
-        if (signature !== expectedSignature) {
+        if (!expectedSignature || signature !== expectedSignature) {
             return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
         }
 
@@ -92,13 +98,69 @@ export default async function handler(req, res) {
         }
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    // STAGE 1: Credential Verification
+    // STRICT: Only use the backend secret. NEVER use VITE_ keys (which are public-facing)
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-        return res.status(500).json({ error: "Missing API Key" });
+        console.error("Critical Failure: GEMINI_API_KEY is not configured in environment.");
+        return res.status(500).json({ error: "Neural Link Offline", details: "API configuration missing." });
     }
 
-    // Stage 2: Neural Credit Verification (Supabase)
+    // Stage 2: Usage Data Operations (FETCH / SYNC)
+    if (requestType === 'usage_fetch' || requestType === 'usage_sync') {
+        if (!supabase) return res.status(503).json({ error: "Database Offline" });
+
+        try {
+            if (requestType === 'usage_fetch') {
+                const { data, error } = await supabase
+                    .from('ag_user_usage')
+                    .select('*')
+                    .eq('device_id', deviceId)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') throw error;
+
+                if (!data) {
+                    // Initialize new user if not found
+                    const { data: newUser, error: createError } = await supabase
+                        .from('ag_user_usage')
+                        .insert([{ device_id: deviceId, tier: 'free', operations_today: 0, ai_docs_weekly: 0 }])
+                        .select()
+                        .single();
+                    if (createError) throw createError;
+                    return res.status(200).json(newUser);
+                }
+                return res.status(200).json(data);
+            }
+
+            if (requestType === 'usage_sync') {
+                const { usage } = req.body;
+                const { error } = await supabase
+                    .from('ag_user_usage')
+                    .update({
+                        tier: usage.tier,
+                        operations_today: usage.operationsToday,
+                        ai_docs_weekly: usage.aiDocsThisWeek,
+                        ai_docs_monthly: usage.aiDocsThisMonth,
+                        ai_pack_credits: usage.aiPackCredits,
+                        last_reset_daily: usage.lastOperationReset,
+                        last_reset_weekly: usage.lastAiWeeklyReset,
+                        last_reset_monthly: usage.lastAiMonthlyReset,
+                        trial_start_date: usage.trialStartDate,
+                    })
+                    .eq('device_id', deviceId);
+
+                if (error) throw error;
+                return res.status(200).json({ success: true });
+            }
+        } catch (dbError) {
+            console.error("Database Proxy Error:", dbError);
+            return res.status(500).json({ error: "Database Sync Error", details: dbError.message });
+        }
+    }
+
+    // Stage 3: Neural Credit Verification (Supabase) - Only for processing/AI requests
     if (supabase && deviceId && deviceId !== 'null' && requestType !== 'guidance') {
         try {
             const { data: usage, error } = await supabase
@@ -110,7 +172,16 @@ export default async function handler(req, res) {
             if (error && error.code !== 'PGRST116') {
                 console.error("Supabase Sync Error:", error);
             } else if (usage) {
-                const canUse = usage.ai_pack_credits > 0 ||
+                // Check for 20-day trial bypass
+                let isTrial = false;
+                if (usage.trial_start_date) {
+                    const trialStart = new Date(usage.trial_start_date);
+                    const now = new Date();
+                    const daysDiff = Math.floor((now.getTime() - trialStart.getTime()) / (24 * 60 * 60 * 1000));
+                    if (daysDiff < 20) isTrial = true;
+                }
+
+                const canUse = isTrial || usage.ai_pack_credits > 0 ||
                     (usage.tier === 'free' && usage.ai_docs_weekly < 1) ||
                     (usage.tier === 'pro' && usage.ai_docs_monthly < 10);
 
@@ -118,11 +189,13 @@ export default async function handler(req, res) {
                     return res.status(403).json({ error: "NEURAL_LINK_EXHAUSTED", details: "You have reached your AI operation quota for this period." });
                 }
 
-                // Deduct credits on the server side
-                if (usage.ai_pack_credits > 0) {
-                    await supabase.from('ag_user_usage').update({ ai_pack_credits: usage.ai_pack_credits - 1 }).eq('device_id', deviceId);
-                } else if (usage.tier === 'free') {
-                    await supabase.from('ag_user_usage').update({ ai_docs_weekly: usage.ai_docs_weekly + 1 }).eq('device_id', deviceId);
+                // Deduct credits on the server side (Skip for trial users)
+                if (!isTrial && requestType !== 'usage_fetch' && requestType !== 'usage_sync') {
+                    if (usage.ai_pack_credits > 0) {
+                        await supabase.from('ag_user_usage').update({ ai_pack_credits: usage.ai_pack_credits - 1 }).eq('device_id', deviceId);
+                    } else if (usage.tier === 'free') {
+                        await supabase.from('ag_user_usage').update({ ai_docs_weekly: usage.ai_docs_weekly + 1 }).eq('device_id', deviceId);
+                    }
                 }
             }
         } catch (e) {
@@ -156,9 +229,9 @@ export default async function handler(req, res) {
 
     // QUOTA-SAFE TRUNCATION: Prevent massive documents from nuking the quota
     // Flash models handle 1M tokens, but daily/RPM limits are much tighter
-    if (documentText && documentText.length > 30000) {
-        console.log("🛡️ Neural Truncation engaged: Clipping context to 30,000 chars.");
-        documentText = documentText.substring(0, 30000) + "... [REMAINDER OF OVERSIZED CARRIER TRUNCATED FOR STABILITY]";
+    if (documentText && documentText.length > 100000) {
+        console.log("🛡️ Neural Truncation engaged: Clipping context to 100,000 chars.");
+        documentText = documentText.substring(0, 100000) + "... [REMAINDER OF OVERSIZED CARRIER TRUNCATED FOR STABILITY]";
     }
 
     try {

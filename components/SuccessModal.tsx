@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, TrendingDown, FileText, X, FolderOpen, Share2, Zap } from 'lucide-react';
+import { CheckCircle, TrendingDown, FileText, X, FolderOpen, Share2, Zap, Download } from 'lucide-react';
 import { formatFileSize } from '../utils/formatters';
 
 interface SuccessModalProps {
@@ -16,6 +16,7 @@ interface SuccessModalProps {
         pagesSplit?: number;
         imagesConverted?: number;
     };
+    onDownload?: () => void;
 }
 
 const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -26,7 +27,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
     originalSize,
     finalSize,
     onViewFiles,
-    metadata
+    metadata,
+    onDownload
 }) => {
     // Auto-dismiss after 5 seconds
     useEffect(() => {
@@ -111,7 +113,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                                    className="w-24 h-24 bg-black dark:bg-white text-white dark:text-black rounded-[32px] flex items-center justify-center shadow-2xl relative z-10 neural-glow"
+                                    className="w-24 h-24 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl relative z-10 neural-glow"
                                 >
                                     <CheckCircle size={44} />
                                 </motion.div>
@@ -185,22 +187,33 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-3">
-                                {onViewFiles && (
+                            <div className="flex flex-col gap-3">
+                                {onDownload && (
                                     <button
-                                        onClick={onViewFiles}
-                                        className="flex-1 flex items-center justify-center gap-3 py-4 px-6 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95"
+                                        onClick={onDownload}
+                                        className="w-full flex items-center justify-center gap-3 py-5 px-6 bg-emerald-500 text-white rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl hover:scale-105 active:scale-95"
                                     >
-                                        <FolderOpen size={16} />
-                                        ARCHIVE
+                                        <Share2 size={20} />
+                                        SHARE ASSET
                                     </button>
                                 )}
-                                <button
-                                    onClick={onClose}
-                                    className="flex-1 py-4 px-6 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all"
-                                >
-                                    DISMISS
-                                </button>
+                                <div className="flex gap-3">
+                                    {onViewFiles && (
+                                        <button
+                                            onClick={onViewFiles}
+                                            className="flex-1 flex items-center justify-center gap-3 py-4 px-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95"
+                                        >
+                                            <FolderOpen size={16} />
+                                            ARCHIVE
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={onClose}
+                                        className="flex-1 py-4 px-6 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 rounded-full font-black text-[10px] uppercase tracking-widest transition-all"
+                                    >
+                                        DISMISS
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>

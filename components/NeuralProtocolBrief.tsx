@@ -77,7 +77,7 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
 
                         <div className="flex justify-between items-start mb-8 relative">
                             <div className="flex gap-4">
-                                <div className={`w-14 h-14 rounded-2xl bg-${current.color}-500/10 flex items-center justify-center border border-${current.color}-500/20`}>
+                                <div className={`w-14 h-14 rounded-full bg-${current.color}-500/10 flex items-center justify-center border border-${current.color}-500/20`}>
                                     {current.icon}
                                 </div>
                                 <div>

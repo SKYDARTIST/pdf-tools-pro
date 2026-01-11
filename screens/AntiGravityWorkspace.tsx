@@ -107,7 +107,7 @@ const AntiGravityWorkspace: React.FC = () => {
       const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
         ? `Initialize Multimodal Protocol. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
         : extractedText
-          ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context.substring(0, 1000)}`
+          ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context}`
           : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
 
       // Run analysis and naming suggestion in parallel
@@ -181,15 +181,15 @@ const AntiGravityWorkspace: React.FC = () => {
               <Sparkles size={20} className="text-white dark:text-black" />
             </div>
             <div className="space-y-0.5 min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 truncate">Anti-Gravity Protocol</div>
+              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500 truncate">Anti-Gravity Protocol</div>
               <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
                 Workspace
               </h2>
             </div>
           </div>
           <div className="flex items-center gap-2 text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">
-            <NeuralPulse color="bg-gray-900 dark:bg-white" size="sm" />
-            STATUS: {status === 'idle' ? 'STANDBY' : status.toUpperCase()}
+            <NeuralPulse color="bg-emerald-500" size="sm" />
+            STATUS: <span className="font-mono">{status === 'idle' ? 'STANDBY' : status.toUpperCase()}</span>
           </div>
         </div>
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white rounded-full border border-black/5 dark:border-white/10 text-[8px] font-black uppercase tracking-[0.2em] shadow-sm">
@@ -203,7 +203,7 @@ const AntiGravityWorkspace: React.FC = () => {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            className="flex-1 flex flex-col items-center justify-center w-full monolith-card cursor-pointer group relative overflow-hidden min-h-[450px] border-dashed border-2 bg-transparent"
+            className="flex-1 flex flex-col items-center justify-center w-full monolith-card rounded-[40px] cursor-pointer group relative overflow-hidden min-h-[450px] border-dashed border-2 bg-transparent"
           >
             <div className="relative z-10 flex flex-col items-center space-y-8">
               <div className="w-28 h-28 bg-black/5 dark:bg-white/5 rounded-[32px] flex items-center justify-center group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all duration-700 border border-black/5 dark:border-white/5 shadow-2xl">
@@ -290,17 +290,17 @@ const AntiGravityWorkspace: React.FC = () => {
               </motion.div>
             )}
 
-            {/* Analysis Result */}
-            <div className="monolith-card p-10 relative overflow-hidden bg-black text-white dark:bg-white dark:text-black border-none">
+            {/* Analysis Result - Pro Obsidian Style */}
+            <div className="monolith-glass p-10 relative overflow-hidden bg-black/60 text-white border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)] rounded-[40px]">
               <div className="absolute top-0 right-0 p-8 opacity-5">
                 <Bot size={140} />
               </div>
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-white/10 dark:bg-black/10 rounded-2xl backdrop-blur-md">
-                  <Bot size={24} className="text-white dark:text-black" />
+                <div className="p-3 bg-white/5 rounded-2xl backdrop-blur-md border border-white/5">
+                  <Bot size={24} className="text-emerald-400" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-technical tracking-[0.3em] opacity-60 text-white dark:text-black uppercase">Primary Insights</div>
+                  <div className="text-[9px] font-mono tracking-[0.4em] opacity-60 text-emerald-400 uppercase">Primary Insights</div>
                   <AnimatePresence>
                     {suggestedName && (
                       <motion.div
@@ -311,7 +311,7 @@ const AntiGravityWorkspace: React.FC = () => {
                       >
                         <div className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/30 flex items-center gap-2">
                           <Sparkles size={10} />
-                          {suggestedName}.pdf
+                          <span className="font-mono tracking-tighter lowercase">{suggestedName}</span>.pdf
                         </div>
                       </motion.div>
                     )}
@@ -327,8 +327,8 @@ const AntiGravityWorkspace: React.FC = () => {
             <div className="flex-1 monolith-card overflow-hidden flex flex-col border-none shadow-2xl min-h-[500px]">
               <div className="px-8 py-6 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-black text-white dark:bg-white dark:text-black">
                 <div className="flex items-center gap-4">
-                  <MessageSquare size={20} />
-                  <div className="text-technical tracking-[0.3em] text-white dark:text-black">Neural Interface</div>
+                  <MessageSquare size={20} className="text-emerald-400" />
+                  <div className="text-[9px] font-mono tracking-[0.4em] text-white">Neural Interface</div>
                 </div>
                 <div className="flex items-center gap-6">
                   {imageContext && (
@@ -369,7 +369,7 @@ const AntiGravityWorkspace: React.FC = () => {
                     className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className="flex flex-col gap-2 relative group-item">
-                      <div className={`max-w-[85%] p-6 rounded-[32px] text-sm font-bold leading-relaxed shadow-xl ${m.role === 'user'
+                      <div className={`max-w-[85%] p-6 rounded-[40px] text-sm font-bold leading-relaxed shadow-xl ${m.role === 'user'
                         ? 'bg-black text-white dark:bg-white dark:text-black rounded-tr-none'
                         : 'bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white border border-black/5 dark:border-white/10 rounded-tl-none'
                         }`}>
@@ -393,7 +393,7 @@ const AntiGravityWorkspace: React.FC = () => {
                 ))}
                 {isAsking && (
                   <div className="flex justify-start">
-                    <div className="bg-black/5 dark:bg-white/5 p-6 rounded-3xl rounded-tl-none animate-pulse">
+                    <div className="bg-black/5 dark:bg-white/5 p-6 rounded-full rounded-tl-none animate-pulse">
                       <div className="flex gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-black/40 dark:bg-white/40 animate-bounce" />
                         <div className="w-1.5 h-1.5 rounded-full bg-black/40 dark:bg-white/40 animate-bounce [animation-delay:0.2s]" />
@@ -411,13 +411,13 @@ const AntiGravityWorkspace: React.FC = () => {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
-                  className="flex-1 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-3xl px-8 py-5 text-sm font-black uppercase tracking-widest focus:outline-none focus:bg-white dark:focus:bg-black focus:border-black/10 transition-all placeholder:text-gray-400"
+                  className="flex-1 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-full px-8 py-5 text-sm font-black uppercase tracking-widest focus:outline-none focus:bg-white dark:focus:bg-black focus:border-black/10 transition-all placeholder:text-gray-400"
                 />
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleAsk}
-                  className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center shadow-2xl active:brightness-125 transition-all"
+                  className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl active:brightness-125 transition-all"
                 >
                   <Zap size={24} fill="currentColor" />
                 </motion.button>
@@ -500,7 +500,7 @@ const AntiGravityWorkspace: React.FC = () => {
               whileHover={{ scale: 1.02, y: -4 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate(tool.path)}
-              className="monolith-card p-6 flex flex-col items-start text-left space-y-4 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
+              className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
             >
               <div className="absolute top-4 right-4 text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 opacity-80 uppercase tracking-widest bg-emerald-500/5 group-hover:scale-110 transition-transform">
                 {tool.tag}
@@ -524,9 +524,9 @@ const AntiGravityWorkspace: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="flex items-center gap-6 p-10 monolith-card bg-transparent border-dashed border-2 opacity-40 hover:opacity-100 transition-opacity cursor-default"
+        className="flex items-center gap-6 p-10 monolith-card rounded-[40px] bg-transparent border-dashed border-2 opacity-40 hover:opacity-100 transition-opacity cursor-default"
       >
-        <div className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl text-gray-900 dark:text-white">
+        <div className="p-4 bg-black/5 dark:bg-white/5 rounded-full text-gray-900 dark:text-white">
           <Info size={24} />
         </div>
         <div className="space-y-1">

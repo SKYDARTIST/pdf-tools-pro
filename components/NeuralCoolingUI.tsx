@@ -87,7 +87,7 @@ const NeuralCoolingUI: React.FC<NeuralCoolingUIProps> = ({ isVisible, onComplete
                             </div>
                         </div>
 
-                        <div className="mt-10 flex items-center justify-center gap-4 py-3 px-6 bg-black/20 dark:bg-white/10 rounded-2xl">
+                        <div className="mt-10 flex items-center justify-center gap-4 py-3 px-6 bg-black/20 dark:bg-white/10 rounded-full">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/80">Re-Establishing Secure Uplink</span>
                         </div>

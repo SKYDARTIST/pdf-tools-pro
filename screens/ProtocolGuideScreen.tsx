@@ -138,20 +138,20 @@ const ProtocolGuideScreen: React.FC = () => {
     })).filter(section => section.tools.length > 0);
 
     return (
-        <div className="min-h-screen bg-transparent pb-32 pt-24 max-w-2xl mx-auto px-6">
-            <div className="space-y-12">
+        <div className="min-h-screen bg-transparent pb-32 pt-40 max-w-2xl mx-auto px-6">
+            <div className="space-y-16">
                 {/* Header Section */}
                 <div className="flex items-center gap-4 mb-8">
                     <motion.button
                         whileHover={{ scale: 1.1, x: -2 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => navigate('/workspace')}
-                        className="w-10 h-10 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center text-gray-900 dark:text-white"
+                        className="w-10 h-10 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center text-gray-900 dark:text-white border border-black/5 dark:border-white/10"
                     >
                         <ArrowLeft size={20} />
                     </motion.button>
-                    <div className="space-y-1">
-                        <div className="text-technical">System Archive</div>
+                    <div className="space-y-2">
+                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">System Archive</div>
                         <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Protocol Guide</h1>
                     </div>
                 </div>
@@ -159,11 +159,11 @@ const ProtocolGuideScreen: React.FC = () => {
                 {/* Search & Tabs */}
                 <div className="space-y-6">
                     <div className="relative">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white" size={20} />
                         <input
                             type="text"
                             placeholder="SEARCH PROTOCOLS..."
-                            className="w-full bg-black/5 dark:bg-white/5 border-none rounded-[24px] py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 ring-black/10 dark:ring-white/10 transition-all shadow-sm"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -174,7 +174,7 @@ const ProtocolGuideScreen: React.FC = () => {
                             <button
                                 key={tab}
                                 onClick={() => setActiveSection(tab as any)}
-                                className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSection === tab
+                                className={`px-6 py-2.5 rounded-full text-[9px] font-mono font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSection === tab
                                     ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/10'
                                     : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:bg-black/10 dark:hover:bg-white/10'
                                     }`}
@@ -205,14 +205,14 @@ const ProtocolGuideScreen: React.FC = () => {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="monolith-card group p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 dark:border dark:border-white/5 hover:border-black/10 dark:hover:border-white/20 transition-all"
+                                        className="monolith-glass rounded-[40px] group p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-none shadow-sm hover:shadow-xl transition-all"
                                     >
                                         <div className="flex items-start gap-5 flex-1">
-                                            <div className="w-14 h-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center shrink-0 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                                            <div className="w-14 h-14 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
                                                 <tool.icon size={28} strokeWidth={1.5} />
                                             </div>
-                                            <div className="space-y-2">
-                                                <h3 className="text-lg font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-none">
+                                            <div className="space-y-3">
+                                                <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-none">
                                                     {tool.title}
                                                 </h3>
                                                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed max-w-md">
@@ -220,7 +220,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                                 </p>
                                                 <div className="flex flex-wrap gap-2 pt-1">
                                                     {tool.useCases.map(uc => (
-                                                        <span key={uc} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full text-gray-400">
+                                                        <span key={uc} className="text-[8px] font-mono font-black uppercase tracking-widest px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full text-gray-400">
                                                             {uc}
                                                         </span>
                                                     ))}
@@ -231,7 +231,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => navigate(tool.path)}
-                                            className="w-full md:w-auto px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 group-hover:shadow-xl dark:shadow-none transition-all"
+                                            className="w-full md:w-auto px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-xl"
                                         >
                                             Incept Tool
                                             <ChevronRight size={14} />

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Scissors, FileText, Download, Loader2, FileUp } from 'lucide-react';
+import { Scissors, FileText, Share2, Loader2, FileUp } from 'lucide-react';
 import { splitPdf } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
@@ -104,7 +104,7 @@ const SplitScreen: React.FC = () => {
             "Initialize the decomposition by uploading a PDF carrier.",
             "AI analyzes the page count and structural complexity.",
             "Execute Fission to decouple the page layers.",
-            "Download the resulting individual page archives."
+            "Share the resulting individual page archives."
           ]}
           useCases={[
             "Page Extraction", "Document Splitting", "Content Isolation", "Asset Management"
@@ -164,8 +164,8 @@ const SplitScreen: React.FC = () => {
                 <Loader2 className="animate-spin" size={20} />
               ) : (
                 <>
-                  <Download size={20} />
-                  <span>Execute Extraction</span>
+                  <Share2 size={18} strokeWidth={3} />
+                  <span>Execute Split & Share</span>
                 </>
               )}
             </button>

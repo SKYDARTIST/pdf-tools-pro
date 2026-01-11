@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Download, Eye, EyeOff, User, Mail, CreditCard, Fingerprint } from 'lucide-react';
+import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Share2, Eye, EyeOff, User, Mail, CreditCard, Fingerprint } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
@@ -259,7 +259,7 @@ const SmartRedactScreen: React.FC = () => {
                     <label className="monolith-card h-80 flex flex-col items-center justify-center cursor-pointer group">
                         <motion.div
                             whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center shadow-2xl mb-6"
+                            className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl mb-6"
                         >
                             <Shield size={32} />
                         </motion.div>
@@ -294,7 +294,7 @@ const SmartRedactScreen: React.FC = () => {
                     <div className="space-y-6">
                         <div className="monolith-card p-8 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center">
+                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center">
                                     <ShieldAlert size={20} className="text-black dark:text-white" />
                                 </div>
                                 <div>
@@ -309,7 +309,7 @@ const SmartRedactScreen: React.FC = () => {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={startRedaction}
-                                    className="bg-black dark:bg-white text-white dark:text-black px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                                    className="bg-black dark:bg-white text-white dark:text-black px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest"
                                 >
                                     Initiate Redaction
                                 </motion.button>
@@ -325,28 +325,28 @@ const SmartRedactScreen: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={() => toggleFilter('identity')}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.identity ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.identity ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <User size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Identity</span>
                                     </button>
                                     <button
                                         onClick={() => toggleFilter('financial')}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.financial ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.financial ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <CreditCard size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Financial</span>
                                     </button>
                                     <button
                                         onClick={() => toggleFilter('contact')}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.contact ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.contact ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <Mail size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Contact</span>
                                     </button>
                                     <button
                                         onClick={() => toggleFilter('identifiers')}
-                                        className={`p-4 rounded-2xl border-2 flex flex-col gap-3 transition-all ${filters.identifiers ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.identifiers ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <Fingerprint size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Identifiers</span>
@@ -369,8 +369,8 @@ const SmartRedactScreen: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="space-y-6"
                             >
-                                <div className="monolith-card p-10 bg-emerald-500/5 border-emerald-500/10 border flex flex-col items-center text-center space-y-6">
-                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-3xl flex items-center justify-center text-emerald-500">
+                                <div className="monolith-card p-10 bg-emerald-500/5 border-emerald-500/10 border flex flex-col items-center text-center space-y-6 rounded-[40px]">
+                                    <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500">
                                         <Check size={32} />
                                     </div>
                                     <div className="space-y-2">
@@ -382,7 +382,7 @@ const SmartRedactScreen: React.FC = () => {
                                     <div className="flex flex-wrap justify-center gap-3">
                                         <button
                                             onClick={() => setShowPreview(!showPreview)}
-                                            className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                                            className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
                                         >
                                             {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
                                             {showPreview ? "Hide Preview" : "Show Preview"}
@@ -393,26 +393,26 @@ const SmartRedactScreen: React.FC = () => {
                                                 onClick={() => handleExport('txt')}
                                                 className="px-4 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
                                             >
-                                                <Download size={14} />
+                                                <Share2 size={14} />
                                                 Text
                                             </button>
                                             <button
                                                 onClick={() => handleExport('pdf')}
                                                 className="px-4 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
                                             >
-                                                <Download size={14} />
+                                                <Share2 size={14} />
                                                 PDF
                                             </button>
                                             <button
                                                 onClick={() => handleExport('image')}
                                                 className="px-4 py-3 bg-white/10 dark:bg-black/10 text-black dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-black/5 dark:border-white/5 hover:bg-emerald-500 hover:text-white transition-all"
                                             >
-                                                <Download size={14} />
+                                                <Share2 size={14} />
                                                 Image
                                             </button>
                                             <button
                                                 onClick={() => setShowReport(true)}
-                                                className="px-4 py-3 bg-rose-500/10 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-rose-500/10 hover:bg-rose-500 hover:text-white transition-all ml-2"
+                                                className="px-4 py-3 bg-rose-500/10 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border border-rose-500/10 hover:bg-rose-500 hover:text-white transition-all ml-2"
                                                 title="Report AI Content"
                                             >
                                                 <Flag size={14} />

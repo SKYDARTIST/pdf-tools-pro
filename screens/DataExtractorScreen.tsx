@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Table, Database, Loader2, Sparkles, Check, X, AlertCircle, Download, FileJson, FileSpreadsheet, PenTool, Flag } from 'lucide-react';
+import { FileUp, Table, Database, Loader2, Sparkles, Check, X, AlertCircle, Share2, FileJson, FileSpreadsheet, PenTool, Flag } from 'lucide-react';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
@@ -187,7 +187,7 @@ Output ONLY raw CSV data.`;
 
                 {!file ? (
                     <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
-                        <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-[24px] flex items-center justify-center shadow-2xl mb-6 group-hover:scale-110 transition-transform">
+                        <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl mb-6 group-hover:scale-110 transition-transform">
                             <FileUp size={28} />
                         </div>
                         <span className="text-sm font-black uppercase tracking-widest text-center px-6">Upload Source (PDF, JPG, PNG)</span>
@@ -210,7 +210,7 @@ Output ONLY raw CSV data.`;
                         />
                         <div className="monolith-card p-8 flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500">
+                                <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-500">
                                     <Table size={24} />
                                 </div>
                                 <div className="flex flex-col">
@@ -218,7 +218,7 @@ Output ONLY raw CSV data.`;
                                     <span className="text-sm font-black uppercase tracking-tighter">{file.name}</span>
                                 </div>
                             </div>
-                            <button onClick={() => setFile(null)} className="p-3 hover:bg-rose-500/10 text-rose-500 rounded-xl transition-all">
+                            <button onClick={() => setFile(null)} className="p-3 hover:bg-rose-500/10 text-rose-500 rounded-full transition-all">
                                 <X size={20} />
                             </button>
                         </div>
@@ -228,19 +228,19 @@ Output ONLY raw CSV data.`;
                                 <div className="flex flex-wrap justify-center gap-4">
                                     <button
                                         onClick={() => setFormat('json')}
-                                        className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'json' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
+                                        className={`px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'json' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
                                     >
                                         <FileJson size={14} /> JSON Feed
                                     </button>
                                     <button
                                         onClick={() => setFormat('csv')}
-                                        className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'csv' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
+                                        className={`px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'csv' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
                                     >
                                         <FileSpreadsheet size={14} /> CSV Sheet
                                     </button>
                                     <button
                                         onClick={() => setFormat('markdown')}
-                                        className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'markdown' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
+                                        className={`px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'markdown' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
                                     >
                                         <PenTool size={14} /> Intelligence Draft
                                     </button>
@@ -251,7 +251,7 @@ Output ONLY raw CSV data.`;
                                     whileTap={{ scale: 0.95 }}
                                     onClick={runExtraction}
                                     disabled={isExtracting}
-                                    className="bg-black dark:bg-white text-white dark:text-black px-12 py-6 rounded-[32px] text-xs font-black uppercase tracking-[0.3em] flex items-center gap-4 shadow-2xl"
+                                    className="bg-black dark:bg-white text-white dark:text-black px-12 py-6 rounded-full text-xs font-black uppercase tracking-[0.3em] flex items-center gap-4 shadow-2xl"
                                 >
                                     {isExtracting ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
                                     {isExtracting ? "Extracting Data Weights..." : "Extract Structured Data"}
@@ -283,14 +283,14 @@ Output ONLY raw CSV data.`;
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={downloadData}
-                                        className="p-3 bg-emerald-500 text-white rounded-xl shadow-lg hover:scale-110 transition-all flex items-center gap-2 mr-4"
+                                        className="p-3 bg-emerald-500 text-white rounded-full shadow-lg hover:scale-110 transition-all flex items-center gap-2 mr-4"
                                     >
-                                        <Download size={16} />
-                                        <span className="text-[9px] font-bold uppercase tracking-widest">Download .{format === 'markdown' ? 'md' : format}</span>
+                                        <Share2 size={16} />
+                                        <span className="text-[9px] font-bold uppercase tracking-widest">Share .{format === 'markdown' ? 'md' : format}</span>
                                     </button>
                                     <button
                                         onClick={() => setShowReport(true)}
-                                        className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors flex items-center gap-2 mr-2"
+                                        className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-full transition-colors flex items-center gap-2 mr-2"
                                         title="Report AI Content"
                                     >
                                         <Flag size={14} />
@@ -305,14 +305,14 @@ Output ONLY raw CSV data.`;
                                 </div>
                             </div>
 
-                            <div className="bg-black/5 dark:bg-black/40 p-6 rounded-3xl font-mono text-[11px] overflow-x-auto max-h-96 custom-scrollbar text-gray-600 dark:text-gray-400">
+                            <div className="bg-black/5 dark:bg-black/40 p-6 rounded-[40px] font-mono text-[11px] overflow-x-auto max-h-96 custom-scrollbar text-gray-600 dark:text-gray-400">
                                 <pre>{extractedData}</pre>
                             </div>
 
                             <div className="pt-8 border-t border-black/5 dark:border-white/5 flex gap-4">
                                 <button
                                     onClick={() => navigate('/workspace')}
-                                    className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                    className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                 >
                                     Return to Lab
                                 </button>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileUp, FileText, Download, Loader2, Info, Calendar, User, Tag } from 'lucide-react';
+import { FileUp, FileText, Share2, Loader2, Info, Calendar, User, Tag } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
@@ -255,8 +255,8 @@ const MetadataScreen: React.FC = () => {
                             <Loader2 className="animate-spin" size={20} />
                         ) : (
                             <>
-                                <Download size={18} strokeWidth={3} />
-                                <span>Execute Injection</span>
+                                <Share2 size={18} strokeWidth={3} />
+                                <span>Inject & Share Asset</span>
                             </>
                         )}
                     </button>
@@ -289,7 +289,7 @@ const MetadataScreen: React.FC = () => {
                             setKeywords('');
                             navigate('/my-files');
                         }}
-                        onShare={() => {
+                        onDownload={() => {
                             setShowSuccessModal(false);
                             setShowShareModal(true);
                         }}

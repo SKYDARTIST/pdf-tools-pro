@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileSpreadsheet, FileUp, Loader2, Bot, Download, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
+import { FileSpreadsheet, FileUp, Loader2, Bot, Share2, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
 import { downloadFile } from '../services/downloadService';
@@ -212,7 +212,7 @@ const TableExtractorScreen: React.FC = () => {
                                         onClick={downloadJSON}
                                         className="px-6 py-3 bg-white/20 dark:bg-black/20 rounded-full flex items-center gap-2 border border-white/20 dark:border-black/20 hover:bg-white/30 dark:hover:bg-black/30 transition-all shadow-xl backdrop-blur-md"
                                     >
-                                        <Download size={14} />
+                                        <Share2 size={14} />
                                         <span className="text-[10px] font-black uppercase tracking-widest">Master JSON</span>
                                     </motion.button>
                                     <button
@@ -256,7 +256,7 @@ const TableExtractorScreen: React.FC = () => {
                                             onClick={() => downloadCSV(table)}
                                             className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-sm"
                                         >
-                                            <Download size={20} />
+                                            <Share2 size={20} />
                                         </motion.button>
                                     </motion.div>
                                 ))}

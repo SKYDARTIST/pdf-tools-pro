@@ -4,8 +4,9 @@ import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, Z
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { downloadFile } from '../services/downloadService';
 import UpgradeModal from '../components/UpgradeModal';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import MindMapComponent from '../components/MindMapComponent';
@@ -60,6 +61,7 @@ const ReaderScreen: React.FC = () => {
     const [showBrief, setShowBrief] = useState(false);
     const [briefType, setBriefType] = useState<'audit' | 'briefing' | 'reader'>('reader');
     const [showBriefingSettings, setShowBriefingSettings] = useState(false);
+    const location = useLocation();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -82,6 +84,22 @@ const ReaderScreen: React.FC = () => {
         setPageNumber((prev) => Math.min(prev + 1, numPages));
     };
 
+    const resetAllStates = () => {
+        setIsFluidMode(false);
+        setIsMindMapMode(false);
+        setIsOutlineMode(false);
+        setFluidContent('');
+        setMindMapData('');
+        setOutlineData(null);
+        setAuditData(null);
+        setPageNumber(1);
+        setIsAudioPlaying(false);
+        try {
+            TextToSpeech.stop().catch(() => { });
+            window.speechSynthesis?.cancel();
+        } catch (e) { }
+    };
+
     const zoomIn = () => {
         setScale((prev) => Math.min(prev + 0.2, 3.0));
     };
@@ -90,10 +108,26 @@ const ReaderScreen: React.FC = () => {
         setScale((prev) => Math.max(prev - 0.2, 0.5));
     };
 
+    // Handle Direct-Share Inbound
+    useEffect(() => {
+        const sharedFile = (location.state as any)?.sharedFile;
+        if (sharedFile) {
+            setFile(sharedFile);
+            resetAllStates();
+            // Clear state so it doesn't reload on every mount
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
     const toggleFluidMode = async () => {
         if (!file) return;
 
-        if (!isFluidMode && !fluidContent) {
+        if (isFluidMode) {
+            setIsFluidMode(false);
+            return;
+        }
+
+        if (!fluidContent) {
             setIsLoadingFluid(true);
             try {
                 const buffer = await file.arrayBuffer();
@@ -105,8 +139,10 @@ const ReaderScreen: React.FC = () => {
                 setIsLoadingFluid(false);
             }
         }
-        setIsFluidMode(!isFluidMode);
+        setIsFluidMode(true);
         setIsMindMapMode(false);
+        setIsOutlineMode(false);
+        setAuditData(null);
     };
 
     const generateMindMap = async (settings?: { range: string; focus: string }) => {
@@ -124,6 +160,11 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
+        if (isMindMapMode && !settings) {
+            setIsMindMapMode(false);
+            return;
+        }
+
         if (!settings && !mindMapData) {
             setShowMindMapSettings(true);
             return;
@@ -131,6 +172,8 @@ const ReaderScreen: React.FC = () => {
 
         setIsMindMapMode(true);
         setIsFluidMode(false);
+        setIsOutlineMode(false);
+        setAuditData(null);
 
         if (mindMapData && !settings) return;
 
@@ -301,13 +344,30 @@ const ReaderScreen: React.FC = () => {
         setIsAudioPlaying(true);
 
         try {
-            // Attempt Native Hardware Synthesis first (for Android/iOS)
+            // Attempt Native Hardware Synthesis first (for Android/iOS/Mac)
+            const nativeVoices = await TextToSpeech.getSupportedVoices();
+            // let selectedNativeVoice = '';
+
+            const selectedNativeVoice = nativeVoices.voices.find(v =>
+                v.name.toLowerCase().includes('female') ||
+                v.name.toLowerCase().includes('samantha') ||
+                v.name.toLowerCase().includes('zira') ||
+                v.name.toLowerCase().includes('karen') ||
+                v.name.toLowerCase().includes('moira') ||
+                v.name.toLowerCase().includes('tessa') ||
+                v.name.toLowerCase().includes('susan') ||
+                (v.name.toLowerCase().includes('google') && v.lang.includes('en-US') && !v.name.toLowerCase().includes('male'))
+            )?.name || '';
+
+            const voiceIndex = nativeVoices.voices.findIndex(v => v.name === selectedNativeVoice);
+
             await TextToSpeech.speak({
                 text: sanitizedText,
                 lang: 'en-US',
                 rate: 1.0,
-                pitch: 1.0,
+                pitch: 1.05,
                 volume: 1.0,
+                voice: voiceIndex !== -1 ? voiceIndex : undefined,
                 category: 'ambient',
             });
             setIsAudioPlaying(false);
@@ -336,7 +396,18 @@ const ReaderScreen: React.FC = () => {
 
                 const utterance = new UtteranceClass(chunks[currentChunk].trim());
                 utterance.rate = 1.0;
-                utterance.pitch = 1.0;
+                utterance.pitch = 1.05;
+
+                const browserVoices = window.speechSynthesis.getVoices();
+                utterance.voice = browserVoices.find(v =>
+                    v.name.toLowerCase().includes('female') ||
+                    v.name.toLowerCase().includes('samantha') ||
+                    v.name.toLowerCase().includes('zira') ||
+                    v.name.toLowerCase().includes('karen') ||
+                    v.name.toLowerCase().includes('moira') ||
+                    v.name.toLowerCase().includes('tessa') ||
+                    (v.name.toLowerCase().includes('google') && v.lang.includes('en-US') && !v.name.toLowerCase().includes('male'))
+                ) || null;
 
                 utterance.onend = () => {
                     currentChunk++;
@@ -362,6 +433,11 @@ const ReaderScreen: React.FC = () => {
     const generateOutline = async () => {
         if (!file || isGeneratingOutline) return;
 
+        if (isOutlineMode) {
+            setIsOutlineMode(false);
+            return;
+        }
+
         if (!hasConsent) {
             setPendingAction(() => generateOutline);
             setShowConsent(true);
@@ -378,6 +454,7 @@ const ReaderScreen: React.FC = () => {
         setIsOutlineMode(true);
         setIsMindMapMode(false);
         setIsFluidMode(false);
+        setAuditData(null);
 
         if (outlineData) return;
 
@@ -427,6 +504,7 @@ const ReaderScreen: React.FC = () => {
         setIsAuditing(true);
         setIsOutlineMode(false);
         setIsMindMapMode(false);
+        setIsFluidMode(false);
 
         try {
             let text = fluidContent;
@@ -459,6 +537,13 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
         } finally {
             setIsAuditing(false);
         }
+    };
+
+    const handleShareSummary = async (content: string, type: string) => {
+        if (!content) return;
+        const fileName = `${type.toLowerCase()}_${Date.now()}.txt`;
+        const blob = new Blob([content], { type: 'text/plain' });
+        await downloadFile(blob, fileName);
     };
 
     useEffect(() => {
@@ -536,7 +621,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                         <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
                             <motion.div
                                 whileHover={{ scale: 1.1, y: -5 }}
-                                className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center shadow-2xl mb-6"
+                                className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl mb-6"
                             >
                                 <BookOpen size={32} />
                             </motion.div>
@@ -556,7 +641,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
                                             onClick={runNeuralAudit}
-                                            className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${auditData || isAuditing
+                                            className={`flex items-center justify-center gap-3 px-4 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${auditData || isAuditing
                                                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
                                                 : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10'
                                                 }`}
@@ -570,7 +655,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                 setBriefType('audit');
                                                 setShowBrief(true);
                                             }}
-                                            className="p-4 rounded-[20px] bg-emerald-500/5 border-2 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 transition-all"
+                                            className="p-4 rounded-full bg-emerald-500/5 border-2 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10 transition-all"
                                         >
                                             <Info size={16} />
                                         </motion.button>
@@ -583,7 +668,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             <motion.button
                                                 whileTap={{ scale: 0.95 }}
                                                 onClick={() => toggleAudioNarrator()}
-                                                className={`flex items-center justify-center gap-3 px-4 py-4 rounded-[20px] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${isAudioPlaying
+                                                className={`flex items-center justify-center gap-3 px-4 py-4 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1 border-2 ${isAudioPlaying
                                                     ? 'bg-emerald-500 border-emerald-500 text-white shadow-xl'
                                                     : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10'
                                                     }`}
@@ -597,7 +682,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                     setBriefType('briefing');
                                                     setShowBrief(true);
                                                 }}
-                                                className="p-4 rounded-[20px] bg-indigo-500/5 border-2 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 transition-all"
+                                                className="p-4 rounded-full bg-indigo-500/5 border-2 border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 transition-all"
                                             >
                                                 <Info size={16} />
                                             </motion.button>
@@ -609,7 +694,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
                                         onClick={toggleFluidMode}
-                                        className={`flex items-center justify-center gap-3 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
+                                        className={`flex items-center justify-center gap-3 px-4 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isFluidMode
                                             ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl neural-glow'
                                             : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                             }`}
@@ -622,7 +707,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
                                             onClick={generateOutline}
-                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
+                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isOutlineMode
                                                 ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl'
                                                 : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                                 }`}
@@ -634,7 +719,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => generateMindMap()}
-                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
+                                            className={`flex items-center justify-center gap-2 px-4 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex-1 ${isMindMapMode
                                                 ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl neural-glow'
                                                 : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                                                 }`}
@@ -654,7 +739,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                         <button
                                             onClick={goToPrevPage}
                                             disabled={pageNumber <= 1 || isFluidMode}
-                                            className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all font-black text-[12px]"
+                                            className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full disabled:opacity-10 transition-all font-black text-[12px]"
                                         >
                                             <ChevronLeft size={16} className="text-gray-900 dark:text-white" />
                                         </button>
@@ -664,7 +749,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                         <button
                                             onClick={goToNextPage}
                                             disabled={pageNumber >= numPages || isFluidMode}
-                                            className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all font-black text-[12px]"
+                                            className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full disabled:opacity-10 transition-all font-black text-[12px]"
                                         >
                                             <ChevronRight size={16} className="text-gray-900 dark:text-white" />
                                         </button>
@@ -675,14 +760,14 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             <button
                                                 onClick={zoomOut}
                                                 disabled={scale <= 0.5 || isFluidMode}
-                                                className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all"
+                                                className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full disabled:opacity-10 transition-all"
                                             >
                                                 <ZoomOut size={16} className="text-gray-900 dark:text-white" />
                                             </button>
                                             <button
                                                 onClick={zoomIn}
                                                 disabled={scale >= 3.0 || isFluidMode}
-                                                className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg disabled:opacity-10 transition-all"
+                                                className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full disabled:opacity-10 transition-all"
                                             >
                                                 <ZoomIn size={16} className="text-gray-900 dark:text-white" />
                                             </button>
@@ -693,9 +778,9 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                         <button
                                             onClick={() => {
                                                 setFile(null);
-                                                setIsFluidMode(false);
+                                                resetAllStates();
                                             }}
-                                            className="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-all"
+                                            className="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-full transition-all"
                                         >
                                             <X size={18} />
                                         </button>
@@ -762,14 +847,24 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                         {protocol === 'briefing' ? "Strategic Executive Summary" : "Neural Executive Outline"}
                                                     </span>
                                                 </div>
-                                                <button
-                                                    onClick={() => setIsOutlineMode(false)}
-                                                    className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
-                                                >
-                                                    Back to Reader
-                                                </button>
+                                                <div className="flex items-center gap-4">
+                                                    <button
+                                                        onClick={() => handleShareSummary(outlineData || '', protocol === 'briefing' ? 'Summary' : 'Outline')}
+                                                        className="flex items-center gap-1.5 p-2 bg-black/5 dark:bg-white/10 rounded-full text-[9px] font-black uppercase tracking-widest text-emerald-500 hover:bg-emerald-500/10 transition-all"
+                                                        title="Share Summary"
+                                                    >
+                                                        <Share2 size={14} />
+                                                        Share
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setIsOutlineMode(false)}
+                                                        className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
+                                                    >
+                                                        Back to Reader
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-white/5 rounded-3xl border border-black/5 dark:border-white/5 relative">
+                                            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-white/5 rounded-[40px] border border-black/5 dark:border-white/5 relative">
                                                 {isGeneratingOutline ? (
                                                     <div className="h-full flex flex-col items-center justify-center space-y-4">
                                                         <div className="relative">
@@ -806,15 +901,25 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                     <Shield size={16} className="text-emerald-500" />
                                                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Neural Risk Analysis Report</span>
                                                 </div>
-                                                <button
-                                                    onClick={() => setAuditData(null)}
-                                                    className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
-                                                >
-                                                    Back to Reader
-                                                </button>
+                                                <div className="flex items-center gap-4">
+                                                    <button
+                                                        onClick={() => handleShareSummary(auditData || '', 'Audit')}
+                                                        className="flex items-center gap-1.5 p-2 bg-emerald-500/10 rounded-full text-[9px] font-black uppercase tracking-widest text-emerald-600 hover:bg-emerald-500/20 transition-all"
+                                                        title="Share Audit Report"
+                                                    >
+                                                        <Share2 size={14} />
+                                                        Share
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setAuditData(null)}
+                                                        className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black dark:hover:text-white"
+                                                    >
+                                                        Back to Reader
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-[#0c0c0c] rounded-3xl border border-emerald-500/10">
+                                            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6 bg-white dark:bg-[#0c0c0c] rounded-[40px] border border-emerald-500/10">
                                                 <div className="prose prose-sm dark:prose-invert max-w-none">
                                                     {auditData.split('\n').map((line, i) => {
                                                         const isHeader = line.startsWith('#');
@@ -903,7 +1008,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                         scale={scale}
                                                         renderTextLayer={true}
                                                         renderAnnotationLayer={true}
-                                                        loading={<div className="w-96 h-[500px] bg-black/5 dark:bg-white/5 animate-pulse rounded-2xl" />}
+                                                        loading={<div className="w-96 h-[500px] bg-black/5 dark:bg-white/5 animate-pulse rounded-[40px]" />}
                                                     />
                                                 </Document>
                                             </div>
@@ -976,7 +1081,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                 isOpen={showBriefingSettings}
                 onClose={() => setShowBriefingSettings(false)}
                 numPages={numPages}
-                onConfirm={(settings) => toggleAudioNarrator(settings)}
+                onConfirm={(settings: any) => toggleAudioNarrator(settings)}
             />
         </motion.div >
     );

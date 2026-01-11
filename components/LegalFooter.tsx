@@ -8,7 +8,8 @@ const LegalFooter: React.FC = () => {
     const links = [
         { name: 'Privacy Manifesto', path: '/manifesto' },
         { name: 'Privacy Policy', path: '/legal/privacy' },
-        { name: 'Terms of Service', path: '/legal/terms' }
+        { name: 'Terms of Service', path: '/legal/terms' },
+        { name: 'Contact Lead', path: 'https://x.com/Cryptobullaaa', external: true }
     ];
 
     return (
@@ -18,12 +19,23 @@ const LegalFooter: React.FC = () => {
                 <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
                     {links.map((item) => (
                         <motion.div key={item.name} whileHover={{ y: -1 }}>
-                            <Link
-                                to={item.path}
-                                className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black dark:hover:text-white transition-all opacity-40 hover:opacity-100"
-                            >
-                                {item.name}
-                            </Link>
+                            {item.external ? (
+                                <a
+                                    href={item.path}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-emerald-500 transition-all opacity-40 hover:opacity-100"
+                                >
+                                    {item.name}
+                                </a>
+                            ) : (
+                                <Link
+                                    to={item.path}
+                                    className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black dark:hover:text-white transition-all opacity-40 hover:opacity-100"
+                                >
+                                    {item.name}
+                                </Link>
+                            )}
                         </motion.div>
                     ))}
                 </div>
@@ -36,9 +48,14 @@ const LegalFooter: React.FC = () => {
                             Anti-Gravity Neural Protocol v2.5
                         </span>
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-[0.5em] text-gray-500 px-4 py-1 border border-black/5 dark:border-white/5 rounded-full">
+                    <a
+                        href="https://x.com/Cryptobullaaa"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[8px] font-black uppercase tracking-[0.5em] text-gray-500 px-4 py-1 border border-black/5 dark:border-white/5 rounded-full hover:border-emerald-500/30 hover:text-emerald-500 transition-all"
+                    >
                         © {currentYear} Built By Cryptobulla
-                    </span>
+                    </a>
                 </div>
             </div>
         </footer>

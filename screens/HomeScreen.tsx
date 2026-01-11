@@ -20,17 +20,17 @@ const HomeScreen: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="px-6 pb-32 pt-32 max-w-2xl mx-auto space-y-16"
+      className="px-6 pb-32 pt-40 max-w-2xl mx-auto space-y-20"
     >
       {/* Hero Section */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="space-y-4 text-center"
+        className="space-y-8 text-center"
       >
-        <div className="flex flex-col items-center space-y-2">
-          <div className="text-technical tracking-[0.3em]">Anti-Gravity Protocol</div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Anti-Gravity Protocol</div>
           <h2 className="text-6xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
             Workspace
           </h2>
@@ -42,14 +42,14 @@ const HomeScreen: React.FC = () => {
 
       {/* Hub Core */}
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="w-full">
           <UsageStats />
         </div>
 
         <div className="space-y-4">
           <div className="text-technical ml-1">Critical Operations</div>
 
-          {/* Anti-Gravity Hero Card */}
+          {/* Anti-Gravity Hero Card - Pro Obsidian Style */}
           <motion.div
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -57,7 +57,7 @@ const HomeScreen: React.FC = () => {
             whileHover={{ y: -4, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/ag-workspace')}
-            className="monolith-card p-10 cursor-pointer group relative overflow-hidden bg-black text-white dark:bg-white dark:text-black border-none"
+            className="monolith-glass p-10 cursor-pointer group relative overflow-hidden bg-black/60 text-white border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)] rounded-[40px]"
           >
             <div className="absolute top-1/2 -translate-y-1/2 -right-10 opacity-10 group-hover:opacity-20 group-hover:-right-5 transition-all duration-700">
               <Sparkles size={160} />
@@ -65,15 +65,15 @@ const HomeScreen: React.FC = () => {
             <div className="relative z-10 flex items-center justify-between">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-white dark:bg-black animate-pulse" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                   <h3 className="text-2xl font-black uppercase tracking-tighter">Anti-Gravity AI</h3>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] opacity-60">
+                <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-60 text-emerald-400">
                   Deep-layer neural analysis
                 </p>
               </div>
-              <div className="w-14 h-14 bg-white/10 dark:bg-black/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                <Sparkles size={24} className="text-white dark:text-black" />
+              <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center backdrop-blur-md border border-white/5">
+                <Sparkles size={24} className="text-emerald-400" />
               </div>
             </div>
           </motion.div>
@@ -94,7 +94,7 @@ const HomeScreen: React.FC = () => {
                 onClick={() => navigate(action.path)}
                 className="monolith-card p-6 cursor-pointer flex items-center gap-5"
               >
-                <div className="w-12 h-12 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0">
                   <action.icon size={20} className="text-gray-900 dark:text-white" />
                 </div>
                 <div className="min-w-0">
@@ -110,7 +110,7 @@ const HomeScreen: React.FC = () => {
       {/* Data Feed */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
-          <div className="text-technical">Data Archive</div>
+          <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Data Archive</div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate('/my-files')}
@@ -132,7 +132,7 @@ const HomeScreen: React.FC = () => {
                   whileHover={{ x: 4 }}
                   className="monolith-card p-5 flex items-center gap-4 cursor-pointer relative overflow-hidden"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
                     <FileText size={20} className="text-gray-900 dark:text-white" />
                   </div>
                   <div className="flex-1 min-w-0">

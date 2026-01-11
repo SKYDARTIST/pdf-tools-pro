@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, FileText, Download, Loader2, FileUp, CheckCircle } from 'lucide-react';
+import { Trash2, FileText, Share2, Loader2, Shield, CheckCircle } from 'lucide-react';
 import { removePagesFromPdf } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
@@ -111,12 +111,9 @@ const RemovePagesScreen: React.FC = () => {
                 pagesRemoved: selectedPages.size
             });
             setShowSuccessModal(true);
-
-            // Reset deferred
         } catch (err) {
             alert('Error removing pages: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
-            // Add error to history
             FileHistoryManager.addEntry({
                 fileName: `remove_pages_failed_${file.name}`,
                 operation: 'split',
@@ -224,8 +221,8 @@ const RemovePagesScreen: React.FC = () => {
                                             transition={{ delay: i * 0.01 }}
                                             onClick={() => togglePage(i)}
                                             className={`relative aspect-[3/4] rounded-2xl border transition-all ${selectedPages.has(i)
-                                                ? 'border-rose-500 bg-rose-500/5 shadow-inner'
-                                                : 'border-black/5 dark:border-white/5 bg-white dark:bg-black hover:border-black/20 dark:hover:border-white/20'
+                                                    ? 'border-rose-500 bg-rose-500/5 shadow-inner'
+                                                    : 'border-black/5 dark:border-white/5 bg-white dark:bg-black hover:border-black/20 dark:hover:border-white/20'
                                                 }`}
                                         >
                                             <div className="absolute inset-0 flex items-center justify-center">
@@ -256,8 +253,8 @@ const RemovePagesScreen: React.FC = () => {
                 disabled={!file || selectedPages.size === 0 || isProcessing || selectedPages.size >= pageCount}
                 onClick={handleRemovePages}
                 className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!file || selectedPages.size === 0 || isProcessing || selectedPages.size >= pageCount
-                    ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-                    : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+                        ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+                        : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
                     }`}
             >
                 <motion.div
@@ -269,13 +266,12 @@ const RemovePagesScreen: React.FC = () => {
                     <Loader2 className="animate-spin" size={20} />
                 ) : (
                     <>
-                        <Trash2 size={18} strokeWidth={3} />
-                        <span>Execute Purge ({selectedPages.size})</span>
+                        <Share2 size={18} strokeWidth={3} />
+                        <span>Process & Share PDF</span>
                     </>
                 )}
             </button>
 
-            {/* Success Modal */}
             {successData && (
                 <SuccessModal
                     isOpen={showSuccessModal}

@@ -50,7 +50,7 @@ const MindMapSettingsModal: React.FC<MindMapSettingsModalProps> = ({ isOpen, onC
                                 </div>
                                 <h2 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Mind Map Focus</h2>
                             </div>
-                            <button onClick={onClose} className="p-3 bg-black/5 dark:bg-white/5 rounded-2xl hover:bg-black/10 dark:hover:bg-white/10 transition-all">
+                            <button onClick={onClose} className="p-3 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all">
                                 <X size={20} />
                             </button>
                         </div>

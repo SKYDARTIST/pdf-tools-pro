@@ -35,19 +35,19 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 px-6 py-4 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] shadow-sm overflow-hidden relative group"
+                className="monolith-glass p-6 items-center flex gap-4 bg-black/60 text-white border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)] rounded-[32px] overflow-hidden relative group"
             >
                 <motion.div
                     animate={{ x: ['-200%', '200%'] }}
                     transition={{ repeat: Infinity, duration: 4, ease: "linear", repeatDelay: 2 }}
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent skew-x-12"
                 />
-                <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 shrink-0 shadow-lg">
+                <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 shrink-0 shadow-lg border border-emerald-500/20">
                     <Crown size={20} fill="currentColor" />
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-emerald-500">PRO AUTHORIZATION</span>
-                    <span className="text-[8px] font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5">UNLIMITED NEURAL OVERRIDE</span>
+                    <span className="text-[11px] font-mono font-black uppercase tracking-widest text-emerald-400">PRO AUTHORIZATION</span>
+                    <span className="text-[8px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5 whitespace-nowrap truncate">UNLIMITED NEURAL OVERRIDE</span>
                 </div>
             </motion.div>
         );
@@ -93,7 +93,7 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                     <Activity size={20} />
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none">
+                    <span className="text-[9px] font-mono font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none">
                         {used} / {limit} TASKS CONSUMED
                     </span>
                     <div className="flex items-center gap-2 mt-2">
@@ -101,7 +101,7 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                             color={isCritical ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}
                             size="sm"
                         />
-                        <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
+                        <span className="text-[8px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
                             SYNC STATUS: {isCritical ? 'EXHAUSTED' : 'OPERATIONAL'}
                         </span>
                     </div>
@@ -112,7 +112,7 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                 <div className={`text-[16px] font-black tracking-tighter leading-none ${isCritical ? 'text-rose-500' : 'text-gray-900 dark:text-white'}`}>
                     {remaining}
                 </div>
-                <div className="text-[7px] font-black uppercase tracking-widest text-gray-400 leading-none">
+                <div className="text-[7px] font-mono font-black uppercase tracking-widest text-gray-400 leading-none">
                     REMAINING
                 </div>
             </div>

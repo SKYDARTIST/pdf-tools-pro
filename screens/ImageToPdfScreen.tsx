@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, Reorder } from 'framer-motion';
-import { Image as ImageIcon, Plus, Trash2, Download, Loader2, GripVertical, FileUp } from 'lucide-react';
+import { Image as ImageIcon, Plus, Trash2, Share2, Loader2, GripVertical, FileUp } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { imageToPdf } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
@@ -207,8 +207,8 @@ const ImageToPdfScreen: React.FC = () => {
           <Loader2 className="animate-spin" size={24} />
         ) : (
           <>
-            <Download size={20} />
-            Generate PDF ({items.length})
+            <Share2 size={20} />
+            Compile & Share PDF ({items.length})
           </>
         )}
       </button>

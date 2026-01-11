@@ -12,9 +12,9 @@ interface ToolGuideProps {
 
 const ToolGuide: React.FC<ToolGuideProps> = ({ title, description, steps, useCases }) => {
     return (
-        <div className="monolith-card p-6 bg-violet-500/5 border-violet-500/10 border space-y-6">
+        <div className="monolith-card rounded-[40px] p-6 bg-violet-500/5 border-violet-500/10 border space-y-6">
             <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500">
+                <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-500">
                     <Info size={16} />
                 </div>
                 <div>
@@ -42,7 +42,7 @@ const ToolGuide: React.FC<ToolGuideProps> = ({ title, description, steps, useCas
                     <h5 className="text-[8px] font-black uppercase tracking-[0.3em] text-gray-400 mb-2">Neural Use Cases</h5>
                     <div className="flex flex-wrap gap-2">
                         {useCases.map((useCase, i) => (
-                            <div key={i} className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-lg flex items-center gap-2">
+                            <div key={i} className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-full flex items-center gap-2">
                                 <CheckCircle2 size={10} className="text-emerald-500" />
                                 <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{useCase}</span>
                             </div>

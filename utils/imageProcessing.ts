@@ -144,15 +144,14 @@ export const autoCrop = (canvas: HTMLCanvasElement, corners: DocumentCorners): H
 /**
  * Enhance text using adaptive thresholding and sharpening
  */
-export const enhanceText = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+export const enhanceText = (canvas: HTMLCanvasElement, sharpnessIntensity: number = 100): HTMLCanvasElement => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return canvas;
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
 
-    // Step 1: Apply unsharp mask for sharpening
-    const sharpened = applyUnsharpMask(imageData);
+    // Step 1: Apply dynamic unsharp mask based on AI sharpness factor
+    const sharpened = applyUnsharpMask(imageData, sharpnessIntensity);
 
     // Step 2: Apply adaptive thresholding for text clarity
     const enhanced = applyAdaptiveThreshold(sharpened);
@@ -161,14 +160,16 @@ export const enhanceText = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
     return canvas;
 };
 
-const applyUnsharpMask = (imageData: ImageData): ImageData => {
+const applyUnsharpMask = (imageData: ImageData, intensity: number): ImageData => {
     const { width, height, data } = imageData;
     const output = new ImageData(width, height);
-    const amount = 0.25; // Subtle sharpening
+
+    // intensity 100 = 0.6 amount (Significant boost)
+    const amount = (intensity / 100) * 0.6;
 
     const kernel = [
         0, -1, 0,
-        -1, 4, -1,
+        -1, 5, -1, // Stronger center
         0, -1, 0
     ];
 
@@ -199,48 +200,25 @@ const applyUnsharpMask = (imageData: ImageData): ImageData => {
 const applyAdaptiveThreshold = (imageData: ImageData): ImageData => {
     const { width, height, data } = imageData;
     const output = new ImageData(width, height);
-    const blockSize = 40; // Wider window for background detection
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = (y * width + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            const luminance = (r + g + b) / 3;
+    // COLOR-PRESERVING ENHANCEMENT:
+    // Simply copy the original pixels through without bleaching.
+    // The contrast and sharpness are handled by the main bakeFilters loop.
+    // This preserves terminal colors, photos, and natural tones.
+    for (let i = 0; i < data.length; i += 4) {
+        // Subtle clarity boost without destroying colors
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
 
-            // Simple local mean calculation (sub-sampled for speed)
-            let sum = 0;
-            let count = 0;
-            const step = 10;
-            for (let dy = -blockSize; dy <= blockSize; dy += step) {
-                for (let dx = -blockSize; dx <= blockSize; dx += step) {
-                    const ny = Math.max(0, Math.min(height - 1, y + dy));
-                    const nx = Math.max(0, Math.min(width - 1, x + dx));
-                    const nidx = (ny * width + nx) * 4;
-                    sum += (data[nidx] + data[nidx + 1] + data[nidx + 2]) / 3;
-                    count++;
-                }
-            }
-            const localMean = sum / count;
+        // Slight saturation boost for color pop
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        const satBoost = 1.15;
 
-            // BACKGROUND LEVELER: 
-            // If the pixel is brighter than the local average, push it toward white
-            // If it's darker (text), leave it alone (don't crush it)
-            if (luminance > localMean - 5) {
-                // Background area: Lighten it to clean up shadows/yellowing
-                const gain = 1.1;
-                output.data[idx] = Math.min(255, r * gain);
-                output.data[idx + 1] = Math.min(255, g * gain);
-                output.data[idx + 2] = Math.min(255, b * gain);
-            } else {
-                // Text/Detail area: Keep original to avoid artifacts
-                output.data[idx] = r;
-                output.data[idx + 1] = g;
-                output.data[idx + 2] = b;
-            }
-            output.data[idx + 3] = 255;
-        }
+        output.data[i] = Math.min(255, Math.max(0, gray + (r - gray) * satBoost));
+        output.data[i + 1] = Math.min(255, Math.max(0, gray + (g - gray) * satBoost));
+        output.data[i + 2] = Math.min(255, Math.max(0, gray + (b - gray) * satBoost));
+        output.data[i + 3] = 255;
     }
 
     return output;
