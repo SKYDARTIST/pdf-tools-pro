@@ -122,14 +122,31 @@ export default async function handler(req, res) {
                 if (error && error.code !== 'PGRST116') throw error;
 
                 if (!data) {
-                    // Initialize new user if not found
+                    // Initialize new user with 20-day trial
+                    const trialStartDate = new Date().toISOString();
                     const { data: newUser, error: createError } = await supabase
                         .from('ag_user_usage')
-                        .insert([{ device_id: deviceId, tier: 'free', operations_today: 0, ai_docs_weekly: 0 }])
+                        .insert([{
+                            device_id: deviceId,
+                            tier: 'free',
+                            operations_today: 0,
+                            ai_docs_weekly: 0,
+                            trial_start_date: trialStartDate  // 20-day unlimited trial
+                        }])
                         .select()
                         .single();
                     if (createError) throw createError;
                     return res.status(200).json(newUser);
+                }
+
+                // RETROACTIVE TRIAL: If existing user doesn't have trial_start_date, grant them one now
+                if (!data.trial_start_date) {
+                    const trialStartDate = new Date().toISOString();
+                    await supabase
+                        .from('ag_user_usage')
+                        .update({ trial_start_date: trialStartDate })
+                        .eq('device_id', deviceId);
+                    data.trial_start_date = trialStartDate;
                 }
                 return res.status(200).json(data);
             }
@@ -174,6 +191,17 @@ export default async function handler(req, res) {
             } else if (usage) {
                 // Check for 20-day trial bypass
                 let isTrial = false;
+
+                // RETROACTIVE TRIAL: Auto-grant trial to existing users without trial_start_date
+                if (!usage.trial_start_date) {
+                    const trialStartDate = new Date().toISOString();
+                    await supabase
+                        .from('ag_user_usage')
+                        .update({ trial_start_date: trialStartDate })
+                        .eq('device_id', deviceId);
+                    usage.trial_start_date = trialStartDate;
+                }
+
                 if (usage.trial_start_date) {
                     const trialStart = new Date(usage.trial_start_date);
                     const now = new Date();
