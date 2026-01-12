@@ -304,6 +304,14 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
     const subscription = getSubscription();
     subscription.tier = tier;
     subscription.purchaseToken = purchaseToken;
+
+    // TESTING PERIOD: Also grant 100 Neural Pack credits with Pro upgrade
+    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
+    if (isTestingPeriod && tier === SubscriptionTier.PRO) {
+        subscription.aiPackCredits = 100;
+    }
+
     saveSubscription(subscription);
 
     // Sync with TaskLimitManager
@@ -320,9 +328,23 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
 };
 
 // Add AI Pack Credits
+// During testing period (until Jan 28, 2026): Refills to 100 credits for free
 export const addAiPackCredits = (amount: number = 100): void => {
     const subscription = getSubscription();
-    subscription.aiPackCredits = (subscription.aiPackCredits || 0) + amount;
+
+    // TESTING PERIOD: Refill to 100 instead of adding
+    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
+
+    if (isTestingPeriod) {
+        // Refill to 100 (free renewal for testers)
+        subscription.aiPackCredits = 100;
+        subscription.tier = SubscriptionTier.PRO;  // Also ensure Pro tier
+    } else {
+        // Normal behavior: add to existing credits
+        subscription.aiPackCredits = (subscription.aiPackCredits || 0) + amount;
+    }
+
     saveSubscription(subscription);
     syncUsageToServer(subscription);
 };

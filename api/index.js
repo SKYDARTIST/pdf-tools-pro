@@ -107,6 +107,12 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Neural Link Offline", details: "API configuration missing." });
     }
 
+    // =============================================================================
+    // TESTER PROMO PERIOD: All users get Pro + 100 Neural Pack until Jan 28, 2026
+    // =============================================================================
+    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
+
     // Stage 2: Usage Data Operations (FETCH / SYNC)
     if (requestType === 'usage_fetch' || requestType === 'usage_sync') {
         if (!supabase) return res.status(503).json({ error: "Database Offline" });
@@ -122,16 +128,17 @@ export default async function handler(req, res) {
                 if (error && error.code !== 'PGRST116') throw error;
 
                 if (!data) {
-                    // Initialize new user with 20-day trial
+                    // Initialize new user
                     const trialStartDate = new Date().toISOString();
                     const { data: newUser, error: createError } = await supabase
                         .from('ag_user_usage')
                         .insert([{
                             device_id: deviceId,
-                            tier: 'free',
+                            tier: isTestingPeriod ? 'pro' : 'free',  // Pro during testing
                             operations_today: 0,
                             ai_docs_weekly: 0,
-                            trial_start_date: trialStartDate  // 20-day unlimited trial
+                            ai_pack_credits: isTestingPeriod ? 100 : 0,  // 100 credits during testing
+                            trial_start_date: trialStartDate
                         }])
                         .select()
                         .single();
@@ -148,6 +155,17 @@ export default async function handler(req, res) {
                         .eq('device_id', deviceId);
                     data.trial_start_date = trialStartDate;
                 }
+
+                // TESTING PERIOD UPGRADE: Give all existing users Pro + 100 credits
+                if (isTestingPeriod && (data.tier !== 'pro' || data.ai_pack_credits < 100)) {
+                    await supabase
+                        .from('ag_user_usage')
+                        .update({ tier: 'pro', ai_pack_credits: 100 })
+                        .eq('device_id', deviceId);
+                    data.tier = 'pro';
+                    data.ai_pack_credits = 100;
+                }
+
                 return res.status(200).json(data);
             }
 
