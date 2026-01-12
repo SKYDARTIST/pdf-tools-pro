@@ -21,7 +21,7 @@ const LandingPage: React.FC = () => {
             className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col overflow-x-hidden selection:bg-emerald-500 selection:text-white"
         >
             {/* Minimalist Landing Header */}
-            <header className="px-6 sm:px-8 py-6 sm:py-10 flex justify-between items-center relative z-20">
+            <header className="px-6 sm:px-8 pt-12 pb-6 sm:py-10 flex justify-between items-center relative z-20">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 bg-black dark:bg-white rounded-2xl flex items-center justify-center shadow-2xl">
                         <Zap size={20} className="text-white dark:text-black" fill="currentColor" />
@@ -59,7 +59,7 @@ const LandingPage: React.FC = () => {
                     </motion.div>
                 </div>
 
-                <div className="relative z-10 max-w-sm w-full space-y-8 sm:space-y-16 text-center">
+                <div className="relative z-10 max-w-sm w-full space-y-6 sm:space-y-16 text-center">
                     {/* Brand Signature */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -67,7 +67,7 @@ const LandingPage: React.FC = () => {
                         transition={{ duration: 1 }}
                         className="space-y-6"
                     >
-                        <div className="flex justify-center mb-6 sm:mb-12 relative">
+                        <div className="flex justify-center mb-4 sm:mb-12 relative">
                             {/* Abstract Blueprint Grid Behind Logo */}
                             <div className="absolute inset-x-0 -top-20 h-64 opacity-[0.03] dark:opacity-[0.07] pointer-events-none -z-10">
                                 <svg viewBox="0 0 400 400" className="w-full h-full animate-[pulse_8s_infinite]">
@@ -101,7 +101,7 @@ const LandingPage: React.FC = () => {
                                 filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
                                 letterSpacing: '-0.08em'
                             }}
-                            className="text-[9vw] xs:text-5xl sm:text-8xl font-black uppercase leading-[0.85] text-gray-900 dark:text-white drop-shadow-2xl px-2"
+                            className="text-4xl sm:text-8xl font-black uppercase leading-[0.9] sm:leading-[0.85] text-gray-900 dark:text-white drop-shadow-2xl px-2"
                         >
                             ANTIGRAVITY<br />AI PDF
                         </motion.h1>
@@ -136,7 +136,7 @@ const LandingPage: React.FC = () => {
                             }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/workspace')}
-                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-7 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
+                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
                         >
                             <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10">Initialize Workspace</span>
                             <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10" />
@@ -168,7 +168,7 @@ const LandingPage: React.FC = () => {
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
-                        className="pt-16 sm:pt-24 space-y-6 sm:space-y-8"
+                        className="pt-12 sm:pt-24 space-y-4 sm:space-y-8"
                     >
                         <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Neural Trust Protocol</div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -193,7 +193,7 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Privacy Manifesto Offset Section */}
-                <div className="w-full max-w-6xl mx-auto pt-20 sm:pt-32 pb-12 sm:pb-16 px-6 sm:px-12">
+                <div className="w-full max-w-6xl mx-auto pt-16 sm:pt-32 pb-10 sm:pb-16 px-6 sm:px-12">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
                         <div className="space-y-10">
                             <h2 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-[0.9]">
@@ -244,7 +244,7 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Communication Protocol / Contact Section */}
-                <div className="w-full max-w-sm mx-auto pt-16 sm:pt-24 pb-20 sm:pb-32 px-8 text-center">
+                <div className="w-full max-w-sm mx-auto pt-12 sm:pt-24 pb-16 sm:pb-32 px-8 text-center">
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         className="p-10 monolith-glass rounded-[48px] border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden group"
