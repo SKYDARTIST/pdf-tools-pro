@@ -31,15 +31,20 @@ const RemovePagesScreen: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const f = e.target.files[0];
-            setFile({ id: 'main', file: f, name: f.name, size: f.size, type: f.type });
 
             // Load PDF to get page count
             setIsLoadingPages(true);
             try {
+                // Read file data immediately to prevent Android permission expiration
                 const arrayBuffer = await f.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: f.type });
+                const freshFile = new File([blob], f.name, { type: f.type });
+                setFile({ id: 'main', file: freshFile, name: f.name, size: f.size, type: f.type });
+
                 const pdfDoc = await PDFDocument.load(arrayBuffer);
                 setPageCount(pdfDoc.getPageCount());
             } catch (err) {
+                console.error('Failed to read file:', f.name, err);
                 alert('Error loading PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
             } finally {
                 setIsLoadingPages(false);
@@ -221,8 +226,8 @@ const RemovePagesScreen: React.FC = () => {
                                             transition={{ delay: i * 0.01 }}
                                             onClick={() => togglePage(i)}
                                             className={`relative aspect-[3/4] rounded-2xl border transition-all ${selectedPages.has(i)
-                                                    ? 'border-rose-500 bg-rose-500/5 shadow-inner'
-                                                    : 'border-black/5 dark:border-white/5 bg-white dark:bg-black hover:border-black/20 dark:hover:border-white/20'
+                                                ? 'border-rose-500 bg-rose-500/5 shadow-inner'
+                                                : 'border-black/5 dark:border-white/5 bg-white dark:bg-black hover:border-black/20 dark:hover:border-white/20'
                                                 }`}
                                         >
                                             <div className="absolute inset-0 flex items-center justify-center">
@@ -253,8 +258,8 @@ const RemovePagesScreen: React.FC = () => {
                 disabled={!file || selectedPages.size === 0 || isProcessing || selectedPages.size >= pageCount}
                 onClick={handleRemovePages}
                 className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!file || selectedPages.size === 0 || isProcessing || selectedPages.size >= pageCount
-                        ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-                        : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
+                    ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
+                    : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
                     }`}
             >
                 <motion.div

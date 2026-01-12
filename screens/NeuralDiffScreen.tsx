@@ -29,12 +29,22 @@ const NeuralDiffScreen: React.FC = () => {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
-            if (fileNum === 1) setFile1(e.target.files[0]);
-            else setFile2(e.target.files[0]);
-            setDiffResult('');
-            setError('');
+            const f = e.target.files[0];
+            try {
+                // Read file data immediately to prevent Android permission expiration
+                const arrayBuffer = await f.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: f.type });
+                const freshFile = new File([blob], f.name, { type: f.type });
+                if (fileNum === 1) setFile1(freshFile);
+                else setFile2(freshFile);
+                setDiffResult('');
+                setError('');
+            } catch (err) {
+                console.error('Failed to read file:', f.name, err);
+                alert('Failed to read file. Please try again.');
+            }
         }
     };
 

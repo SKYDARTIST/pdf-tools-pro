@@ -40,11 +40,14 @@ const ExtractTextScreen: React.FC = () => {
         return;
       }
 
-      setFile(selectedFile);
       setIsProcessing(true);
 
       try {
+        // Read file data immediately to prevent Android permission expiration
         const arrayBuffer = await selectedFile.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: selectedFile.type });
+        const freshFile = new File([blob], selectedFile.name, { type: selectedFile.type });
+        setFile(freshFile);
         setOriginalBuffer(arrayBuffer);
 
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
@@ -82,6 +85,7 @@ const ExtractTextScreen: React.FC = () => {
           status: 'success'
         });
       } catch (err) {
+        console.error('Failed to read file:', selectedFile.name, err);
         alert('Error extracting text: ' + (err instanceof Error ? err.message : 'Unknown error'));
         setText('Failed to extract text from PDF.');
       } finally {

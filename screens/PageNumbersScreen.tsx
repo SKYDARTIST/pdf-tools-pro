@@ -30,13 +30,18 @@ const PageNumbersScreen: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const f = e.target.files[0];
-            setFile(f);
 
             try {
+                // Read file data immediately to prevent Android permission expiration
                 const arrayBuffer = await f.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: f.type });
+                const freshFile = new File([blob], f.name, { type: f.type });
+                setFile(freshFile);
+
                 const pdfDoc = await PDFDocument.load(arrayBuffer);
                 setPageCount(pdfDoc.getPageCount());
             } catch (err) {
+                console.error('Failed to read file:', f.name, err);
                 alert('Error loading PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
             }
         }

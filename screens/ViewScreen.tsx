@@ -10,13 +10,21 @@ const ViewScreen: React.FC = () => {
   const [fileName, setFileName] = useState('');
   const [extractedText, setExtractedText] = useState('');
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setFileName(file.name);
-      setPdfUrl(URL.createObjectURL(file));
-      // For demonstration, we assume text extraction happened
-      setExtractedText("This is a sample document about modern PDF management. It details security, merging techniques, and digital signatures. It explains that 'XREF Tables' are a legacy structure of PDFs.");
+      const f = e.target.files[0];
+      try {
+        // Read file data immediately to prevent Android permission expiration
+        const arrayBuffer = await f.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: f.type });
+        const freshFile = new File([blob], f.name, { type: f.type });
+        setFileName(freshFile.name);
+        setPdfUrl(URL.createObjectURL(freshFile));
+        setExtractedText("This is a sample document about modern PDF management. It details security, merging techniques, and digital signatures. It explains that 'XREF Tables' are a legacy structure of PDFs.");
+      } catch (err) {
+        console.error('Failed to read file:', f.name, err);
+        alert('Failed to read file. Please try again.');
+      }
     }
   };
 

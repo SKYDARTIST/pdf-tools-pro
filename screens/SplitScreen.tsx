@@ -19,16 +19,26 @@ const SplitScreen: React.FC = () => {
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
   const navigate = useNavigate();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const f = e.target.files[0];
-      setFile({
-        id: 'main',
-        file: f,
-        name: f.name,
-        size: f.size,
-        type: f.type
-      });
+      try {
+        // Read file data immediately to prevent Android permission expiration
+        const arrayBuffer = await f.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: f.type });
+        const freshFile = new File([blob], f.name, { type: f.type });
+
+        setFile({
+          id: 'main',
+          file: freshFile,
+          name: f.name,
+          size: f.size,
+          type: f.type
+        });
+      } catch (err) {
+        console.error('Failed to read file:', f.name, err);
+        alert('Failed to read file. Please try again.');
+      }
     }
   };
 
