@@ -337,27 +337,32 @@ const ScannerScreen: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute inset-0 z-50 flex items-center justify-center p-10 bg-black/60 backdrop-blur-md"
+                  className="absolute inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md overflow-y-auto"
                 >
-                  <div className="w-full max-w-sm space-y-6">
-                    <ToolGuide
-                      title="Neural Scanner"
-                      description="Capture and enhance physical documents with AI-powered image optimization, smart naming, and professional-grade quality enhancement."
-                      steps={[
-                        "Align your document within the visual guide markers.",
-                        "Capture the high-fidelity scan using the trigger.",
-                        "Activate Neural Enhancement for optimal quality.",
-                        "Assemble into a multi-page PDF or export as high-quality JPEG."
-                      ]}
-                      useCases={[
-                        "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
-                      ]}
-                    />
+                  <div className="flex-1 flex flex-col items-center justify-start p-6 pt-4 pb-24 min-h-0">
+                    <div className="w-full max-w-sm space-y-4">
+                      <ToolGuide
+                        title="Neural Scanner"
+                        description="Capture and enhance physical documents with AI-powered image optimization, smart naming, and professional-grade quality enhancement."
+                        steps={[
+                          "Align your document within the visual guide markers.",
+                          "Capture the high-fidelity scan using the trigger.",
+                          "Activate Neural Enhancement for optimal quality.",
+                          "Assemble into a multi-page PDF or export as high-quality JPEG."
+                        ]}
+                        useCases={[
+                          "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
+                        ]}
+                      />
+                    </div>
+                  </div>
+                  {/* Fixed bottom button */}
+                  <div className="sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/95 to-transparent">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setShowGuide(false)}
-                      className="w-full h-20 bg-white text-black rounded-full font-black uppercase tracking-[0.4em] text-xs shadow-2xl hover:bg-emerald-500 hover:text-white transition-all"
+                      className="w-full h-16 bg-white text-black rounded-full font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl hover:bg-emerald-500 hover:text-white transition-all"
                     >
                       Initialize Acquisition
                     </motion.button>
@@ -469,54 +474,54 @@ const ScannerScreen: React.FC = () => {
       </div>
 
       {/* Controls */}
-      <div className="p-12 bg-black/90 backdrop-blur-2xl flex items-center justify-around border-t border-white/10">
+      <div className="p-4 sm:p-8 bg-black/90 backdrop-blur-2xl flex items-center justify-around border-t border-white/10 safe-area-bottom">
         {!capturedImage ? (
           <>
-            <div className="w-12" />
+            <div className="w-10" />
             <button
               onClick={handleCapture}
-              className="w-24 h-24 rounded-full border-4 border-white/20 flex items-center justify-center group active:scale-95 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)]"
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white/20 flex items-center justify-center group active:scale-95 transition-all shadow-[0_0_50px_rgba(255,255,255,0.1)]"
             >
-              <div className="w-20 h-20 rounded-full bg-white group-hover:scale-90 transition-all flex items-center justify-center shadow-2xl">
-                <div className="w-18 h-18 rounded-full border border-black/10" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white group-hover:scale-90 transition-all flex items-center justify-center shadow-2xl">
+                <div className="w-14 h-14 sm:w-18 sm:h-18 rounded-full border border-black/10" />
               </div>
             </button>
             <button className="text-white/40 hover:text-white transition-colors">
-              <RefreshCw size={24} />
+              <RefreshCw size={20} />
             </button>
           </>
         ) : (
-          <>
+          <div className="flex items-center justify-center gap-3 w-full">
             <button
               onClick={() => setCapturedImage(null)}
-              className="flex flex-col items-center gap-3 text-white/40 hover:text-white transition-all transform hover:-rotate-12"
+              className="flex flex-col items-center gap-1.5 text-white/40 hover:text-white transition-all p-2"
             >
-              <div className="p-4 bg-white/5 rounded-2xl">
-                <RefreshCw size={20} />
+              <div className="p-2.5 bg-white/5 rounded-xl">
+                <RefreshCw size={18} />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest">Reset Scan</span>
+              <span className="text-[7px] font-black uppercase tracking-widest">Reset</span>
             </button>
 
             {!appliedFilters ? (
               <button
                 onClick={handleNeuralEnhance}
                 disabled={isPolishing}
-                className="h-20 px-8 bg-violet-600 rounded-full flex items-center gap-4 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all group overflow-hidden relative"
+                className="h-14 px-5 bg-violet-600 rounded-full flex items-center gap-3 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all group overflow-hidden relative"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <Wand2 size={20} className={isPolishing ? 'animate-spin' : ''} />
-                <span className="font-black text-[10px] uppercase tracking-[0.3em]">
-                  Neural Enhance
+                <Wand2 size={16} className={isPolishing ? 'animate-spin' : ''} />
+                <span className="font-black text-[9px] uppercase tracking-[0.2em]">
+                  Enhance
                 </span>
               </button>
             ) : (
-              <div className="flex gap-4">
+              <>
                 <button
                   onClick={handleShare}
-                  className="h-20 px-6 bg-white/10 rounded-full flex flex-col items-center justify-center text-white hover:bg-white/20 transition-all border border-white/10"
+                  className="h-14 px-4 bg-white/10 rounded-full flex items-center gap-2 text-white hover:bg-white/20 transition-all border border-white/10"
                 >
-                  <Share2 size={20} />
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] mt-2">Share JPEG</span>
+                  <Share2 size={16} />
+                  <span className="text-[8px] font-black uppercase tracking-widest">JPEG</span>
                 </button>
 
                 <button
@@ -530,17 +535,14 @@ const ScannerScreen: React.FC = () => {
                     }
                     navigate('/image-to-pdf', { state: { capturedImage: finalImage } });
                   }}
-                  className="h-20 px-10 bg-white rounded-full flex flex-col items-center justify-center text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                  className="h-14 px-5 bg-white rounded-full flex items-center gap-2 text-black shadow-2xl hover:scale-105 active:scale-95 transition-all"
                 >
-                  <div className="flex items-center gap-4">
-                    <FileCheck size={20} />
-                    <span className="font-black text-[10px] uppercase tracking-[0.3em]">Assemble PDF</span>
-                  </div>
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">Handoff to Compile</span>
+                  <FileCheck size={16} />
+                  <span className="font-black text-[9px] uppercase tracking-[0.2em]">PDF</span>
                 </button>
-              </div>
+              </>
             )}
-          </>
+          </div>
         )}
       </div>
 

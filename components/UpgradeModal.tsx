@@ -45,95 +45,83 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-6"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
                     >
-                        <div className="relative w-full max-w-sm bg-white dark:bg-[#0a0a0a] rounded-[40px] overflow-hidden border border-black/5 dark:border-white/5 shadow-2xl">
+                        <div className="relative w-full max-w-sm bg-white dark:bg-[#0a0a0a] rounded-[32px] sm:rounded-[40px] overflow-hidden border border-black/5 dark:border-white/5 shadow-2xl flex flex-col max-h-[90vh]">
                             {/* Close button */}
                             <button
                                 onClick={onClose}
-                                className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-100 dark:bg-[#0a0a0a] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-10"
+                                className="absolute top-4 right-4 sm:top-6 sm:right-6 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-100 dark:bg-[#1a1a1a] flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-20 shadow-sm"
                             >
-                                <X size={20} className="text-slate-600 dark:text-gray-400" />
+                                <X size={16} className="text-slate-600 dark:text-gray-400" />
                             </button>
 
-                            {/* Header */}
-                            <div className="relative p-10 pb-8 bg-black text-white dark:bg-white dark:text-black overflow-hidden group">
-                                {/* Technical Grid Overlay */}
+                            {/* Header - More compact */}
+                            <div className="relative p-6 sm:p-10 pb-4 sm:pb-8 bg-black text-white dark:bg-white dark:text-black overflow-hidden shrink-0">
                                 <div className="absolute inset-0 opacity-10 pointer-events-none"
-                                    style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                                    style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
 
                                 <motion.div
                                     animate={{
-                                        y: [0, -5, 0],
+                                        y: [0, -3, 0],
                                         filter: ["brightness(1)", "brightness(1.5)", "brightness(1)"]
                                     }}
                                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                    className="w-16 h-16 mx-auto mb-6 bg-white/10 dark:bg-black/10 rounded-2xl flex items-center justify-center relative z-10"
+                                    className="w-10 h-10 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-6 bg-white/10 dark:bg-black/10 rounded-xl sm:rounded-2xl flex items-center justify-center relative z-10"
                                 >
-                                    <Crown size={32} className="text-white dark:text-black" fill="currentColor" />
+                                    <Crown size={20} className="sm:text-[32px] text-white dark:text-black" fill="currentColor" />
                                 </motion.div>
 
-                                <div className="relative z-10">
-                                    {reason === 'limit_reached' ? (
-                                        <>
-                                            <h2 className="text-3xl font-black text-center uppercase tracking-tighter leading-none mb-3">
-                                                Quota Limit
-                                            </h2>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 text-center">
-                                                Standard Access Exhausted
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <h2 className="text-3xl font-black text-center uppercase tracking-tighter leading-none mb-3">
-                                                Anti-Gravity Pro
-                                            </h2>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60 text-center">
-                                                Initialize Full Protocol
-                                            </p>
-                                        </>
-                                    )}
+                                <div className="relative z-10 text-center">
+                                    <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tighter leading-none mb-1 sm:mb-3">
+                                        {reason === 'limit_reached' ? 'Quota Limit' : 'Anti-Gravity Pro'}
+                                    </h2>
+                                    <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60">
+                                        {reason === 'limit_reached' ? 'Standard Access Exhausted' : 'Initialize Full Protocol'}
+                                    </p>
                                 </div>
                             </div>
 
-                            {/* Content */}
-                            <div className="p-8 space-y-6">
+                            {/* Scrollable Content Area */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-4 sm:space-y-6">
                                 {/* Pricing */}
                                 <div className="text-center">
-                                    <div className="flex items-center justify-center gap-2 mb-2">
-                                        <span className="text-3xl font-black text-slate-900 dark:text-white">$2.99</span>
-                                        <span className="text-sm font-bold text-slate-400 dark:text-gray-600">one-time</span>
+                                    <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
+                                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">$2.99</span>
+                                        <span className="text-[10px] sm:text-sm font-bold text-slate-400 dark:text-gray-600">one-time</span>
                                     </div>
-                                    <p className="text-xs font-bold text-violet-600 dark:text-violet-500">
+                                    <p className="text-[10px] sm:text-xs font-bold text-violet-600 dark:text-violet-500">
                                         Lifetime access • No subscription
                                     </p>
                                 </div>
 
                                 {/* Features */}
-                                <div className="space-y-4">
+                                <div className="space-y-3 sm:space-y-4">
                                     <Feature icon={Zap} text="Unlimited Daily Tasks" />
                                     <Feature icon={Sparkles} text="All 14 Neural Tools" />
                                     <Feature icon={Check} text="Zero Watermarks • All Plans" />
                                     <Feature icon={Shield} text="100% Private Processing" />
                                 </div>
 
-                                {/* Comparison Card */}
-                                <div className="p-8 bg-black/5 dark:bg-white/5 rounded-[40px] space-y-4 border border-black/[0.03] dark:border-white/[0.03]">
+                                {/* Comparison Card - More compact */}
+                                <div className="p-4 sm:p-8 bg-black/5 dark:bg-white/5 rounded-[24px] sm:rounded-[40px] space-y-2 sm:space-y-4 border border-black/[0.03] dark:border-white/[0.03]">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Standard Apps</span>
-                                        <span className="text-xs font-black text-red-500 uppercase tracking-tighter">$100/YEAR</span>
+                                        <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">Standard Apps</span>
+                                        <span className="text-[10px] sm:text-xs font-black text-red-500 uppercase tracking-tighter">$100/YEAR</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity</span>
-                                        <span className="text-sm font-black text-emerald-500 uppercase tracking-tighter">$2.99 LIFETIME</span>
+                                        <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity</span>
+                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">$2.99 LIFETIME</span>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* CTA */}
-                                <div className="space-y-4 pt-4">
+                            {/* CTA - Fixed at bottom */}
+                            <div className="p-6 sm:p-8 pt-2 sm:pt-4 bg-white dark:bg-[#0a0a0a] border-t border-black/5 dark:border-white/5 shrink-0">
+                                <div className="space-y-3 sm:space-y-4">
                                     <button
                                         onClick={handleUpgrade}
-                                        className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
+                                        className="w-full py-4 sm:py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-[10px] sm:text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
                                     >
                                         <motion.div
                                             animate={{ x: ['-100%', '200%'] }}
@@ -146,7 +134,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                     {reason === 'limit_reached' && (
                                         <button
                                             onClick={onClose}
-                                            className="w-full py-2 text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] hover:text-black dark:hover:text-white transition-colors"
+                                            className="w-full py-1 text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] hover:text-black dark:hover:text-white transition-colors"
                                         >
                                             Stay on Standard Protocol
                                         </button>

@@ -52,12 +52,12 @@ class TaskLimitManager {
      * Check if user has tasks remaining
      */
     static canUseTask(): boolean {
-        const data = this.getData();
-
         // Pro users have unlimited tasks
-        if (data.isPro) {
+        if (this.isPro()) {
             return true;
         }
+
+        const data = this.getData();
 
         // Check if date has changed (new day)
         const today = this.getTodayDate();
@@ -82,7 +82,7 @@ class TaskLimitManager {
         const data = this.getData();
 
         // Don't increment for Pro users
-        if (data.isPro) {
+        if (this.isPro()) {
             return;
         }
 
@@ -111,7 +111,7 @@ class TaskLimitManager {
         const data = this.getData();
 
         // Pro users have unlimited
-        if (data.isPro) {
+        if (this.isPro()) {
             return Infinity;
         }
 
