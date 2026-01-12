@@ -101,20 +101,20 @@ const LandingPage: React.FC = () => {
                                 filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
                                 letterSpacing: '-0.08em'
                             }}
-                            className="text-4xl sm:text-8xl font-black uppercase leading-[0.9] sm:leading-[0.85] text-gray-900 dark:text-white drop-shadow-2xl px-2"
+                            className="text-5xl android-sm:text-4xl sm:text-8xl font-black uppercase leading-[0.85] text-gray-900 dark:text-white drop-shadow-2xl px-2"
                         >
                             ANTIGRAVITY<br />AI PDF
                         </motion.h1>
 
                         <div className="space-y-6">
-                            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed max-w-[280px] mx-auto">
+                            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed max-w-[280px] mx-auto android-sm:text-[10px]">
                                 The local-first, zero-login AI workspace built for the next generation.
                             </p>
                             <div className="flex flex-col items-center gap-3">
-                                <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
+                                <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 android-sm:text-[8px] android-sm:px-3">
                                     PRIVACY BY DESIGN • EDGE NEURAL
                                 </div>
-                                <div className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter">
+                                <div className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter android-sm:text-[9px]">
                                     $2.99 LIFETIME PASS • <span className="opacity-40">STRICT PRIVACY</span>
                                 </div>
                             </div>
@@ -126,7 +126,7 @@ const LandingPage: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="space-y-8"
+                        className="space-y-8 android-sm:space-y-4"
                     >
                         <motion.button
                             whileHover={{
@@ -136,10 +136,10 @@ const LandingPage: React.FC = () => {
                             }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/workspace')}
-                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
+                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-8 android-sm:py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
                         >
-                            <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10">Initialize Workspace</span>
-                            <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10" />
+                            <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10 android-sm:text-[10px]">Initialize Workspace</span>
+                            <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10 android-sm:w-4" />
                         </motion.button>
 
                         <div className="flex flex-col items-center gap-2">
