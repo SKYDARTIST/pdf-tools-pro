@@ -59,7 +59,7 @@ const ImageToPdfScreen: React.FC = () => {
 
       // Read file data immediately to prevent Android permission expiration
       const newFiles = await Promise.all(
-        filesArray.map(async (file) => {
+        filesArray.map(async (file: File) => {
           try {
             // Read file data immediately into memory to prevent stale reference
             const arrayBuffer = await file.arrayBuffer();
