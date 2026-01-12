@@ -143,10 +143,19 @@ class TaskLimitManager {
      * Check if user is Pro
      */
     static isPro(): boolean {
-        // TESTING PERIOD: All users are Pro until Jan 28, 2026
-        const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
-        if (new Date() < TESTING_PERIOD_END) {
-            return true;
+        // TESTING PERIOD: Use server-verified time to prevent clock manipulation
+        // Import dynamically to avoid circular dependencies
+        try {
+            const { isTestingPeriodSync } = require('../services/serverTimeService');
+            if (isTestingPeriodSync()) {
+                return true;
+            }
+        } catch (e) {
+            // Fallback to local time if service not available
+            const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+            if (new Date() < TESTING_PERIOD_END) {
+                return true;
+            }
         }
 
         const data = this.getData();

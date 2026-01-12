@@ -37,6 +37,7 @@ import AiPackNotification from './components/AiPackNotification';
 import NeuralAssistant from './components/NeuralAssistant';
 import PullToRefresh from './components/PullToRefresh';
 import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
+import { initServerTime } from './services/serverTimeService';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
@@ -46,9 +47,10 @@ const App: React.FC = () => {
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
 
-  // Sync with Supabase on mount
+  // Sync with Supabase and fetch server time on mount
   React.useEffect(() => {
     initSubscription();
+    initServerTime();  // Fetch server time to prevent clock manipulation
   }, []);
 
   // Global AI Notification Listener

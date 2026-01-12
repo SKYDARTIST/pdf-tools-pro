@@ -113,6 +113,15 @@ export default async function handler(req, res) {
     const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
     const isTestingPeriod = new Date() < TESTING_PERIOD_END;
 
+    // Stage 1.5: Server Time Check (for frontend anti-manipulation)
+    if (requestType === 'server_time') {
+        return res.status(200).json({
+            serverTime: new Date().toISOString(),
+            isTestingPeriod: isTestingPeriod,
+            testingEndsAt: TESTING_PERIOD_END.toISOString()
+        });
+    }
+
     // Stage 2: Usage Data Operations (FETCH / SYNC)
     if (requestType === 'usage_fetch' || requestType === 'usage_sync') {
         if (!supabase) return res.status(503).json({ error: "Database Offline" });
