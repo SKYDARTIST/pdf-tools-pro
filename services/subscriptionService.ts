@@ -56,6 +56,10 @@ export const initSubscription = async (): Promise<UserSubscription> => {
 
 // Get current subscription from localStorage
 export const getSubscription = (): UserSubscription => {
+    // TESTING PERIOD: All users get Pro + 100 credits until Jan 28, 2026
+    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
+
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
         const subscription = JSON.parse(stored);
@@ -66,22 +70,31 @@ export const getSubscription = (): UserSubscription => {
             saveSubscription(subscription);
         }
 
+        // TESTING PERIOD: Force Pro + 100 credits if not already
+        if (isTestingPeriod && (subscription.tier !== SubscriptionTier.PRO || subscription.aiPackCredits < 100)) {
+            subscription.tier = SubscriptionTier.PRO;
+            subscription.aiPackCredits = 100;
+            saveSubscription(subscription);
+        }
+
         return subscription;
     }
 
-    // Default free tier with 20-day trial
+    // Default: Pro tier with 100 credits during testing, otherwise free
     const now = new Date().toISOString();
-    return {
-        tier: SubscriptionTier.FREE,
+    const defaultSubscription = {
+        tier: isTestingPeriod ? SubscriptionTier.PRO : SubscriptionTier.FREE,
         operationsToday: 0,
         aiDocsThisWeek: 0,
         aiDocsThisMonth: 0,
-        aiPackCredits: 0,
+        aiPackCredits: isTestingPeriod ? 100 : 0,
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
-        trialStartDate: now, // Start 20-day trial immediately
+        trialStartDate: now,
     };
+    saveSubscription(defaultSubscription);
+    return defaultSubscription;
 };
 
 // Save subscription to localStorage

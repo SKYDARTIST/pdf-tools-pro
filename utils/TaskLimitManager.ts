@@ -143,6 +143,12 @@ class TaskLimitManager {
      * Check if user is Pro
      */
     static isPro(): boolean {
+        // TESTING PERIOD: All users are Pro until Jan 28, 2026
+        const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+        if (new Date() < TESTING_PERIOD_END) {
+            return true;
+        }
+
         const data = this.getData();
         return data.isPro;
     }
