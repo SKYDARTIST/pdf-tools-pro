@@ -53,16 +53,36 @@ const ImageToPdfScreen: React.FC = () => {
     }
   }, [location]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = (Array.from(e.target.files) as File[]).map(file => ({
-        id: Math.random().toString(36).substr(2, 9),
-        file,
-        name: file.name,
-        size: file.size,
-        type: file.type
-      }));
-      setItems(prev => [...prev, ...newFiles]);
+      const filesArray = Array.from(e.target.files);
+
+      // Read file data immediately to prevent Android permission expiration
+      const newFiles = await Promise.all(
+        filesArray.map(async (file) => {
+          try {
+            // Read file data immediately into memory to prevent stale reference
+            const arrayBuffer = await file.arrayBuffer();
+            const blob = new Blob([arrayBuffer], { type: file.type });
+            const freshFile = new File([blob], file.name, { type: file.type });
+
+            return {
+              id: Math.random().toString(36).substr(2, 9),
+              file: freshFile,
+              name: file.name,
+              size: file.size,
+              type: file.type
+            };
+          } catch (err) {
+            console.error('Failed to read file:', file.name, err);
+            return null;
+          }
+        })
+      );
+
+      // Filter out any failed reads
+      const validFiles = newFiles.filter((f): f is FileItem => f !== null);
+      setItems(prev => [...prev, ...validFiles]);
     }
   };
 
