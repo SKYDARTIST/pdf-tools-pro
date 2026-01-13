@@ -134,7 +134,7 @@ const Header: React.FC = () => {
             transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-black/10 to-transparent skew-x-12"
           />
-          <Crown size={12} fill="currentColor" className="sm:mr-1.5 relative z-10" />
+          <Crown size={15} fill="currentColor" className="sm:mr-1.5 relative z-10" />
           <span className="hidden sm:inline uppercase tracking-widest relative z-10">Upgrade</span>
         </motion.button>
       </div>

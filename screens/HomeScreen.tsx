@@ -47,7 +47,7 @@ const HomeScreen: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="text-technical ml-1">Daily Tools</div>
+          <div className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60 ml-1">Daily Tools</div>
 
           {/* Anti-Gravity Hero Card - Pro Obsidian Style */}
           <motion.div
@@ -59,7 +59,7 @@ const HomeScreen: React.FC = () => {
             onClick={() => navigate('/ag-workspace')}
             className="monolith-glass p-10 cursor-pointer group relative overflow-hidden bg-black/60 text-white border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)] rounded-[40px]"
           >
-            <div className="absolute top-1/2 -translate-y-1/2 -right-10 opacity-10 group-hover:opacity-20 group-hover:-right-5 transition-all duration-700">
+            <div className="absolute top-1/2 -translate-y-1/2 -right-10 opacity-[0.05] group-hover:opacity-10 group-hover:-right-5 transition-all duration-700">
               <Sparkles size={160} />
             </div>
             <div className="relative z-10 flex items-center justify-between">
