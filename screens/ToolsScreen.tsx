@@ -137,7 +137,7 @@ const ToolsScreen: React.FC = () => {
                                         }));
                                     }}
                                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 z-20"
-                                    title="Neural Guidance"
+                                    title="Ask AI"
                                 >
                                     <Sparkles size={10} />
                                 </motion.button>

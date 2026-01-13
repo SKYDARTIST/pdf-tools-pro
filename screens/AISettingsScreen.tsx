@@ -42,7 +42,7 @@ const AISettingsScreen: React.FC = () => {
                 <Sparkles size={28} className={isAiEnabled ? 'text-white dark:text-black' : 'text-gray-400'} />
               </motion.div>
               <div className="space-y-1">
-                <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Neural Helper</h4>
+                <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">AI Assistant</h4>
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Gemini AI Engine Integration</p>
               </div>
             </div>

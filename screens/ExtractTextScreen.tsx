@@ -120,7 +120,7 @@ const ExtractTextScreen: React.FC = () => {
       }
     } catch (error) {
       console.error(error);
-      alert('Neural Modification failed.');
+      alert('Edit failed. Please try again.');
     } finally {
       setIsApplyingEdit(false);
     }

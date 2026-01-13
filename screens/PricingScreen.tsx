@@ -122,11 +122,11 @@ const PricingScreen: React.FC = () => {
                 onClick={() => {
                   if (tier.name === 'PRO') {
                     upgradeTier(SubscriptionTier.PRO);
-                    alert('LIFETIME PRO AUTHORIZED. Neural Layer Unlocked.');
+                    alert('Lifetime Pro activated! All premium features unlocked.');
                     navigate('/ag-workspace');
                   } else if (tier.name === 'AI PACK') {
                     addAiPackCredits(100);
-                    alert('100 NEURAL CREDITS INJECTED. AI Pack Activated.');
+                    alert('100 AI credits added. AI features activated!');
                     navigate('/ag-workspace');
                   }
                 }}

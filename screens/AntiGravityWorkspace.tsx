@@ -189,11 +189,11 @@ const AntiGravityWorkspace: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] ml-1">
             <NeuralPulse color="bg-emerald-500" size="sm" />
-            STATUS: <span className="font-mono">{status === 'idle' ? 'STANDBY' : status.toUpperCase()}</span>
+            {status === 'idle' ? 'Ready' : status === 'lifting' ? 'Working...' : 'Ready'}
           </div>
         </div>
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white rounded-full border border-black/5 dark:border-white/10 text-[8px] font-black uppercase tracking-[0.2em] shadow-sm">
-          SECURE ENCRYPTION ACTIVE
+          Private Mode
         </div>
       </div>
       <AnimatePresence mode="wait">
