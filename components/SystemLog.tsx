@@ -16,8 +16,8 @@ const SystemLog: React.FC = () => {
     useEffect(() => {
         const addInitialLogs = () => {
             const initialLogs: LogEntry[] = [
-                { id: '1', type: 'status', message: 'NEURAL_LINK_ESTABLISHED', source: 'KERNEL' },
-                { id: '2', type: 'success', message: 'ENCRYPTION_ACTIVE_REV_4', source: 'SEC_MOD' },
+                { id: '1', type: 'status', message: 'AI_CONNECTION_ESTABLISHED', source: 'KERNEL' },
+                { id: '2', type: 'success', message: 'PRIVATE_MODE_ACTIVE', source: 'SEC_MOD' },
             ];
             setLogs(initialLogs);
         };

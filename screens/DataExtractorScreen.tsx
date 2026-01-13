@@ -138,7 +138,7 @@ Output ONLY raw CSV data.`;
             }
 
             // @ts-ignore - passing extra mimeType for backend precision
-            const response = await askGemini(prompt, text || "Vision Extraction Protocol Active.", "table", imageBase64 || undefined, fileMime);
+            const response = await askGemini(prompt, text || "Analyzing image...", "table", imageBase64 || undefined, fileMime);
 
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);

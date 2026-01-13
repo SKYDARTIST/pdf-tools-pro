@@ -47,7 +47,7 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                 </div>
                 <div className="flex flex-col">
                     <span className="text-[11px] font-mono font-black uppercase tracking-widest text-emerald-400">PRO AUTHORIZATION</span>
-                    <span className="text-[8px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5 whitespace-nowrap truncate">UNLIMITED NEURAL OVERRIDE</span>
+                    <span className="text-[8px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5 whitespace-nowrap truncate">UNLIMITED ACCESS</span>
                 </div>
             </motion.div>
         );

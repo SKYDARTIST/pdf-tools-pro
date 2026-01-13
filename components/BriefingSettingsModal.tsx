@@ -46,7 +46,7 @@ const BriefingSettingsModal: React.FC<BriefingSettingsModalProps> = ({ isOpen, o
                                     <div className="p-2 bg-emerald-500/10 rounded-xl">
                                         <Zap size={20} className="text-emerald-500" />
                                     </div>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500">Briefing Protocol Tuning</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500">Audio Settings</span>
                                 </div>
                                 <h2 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none text-balance">Podcast Configuration</h2>
                             </div>

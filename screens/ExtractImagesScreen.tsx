@@ -151,7 +151,7 @@ const ExtractImagesScreen: React.FC = () => {
         if (extractedAssets.length === 0) return;
         setIsProcessing(true);
         try {
-            console.log("📂 Mass Download Protocol: Handing over URIs to native share service.");
+            console.log("📂 Sending images to system share...");
 
             // On Mobile, we use the Native Share sheet for the whole collection
             const uris = extractedAssets.map(a => a.uri);

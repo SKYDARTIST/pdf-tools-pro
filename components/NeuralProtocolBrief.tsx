@@ -12,7 +12,7 @@ interface NeuralProtocolBriefProps {
 const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClose, type }) => {
     const content = {
         audit: {
-            title: "Neural Audit Protocol",
+            title: "AI Audit Guide",
             subtitle: "Structural & Financial Investigation",
             description: "Advanced AI-driven analysis designed for High-Stakes assets (Contracts, Invoices, Legal Filings). It identifies hidden risks, math discrepancies, and strategic savings without modifying your original file.",
             icon: <Shield size={24} className="text-emerald-500" />,
@@ -25,7 +25,7 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
             ]
         },
         briefing: {
-            title: "Intelligence Briefing Protocol",
+            title: "Summary Guide",
             subtitle: "Strategic Audio Download",
             description: "Converts long-form PDF assets into high-end professional podcast scripts for hands-free intellectual consumption.",
             icon: <Headphones size={24} className="text-violet-500" />,
@@ -38,9 +38,9 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
             ]
         },
         reader: {
-            title: "Secure Reader Protocol",
+            title: "Reader Guide",
             subtitle: "High-Fidelity Sequential Intake",
-            description: "A secure environment for deep focus and document absorption with neural reflow capabilities.",
+            description: "A private place for deep reading with smart text layout.",
             icon: <Zap size={24} className="text-amber-500" />,
             color: "amber",
             features: [
@@ -81,7 +81,7 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
                                     {current.icon}
                                 </div>
                                 <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-1">Neural Briefing</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-1">AI Summary</h4>
                                     <h2 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-none">
                                         {current.title}
                                     </h2>

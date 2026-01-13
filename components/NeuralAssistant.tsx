@@ -49,10 +49,10 @@ const NeuralAssistant: React.FC = () => {
     }, []);
 
     const quickChips = [
-        { label: 'Find Savings in PDFs 💰', query: 'How can I find savings or risks in my documents using Neural Audit?' },
+        { label: 'Find Savings in PDFs 💰', query: 'How can I find savings or risks in my documents using AI Audit?' },
         { label: 'Hide Private Info 🛡️', query: 'How do I automatically redact PII from my files?' },
         { label: 'Extract Data 📊', query: 'How do I convert a scanned invoice into structured data?' },
-        { label: 'Merge Payloads 📑', query: 'What is the best way to combine multiple PDF files?' }
+        { label: 'Merge PDF Files 📑', query: 'What is the best way to combine multiple PDF files?' }
     ];
 
     const handleSend = async (customQuery?: string) => {

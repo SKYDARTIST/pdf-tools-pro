@@ -86,7 +86,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
                   </div>
                   {m.role === 'bot' && (
                     <button
-                      onClick={() => alert("Response flagged. This feedback helps improve our local neural guardrails.")}
+                      onClick={() => alert("Response flagged. Thanks for your feedback!")}
                       className="mt-1 ml-1 flex items-center gap-1 text-[9px] text-slate-400 hover:text-red-500 font-bold transition-colors uppercase tracking-widest"
                     >
                       <ShieldAlert size={10} />

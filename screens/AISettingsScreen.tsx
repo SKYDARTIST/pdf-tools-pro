@@ -81,7 +81,7 @@ const AISettingsScreen: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { icon: Shield, title: "Zero Logging", desc: "No local or remote persistence", delay: 0.3 },
-            { icon: Zap, title: "Edge Processing", desc: "Native speed optimizations", delay: 0.4 },
+            { icon: Zap, title: "Fast Processing", desc: "Optimized for speed", delay: 0.4 },
           ].map((item) => (
             <motion.div
               key={item.title}

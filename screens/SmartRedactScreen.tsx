@@ -219,8 +219,8 @@ const SmartRedactScreen: React.FC = () => {
                 : "The user has opted for NO specific redaction. Perform a baseline extraction only.";
 
             const prompt = file.type === 'application/pdf'
-                ? `CRITICAL SECURITY PROTOCOL: You are a high-security redaction engine. Your primary objective is to find and neutralize specific data vectors. ${filterContext} Replace selected identifiers with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any headers, technical reports, or metadata. Output the pure sanitized stream only.`
-                : `ULTIMATE PRIVACY OVERRIDE: Inspect the provided image payload for sensitive data. ${filterContext} Replace selected metrics with [NEURAL_REDACTED]. Return ONLY the sanitized transcript. DO NOT include any report markers, headers, or summaries. ADHERE TO MAXIMUM SECURITY CLEARANCE.`;
+                ? `You are a privacy redaction tool. Find and hide sensitive data. ${filterContext} Replace identified information with [REDACTED]. Return ONLY the cleaned text. No headers or reports.`
+                : `Analyze this image for sensitive data. ${filterContext} Replace sensitive information with [REDACTED]. Return ONLY the cleaned text. No headers or summaries.`;
 
             const response = await askGemini(
                 prompt,

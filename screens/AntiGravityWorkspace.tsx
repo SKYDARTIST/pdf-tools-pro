@@ -99,16 +99,16 @@ const AntiGravityWorkspace: React.FC = () => {
           TOTAL_PAGES: ${pageCount}
           SIZE: ${(selected.size / 1024).toFixed(2)} KB
           
-          DOCUMENT_TEXT_PAYLOAD:
-          ${extractedText || "NO_EXTRACTABLE_TEXT: Document is image-based. Visual AI Analysis Activated."}
+          DOCUMENT_CONTENT:
+          ${extractedText || "The document is image-based. Analyzing the visual content now."}
           `.trim();
       }
 
       const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
-        ? `Initialize AI Analysis. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
+        ? `Analyze this document. Inspect the images "${selected.name}". Identify the document type, extract key information, and summarize what it is about. Respond with a helpful, professional tone.`
         : extractedText
-          ? `Start Session. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context}`
-          : `Start Session. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
+          ? `Analyze this document. Perform a detailed review of the content provided. Focus on identifying the purpose and key points. Tone: Helpful, Professional. Document Context: ${context}`
+          : `Analyze the document. Let the user know the document appears to be an image or scan with no searchable text. Explain that for a deeper analysis, a text-based PDF works best. Suggest trying the "Scanner" or "Image to PDF" tool to re-process the file and try again. Tone: Helpful, Professional.`;
 
       // Run analysis and naming suggestion in parallel
       const { suggestDocumentName } = await import('../services/namingService');
@@ -127,7 +127,7 @@ const AntiGravityWorkspace: React.FC = () => {
       setStatus('analyzed');
 
       // Phase 5: Knowledge Base Indexing
-      const signaturePrompt = `Generate a 1-sentence "Neural Signature" for this document for search indexing. Focus on key entities, dates, and intent. NO markdown. Payload: ${initialAnalysis.substring(0, 500)}`;
+      const signaturePrompt = `Write a 1-sentence summary of this document for search. Focus on key topics, dates, and purpose. NO markdown. Document: ${initialAnalysis.substring(0, 500)}`;
       const neuralSignature = await askGemini(signaturePrompt, context, 'chat');
 
       FileHistoryManager.addEntry({

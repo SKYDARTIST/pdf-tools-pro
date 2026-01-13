@@ -61,14 +61,14 @@ const AIReportModal: React.FC<AIReportModalProps> = ({ isOpen, onClose, contentI
                                             Flag Output
                                         </h2>
                                         <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
-                                            Neural Safety Protocol
+                                            Safety Report
                                         </p>
                                     </div>
 
                                     {/* Content */}
                                     <div className="p-8 space-y-6">
                                         <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-relaxed text-center">
-                                            Help us refine the Anti-Gravity engine. Why are you flagging this neural response?
+                                            Help us improve the app. Why are you flagging this AI response?
                                         </p>
 
                                         <div className="space-y-3">
@@ -112,7 +112,7 @@ const AIReportModal: React.FC<AIReportModalProps> = ({ isOpen, onClose, contentI
                                     </motion.div>
                                     <div className="space-y-2">
                                         <h3 className="text-2xl font-black uppercase tracking-tighter">Report Received</h3>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Protocol Updated</p>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Report Sent</p>
                                     </div>
                                 </div>
                             )}

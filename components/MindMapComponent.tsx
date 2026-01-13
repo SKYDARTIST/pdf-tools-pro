@@ -228,12 +228,12 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             ctx.font = `900 ${32 * (finalScale / 4)}px "SF Pro Display"`;
             ctx.textAlign = 'right';
             ctx.textBaseline = 'alphabetic';
-            ctx.fillText('NEURAL PROJECTION | ANTI-GRAVITY', canvas.width - 80, canvas.height - 80);
+            ctx.fillText('AI VIEW | ANTI-GRAVITY', canvas.width - 80, canvas.height - 80);
 
             // Left corner: Engine Badge
             ctx.textAlign = 'left';
             ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
-            ctx.fillText('• NEURAL PRO ENGINE', 80, canvas.height - 80);
+            ctx.fillText('• AI ENGINE', 80, canvas.height - 80);
 
 
 
@@ -342,7 +342,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             </div>
 
             <div className="absolute top-8 left-8 pointer-events-none z-10">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Neural Engine: Active</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">AI Engine: Active</span>
             </div>
 
             {isExporting && (

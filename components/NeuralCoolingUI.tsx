@@ -63,11 +63,11 @@ const NeuralCoolingUI: React.FC<NeuralCoolingUIProps> = ({ isVisible, onComplete
                             </h2>
                             <div className="flex items-center justify-center gap-2">
                                 <ShieldAlert size={12} className="text-emerald-500" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500">Neural Link Cooling Protocols</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500">System Cooling Down</span>
                             </div>
 
                             <p className="text-[12px] font-medium text-gray-400 dark:text-gray-600 leading-relaxed pt-4">
-                                Global traffic surge detected. Calibrating neural pathways for maximum data integrity. Your intelligence session is in a safe queue.
+                                High traffic detected. We're optimizing the system for you. Your session will start shortly.
                             </p>
                         </div>
 

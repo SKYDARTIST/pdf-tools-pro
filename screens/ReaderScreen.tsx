@@ -1039,7 +1039,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500 relative z-10" />
                                             </div>
                                             <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white dark:text-black">
-                                                LOCAL NEURAL SYNC
+                                                SAVING LOCALLY
                                             </span>
                                         </div>
                                     </motion.div>

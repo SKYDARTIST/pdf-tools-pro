@@ -61,7 +61,7 @@ const MindMapSettingsModal: React.FC<MindMapSettingsModalProps> = ({ isOpen, onC
                                 <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-400">
                                     <div className="flex items-center gap-2">
                                         <FileText size={12} />
-                                        <span>Neural Scan Range</span>
+                                        <span>Focus Detail</span>
                                     </div>
                                     <span>Total: {numPages} Pages</span>
                                 </div>
@@ -96,7 +96,7 @@ const MindMapSettingsModal: React.FC<MindMapSettingsModalProps> = ({ isOpen, onC
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                             <Sparkles size={20} className="text-white" />
-                            <span className="text-xs font-black uppercase tracking-[0.2em] text-white">Execute Neural Synthesis</span>
+                            <span className="text-xs font-black uppercase tracking-[0.2em] text-white">Generate Mind Map</span>
                         </button>
                     </div>
                 </motion.div>
