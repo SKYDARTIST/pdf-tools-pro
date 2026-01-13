@@ -21,7 +21,7 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                 }
                 return prev + 1;
             });
-        }, 400);
+        }, 250);
 
         return () => clearInterval(timer);
     }, [onComplete, stages.length]);
@@ -72,13 +72,12 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                                 </span>
                             </motion.div>
                         </AnimatePresence>
-                        <span className="text-[8px] font-black tracking-widest text-gray-700 uppercase">System Integrity: 100%</span>
                     </div>
                 </div>
             </div>
 
             <div className="absolute bottom-12 left-0 right-0 flex justify-center">
-                <span className="text-[10px] font-black tracking-[0.5em] text-white/20 uppercase">Anti-Gravity // v4.0</span>
+                <span className="text-[10px] font-black tracking-[0.5em] text-white/10 uppercase">v2.1</span>
             </div>
         </motion.div>
     );

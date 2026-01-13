@@ -278,7 +278,6 @@ const PricingScreen: React.FC = () => {
         >
           <div className="flex flex-col items-center pt-8 border-t border-black/5 dark:border-white/5 space-y-4">
             <span className="text-[9px] font-black uppercase tracking-[0.5em] text-gray-300 dark:text-gray-700">100% Secure • Private Processing</span>
-            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500 opacity-30">Built By Cryptobulla</span>
           </div>
         </motion.div>
       </div>

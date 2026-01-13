@@ -56,9 +56,6 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
                                     <h2 className="text-3xl font-black uppercase tracking-tighter leading-none mb-3">
                                         AI Permission
                                     </h2>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
-                                        Privacy Policy v2.0
-                                    </p>
                                 </div>
                             </div>
 

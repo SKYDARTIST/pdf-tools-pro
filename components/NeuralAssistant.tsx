@@ -22,7 +22,7 @@ const NeuralAssistant: React.FC = () => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<{ role: 'bot' | 'user', text: string, action?: { name: string; path: string } }[]>([
-        { role: 'bot', text: 'Anti-Gravity Assistant online. I\'m ready to help with your documents. How can I assist you today?' }
+        { role: 'bot', text: 'Assistant online. How can I help?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -49,10 +49,10 @@ const NeuralAssistant: React.FC = () => {
     }, []);
 
     const quickChips = [
-        { label: 'Find Savings in PDFs 💰', query: 'How can I find savings or risks in my documents using AI Audit?' },
-        { label: 'Hide Private Info 🛡️', query: 'How do I automatically redact PII from my files?' },
-        { label: 'Extract Data 📊', query: 'How do I convert a scanned invoice into structured data?' },
-        { label: 'Merge PDF Files 📑', query: 'What is the best way to combine multiple PDF files?' }
+        { label: 'Audit Savings 💰', query: 'How can I find savings or risks in my documents using AI Audit?' },
+        { label: 'Redact Privacy 🛡️', query: 'How do I automatically redact PII from my files?' },
+        { label: 'Extract Invoices 📊', query: 'How do I convert a scanned invoice into structured data?' },
+        { label: 'Merge PDF 📑', query: 'What is the best way to combine multiple PDF files?' }
     ];
 
     const handleSend = async (customQuery?: string) => {

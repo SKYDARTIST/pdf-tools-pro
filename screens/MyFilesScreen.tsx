@@ -166,7 +166,6 @@ const MyFilesScreen: React.FC = () => {
                     <div className="flex items-center gap-3 text-gray-400">
                         <span className="text-[9px] font-mono font-black uppercase tracking-[0.3em]">SECURE LOCAL STORAGE</span>
                     </div>
-                    <span className="text-[8px] font-mono font-black uppercase tracking-[0.4em] text-gray-400">Built By Cryptobulla</span>
                 </motion.div>
             </div>
         </motion.div>

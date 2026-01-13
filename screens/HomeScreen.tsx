@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
-import LegalFooter from '../components/LegalFooter';
+
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -166,7 +166,7 @@ const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      <LegalFooter />
+
     </motion.div>
   );
 };

@@ -33,11 +33,11 @@
         :root {
             --mouse-x: 50%;
             --mouse-y: 50%;
-            --accent-glow: rgba(16, 185, 129, 0.2);
+            --accent-glow: rgba(16, 185, 129, 0.05);
             --grid-light: rgba(0, 0, 0, 0.03);
             --grid-dark: rgba(255, 255, 255, 0.03);
-            --glow-light: rgba(16, 185, 129, 0.05);
-            --glow-dark: rgba(255, 255, 255, 0.03);
+            --glow-light: rgba(16, 185, 129, 0.03);
+            --glow-dark: rgba(16, 185, 129, 0.01);
             --glow-radius: 50%;
         }
 
@@ -154,7 +154,7 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.08) 0%, transparent 40%);
+            background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.15) 0%, transparent 40%);
             opacity: 0;
             transition: opacity 0.4s ease;
             pointer-events: none;

@@ -6,7 +6,7 @@ import {
     RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet, BookOpen, Shield,
     GitMerge, Database, Sparkles
 } from 'lucide-react';
-import LegalFooter from '../components/LegalFooter';
+
 import TaskCounter from '../components/TaskCounter';
 
 const ToolsScreen: React.FC = () => {
@@ -16,17 +16,17 @@ const ToolsScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
 
     const tools = [
-        { title: 'Read', desc: 'Private PDF Reader', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
+        { title: 'Read', desc: 'Secure PDF Reader', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
         { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular' },
         { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
-        { title: 'Merge', desc: 'Merge PDF Files', icon: Combine, path: '/merge', cat: 'popular' },
-        { title: 'Split', desc: 'Split & Extract Pages', icon: Scissors, path: '/split', cat: 'popular' },
+        { title: 'Merge', desc: 'Merge PDF', icon: Combine, path: '/merge', cat: 'popular' },
+        { title: 'Split', desc: 'Split Pages', icon: Scissors, path: '/split', cat: 'popular' },
         { title: 'To Text', desc: 'Extract PDF Text', icon: FileText, path: '/extract-text', cat: 'convert' },
         { title: 'Sign', desc: 'Sign PDF Documents', icon: PenTool, path: '/sign', cat: 'security' },
-        { title: 'Rotate', desc: 'Rotate PDF Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
+        { title: 'Rotate', desc: 'Rotate Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
         { title: 'Watermark', desc: 'Add PDF Watermark', icon: Droplet, path: '/watermark', cat: 'security' },
         { title: 'Get Images', desc: 'Extract PDF Images', icon: FileImage, path: '/extract-images', cat: 'convert' },
-        { title: 'Remove', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
+        { title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'popular' },
         { title: 'PDF Metadata', desc: 'Edit Document Info', icon: FileText, path: '/metadata', cat: 'security' },
     ];
@@ -156,7 +156,7 @@ const ToolsScreen: React.FC = () => {
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">No tools found</p>
                     </motion.div>
                 )}
-                <LegalFooter />
+
             </div>
         </div>
     );

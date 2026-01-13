@@ -59,13 +59,13 @@ const LandingPage: React.FC = () => {
                     </motion.div>
                 </div>
 
-                <div className="relative z-10 max-w-sm w-full space-y-6 sm:space-y-16 text-center">
+                <div className="relative z-10 max-w-sm w-full space-y-14 sm:space-y-24 text-center">
                     {/* Brand Signature */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1 }}
-                        className="space-y-6"
+                        className="space-y-12"
                     >
                         <div className="flex justify-center mb-4 sm:mb-12 relative">
                             {/* Abstract Blueprint Grid Behind Logo */}
@@ -106,17 +106,13 @@ const LandingPage: React.FC = () => {
                             ANTIGRAVITY<br />AI PDF
                         </motion.h1>
 
-                        <div className="space-y-6">
-                            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed max-w-[280px] mx-auto android-sm:text-[10px]">
-                                The local-first, zero-login AI workspace built for the next generation.
-                            </p>
+                        <div className="mt-14 space-y-10">
+
                             <div className="flex flex-col items-center gap-3">
                                 <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 android-sm:text-[8px] android-sm:px-3">
                                     PRIVACY BY DESIGN • PRIVATE AI
                                 </div>
-                                <div className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter android-sm:text-[9px]">
-                                    $2.99 LIFETIME PASS • <span className="opacity-40">STRICT PRIVACY</span>
-                                </div>
+
                             </div>
                         </div>
                     </motion.div>
@@ -126,7 +122,7 @@ const LandingPage: React.FC = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="space-y-8 android-sm:space-y-4"
+                        className="space-y-8 android-sm:space-y-4 mt-20"
                     >
                         <motion.button
                             whileHover={{
@@ -136,10 +132,10 @@ const LandingPage: React.FC = () => {
                             }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/workspace')}
-                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-8 android-sm:py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
+                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-8 android-sm:py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl shadow-emerald-500/20 dark:shadow-none relative overflow-hidden btn-neural"
                         >
                             <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10 android-sm:text-[10px]">Open App Workspace</span>
-                            <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10 android-sm:w-4" />
+                            <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10 android-sm:w-4 text-white dark:text-black" />
                         </motion.button>
 
                         <div className="flex flex-col items-center gap-2">
@@ -147,19 +143,6 @@ const LandingPage: React.FC = () => {
                                 v2026.1.0 Stable
                             </div>
                             <div className="h-[1px] w-12 bg-black/10 dark:bg-white/10" />
-                        </div>
-
-                        <div className="flex justify-center gap-14 pt-4 opacity-30 group-hover:opacity-100 transition-opacity">
-                            {[
-                                { icon: Shield, label: 'Secure' },
-                                { icon: Cpu, label: 'Private AI' },
-                                { icon: Sparkles, label: 'Local' }
-                            ].map((item, i) => (
-                                <div key={i} className="flex flex-col items-center gap-3">
-                                    <item.icon size={18} />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">{item.label}</span>
-                                </div>
-                            ))}
                         </div>
                     </motion.div>
 
@@ -197,10 +180,10 @@ const LandingPage: React.FC = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
                         <div className="space-y-10">
                             <h2 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-[0.9]">
-                                The Privacy<br className="hidden sm:block" /> Manifesto.
+                                Our Privacy<br className="hidden sm:block" /> Promise.
                             </h2>
                             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
-                                In 2026, most tools use "Cloud-First" strategies that send your data to corporate servers. Anti-Gravity is different. We have no storage servers. We cannot see your documents. We cannot sell your data.
+                                We believe your data belongs to you. Anti-Gravity processes everything locally on your device, ensuring total privacy without any cloud storage.
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
                                 {[
@@ -226,18 +209,8 @@ const LandingPage: React.FC = () => {
                                 <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">OUR ADVANTAGE</div>
                                 <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none">INSTANT SPEED.<br />ZERO RISK.</h3>
                                 <p className="text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
-                                    By using local processing, we skip the slow uploads. Your documents are analyzed through a secure, temporary connection that clears immediately after each use. This is the future of secure document tools.
+                                    By using local processing, we skip the slow uploads. Your documents are analyzed privately on your device. This is the future of secure document tools.
                                 </p>
-                                <div className="pt-10 flex items-center justify-between border-t border-black/10 dark:border-white/10">
-                                    <div className="text-left">
-                                        <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.1em] mb-1">Latency</div>
-                                        <div className="text-2xl sm:text-3xl font-black text-emerald-500 tracking-tighter">0ms</div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-[9px] font-black opacity-30 uppercase tracking-[0.1em] mb-1">Cloud Leak</div>
-                                        <div className="text-2xl sm:text-3xl font-black text-emerald-500 tracking-tighter">IMP***IBLE</div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>

@@ -102,43 +102,7 @@ const AISettingsScreen: React.FC = () => {
           ))}
         </div>
 
-        {/* Meet the Developer (Social Proof) */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.6 }}
-          className="monolith-card p-10 space-y-8 border-none bg-black dark:bg-white text-white dark:text-black shadow-2xl"
-        >
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-white/10 dark:bg-black/10 rounded-full flex items-center justify-center overflow-hidden border border-white/20 dark:border-black/20">
-              <Twitter size={32} />
-            </div>
-            <div className="space-y-1">
-              <h4 className="text-xl font-black uppercase tracking-tighter">Meet the Developer</h4>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] opacity-60">The Creator</p>
-            </div>
-          </div>
 
-          <p className="text-xs font-bold leading-relaxed uppercase tracking-wider opacity-80">
-            Engineered by <span className="underline select-all">Cryptobulla</span>. Developer of the MindMint ecosystem.
-            I built Anti-Gravity as a secure, ad-free alternative to exploitative subscription models.
-          </p>
-
-          <div className="flex flex-wrap gap-4 pt-4">
-            <motion.a
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              href="https://x.com/Cryptobullaaa"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 px-6 py-3 bg-white/10 dark:bg-black/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 dark:hover:bg-black/20 transition-colors"
-            >
-              <Twitter size={14} />
-              Follow for Updates
-              <ExternalLink size={12} />
-            </motion.a>
-          </div>
-        </motion.div>
 
         {/* Platform Protocol Transparency */}
         <div className="monolith-card p-8 space-y-6 border-dashed border-2 border-black/10 dark:border-white/10 bg-transparent shadow-none">
@@ -163,7 +127,6 @@ const AISettingsScreen: React.FC = () => {
             <p className="text-[10px] text-center text-gray-400 dark:text-gray-600 px-8 leading-relaxed uppercase font-black tracking-[0.3em]">
               Anti-Gravity Security System
             </p>
-            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-400">Built By Cryptobulla</span>
           </div>
         </motion.div>
       </div>

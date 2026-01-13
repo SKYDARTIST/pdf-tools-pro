@@ -8,19 +8,19 @@ const LEGAL_CONTENT = {
     privacy: {
         title: 'Privacy Policy',
         icon: Shield,
-        subtitle: 'Your Data is Private',
+        subtitle: 'Privacy',
         content: [
-            "Anti-Gravity operates on a strict Privacy-First model. We do not keep a database of your uploaded documents or PDF content.",
+            "Anti-Gravity operates on a strict Privacy-First model. We do not store your documents or PDF content.",
             "AI ASSISTANT: When you use the Workspace or AI tools, your document data is sent via secure connection to the Google Gemini AI for analysis. This data is processed temporarily and is not used to train AI models. By using these features, you agree to this.",
             "LOCAL STORAGE: We use your phone's storage only to save your subscription status and simple app settings. This data stays on your device and is never sent to the cloud.",
             "REPORTING: You can flag any AI-generated answer for review. This helps us improve the safety and accuracy of our AI helper.",
-            "SECURITY: All information sent through the app is protected by professional-grade secure encryption."
+            "SECURITY: All data is protected by professional-grade encryption and never leaves your device unless analyzed by AI."
         ]
     },
     terms: {
         title: 'Terms of Service',
         icon: FileText,
-        subtitle: 'User Agreement',
+        subtitle: 'Agreement',
         content: [
             "By using Anti-Gravity, you agree to use our tools for lawful purposes only.",
             "SERVICE STATUS: Anti-Gravity is provided 'as-is'. We do not guarantee 100% uptime or that everything will work perfectly at all times.",
@@ -31,7 +31,7 @@ const LEGAL_CONTENT = {
     disclaimer: {
         title: 'AI Disclaimer',
         icon: Bot,
-        subtitle: 'Important Note about AI',
+        subtitle: 'AI Note',
         content: [
             "The Anti-Gravity AI is an advanced system. While very powerful, it can still make mistakes, common to all AI models.",
             "VERIFICATION REQUIRED: AI-generated summaries and checklists may occasionally contain mistakes. You should always double-check important financial, legal, or medical information.",

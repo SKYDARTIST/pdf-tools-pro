@@ -519,20 +519,16 @@ const AntiGravityWorkspace: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Workspace Footer */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="flex items-center gap-6 p-10 monolith-card rounded-[40px] bg-transparent border-dashed border-2 opacity-40 hover:opacity-100 transition-opacity cursor-default"
+        className="flex items-center gap-6 p-6 monolith-card rounded-[40px] bg-transparent border-black/5 opacity-40 hover:opacity-100 transition-opacity cursor-default"
       >
-        <div className="p-4 bg-black/5 dark:bg-white/5 rounded-full text-gray-900 dark:text-white">
-          <Info size={24} />
-        </div>
         <div className="space-y-1">
           <div className="text-technical tracking-[0.4em]">Privacy & Security</div>
-          <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] leading-relaxed">
-            YOUR FILES ARE DELETED AUTOMATICALLY WHEN YOU CLOSE THIS SESSION. NO DATA IS SAVED ON OUR SERVERS.
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.2em] leading-relaxed">
+            FILES ARE DELETED AUTOMATICALLY. NO DATA LEAVES YOUR DEVICE.
           </p>
         </div>
       </motion.div>

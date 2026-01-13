@@ -6,7 +6,7 @@ import {
     Droplet, FileImage, Trash2, Hash, Shield, Search, Sparkles, Database,
     GitMerge, EyeOff, Headphones, ArrowLeft, ChevronRight, Info
 } from 'lucide-react';
-import LegalFooter from '../components/LegalFooter';
+
 
 const ProtocolGuideScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -21,35 +21,35 @@ const ProtocolGuideScreen: React.FC = () => {
             tools: [
                 {
                     title: 'Anti-Gravity Workspace',
-                    desc: 'Unlock insights instantly by chatting with your documents. Eliminate manual reading and get answers quickly with our private AI.',
+                    desc: 'Chat with your documents for instant answers.',
                     icon: Sparkles,
                     path: '/ag-workspace',
                     useCases: ['Contract Analysis', 'Study Summaries', 'Data Querying']
                 },
                 {
                     title: 'AI Audit',
-                    desc: 'Expose hidden risks and financial opportunities buried in fine print. Your automated expert for checking long legal or financial documents.',
+                    desc: 'Expose hidden risks and financial gaps in fine print.',
                     icon: Shield,
                     path: '/reader?protocol=audit',
                     useCases: ['Risk Assessment', 'Legal Review', 'Cost Auditing']
                 },
                 {
                     title: 'Data Extractor',
-                    desc: 'Turn messy scans and handwriting into sharp, structured data. Smart text recognition that digitalizes your paper trail perfectly.',
+                    desc: 'Turn messy scans and handwriting into sharp data.',
                     icon: Database,
                     path: '/data-extractor',
                     useCases: ['Invoice Processing', 'Medical OCR', 'Handwritten Notes']
                 },
                 {
                     title: 'AI Redact',
-                    desc: 'Keep your personal information private. Automatically find and black out sensitive info like names and addresses.',
+                    desc: 'Securely black out sensitive personal data.',
                     icon: EyeOff,
                     path: '/smart-redact',
                     useCases: ['Compliance', 'Privacy', 'Secure Sharing']
                 },
                 {
                     title: 'AI Diff',
-                    desc: 'Track every revision. Instantly highlight every change between document versions so you never miss a detail.',
+                    desc: 'Highlight every change between document versions.',
                     icon: GitMerge,
                     path: '/neural-diff',
                     useCases: ['Agreement Tracking', 'Audit Trails', 'Revision Sync']
@@ -250,7 +250,7 @@ const ProtocolGuideScreen: React.FC = () => {
                     </div>
                 )}
 
-                <LegalFooter />
+
             </div>
         </div>
     );
