@@ -155,7 +155,7 @@ const PricingScreen: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.6 }}
-          className="monolith-glass rounded-[40px] p-12 space-y-16 border-none bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative"
+          className="monolith-glass rounded-[40px] p-6 sm:p-12 android-sm:p-5 space-y-12 sm:space-y-16 border-none bg-black text-white dark:bg-white dark:text-black shadow-2xl overflow-hidden relative"
         >
           <div className="absolute top-0 right-0 p-12 opacity-5">
             <Zap size={160} />
@@ -216,9 +216,9 @@ const PricingScreen: React.FC = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/10 dark:border-black/10">
-                      <th className="p-6 text-[8px] font-mono font-black uppercase tracking-widest opacity-40">Feature</th>
-                      <th className="p-6 text-[8px] font-mono font-black uppercase tracking-widest opacity-40">Legacy Platforms</th>
-                      <th className="p-6 text-[8px] font-mono font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
+                      <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest opacity-40">Feature</th>
+                      <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest opacity-40">Legacy Platforms</th>
+                      <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
                     </tr>
                   </thead>
                   <tbody className="text-[9px] font-mono font-bold uppercase tracking-tight">
@@ -230,9 +230,9 @@ const PricingScreen: React.FC = () => {
                       { f: "Cost Strategy", c: "$240/Year Sub", l: "$2.99 Lifetime" },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-white/5 dark:border-black/5 last:border-0 hover:bg-white/5 dark:hover:bg-black/5 transition-colors">
-                        <td className="p-6 opacity-40">{row.f}</td>
-                        <td className="p-6 text-red-500/60">{row.c}</td>
-                        <td className="p-6 text-emerald-500">{row.l}</td>
+                        <td className="p-6 android-sm:p-3 opacity-40">{row.f}</td>
+                        <td className="p-6 android-sm:p-3 text-red-500/60">{row.c}</td>
+                        <td className="p-6 android-sm:p-3 text-emerald-500">{row.l}</td>
                       </tr>
                     ))}
                   </tbody>

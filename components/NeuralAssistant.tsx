@@ -119,14 +119,14 @@ const NeuralAssistant: React.FC = () => {
     };
 
     return (
-        <div className="fixed bottom-24 right-6 z-50 pointer-events-none">
+        <div className="fixed bottom-24 android-sm:bottom-32 right-6 z-50 pointer-events-none">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="pointer-events-auto bg-white/95 dark:bg-black/95 backdrop-blur-2xl rounded-[32px] w-[380px] max-w-[calc(100vw-48px)] h-[500px] sm:h-[600px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] border border-black/5 dark:border-white/10 flex flex-col overflow-hidden mb-4"
+                        className="pointer-events-auto bg-white/95 dark:bg-black/95 backdrop-blur-2xl rounded-[32px] w-[380px] max-w-[calc(100vw-32px)] h-[500px] sm:h-[600px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] border border-black/5 dark:border-white/10 flex flex-col overflow-hidden mb-4"
                     >
                         {/* Header */}
                         <div className="p-6 bg-black text-white dark:bg-white dark:text-black flex items-center justify-between shadow-2xl relative overflow-hidden shrink-0">

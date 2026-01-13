@@ -250,7 +250,7 @@ const SmartRedactScreen: React.FC = () => {
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="min-h-screen pb-32 pt-32 max-w-2xl mx-auto px-6"
+            className="min-h-screen pb-32 pt-32 max-w-2xl mx-auto px-6 android-sm:px-4"
         >
             <div className="space-y-12">
                 <div className="space-y-3">
@@ -302,15 +302,15 @@ const SmartRedactScreen: React.FC = () => {
 
                 {file && (
                     <div className="space-y-6">
-                        <div className="monolith-card p-8 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center">
+                        <div className="monolith-card p-8 android-sm:p-4 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center flex-shrink-0">
                                     <ShieldAlert size={20} className="text-black dark:text-white" />
                                 </div>
-                                <div>
-                                    <h3 className="text-[12px] font-black uppercase tracking-widest">{file.name}</h3>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                        {file.type.startsWith('image/') ? 'Visual Vector Identified' : 'Document Asset Ready'}
+                                <div className="min-w-0">
+                                    <h3 className="text-[12px] font-black uppercase tracking-widest truncate max-w-[140px] android-sm:max-w-[100px]">{file.name}</h3>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">
+                                        {file.type.startsWith('image/') ? 'Visual Vector' : 'Document Ready'}
                                     </p>
                                 </div>
                             </div>
@@ -319,9 +319,9 @@ const SmartRedactScreen: React.FC = () => {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={startRedaction}
-                                    className="bg-black dark:bg-white text-white dark:text-black px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest"
+                                    className="bg-black dark:bg-white text-white dark:text-black px-8 android-sm:px-4 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex-shrink-0"
                                 >
-                                    Initiate Redaction
+                                    Initiate
                                 </motion.button>
                             )}
                         </div>
@@ -335,28 +335,28 @@ const SmartRedactScreen: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={() => toggleFilter('identity')}
-                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.identity ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 android-sm:p-3 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.identity ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <User size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Identity</span>
                                     </button>
                                     <button
                                         onClick={() => toggleFilter('financial')}
-                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.financial ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 android-sm:p-3 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.financial ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <CreditCard size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Financial</span>
                                     </button>
                                     <button
                                         onClick={() => toggleFilter('contact')}
-                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.contact ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 android-sm:p-3 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.contact ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <Mail size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Contact</span>
                                     </button>
                                     <button
                                         onClick={() => toggleFilter('identifiers')}
-                                        className={`p-4 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.identifiers ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
+                                        className={`p-4 android-sm:p-3 rounded-[40px] border-2 flex flex-col gap-3 transition-all ${filters.identifiers ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600' : 'bg-gray-50 dark:bg-white/5 border-transparent text-gray-400'}`}
                                     >
                                         <Fingerprint size={18} />
                                         <span className="text-[9px] font-black uppercase tracking-widest">Identifiers</span>
