@@ -15,20 +15,26 @@ const ToolsScreen: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
 
+    const toolCategories = [
+        { id: 'popular', label: 'MOST POPULAR' },
+        { id: 'convert', label: 'CONVERSION TOOLS' },
+        { id: 'security', label: 'SECURITY & PRIVACY' }
+    ];
+
     const tools = [
+        { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular', isPro: true },
         { title: 'Read', desc: 'Secure PDF Reader', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
-        { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular' },
+        { title: 'Merge', desc: 'Merge PDF Documents', icon: Combine, path: '/merge', cat: 'popular' },
+        { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular' },
+        { title: 'Sign', desc: 'Sign PDF High-Security', icon: PenTool, path: '/sign', cat: 'security', isPro: true },
         { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
-        { title: 'Merge', desc: 'Merge PDF', icon: Combine, path: '/merge', cat: 'popular' },
-        { title: 'Split', desc: 'Split Pages', icon: Scissors, path: '/split', cat: 'popular' },
-        { title: 'To Text', desc: 'Extract PDF Text', icon: FileText, path: '/extract-text', cat: 'convert' },
-        { title: 'Sign', desc: 'Sign PDF Documents', icon: PenTool, path: '/sign', cat: 'security' },
-        { title: 'Rotate', desc: 'Rotate Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
-        { title: 'Watermark', desc: 'Add PDF Watermark', icon: Droplet, path: '/watermark', cat: 'security' },
+        { title: 'To Text', desc: 'Extract PDF Text layer', icon: FileText, path: '/extract-text', cat: 'convert' },
+        { title: 'Rotate', desc: 'Rotate PDF Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
+        { title: 'Watermark', desc: 'Add Secure Watermark', icon: Droplet, path: '/watermark', cat: 'security' },
         { title: 'Get Images', desc: 'Extract PDF Images', icon: FileImage, path: '/extract-images', cat: 'convert' },
-        { title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
+        { title: 'Remove', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'popular' },
-        { title: 'PDF Metadata', desc: 'Edit Document Info', icon: FileText, path: '/metadata', cat: 'security' },
+        { title: 'PDF Metadata', desc: 'Edit Document Info', icon: FileText, path: '/metadata', cat: 'security', isPro: true },
     ];
 
     const filtered = tools.filter(tool => {
@@ -37,6 +43,58 @@ const ToolsScreen: React.FC = () => {
         const matchesCategory = activeCategory === 'all' || tool.cat === activeCategory;
         return matchesSearch && matchesCategory;
     });
+
+    const renderGrid = (items: typeof tools) => (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-10">
+            {items.map((tool, i) => (
+                <motion.div
+                    key={tool.title}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate(tool.path)}
+                    className="monolith-glass rounded-[40px] cursor-pointer p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+                >
+                    {tool.isPro && (
+                        <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/20" />
+                    )}
+
+                    <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                        <tool.icon size={18} className="transition-colors" strokeWidth={2.5} />
+                    </div>
+
+                    <div className="min-w-0 px-1">
+                        <div className="flex flex-col items-center gap-1.5 mb-1">
+                            <h3 className="text-[11px] font-black uppercase tracking-wider text-black dark:text-white leading-none">{tool.title}</h3>
+                            {tool.isPro && (
+                                <span className="text-[7px] font-mono font-black bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase tracking-widest">ELITE</span>
+                            )}
+                        </div>
+                        <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-tight line-clamp-2 max-w-[110px]">{tool.desc}</p>
+                    </div>
+
+                    <motion.button
+                        whileHover={{ scale: 1.2, rotate: 15 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            window.dispatchEvent(new CustomEvent('neural-assistant-sync', {
+                                detail: {
+                                    query: `Tell me about the ${tool.title} tool. What are its use cases and how do I use it?`,
+                                    guidance: true
+                                }
+                            }));
+                        }}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-80 group-hover:opacity-100 z-20"
+                    >
+                        <Sparkles size={10} />
+                    </motion.button>
+                </motion.div>
+            ))}
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-transparent pb-32 pt-40 max-w-md mx-auto px-6">
@@ -47,9 +105,9 @@ const ToolsScreen: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-4"
                 >
-                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Available Tools</div>
+                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Document Engine</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tools</h1>
-                    <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Select a tool to process your PDFs</p>
+                    <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Select an optimized tool for your workflow</p>
                 </motion.div>
 
                 <TaskCounter variant="inline" />
@@ -64,9 +122,8 @@ const ToolsScreen: React.FC = () => {
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" size={20} />
                     <input
                         type="search"
-                        placeholder="Search tools..."
-                        aria-label="Search tools"
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
+                        placeholder="Search for a tool..."
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -79,7 +136,7 @@ const ToolsScreen: React.FC = () => {
                     transition={{ delay: 0.2 }}
                     className="flex gap-2 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6"
                 >
-                    {['all', 'popular', 'security', 'convert'].map((cat, i) => (
+                    {['all', 'popular', 'security', 'convert'].map((cat) => (
                         <motion.button
                             key={cat}
                             whileTap={{ scale: 0.95 }}
@@ -100,49 +157,25 @@ const ToolsScreen: React.FC = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="grid grid-cols-2 gap-4"
+                        className="space-y-16"
                     >
-                        {filtered.map((tool, i) => (
-                            <motion.div
-                                key={tool.title}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.03 }}
-                                whileHover={{ y: -4, scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => navigate(tool.path)}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={(e) => e.key === 'Enter' && navigate(tool.path)}
-                                className="monolith-glass rounded-[40px] cursor-pointer p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-md transition-all group dark:border dark:border-white/5 active:shadow-inner relative"
-                            >
-                                <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
-                                    <tool.icon size={18} className="transition-colors" strokeWidth={2.5} />
-                                </div>
-                                <div className="min-w-0 px-1">
-                                    <h3 className="text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-0.5 mt-1 leading-none">{tool.title}</h3>
-                                    <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-tight line-clamp-2 max-w-[100px]">{tool.desc}</p>
-                                </div>
-
-                                <motion.button
-                                    whileHover={{ scale: 1.2, rotate: 15 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        window.dispatchEvent(new CustomEvent('neural-assistant-sync', {
-                                            detail: {
-                                                query: `Tell me about the ${tool.title} tool. What are its use cases and how do I use it?`,
-                                                guidance: true
-                                            }
-                                        }));
-                                    }}
-                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100 z-20"
-                                    title="Ask AI"
-                                >
-                                    <Sparkles size={10} />
-                                </motion.button>
-                            </motion.div>
-                        ))}
+                        {activeCategory === 'all' && !searchQuery ? (
+                            toolCategories.map((meta) => {
+                                const toolsInCat = tools.filter(t => t.cat === meta.id);
+                                if (toolsInCat.length === 0) return null;
+                                return (
+                                    <div key={meta.id} className="space-y-8">
+                                        <div className="flex items-center gap-3 ml-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60">{meta.label}</h2>
+                                        </div>
+                                        {renderGrid(toolsInCat)}
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            renderGrid(filtered)
+                        )}
                     </motion.div>
                 </AnimatePresence>
 
