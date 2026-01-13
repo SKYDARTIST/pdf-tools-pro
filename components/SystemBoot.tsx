@@ -5,10 +5,10 @@ import { Sparkles, Cpu, Shield, Zap } from 'lucide-react';
 const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const [stage, setStage] = useState(0);
     const stages = [
-        { label: 'ALLOCATING_RESOURCES', icon: Cpu },
-        { label: 'ENCRYPTION_ACTIVE', icon: Shield },
-        { label: 'NEURAL_LINK_READY', icon: Sparkles },
-        { label: 'ANTI_GRAVITY_CORE_READY', icon: Zap },
+        { label: 'LOADING TOOLS', icon: Cpu },
+        { label: 'SECURITY READY', icon: Shield },
+        { label: 'AI ASSISTANT READY', icon: Sparkles },
+        { label: 'SYSTEM READY', icon: Zap },
     ];
 
     useEffect(() => {
@@ -78,7 +78,7 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             </div>
 
             <div className="absolute bottom-12 left-0 right-0 flex justify-center">
-                <span className="text-[10px] font-black tracking-[0.5em] text-white/20 uppercase">Anti-Gravity Protocol // Rev 4.0</span>
+                <span className="text-[10px] font-black tracking-[0.5em] text-white/20 uppercase">Anti-Gravity // v4.0</span>
             </div>
         </motion.div>
     );

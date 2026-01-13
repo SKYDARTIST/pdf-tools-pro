@@ -136,22 +136,22 @@ const PageNumbersScreen: React.FC = () => {
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Sequential Indexing</div>
+                    <div className="text-technical">Available Tools / Page Numbers</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Number</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Apply sequential metadata markers to track structural asset flow</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Add clear, professional page numbers to your document</p>
                 </div>
 
                 <ToolGuide
-                    title="Hierarchical Indexing Protocol"
-                    description="Apply structural markers for sequential navigation. Embed persistent page numbers onto the document layer for auditing."
+                    title="How to add page numbers"
+                    description="Automatically add numbers to every page of your PDF. You can choose the format (like 'Page 1 of 10') and where they appear on the page."
                     steps={[
-                        "Initialize the indexing protocol by uploading a PDF carrier.",
-                        "Select the desired indexing schema (Simple or Extended).",
-                        "Configure the spatial anchoring (Left, Center, or Right).",
-                        "Execute Indexing to finalize the structural markers."
+                        "Upload the PDF you want to number.",
+                        "Choose the number format (1, 2, 3 or Page X of Y).",
+                        "Select the position (Left, Center, or Right).",
+                        "Tap 'Add Numbers' to save your new PDF."
                     ]}
                     useCases={[
-                        "Lease Agreements", "Academic Papers", "Legal Bundles", "Pagination Control"
+                        "Lease Agreements", "Academic Papers", "Legal Bundles", "Organizing Documents"
                     ]}
                 />
 
@@ -163,7 +163,7 @@ const PageNumbersScreen: React.FC = () => {
                         >
                             <Hash size={32} />
                         </motion.div>
-                        <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Indexing</span>
+                        <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
                         <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
                         <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                     </label>
@@ -180,7 +180,7 @@ const PageNumbersScreen: React.FC = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES ARCHIVED</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES FOUND</p>
                             </div>
                             <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
                                 Change
@@ -192,7 +192,7 @@ const PageNumbersScreen: React.FC = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     <FileText size={14} className="text-black dark:text-white" />
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Indexing Schema</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Number Format</h4>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <button
@@ -222,7 +222,7 @@ const PageNumbersScreen: React.FC = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     <AlignLeft size={14} className="text-black dark:text-white" />
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Spatial Anchoring</h4>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Position</h4>
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
                                     <button
@@ -275,7 +275,7 @@ const PageNumbersScreen: React.FC = () => {
                             ) : (
                                 <>
                                     <Share2 size={18} strokeWidth={3} />
-                                    <span>Index & Share Asset</span>
+                                    <span>Add Numbers & Share</span>
                                 </>
                             )}
                         </button>

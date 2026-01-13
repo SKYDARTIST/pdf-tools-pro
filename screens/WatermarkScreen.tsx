@@ -94,23 +94,23 @@ const WatermarkScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Intellectual Property</div>
+          <div className="text-technical">Secure Watermarking</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Watermark</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Embed permanent identification markers to protect structural asset ownership</p>
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Embed permanent marks to protect your document ownership</p>
           <div className="pt-2 flex items-center gap-2">
             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Zero Watermark Protocol: Professional Clean Output</span>
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">No Watermarks: Pro Clean Output</span>
           </div>
         </div>
 
         <ToolGuide
-          title="Ownership Signature Protocol"
-          description="Overlay provenance markers on the document layer. Embed persistent watermarks to verify asset authenticity."
+          title="Ownership Signature Guide"
+          description="Overlay proof-of-ownership on the document. Embed permanent watermarks to verify your document's authenticity."
           steps={[
-            "Initialize the stamping protocol by uploading a PDF carrier.",
-            "Define the identifier text (e.g., CONFIDENTIAL, DRAFT).",
-            "Select from standardized provenance templates.",
-            "Execute Stamping to embed the markers permanently."
+            "Upload the PDF you want to watermark.",
+            "Type your text (e.g., CONFIDENTIAL, DRAFT).",
+            "Select a quick template for faster labeling.",
+            "Tap 'Apply Watermark' to secure your file."
           ]}
           useCases={[
             "Brand Protection", "Status Labeling", "Intellectual Property Safeguarding", "Document Classification"
@@ -125,8 +125,8 @@ const WatermarkScreen: React.FC = () => {
             >
               <ImageIcon size={32} />
             </motion.div>
-            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Stamping</span>
-            <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
+            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Upload PDF for Watermarking</span>
+            <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 mt-2">Maximum 50MB PDF</span>
             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
           </label>
         ) : (
@@ -141,7 +141,7 @@ const WatermarkScreen: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-black uppercase tracking-tighter truncate">{file.name}</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Awaiting Marker Input</p>
+                <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Awaiting Marker Input</p>
               </div>
               <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">Clear</button>
             </motion.div>
@@ -149,7 +149,7 @@ const WatermarkScreen: React.FC = () => {
             <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none space-y-6">
               <div className="flex items-center gap-3">
                 <Type size={14} className="text-black dark:text-white" />
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Marker Definition</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 dark:text-gray-400">Marker Definition</h4>
               </div>
 
               <div className="space-y-4">
@@ -168,7 +168,7 @@ const WatermarkScreen: React.FC = () => {
                       onClick={() => setText(tag)}
                       className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${text === tag
                         ? 'bg-black dark:bg-white text-white dark:text-black'
-                        : 'bg-black/5 dark:bg-white/5 text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
+                        : 'bg-black/5 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-black/10 dark:hover:bg-white/10'
                         }`}
                     >
                       {tag}
@@ -201,7 +201,7 @@ const WatermarkScreen: React.FC = () => {
         ) : (
           <>
             <Share2 size={18} strokeWidth={3} />
-            <span>Bake & Share PDF</span>
+            <span>Apply Watermark & Share</span>
           </>
         )}
       </button>

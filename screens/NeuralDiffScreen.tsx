@@ -101,8 +101,8 @@ const NeuralDiffScreen: React.FC = () => {
         if (!diffResult) return;
         setIsAnalyzing(true);
         try {
-            const pdfBytes = await createPdfFromText("Neural Diff Report", diffResult);
-            const fileName = `Neural_Diff_${Date.now()}.pdf`;
+            const pdfBytes = await createPdfFromText("PDF Comparison Report", diffResult);
+            const fileName = `PDF_Comparison_${Date.now()}.pdf`;
             const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
             await downloadFile(blob, fileName);
 
@@ -114,7 +114,7 @@ const NeuralDiffScreen: React.FC = () => {
             });
         } catch (err) {
             console.error("Export failed:", err);
-            setError("PDF export failed. Neural link too complex.");
+            setError("PDF export failed. Request too complex.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -128,24 +128,24 @@ const NeuralDiffScreen: React.FC = () => {
         >
             <div className="space-y-12">
                 <div className="space-y-3">
-                    <div className="text-technical">Neural Lab / Comparison Protocol</div>
-                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Neural Diff</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                        Identify semantic variations between document versions with Edge-AI
+                    <div className="text-technical">AI Tools / Compare Documents</div>
+                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Compare</h1>
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
+                        Find key differences and changes between two document versions with AI
                     </p>
                 </div>
 
                 <ToolGuide
-                    title="Semantic Comparison Protocol"
-                    description="Perform a deep semantic analysis between two document versions. Identify critical variations in legal obligations and numerical data."
+                    title="How to compare documents"
+                    description="Upload two versions of a document to see what changed. Our AI will highlight legal updates, price changes, and new or deleted text."
                     steps={[
-                        "Initialize the comparison by uploading two versions of the document (Base vs Modified).",
-                        "The Neural Lab extracts textual data streams from both carriers.",
-                        "Gemini AI performs a semantic diff to identify risks, omissions, and additions.",
-                        "Analyze the 'Semantic Analysis Ready' report for critical variations."
+                        "Upload the original version (Version 1).",
+                        "Upload the modified version (Version 2).",
+                        "Our AI analyzes the text in both documents.",
+                        "Review the comparison report for important changes."
                     ]}
                     useCases={[
-                        "Contract Review", "Legal Comparison", "Version Control Auditing", "Price Change Verification"
+                        "Contract Review", "Legal Comparison", "Version History", "Price Check"
                     ]}
                 />
 
@@ -185,7 +185,7 @@ const NeuralDiffScreen: React.FC = () => {
                             className="bg-black dark:bg-white text-white dark:text-black px-12 py-6 rounded-full text-xs font-black uppercase tracking-[0.3em] flex items-center gap-4 shadow-2xl"
                         >
                             {isAnalyzing ? <Loader2 size={18} className="animate-spin" /> : <GitMerge size={18} />}
-                            {isAnalyzing ? "Executing Analysis..." : "Execute Neural Diff"}
+                            {isAnalyzing ? "Analyzing Changes..." : "Start AI Comparison"}
                         </motion.button>
                     </div>
                 )}
@@ -207,7 +207,7 @@ const NeuralDiffScreen: React.FC = () => {
                             <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-6">
                                 <div className="flex items-center gap-3">
                                     <Sparkles size={20} className="text-emerald-500" />
-                                    <span className="text-xs font-black uppercase tracking-widest">Semantic Analysis Ready</span>
+                                    <span className="text-xs font-black uppercase tracking-widest">Comparison Report Ready</span>
                                 </div>
                                 <button
                                     onClick={() => setShowReport(true)}
@@ -287,7 +287,7 @@ const NeuralDiffScreen: React.FC = () => {
                         setFile2(null);
                         setDiffResult('');
                     }}
-                    operation="Neural Diff"
+                    operation="Compare PDFs"
                     fileName={successData.fileName}
                     originalSize={successData.originalSize}
                     finalSize={successData.finalSize}

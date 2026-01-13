@@ -136,22 +136,22 @@ const ExtractTextScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Lexical Extraction</div>
+          <div className="text-technical">Available Tools / Extract & Edit</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Extract & Edit</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Reconstruct readable data streams or inject modifications directly</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Extract text from your PDF or quickly find and replace words</p>
         </div>
 
         <ToolGuide
-          title="Lexical Extraction Protocol"
-          description="Identify and decouple document-based text streams. Reconstruct raw lexical data for analysis or direct modification."
+          title="How to extract and edit text"
+          description="Automatically pull all text from your document. You can then copy it, or use our editor to replace specific words throughout the entire PDF."
           steps={[
-            "Initialize the extraction protocol by uploading a PDF carrier.",
-            "System performs a lexical scan to decouple character data from the document layer.",
-            "Analyze the character stream in the Neural Buffer for modifications.",
-            "Use the 'Direct Edit' protocol to inject global neural modifications to the carrier."
+            "Upload the PDF you want to extract text from.",
+            "Our tool scans the document for all readable text.",
+            "View and copy the extracted text from the window below.",
+            "Use the 'Find & Replace' tool to make global changes to your PDF."
           ]}
           useCases={[
-            "Content Repurposing", "Global Data Replacement", "Textual Archiving", "Document Correction"
+            "Content Repurposing", "Changing Names/Dates", "Textual Archiving", "Document Correction"
           ]}
         />
 
@@ -163,23 +163,23 @@ const ExtractTextScreen: React.FC = () => {
             >
               <FileSearch size={32} />
             </motion.div>
-            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Extraction</span>
+            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
           </label>
         ) : isProcessing ? (
           <div className="h-80 flex flex-col items-center justify-center gap-6 monolith-card bg-black/5 dark:bg-white/5 border-none shadow-xl">
             <Loader2 className="animate-spin text-black dark:text-white" size={48} strokeWidth={3} />
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] animate-pulse">Syncing Lexical Data...</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] animate-pulse">Extracting text...</p>
           </div>
         ) : (
           <div className="space-y-8">
             {/* Stats & Actions */}
             <div className="flex justify-between items-end px-2">
               <div className="space-y-1">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Neural Buffer</h4>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Extracted Text</h4>
                 {stats && (
                   <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
-                    {stats.chars.toLocaleString()} BYTES • {stats.pages} SEGMENTS
+                    {stats.chars.toLocaleString()} CHARACTERS • {stats.pages} PAGES
                   </p>
                 )}
               </div>
@@ -189,7 +189,7 @@ const ExtractTextScreen: React.FC = () => {
                   className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all ${showEdit ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10'}`}
                 >
                   <Edit3 size={14} />
-                  {showEdit ? 'Close Editor' : 'Direct Edit'}
+                  {showEdit ? 'Close Editor' : 'Find & Replace'}
                 </button>
                 <button
                   onClick={() => {
@@ -217,11 +217,11 @@ const ExtractTextScreen: React.FC = () => {
                   <div className="monolith-card p-6 bg-emerald-500/5 border-emerald-500/20 mb-8 space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Edit3 size={14} className="text-emerald-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Neural Injector Prototype</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Find & Replace Tool</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-widest text-gray-400">Search Lexeme</label>
+                        <label className="text-[8px] font-black uppercase tracking-widest text-gray-400">Text to find</label>
                         <input
                           value={findText}
                           onChange={(e) => setFindText(e.target.value)}
@@ -230,7 +230,7 @@ const ExtractTextScreen: React.FC = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[8px] font-black uppercase tracking-widest text-gray-400">Target Injection</label>
+                        <label className="text-[8px] font-black uppercase tracking-widest text-gray-400">Replace with</label>
                         <input
                           value={replaceText}
                           onChange={(e) => setReplaceText(e.target.value)}
@@ -245,7 +245,7 @@ const ExtractTextScreen: React.FC = () => {
                       className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3 disabled:opacity-20"
                     >
                       {isApplyingEdit ? <RefreshCcw className="animate-spin" size={16} /> : <Share2 size={16} />}
-                      {isApplyingEdit ? 'Injecting Data...' : 'Apply Neural Inject & Share'}
+                      {isApplyingEdit ? 'Applying changes...' : 'Replace Text & Share'}
                     </button>
                   </div>
                 </motion.div>
@@ -263,7 +263,7 @@ const ExtractTextScreen: React.FC = () => {
               onClick={() => { setText(null); setStats(null); setFile(null); setShowEdit(false); }}
               className="w-full py-4 text-[9px] font-black text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase tracking-[0.5em] transition-colors"
             >
-              [ Re-Initialize Extraction ]
+              [ Change File ]
             </button>
           </div>
         )}

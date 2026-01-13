@@ -149,22 +149,22 @@ const ImageToPdfScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Visual Aggregation</div>
+          <div className="text-technical">Available Tools / Image to PDF</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Compile</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Aggregate tactical visual assets into unified document containers</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Combine multiple images into a single PDF document</p>
         </div>
 
         <ToolGuide
-          title="Visual Aggregation Protocol"
-          description="Synthesize unified PDF carriers from isolated image assets. Compile multiple visual streams into a single document structure."
+          title="How to create a PDF from images"
+          description="Convert your photos and images into a clean PDF document. You can upload multiple images and arrange them in any order."
           steps={[
-            "Initialize the asset load by selecting image files (JPEG, PNG).",
-            "Organize the compile order using the spatial reorder system.",
-            "Analyze and prepare the visual assets for document synthesis.",
-            "Execute Compilation to generate the unified PDF payload."
+            "Upload your image files (JPEG or PNG).",
+            "Drag and drop to rearrange the order of pages.",
+            "Our tool prepares the images for your PDF.",
+            "Tap 'Combine & Share' to create and save your PDF."
           ]}
           useCases={[
-            "Document Digitization", "Portfolio Compilation", "Image Archival", "Receipt Aggregation"
+            "Scanning Documents", "Creating Portfolios", "Saving Receipts", "Organizing Photos"
           ]}
         />
       </div>
@@ -177,7 +177,7 @@ const ImageToPdfScreen: React.FC = () => {
           >
             <Plus size={32} />
           </motion.div>
-          <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Asset Load</span>
+          <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload images</span>
           <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">JPEG / PNG / RAW</span>
           <input type="file" multiple accept="image/png, image/jpeg" className="hidden" onChange={handleFileChange} />
         </label>
@@ -228,7 +228,7 @@ const ImageToPdfScreen: React.FC = () => {
         ) : (
           <>
             <Share2 size={20} />
-            Compile & Share PDF ({items.length})
+            Combine & Share PDF ({items.length})
           </>
         )}
       </button>

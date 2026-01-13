@@ -144,7 +144,7 @@ const ReaderScreen: React.FC = () => {
                 const text = await extractTextFromPdf(buffer);
                 setFluidContent(text);
             } catch (error) {
-                console.error("Fluid Extraction Failed:", error);
+                console.error("Text extraction failed:", error);
             } finally {
                 setIsLoadingFluid(false);
             }
@@ -208,7 +208,7 @@ const ReaderScreen: React.FC = () => {
             const buffer = await file.arrayBuffer();
             text = await extractTextFromPdf(buffer, startPage, endPage);
 
-            const prompt = `Perform a high-fidelity Neural Mind Map Synthesis. 
+            const prompt = `Perform a high-quality AI document map. 
             Target Range: Pages ${startPage} to ${endPage}.
             Strategic Focus: ${settings?.focus || "Core document architecture and key thematic pillars"}.
             
@@ -238,7 +238,7 @@ const ReaderScreen: React.FC = () => {
             setMindMapData(response);
             await recordAIUsage();
         } catch (error) {
-            console.error("Mind Map Generation Failed:", error);
+            console.error("AI Document Map Generation Failed:", error);
         } finally {
             setIsGeneratingMindMap(false);
         }
@@ -399,7 +399,7 @@ const ReaderScreen: React.FC = () => {
                     (typeof SpeechSynthesisUtterance !== 'undefined' ? SpeechSynthesisUtterance : null);
 
                 if (!UtteranceClass) {
-                    console.error("No Speech synthesis engine available on this device.");
+                    console.error("Speech synthesis not available on this device.");
                     setIsAudioPlaying(false);
                     return;
                 }
@@ -523,8 +523,7 @@ const ReaderScreen: React.FC = () => {
                 text = await extractTextFromPdf(buffer);
                 setFluidContent(text);
             }
-            const response = await askGemini(`
-Perform a high-level Neural Audit of this high-stakes document. 
+            const response = await askGemini(`Perform a high-level AI Audit of this document. 
 Identify hidden risks, financial discrepancies, and legal exposure. 
 
 REPORT STRUCTURE:
@@ -576,10 +575,10 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Linear Reading</div>
+                    <div className="text-technical">Available Tools / Reader</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Read</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                        {isFluidMode ? "Neural Reflow Mode - Responsive Data Stream" : "Execute sequential data interpretation via high-fidelity document rendering"}
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
+                        {isFluidMode ? "Mobile View - Text automatically fits your screen" : "Read and review your document with high-quality rendering"}
                     </p>
                 </div>
 
@@ -588,40 +587,40 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                     {(protocol || file) && (
                         <ToolGuide
                             title={
-                                protocol === 'briefing' ? "Intelligence Briefing Protocol" :
-                                    protocol === 'audit' ? "Neural Audit Protocol" :
-                                        "Secure Reader Protocol"
+                                protocol === 'briefing' ? "Audio Quick-Briefing Guide" :
+                                    protocol === 'audit' ? "Document Safety Audit Guide" :
+                                        "Document Reader Guide"
                             }
                             description={
-                                protocol === 'briefing' ? "Convert complex documents into strategic high-end audio downloads. ACTIVATE the headset mode for hands-free intake." :
-                                    protocol === 'audit' ? "Deep-layer structural investigation. Identify risks, financial discrepancies, and strategic savings." :
-                                        "High-fidelity sequential data interpretation. Optimized for deep focus and long-form document absorption."
+                                protocol === 'briefing' ? "Listen to your document like a professional podcast. Put on your headphones and learn on the go." :
+                                    protocol === 'audit' ? "Deep-layer document check. Find hidden risks, errors, and important legal details automatically." :
+                                        "A high-quality reading experience optimized for focus and long documents."
                             }
                             steps={
                                 protocol === 'briefing' ? [
-                                    "Initialize the operational context by uploading a PDF carrier.",
-                                    "System extracts high-fidelity lexical streams from the document.",
-                                    "Execute Synthesis to generate a strategic Intelligence Briefing podcast.",
-                                    "Stream or download the audio payload for elite mobile intake."
+                                    "Upload the PDF you want to listen to.",
+                                    "Our system reads and understands the document text.",
+                                    "Tap 'Start Audio' to generate your custom podcast briefing.",
+                                    "Listen now or download the audio for your commute."
                                 ] : protocol === 'audit' ? [
-                                    "Initialize the operational context by uploading a PDF carrier.",
-                                    "Run Neural Audit to perform a deep-layer risk assessment.",
-                                    "AI identifies critical discrepancies, savings, and legal exposure.",
-                                    "Synthesize a comprehensive Risk Analysis report."
+                                    "Upload the PDF you want to audit.",
+                                    "Run the 'Safety Audit' for a deep risk assessment.",
+                                    "Our AI finds critical errors, savings, and legal issues.",
+                                    "Get a clear, easy-to-read Risk Analysis report."
                                 ] : [
-                                    "Initialize the operational context by uploading a PDF carrier.",
-                                    "Configure visual parameters (Zoom, Fluid Mode) for optimal intake.",
-                                    "Use Neural Mind Mapping to project document architecture.",
-                                    "Engage with the document via High-Fidelity sequential rendering."
+                                    "Upload the PDF you want to read.",
+                                    "Use zoom or 'Mobile View' for the best comfort.",
+                                    "Create a Mind Map to see the document structure at a glance.",
+                                    "Enjoy a high-quality, distraction-free reading experience."
                                 ]
                             }
                             useCases={
                                 protocol === 'briefing' ? [
-                                    "Commuter Consumption", "Rapid Executive Briefing", "Mobile Data Sync", "Auditory Learning"
+                                    "Commuter Learning", "Executive Summaries", "Listen while driving", "Audio Study"
                                 ] : protocol === 'audit' ? [
-                                    "Legal Compliance", "Financial Auditing", "Due Diligence", "Investment Analysis"
+                                    "Legal Checks", "Financial Review", "Contract Testing", "Investment Analysis"
                                 ] : [
-                                    "Deep Reading", "Technical Review", "Knowledge Acquisition", "Asset Verification"
+                                    "Deep Reading", "Technical Review", "Learning", "Document View"
                                 ]
                             }
                         />
@@ -636,9 +635,9 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                 <BookOpen size={32} />
                             </motion.div>
                             <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">
-                                {protocol === 'audit' ? "Inject Audit Payload" :
-                                    protocol === 'briefing' ? "Inject Briefing Payload" :
-                                        "Initialize Reader"}
+                                {protocol === 'audit' ? "Upload Document for Audit" :
+                                    protocol === 'briefing' ? "Upload Document for Audio" :
+                                        "Tap to Open PDF"}
                             </span>
                             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                         </label>
@@ -657,7 +656,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                 }`}
                                         >
                                             <Shield size={16} fill={isAuditing ? "currentColor" : "none"} />
-                                            {isAuditing ? "Synthesizing Risk Map" : "Neural Audit Protocol"}
+                                            {isAuditing ? "Building Risk Report..." : "Start Safety Audit"}
                                         </motion.button>
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
@@ -684,7 +683,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                     }`}
                                             >
                                                 {isGeneratingAudio ? <Loader2 size={16} className="animate-spin" /> : isAudioPlaying ? <Square size={16} fill="currentColor" /> : <Headphones size={16} />}
-                                                {isAudioPlaying ? "Halt Intake" : "Execute Briefing Podcast"}
+                                                {isAudioPlaying ? "Stop Audio" : "Start Audio Podcast"}
                                             </motion.button>
                                             <motion.button
                                                 whileTap={{ scale: 0.95 }}
@@ -710,7 +709,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             }`}
                                     >
                                         <Zap size={14} fill={isFluidMode ? "currentColor" : "none"} />
-                                        {isFluidMode ? "Neural Reflow" : "Fluid Mode"}
+                                        {isFluidMode ? "Read in Mobile View" : "Mobile View"}
                                     </motion.button>
 
                                     <div className="flex gap-2 flex-1 min-w-[200px]">
@@ -735,7 +734,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                 }`}
                                         >
                                             <GitBranch size={14} />
-                                            {isGeneratingMindMap ? "Projecting" : "Mind Map"}
+                                            {isGeneratingMindMap ? "Creating Map..." : "Mind Map"}
                                         </motion.button>
                                     </div>
                                 </div>
@@ -812,7 +811,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             <div className="flex justify-between items-center mb-8">
                                                 <div className="flex items-center gap-2">
                                                     <GitBranch size={16} className="text-black dark:text-white" />
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">Neural Mind Map Projection</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">AI Document Map</span>
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <button
@@ -854,7 +853,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                 <div className="flex items-center gap-2">
                                                     <BookOpen size={16} className="text-black dark:text-white" />
                                                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black dark:text-white">
-                                                        {protocol === 'briefing' ? "Strategic Executive Summary" : "Neural Executive Outline"}
+                                                        {protocol === 'briefing' ? "Strategic Executive Summary" : "AI Executive Outline"}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-4">
@@ -887,7 +886,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                                                 className="absolute inset-0 bg-emerald-500 rounded-full blur-xl"
                                                             />
                                                         </div>
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 animate-pulse">On-Device Neural Processing active...</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 animate-pulse">Private AI processing active...</span>
                                                     </div>
                                                 ) : (
                                                     <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -909,7 +908,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             <div className="flex justify-between items-center mb-8">
                                                 <div className="flex items-center gap-2">
                                                     <Shield size={16} className="text-emerald-500" />
-                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">Neural Risk Analysis Report</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-600">AI Risk Analysis Report</span>
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <button
@@ -956,7 +955,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center"
                                         >
                                             <Zap size={48} className="text-black dark:text-white animate-pulse mb-6 opacity-20" />
-                                            <h3 className="text-sm font-black uppercase tracking-widest text-black dark:text-white mb-2">Neural Reflow Processing</h3>
+                                            <h3 className="text-sm font-black uppercase tracking-widest text-black dark:text-white mb-2">AI Text Reflow</h3>
                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Optimizing sequential data for mobile consumption...</p>
                                         </motion.div>
                                     ) : isFluidMode ? (

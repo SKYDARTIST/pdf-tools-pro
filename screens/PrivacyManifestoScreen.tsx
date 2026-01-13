@@ -21,7 +21,7 @@ const PrivacyManifestoScreen: React.FC = () => {
                     className="flex items-center gap-4 text-gray-400 hover:text-black dark:hover:text-white transition-colors group"
                 >
                     <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Return to Base</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Go Back</span>
                 </motion.button>
 
                 {/* Hero */}
@@ -39,23 +39,23 @@ const PrivacyManifestoScreen: React.FC = () => {
                     {[
                         {
                             icon: Lock,
-                            title: "Zero-Knowledge Infrastructure",
-                            desc: "Engineered without a central server. Anti-Gravity is physically unable to track your session, store your files, or sell your identity. Your documents reside only in your device's active RAM during manipulation."
+                            title: "We Store Nothing",
+                            desc: "We don't have a central server. This means we can't track you, store your files, or sell your data. Your documents stay on your device while you work on them."
                         },
                         {
                             icon: EyeOff,
-                            title: "Transient AI Processing",
-                            desc: "Neural interactions are powered by the Google Gemini API via encrypted TLS 1.3 links. All data transmission is stateless and transient; your documents are never used for model training and are purged immediately after response generation."
+                            title: "Secure AI Assistance",
+                            desc: "Our AI assistant uses secure, private connections. We never use your documents to train AI models, and all data is deleted immediately after you get your answer."
                         },
                         {
                             icon: Lock,
-                            title: "Zero-Persistence Storage",
-                            desc: "Operational state (Consent, Neural Budget) is stored in encrypted LocalStorage. No document identifiers or sensitive content ever persist beyond your active processing window."
+                            title: "No Hidden Tracking",
+                            desc: "Only basic settings like your AI credit balance are saved on your device. We never save your document names or content after you close the app."
                         },
                         {
                             icon: Zap,
-                            title: "2026 AI Safety Compliance",
-                            desc: "Every AI-generated insight follows strict safety protocols. The integrated 'Flag AI' mechanism allows for immediate reporting of neural inaccuracies, ensuring absolute technical integrity and accountability."
+                            title: "Safe AI Standards",
+                            desc: "Our AI follows strict safety rules. If you see an incorrect or unhelpful answer, you can report it instantly to help us improve."
                         }
                     ].map((pillar, i) => (
                         <motion.div
@@ -81,9 +81,9 @@ const PrivacyManifestoScreen: React.FC = () => {
                 {/* Final Callout */}
                 <div className="p-12 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[40px] text-center space-y-8">
                     <Globe size={48} className="mx-auto opacity-20" />
-                    <h3 className="text-3xl font-black uppercase tracking-tighter">Distributed & Secure</h3>
+                    <h3 className="text-3xl font-black uppercase tracking-tighter">Safe & Private</h3>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
-                        Join the 2026 Privacy Revolution. Use Anti-Gravity for all your sensitive document workflows without ever worrying about a data breach.
+                        Join the Privacy Revolution. Use Anti-Gravity for all your sensitive document workflows without ever worrying about a data breach.
                     </p>
                 </div>
             </div>

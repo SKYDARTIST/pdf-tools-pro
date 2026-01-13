@@ -119,7 +119,7 @@ const TableExtractorScreen: React.FC = () => {
         >
             <div className="flex justify-between items-center mb-12">
                 <div className="space-y-1">
-                    <div className="text-technical">Neural Extraction Protocol</div>
+                    <div className="text-technical">AI Tools / Table Extractor</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Table AI</h1>
                 </div>
                 <button
@@ -131,16 +131,16 @@ const TableExtractorScreen: React.FC = () => {
             </div>
 
             <ToolGuide
-                title="Structured Data Protocol"
-                description="Isolate grid-based data flows from visual or document carriers. Convert unstructured document layers into premium data assets."
+                title="How to extract tables"
+                description="Automatically find tables and spreadsheets inside your PDF or images. We'll turn them into clean CSV or JSON files you can use in Excel."
                 steps={[
-                    "Inject the data source (PDF carrier or Image stream) into the recovery engine.",
-                    "AI performs a Deep Scan of the document's internal grid layer.",
-                    "System identifies structural tables and decouples the raw data segments.",
-                    "Execute Export to synthesize a Structured CSV or Master JSON payload."
+                    "Upload your PDF or Image containing a table.",
+                    "Our AI performs a deep scan for any table or grid.",
+                    "We identify the rows and columns and extract the data.",
+                    "Export your tables as clean CSV or JSON files."
                 ]}
                 useCases={[
-                    "Financial Audit", "Data Migration", "Report Digitization", "Inventory Management Synthesis"
+                    "Financial Reports", "Data Entry", "Digitizing Documents", "Excel Preparation"
                 ]}
             />
 
@@ -156,8 +156,8 @@ const TableExtractorScreen: React.FC = () => {
                         <div className="w-20 h-20 bg-black/5 dark:bg-white/5 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-500">
                             <FileUp size={32} />
                         </div>
-                        <h3 className="text-xl font-black uppercase tracking-tight text-gray-900 dark:text-white">Inject Data Source</h3>
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-2">Upload Image or PDF for AI extraction</p>
+                        <h3 className="text-xl font-black uppercase tracking-tight text-gray-900 dark:text-white">Upload Source File</h3>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-2">Choose a PDF or Image to find tables</p>
                         <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileSelect} />
                     </motion.label>
                 )}
@@ -180,8 +180,8 @@ const TableExtractorScreen: React.FC = () => {
                             </div>
                         </div>
                         <div className="text-center">
-                            <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Scanning Grid Layer</h3>
-                            <p className="text-technical animate-pulse mt-2">Gemini Neural Parsing Active</p>
+                            <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Scanning for Tables...</h3>
+                            <p className="text-technical animate-pulse mt-2">AI is analyzing your document</p>
                         </div>
                     </motion.div>
                 )}
@@ -203,7 +203,7 @@ const TableExtractorScreen: React.FC = () => {
                                     <span className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Extraction Complete</span>
                                 </div>
                                 <h3 className="text-3xl font-black uppercase tracking-tighter leading-none">
-                                    {tables.length} {tables.length === 1 ? 'Table' : 'Tables'} Recovered
+                                    {tables.length} {tables.length === 1 ? 'Table' : 'Tables'} Found
                                 </h3>
                                 <div className="pt-4 flex gap-4">
                                     <motion.button
@@ -213,7 +213,7 @@ const TableExtractorScreen: React.FC = () => {
                                         className="px-6 py-3 bg-white/20 dark:bg-black/20 rounded-full flex items-center gap-2 border border-white/20 dark:border-black/20 hover:bg-white/30 dark:hover:bg-black/30 transition-all shadow-xl backdrop-blur-md"
                                     >
                                         <Share2 size={14} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Master JSON</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Download JSON</span>
                                     </motion.button>
                                     <button
                                         onClick={() => setShowReport(true)}
@@ -264,7 +264,7 @@ const TableExtractorScreen: React.FC = () => {
                         ) : (
                             <div className="py-20 text-center opacity-30">
                                 <TableIcon size={48} className="mx-auto mb-4" />
-                                <p className="text-xs font-black uppercase tracking-widest">No structural grids located</p>
+                                <p className="text-xs font-black uppercase tracking-widest">No tables found</p>
                             </div>
                         )}
 
@@ -272,7 +272,7 @@ const TableExtractorScreen: React.FC = () => {
                             onClick={() => { setStatus('idle'); setTables([]); setFile(null); }}
                             className="w-full py-6 monolith-card bg-black/5 dark:bg-white/5 border-dashed border-2 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-[0.4em] text-gray-400"
                         >
-                            Reset Protocol
+                            Start Over
                         </button>
                     </motion.div>
                 )}

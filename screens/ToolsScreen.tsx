@@ -16,19 +16,19 @@ const ToolsScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
 
     const tools = [
-        { title: 'Read', desc: 'Secure Sequential Reading', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
-        { title: 'Scanner', desc: 'Neural Enhanced Scan', icon: Zap, path: '/scanner', cat: 'popular' },
-        { title: 'Image to PDF', desc: 'Convert photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
-        { title: 'Merge', desc: 'Combine PDFs', icon: Combine, path: '/merge', cat: 'popular' },
-        { title: 'Split', desc: 'Extract pages', icon: Scissors, path: '/split', cat: 'popular' },
-        { title: 'To Text', desc: 'Extract copyable text', icon: FileText, path: '/extract-text', cat: 'convert' },
-        { title: 'Sign', desc: 'Authorize documents', icon: PenTool, path: '/sign', cat: 'security' },
-        { title: 'Rotate', desc: 'Fix orientation', icon: RotateCw, path: '/rotate', cat: 'popular' },
-        { title: 'Watermark', desc: 'Add brand layer', icon: Droplet, path: '/watermark', cat: 'security' },
-        { title: 'Get Images', desc: 'Export PDF visuals', icon: FileImage, path: '/extract-images', cat: 'convert' },
-        { title: 'Remove', desc: 'Delete specific pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
-        { title: 'Numbers', desc: 'Add page identifiers', icon: Hash, path: '/page-numbers', cat: 'popular' },
-        { title: 'Meta Engine', desc: 'Edit document data', icon: FileText, path: '/metadata', cat: 'security' },
+        { title: 'Read', desc: 'Private PDF Reader', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
+        { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular' },
+        { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
+        { title: 'Merge', desc: 'Merge PDF Files', icon: Combine, path: '/merge', cat: 'popular' },
+        { title: 'Split', desc: 'Split & Extract Pages', icon: Scissors, path: '/split', cat: 'popular' },
+        { title: 'To Text', desc: 'Extract PDF Text', icon: FileText, path: '/extract-text', cat: 'convert' },
+        { title: 'Sign', desc: 'Sign PDF Documents', icon: PenTool, path: '/sign', cat: 'security' },
+        { title: 'Rotate', desc: 'Rotate PDF Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
+        { title: 'Watermark', desc: 'Add PDF Watermark', icon: Droplet, path: '/watermark', cat: 'security' },
+        { title: 'Get Images', desc: 'Extract PDF Images', icon: FileImage, path: '/extract-images', cat: 'convert' },
+        { title: 'Remove', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
+        { title: 'Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'popular' },
+        { title: 'PDF Metadata', desc: 'Edit Document Info', icon: FileText, path: '/metadata', cat: 'security' },
     ];
 
     const filtered = tools.filter(tool => {
@@ -47,9 +47,9 @@ const ToolsScreen: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-4"
                 >
-                    <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Protocol Assets</div>
+                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Available Tools</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tools</h1>
-                    <p className="text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Select operation for data manipulation</p>
+                    <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Select a tool to process your PDFs</p>
                 </motion.div>
 
                 <TaskCounter variant="inline" />
@@ -61,12 +61,12 @@ const ToolsScreen: React.FC = () => {
                     transition={{ delay: 0.1 }}
                     className="relative group"
                 >
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-600 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" size={20} />
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" size={20} />
                     <input
                         type="search"
-                        placeholder="SEARCH PROTOCOLS..."
+                        placeholder="Search tools..."
                         aria-label="Search tools"
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -89,7 +89,7 @@ const ToolsScreen: React.FC = () => {
                                 : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:bg-black/10 dark:hover:bg-white/10'
                                 }`}
                         >
-                            {cat}
+                            {cat === 'all' ? 'All' : cat}
                         </motion.button>
                     ))}
                 </motion.div>
@@ -121,7 +121,7 @@ const ToolsScreen: React.FC = () => {
                                 </div>
                                 <div className="min-w-0 px-1">
                                     <h3 className="text-[11px] font-black uppercase tracking-wider text-black dark:text-white mb-0.5 mt-1 leading-none">{tool.title}</h3>
-                                    <p className="text-[7px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight leading-tight line-clamp-2 max-w-[100px]">{tool.desc}</p>
+                                    <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-tight line-clamp-2 max-w-[100px]">{tool.desc}</p>
                                 </div>
 
                                 <motion.button
@@ -131,7 +131,7 @@ const ToolsScreen: React.FC = () => {
                                         e.stopPropagation();
                                         window.dispatchEvent(new CustomEvent('neural-assistant-sync', {
                                             detail: {
-                                                query: `Tell me about the ${tool.title} Protocol. What are its use cases and how do I use it?`,
+                                                query: `Tell me about the ${tool.title} tool. What are its use cases and how do I use it?`,
                                                 guidance: true
                                             }
                                         }));
@@ -153,7 +153,7 @@ const ToolsScreen: React.FC = () => {
                         className="text-center py-20 monolith-card bg-transparent border-dashed border-2 border-black/10 dark:border-white/10"
                     >
                         <Search size={32} className="mx-auto mb-4 text-gray-300 dark:text-gray-700" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zero matches in archive</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">No tools found</p>
                     </motion.div>
                 )}
                 <LegalFooter />

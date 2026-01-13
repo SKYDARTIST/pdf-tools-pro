@@ -38,22 +38,22 @@ const ViewScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Internal Visualization</div>
+          <div className="text-technical">Available Tools / PDF Viewer</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">View</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Render tactical document structures for real-time visual inspection</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Quickly preview and read your PDF documents with our private viewer</p>
         </div>
 
         <ToolGuide
-          title="Internal Visualization Protocol"
-          description="Access the internal document layer for structural inspection. Synchronize with the Neural Assistant for semantic analysis."
+          title="How to view your PDF"
+          description="Read any PDF document privately. You can zoom in, navigate pages, and ask our AI assistant questions about the content."
           steps={[
-            "Initialize the visualization protocol by uploading a PDF carrier.",
-            "System renders the visual payload in the Active Buffer.",
-            "Interact with the Neural Assistant for real-time document intelligence.",
-            "Navigate the internal segment hierarchy using the spatial controls."
+            "Upload the PDF you want to view.",
+            "We'll show your document in our secure viewer.",
+            "Ask the AI assistant for a summary or to explain specific parts.",
+            "Use the controls at the bottom to flip through pages."
           ]}
           useCases={[
-            "Quick Inspection", "Semantic Analysis", "Visual Verification", "Read-Only Access"
+            "Quick Inspection", "Summarizing Content", "Visual Verification", "Read-Only Access"
           ]}
         />
 
@@ -65,8 +65,8 @@ const ViewScreen: React.FC = () => {
             >
               <Eye size={32} />
             </motion.div>
-            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Visualization</span>
-            <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Internal Scan Mode</span>
+            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
+            <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Safe & Private Viewing</span>
             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
           </label>
         ) : (
@@ -81,7 +81,7 @@ const ViewScreen: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{fileName}</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Buffer</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Viewing Mode</p>
               </div>
               <div className="flex gap-2">
                 <button className="p-3 text-gray-400 hover:text-black dark:hover:text-white transition-colors"><ZoomIn size={20} /></button>
@@ -98,7 +98,7 @@ const ViewScreen: React.FC = () => {
 
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-black/90 dark:bg-white/90 backdrop-blur-xl px-8 py-4 rounded-[24px] text-white dark:text-black shadow-2xl border border-white/10 dark:border-black/10 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0">
                 <button className="opacity-30 hover:opacity-100 transition-opacity"><ChevronLeft size={24} /></button>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">P_01 / BUFFER_END</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">P_01</span>
                 <button className="opacity-30 hover:opacity-100 transition-opacity"><ChevronRight size={24} /></button>
                 <div className="w-[2px] h-6 bg-white/10 dark:bg-black/10" />
                 <button className="hover:scale-110 active:scale-90 transition-transform"><Maximize size={20} /></button>
@@ -109,7 +109,7 @@ const ViewScreen: React.FC = () => {
 
         {pdfUrl && (
           <div className="space-y-6">
-            <div className="text-technical ml-1">Neural Integration</div>
+            <div className="text-technical ml-1">AI Assistant</div>
             <AIAssistant contextText={extractedText} />
           </div>
         )}

@@ -30,13 +30,13 @@ const HomeScreen: React.FC = () => {
         className="space-y-8 text-center"
       >
         <div className="flex flex-col items-center space-y-4">
-          <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Anti-Gravity Protocol</div>
+          <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Security Active</div>
           <h2 className="text-6xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
             Workspace
           </h2>
         </div>
-        <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
-          Ready for document interpretation
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
+          Ready to process your documents
         </p>
       </motion.div>
 
@@ -47,7 +47,7 @@ const HomeScreen: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="text-technical ml-1">Critical Operations</div>
+          <div className="text-technical ml-1">Daily Tools</div>
 
           {/* Anti-Gravity Hero Card - Pro Obsidian Style */}
           <motion.div
@@ -69,7 +69,7 @@ const HomeScreen: React.FC = () => {
                   <h3 className="text-2xl font-black uppercase tracking-tighter">Anti-Gravity AI</h3>
                 </div>
                 <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-60 text-emerald-400">
-                  Deep-layer neural analysis
+                  Smart AI analysis
                 </p>
               </div>
               <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center backdrop-blur-md border border-white/5">
@@ -81,8 +81,8 @@ const HomeScreen: React.FC = () => {
           {/* Secondary Actions Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { icon: LayoutGrid, label: 'Standard Tools', path: '/tools', desc: 'Core Assets' },
-              { icon: HelpCircle, label: 'Protocol Guide', path: '/protocol-guide', desc: 'Operational Archive' }
+              { icon: LayoutGrid, label: 'All Tools', path: '/tools', desc: 'PDF Toolbox' },
+              { icon: HelpCircle, label: 'Help Guide', path: '/protocol-guide', desc: 'How to use' }
             ].map((action, i) => (
               <motion.div
                 key={action.label}
@@ -99,7 +99,7 @@ const HomeScreen: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-sm font-black uppercase tracking-tighter">{action.label}</h4>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{action.desc}</p>
+                  <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{action.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -110,13 +110,13 @@ const HomeScreen: React.FC = () => {
       {/* Data Feed */}
       <div className="space-y-6">
         <div className="flex items-center justify-between px-1">
-          <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Data Archive</div>
+          <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Recent Files</div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate('/my-files')}
             className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 hover:opacity-100 transition-opacity"
           >
-            Access History
+            View All Files
           </motion.button>
         </div>
 
@@ -142,7 +142,7 @@ const HomeScreen: React.FC = () => {
                         {file.neuralSignature}
                       </p>
                     ) : (
-                      <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                      <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
                         {new Date(file.timestamp).toLocaleDateString()}
                       </p>
                     )}
@@ -150,7 +150,7 @@ const HomeScreen: React.FC = () => {
                   {file.neuralSignature && (
                     <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                       <Sparkles size={8} className="text-emerald-500" />
-                      <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">Neural Index</span>
+                      <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">AI TAG</span>
                     </div>
                   )}
                   <CheckCircle size={16} className="text-gray-900 dark:text-white opacity-20" />
@@ -158,8 +158,8 @@ const HomeScreen: React.FC = () => {
               ))
             ) : (
               <div className="monolith-card p-16 flex flex-col items-center justify-center border-dashed border-2 opacity-30">
-                <FolderOpen size={32} className="text-gray-400 mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Memory Empty</p>
+                <FolderOpen size={32} className="text-gray-500 mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">History Empty</p>
               </div>
             )}
           </AnimatePresence>

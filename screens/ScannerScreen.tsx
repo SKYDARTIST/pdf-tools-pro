@@ -296,10 +296,10 @@ const ScannerScreen: React.FC = () => {
         <div className="flex flex-col items-center flex-1">
           <div className="flex items-center gap-2 mb-1">
             <NeuralPulse color="bg-emerald-500" size="md" />
-            <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Private • Secure Acquisition</span>
+            <span className="text-emerald-500 font-black text-[8px] tracking-[0.3em] uppercase">Safe • Private Scanning</span>
           </div>
           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-            <span className="text-emerald-500 font-black text-[7px] tracking-[0.2em] uppercase">Zero Watermark Protocol Active</span>
+            <span className="text-emerald-500 font-black text-[7px] tracking-[0.2em] uppercase">100% Watermark Free</span>
           </div>
           <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
         </div>
@@ -326,7 +326,7 @@ const ScannerScreen: React.FC = () => {
               <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-xl" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest bg-black/20 px-4 py-2 rounded-full backdrop-blur-sm">
-                  Align Document
+                  Align your document
                 </p>
               </div>
             </div>
@@ -342,13 +342,13 @@ const ScannerScreen: React.FC = () => {
                   <div className="flex-1 flex flex-col items-center justify-start p-6 pt-4 pb-24 min-h-0">
                     <div className="w-full max-w-sm space-y-4">
                       <ToolGuide
-                        title="Neural Scanner"
-                        description="Capture and enhance physical documents with AI-powered image optimization, smart naming, and professional-grade quality enhancement."
+                        title="How to scan"
+                        description="Take a clear photo of your document. Our AI will automatically enhance the quality, fix the lighting, and suggest a professional name for your file."
                         steps={[
-                          "Align your document within the visual guide markers.",
-                          "Capture the high-fidelity scan using the trigger.",
-                          "Activate Neural Enhancement for optimal quality.",
-                          "Assemble into a multi-page PDF or export as high-quality JPEG."
+                          "Point your camera at the document.",
+                          "Tap the button to take a photo.",
+                          "Tap 'Enhance' to fix the quality and lighting.",
+                          "Save your scan as a PDF or an Image file."
                         ]}
                         useCases={[
                           "Receipts & Invoices", "Business Cards", "Handwritten Notes", "Whiteboards", "Official Forms"
@@ -364,7 +364,7 @@ const ScannerScreen: React.FC = () => {
                       onClick={() => setShowGuide(false)}
                       className="w-full h-16 bg-white text-black rounded-full font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl hover:bg-emerald-500 hover:text-white transition-all"
                     >
-                      Initialize Acquisition
+                      Start Scanning
                     </motion.button>
                   </div>
                 </motion.div>
@@ -397,7 +397,7 @@ const ScannerScreen: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     className="bg-black/90 backdrop-blur-2xl p-2.5 px-4 rounded-2xl flex items-center gap-3 border border-white/10 shadow-2xl"
                   >
-                    <span className="text-[8px] font-black uppercase tracking-widest text-violet-400 shrink-0">Smart Name:</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-violet-400 shrink-0">File Name:</span>
                     <input
                       type="text"
                       value={suggestedName}
@@ -413,10 +413,10 @@ const ScannerScreen: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] font-black uppercase tracking-[0.15em] block leading-tight text-white">
-                        Neural Enhancement
+                        AI Enhanced
                       </span>
                       {appliedFilters.shadowPurge && (
-                        <span className="px-1.5 py-0.5 bg-violet-500 rounded text-[6px] font-black uppercase tracking-widest animate-pulse">Shadow Purge Active</span>
+                        <span className="px-1.5 py-0.5 bg-violet-500 rounded text-[6px] font-black uppercase tracking-widest animate-pulse">Shadows Fixed</span>
                       )}
                     </div>
                     <p className="text-[7px] font-bold opacity-80 uppercase tracking-tight truncate mt-1">
@@ -452,7 +452,7 @@ const ScannerScreen: React.FC = () => {
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
               >
                 <Loader2 className="animate-spin text-white" size={32} />
-                <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Analyzing Lighting...</span>
+                <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Enhancing quality...</span>
               </motion.div>
             )}
           </div>
@@ -467,7 +467,7 @@ const ScannerScreen: React.FC = () => {
               className="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center gap-4"
             >
               <Loader2 className="animate-spin text-violet-600" size={48} />
-              <p className="text-slate-900 font-black text-xs uppercase tracking-widest">Enhancing Scan...</p>
+              <p className="text-slate-900 font-black text-xs uppercase tracking-widest">Processing photo...</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -499,7 +499,7 @@ const ScannerScreen: React.FC = () => {
               <div className="p-2.5 bg-white/5 rounded-xl">
                 <RefreshCw size={18} />
               </div>
-              <span className="text-[7px] font-black uppercase tracking-widest">Reset</span>
+              <span className="text-[7px] font-black uppercase tracking-widest">Retake</span>
             </button>
 
             {!appliedFilters ? (
@@ -511,7 +511,7 @@ const ScannerScreen: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <Wand2 size={16} className={isPolishing ? 'animate-spin' : ''} />
                 <span className="font-black text-[9px] uppercase tracking-[0.2em]">
-                  Enhance
+                  AI Enhance
                 </span>
               </button>
             ) : (

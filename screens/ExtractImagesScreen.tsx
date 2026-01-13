@@ -181,22 +181,22 @@ const ExtractImagesScreen: React.FC = () => {
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Visual Extraction</div>
+                    <div className="text-technical">Available Tools / Extract Images</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Images</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Identify and decouple tactical visual assets from the document carrier</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Find and save all images from your PDF as separate files</p>
                 </div>
 
                 <ToolGuide
-                    title="Visual Asset Isolation"
-                    description="Decouple embedded images from the PDF carrier. Identify and extract tactical visual assets for isolated usage."
+                    title="How to extract images"
+                    description="Automatically find all pictures and photos inside your PDF. You can then download them individually or all at once."
                     steps={[
-                        "Initialize the extraction protocol by uploading a PDF carrier.",
-                        "System performs a visual scan to identify tactical image assets within the pages.",
-                        "Embedded image layers are identified for decoupling from the document structure.",
-                        "Execute Extraction to isolate and download the visual payloads."
+                        "Upload the PDF you want to scan for images.",
+                        "Our tool scans every page of your document.",
+                        "We identify all the photos and graphics found inside.",
+                        "Tap 'Extract' to save the images to your device."
                     ]}
                     useCases={[
-                        "Image Harvesting", "Asset Decoupling", "Visual Content Management", "Portfolio Assembly"
+                        "Saving Photos", "Pulling Graphics", "Image Harvesting", "Document Assets"
                     ]}
                 />
             </div>
@@ -209,8 +209,8 @@ const ExtractImagesScreen: React.FC = () => {
                     >
                         <ImageIcon size={32} />
                     </motion.div>
-                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Extraction</span>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Visual Scan Mode</span>
+                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
+                    <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Scanning for images</span>
                     <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                 </label>
             ) : (
@@ -227,7 +227,7 @@ const ExtractImagesScreen: React.FC = () => {
                         <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                {extractedAssets.length > 0 ? `${extractedAssets.length} ASSETS DECOUPLED` : 'AWAITING SCAN'}
+                                {extractedAssets.length > 0 ? `${extractedAssets.length} IMAGES FOUND` : 'AWAITING SCAN'}
                             </p>
                         </div>
                         <button onClick={() => {
@@ -258,7 +258,7 @@ const ExtractImagesScreen: React.FC = () => {
                             ) : (
                                 <>
                                     <ImageIcon size={18} strokeWidth={3} />
-                                    <span>Execute Extraction</span>
+                                    <span>Extract All Images</span>
                                 </>
                             )}
                         </button>

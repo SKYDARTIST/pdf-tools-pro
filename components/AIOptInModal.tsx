@@ -54,10 +54,10 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
 
                                 <div className="relative z-10 text-center">
                                     <h2 className="text-3xl font-black uppercase tracking-tighter leading-none mb-3">
-                                        Neural Consent
+                                        AI Permission
                                     </h2>
                                     <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">
-                                        Privacy Protocol v2026
+                                        Privacy Policy v2.0
                                     </p>
                                 </div>
                             </div>
@@ -65,24 +65,24 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
                             {/* Content */}
                             <div className="p-8 space-y-8">
                                 <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-relaxed text-center">
-                                    To initialize AI operations, we must transmit your document data via secure HTTPS to the Google Gemini Neural Engine.
+                                    To use AI features, we need to securely process your document using Google's AI service.
                                 </p>
 
                                 <div className="space-y-6">
                                     <ConsentItem
                                         icon={EyeOff}
-                                        title="Ephemeral Processing"
-                                        desc="No data is stored for model training."
+                                        title="Private Processing"
+                                        desc="Your data is not used for model training."
                                     />
                                     <ConsentItem
                                         icon={Zap}
-                                        title="Secure Tunnel"
-                                        desc="Encrypted via SSL/TLS during transit."
+                                        title="Secure Connection"
+                                        desc="All data is encrypted during transit."
                                     />
                                     <ConsentItem
                                         icon={Cpu}
-                                        title="Play Store Compliant"
-                                        desc="Verified privacy-first architecture."
+                                        title="On-Device Security"
+                                        desc="Only the minimum data needed is shared."
                                     />
                                 </div>
 
@@ -91,7 +91,7 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
                                         onClick={onAccept}
                                         className="w-full py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
                                     >
-                                        Accept Protocol
+                                        I Agree
                                         <ArrowRight size={14} className="inline-block ml-2 group-hover:translate-x-1 transition-transform" />
                                     </button>
 
@@ -99,7 +99,7 @@ const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }
                                         onClick={onClose}
                                         className="w-full py-2 text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] hover:text-black dark:hover:text-white transition-colors"
                                     >
-                                        Decline & Return
+                                        Cancel
                                     </button>
                                 </div>
                             </div>

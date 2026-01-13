@@ -139,22 +139,22 @@ const RemovePagesScreen: React.FC = () => {
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Segment Deletion</div>
+                    <div className="text-technical">Available Tools / Remove Pages</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Remove</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Identify and purge structural segments from the asset carrier</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Select and remove unnecessary pages from your PDF document</p>
                 </div>
 
                 <ToolGuide
-                    title="Data Purge Protocol"
-                    description="Permanently excise redundant or classified pages. Select valid segments to retain while purging irrelevant data layers."
+                    title="How to remove pages"
+                    description="Delete unwanted pages from your document. Simply select the pages you want to remove and we'll create a new, cleaned-up PDF for you."
                     steps={[
-                        "Initialize the purge protocol by uploading a PDF carrier.",
-                        "Analyze individual page segments for deletion.",
-                        "Select any pages that must be permanently DELETED.",
-                        "Execute Purge to synthesize a cleaned asset carrier."
+                        "Upload the PDF you want to edit.",
+                        "View the pages of your document below.",
+                        "Select the pages you want to remove.",
+                        "Tap 'Remove Pages' to save your new PDF."
                     ]}
                     useCases={[
-                        "Confidentiality Management", "Document Resizing", "Redundancy Removal", "Classification Control"
+                        "Removing Mistakes", "Document Resizing", "Deleting Blank Pages", "Classification Control"
                     ]}
                 />
             </div>
@@ -167,7 +167,7 @@ const RemovePagesScreen: React.FC = () => {
                     >
                         <Trash2 size={32} />
                     </motion.div>
-                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Purge</span>
+                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
                     <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
                     <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                 </label>
@@ -183,7 +183,7 @@ const RemovePagesScreen: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} SEGMENTS ARCHIVED</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES FOUND</p>
                         </div>
                         <button onClick={() => { setFile(null); setSelectedPages(new Set()); setPageCount(0); }} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
                             Change
@@ -235,7 +235,7 @@ const RemovePagesScreen: React.FC = () => {
                                             </div>
                                             <div className="absolute bottom-2 left-0 right-0 text-center">
                                                 <span className={`text-[8px] font-black uppercase tracking-widest ${selectedPages.has(i) ? 'text-rose-600' : 'text-gray-400 dark:text-gray-500'}`}>
-                                                    SGN {i + 1}
+                                                    PAGE {i + 1}
                                                 </span>
                                             </div>
                                             {selectedPages.has(i) && (
@@ -272,7 +272,7 @@ const RemovePagesScreen: React.FC = () => {
                 ) : (
                     <>
                         <Share2 size={18} strokeWidth={3} />
-                        <span>Process & Share PDF</span>
+                        <span>Remove Pages & Share</span>
                     </>
                 )}
             </button>

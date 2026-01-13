@@ -254,14 +254,14 @@ const SmartRedactScreen: React.FC = () => {
         >
             <div className="space-y-12">
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Security Layer</div>
+                    <div className="text-technical">AI Tools / Smart Redact</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Smart Redact</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                        Automated PII Neutralization via Neural Pattern Recognition
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
+                        Automatically hide sensitive info like names, emails, and bank details
                     </p>
                     <div className="pt-2 flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Zero Watermark Protocol: Verified Clean Output</span>
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">100% Watermark Free: Clean and Private Output</span>
                     </div>
                 </div>
 
@@ -273,7 +273,7 @@ const SmartRedactScreen: React.FC = () => {
                         >
                             <Shield size={32} />
                         </motion.div>
-                        <span className="text-sm font-black uppercase tracking-widest">Inhibit Sensitive Flow</span>
+                        <span className="text-sm font-black uppercase tracking-widest">Tap to upload document</span>
                         <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
                     </label>
                 ) : null}
@@ -285,16 +285,16 @@ const SmartRedactScreen: React.FC = () => {
                         transition={{ delay: 0.1 }}
                     >
                         <ToolGuide
-                            title="PII Neutralization Engine"
-                            description="Automatically identify and redact sensitive personal information from documents and images using a multi-layer security protocol (Local + Neural)."
+                            title="How Smart Redact works"
+                            description="Automatically find and hide sensitive personal information from documents and images using advanced AI security layers."
                             steps={[
-                                "Upload a PDF or Image containing sensitive data.",
-                                "Initiate Redaction to trigger local & neural scanning.",
-                                "Preview the sanitized transcript for verification.",
-                                "Export the finalized, privacy-safe asset."
+                                "Upload a PDF or an Image with sensitive data.",
+                                "Select the types of info you want to hide.",
+                                "Tap 'Redact' to start the AI scanning process.",
+                                "Download your private, cleaned document."
                             ]}
                             useCases={[
-                                "ID Cards", "Bank Statements", "Resume Masking", "Public Records", "GDPR Compliance"
+                                "ID Cards", "Bank Statements", "Hiding Personal Info", "Public Records", "Privacy Compliance"
                             ]}
                         />
                     </motion.div>
@@ -310,7 +310,7 @@ const SmartRedactScreen: React.FC = () => {
                                 <div className="min-w-0">
                                     <h3 className="text-[12px] font-black uppercase tracking-widest truncate max-w-[140px] android-sm:max-w-[100px]">{file.name}</h3>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate">
-                                        {file.type.startsWith('image/') ? 'Visual Vector' : 'Document Ready'}
+                                        {file.type.startsWith('image/') ? 'Image File' : 'PDF File'}
                                     </p>
                                 </div>
                             </div>
@@ -321,7 +321,7 @@ const SmartRedactScreen: React.FC = () => {
                                     onClick={startRedaction}
                                     className="bg-black dark:bg-white text-white dark:text-black px-8 android-sm:px-4 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex-shrink-0"
                                 >
-                                    Initiate
+                                    <span>Redact</span>
                                 </motion.button>
                             )}
                         </div>
@@ -330,7 +330,7 @@ const SmartRedactScreen: React.FC = () => {
                             <div className="monolith-card p-6 space-y-6">
                                 <div className="flex items-center gap-2">
                                     <Zap size={14} className="text-emerald-500" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Redaction Control Hub</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Choose what to hide</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
@@ -369,8 +369,8 @@ const SmartRedactScreen: React.FC = () => {
                             <div className="monolith-card p-12 flex flex-col items-center justify-center space-y-6 text-center">
                                 <Loader2 size={40} className="animate-spin text-black dark:text-white opacity-20" />
                                 <div className="space-y-2">
-                                    <h4 className="text-sm font-black uppercase tracking-widest">Neural Scanning In Progress</h4>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Identifying PII vectors for neutralization...</p>
+                                    <h4 className="text-sm font-black uppercase tracking-widest">Scanning your document...</h4>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Looking for sensitive information...</p>
                                 </div>
                             </div>
                         ) : status === 'done' && (
@@ -384,9 +384,9 @@ const SmartRedactScreen: React.FC = () => {
                                         <Check size={32} />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-xl font-black uppercase tracking-tighter text-emerald-500">Document Sanitized</h3>
+                                        <h3 className="text-xl font-black uppercase tracking-tighter text-emerald-500">Privacy Clean Complete</h3>
                                         <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest">
-                                            {file.type.startsWith('image/') ? 'Neural Vision has extracted and neutralized PII from the visual asset.' : 'All identified PII has been neutralized from the output stream.'}
+                                            {file.type.startsWith('image/') ? 'Our AI has identified and hidden sensitive information from your image.' : 'All sensitive information has been hidden from the text export.'}
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap justify-center gap-3">

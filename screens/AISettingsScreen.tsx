@@ -16,9 +16,9 @@ const AISettingsScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3 text-center sm:text-left">
-          <div className="text-technical">Protocol Configuration</div>
+          <div className="text-technical">App Settings</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Security</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Privacy and automation parameters</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Manage your privacy and AI assistant settings</p>
         </div>
 
         {/* AI Assistant Toggle Control */}
@@ -67,12 +67,12 @@ const AISettingsScreen: React.FC = () => {
           >
             <div className="flex items-center gap-3 text-gray-900 dark:text-white">
               <Info size={16} />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Operational Logic</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">How it works</span>
             </div>
             <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
-              Assistant utilizes text extraction parameters locally.
-              Remote queries are only dispatched during active user input.
-              Disabling will prune all AI modules from the current session.
+              The assistant reads your document text directly on your device.
+              Information is only sent to our secure AI server when you ask a question.
+              Turning this off will disable all AI features like chat and summaries.
             </p>
           </motion.div>
         </motion.div>
@@ -115,7 +115,7 @@ const AISettingsScreen: React.FC = () => {
             </div>
             <div className="space-y-1">
               <h4 className="text-xl font-black uppercase tracking-tighter">Meet the Developer</h4>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] opacity-60">Verified Originator Protocol</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] opacity-60">The Creator</p>
             </div>
           </div>
 
@@ -144,11 +144,11 @@ const AISettingsScreen: React.FC = () => {
         <div className="monolith-card p-8 space-y-6 border-dashed border-2 border-black/10 dark:border-white/10 bg-transparent shadow-none">
           <div className="flex items-center gap-3 text-gray-500">
             <Globe size={14} />
-            <h5 className="text-[10px] font-black uppercase tracking-[0.3em]">Platform Protocol</h5>
+            <h5 className="text-[10px] font-black uppercase tracking-[0.3em]">How we handle files</h5>
           </div>
           <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 leading-relaxed uppercase tracking-widest">
-            Non-AI protocols (Merge, Split, Compress, Sign, etc.) are executed <span className="text-black dark:text-white underline decoration-black/20 dark:decoration-white/20">100% locally</span>.
-            No document data leaves your device unless explicitly requested via the Neural Helper module.
+            Basic tools (Merge, Split, Compress, Sign, etc.) run <span className="text-black dark:text-white underline decoration-black/20 dark:decoration-white/20">100% locally</span> on your phone.
+            Your files never leave your device unless you use the AI assistant to summarize or analyze them.
           </p>
         </div>
 
@@ -161,7 +161,7 @@ const AISettingsScreen: React.FC = () => {
           <div className="w-8 h-[2px] bg-black/10 dark:bg-white/10 rounded-full" />
           <div className="flex flex-col items-center gap-2">
             <p className="text-[10px] text-center text-gray-400 dark:text-gray-600 px-8 leading-relaxed uppercase font-black tracking-[0.3em]">
-              Anti-Gravity Security Protocol // Rev 4.0
+              Anti-Gravity Security System
             </p>
             <span className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-400">Built By Cryptobulla</span>
           </div>

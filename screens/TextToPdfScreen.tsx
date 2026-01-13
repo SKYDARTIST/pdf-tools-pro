@@ -72,22 +72,22 @@ const TextToPdfScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Lexical Synthesis</div>
+          <div className="text-technical">Available Tools / Text to PDF</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Draft</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Synthesize tactical document structures from raw lexical input</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Create a clean, professional PDF document from your plain text</p>
         </div>
 
         <ToolGuide
-          title="Data Synthesis Protocol"
-          description="Synthesize tactical document structures from raw lexical input. Convert unstructured text streams into premium PDF asset carriers."
+          title="How to create a PDF from text"
+          description="Easily convert your notes, memos, or any typed text into a high-quality PDF. Just enter a title and your content, and we'll handle the rest."
           steps={[
-            "Define the unique document identifier (Title) for the asset header.",
-            "Initialize the lexical stream by entering raw text data into the terminal.",
-            "System formats the raw lexical input into a standardized document layer.",
-            "Execute Synthesis to finalize the PDF asset carrier and download the payload."
+            "Enter a Title for your document.",
+            "Type or paste your text into the box provided.",
+            "We format your text into a clean PDF layout.",
+            "Tap 'Create PDF' to save and share your new file."
           ]}
           useCases={[
-            "Rapid Memo Generation", "Lexical Data Archival", "Note Conversion", "Structured Text Serialization"
+            "Rapid Memo Generation", "Saving Notes", "Creating Checklists", "Formal Documents"
           ]}
         />
 
@@ -97,19 +97,19 @@ const TextToPdfScreen: React.FC = () => {
               <Bold size={14} className="text-gray-400" />
               <AlignLeft size={14} className="text-gray-400" />
               <div className="w-[2px] h-4 bg-black/10 dark:bg-white/10" />
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Operational Terminal</span>
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">Document Editor</span>
             </div>
 
             <input
               type="text"
-              placeholder="DOC_IDENTIFIER..."
+              placeholder="Document Title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full text-2xl font-black text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-700 bg-transparent focus:outline-none uppercase tracking-tighter"
             />
 
             <textarea
-              placeholder="INITIALIZE_LEXICAL_STREAM..."
+              placeholder="Type your text here..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full flex-1 text-[13px] text-gray-600 dark:text-gray-300 placeholder:text-gray-300 dark:placeholder:text-gray-700 bg-transparent focus:outline-none resize-none leading-relaxed font-medium min-h-[300px] custom-scrollbar"
@@ -134,7 +134,7 @@ const TextToPdfScreen: React.FC = () => {
             ) : (
               <>
                 <Share2 size={18} strokeWidth={3} />
-                <span>Synthesize & Share Asset</span>
+                <span>Create & Share PDF</span>
               </>
             )}
           </button>
@@ -150,7 +150,7 @@ const TextToPdfScreen: React.FC = () => {
       {successData && (
         <SuccessModal
           isOpen={successData.isOpen}
-          operation="Document Synthesis"
+          operation="PDF Creation"
           fileName={successData.fileName}
           originalSize={successData.originalSize}
           finalSize={successData.finalSize}

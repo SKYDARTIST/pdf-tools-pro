@@ -37,7 +37,7 @@ const LandingPage: React.FC = () => {
                     rel="noopener noreferrer"
                     className="text-right ml-auto group transition-transform hover:scale-105"
                 >
-                    <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 group-hover:text-emerald-500 group-hover:opacity-100 transition-all">AUTH PROTOCOL</div>
+                    <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 group-hover:text-emerald-500 group-hover:opacity-100 transition-all">CONNECT WITH ME</div>
                     <div className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap group-hover:text-emerald-500 transition-colors">BUILT BY CRYPTOBULLA</div>
                 </a>
             </header>
@@ -90,7 +90,7 @@ const LandingPage: React.FC = () => {
                                 className="px-5 sm:px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl backdrop-blur-md"
                             >
                                 <NeuralPulse color="bg-emerald-500" size="sm" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500 dark:text-emerald-400">Neural Link: Active</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500 dark:text-emerald-400">AI SECURE & ACTIVE</span>
                             </motion.div>
                         </div>
 
@@ -112,7 +112,7 @@ const LandingPage: React.FC = () => {
                             </p>
                             <div className="flex flex-col items-center gap-3">
                                 <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 android-sm:text-[8px] android-sm:px-3">
-                                    PRIVACY BY DESIGN • EDGE NEURAL
+                                    PRIVACY BY DESIGN • PRIVATE AI
                                 </div>
                                 <div className="text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter android-sm:text-[9px]">
                                     $2.99 LIFETIME PASS • <span className="opacity-40">STRICT PRIVACY</span>
@@ -138,13 +138,13 @@ const LandingPage: React.FC = () => {
                             onClick={() => navigate('/workspace')}
                             className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-8 android-sm:py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden btn-neural"
                         >
-                            <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10 android-sm:text-[10px]">Initialize Workspace</span>
+                            <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10 android-sm:text-[10px]">Open App Workspace</span>
                             <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10 android-sm:w-4" />
                         </motion.button>
 
                         <div className="flex flex-col items-center gap-2">
                             <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.5em] opacity-40">
-                                v2026.1.0 Protocol
+                                v2026.1.0 Stable
                             </div>
                             <div className="h-[1px] w-12 bg-black/10 dark:bg-white/10" />
                         </div>
@@ -152,7 +152,7 @@ const LandingPage: React.FC = () => {
                         <div className="flex justify-center gap-14 pt-4 opacity-30 group-hover:opacity-100 transition-opacity">
                             {[
                                 { icon: Shield, label: 'Secure' },
-                                { icon: Cpu, label: 'Edge AI' },
+                                { icon: Cpu, label: 'Private AI' },
                                 { icon: Sparkles, label: 'Local' }
                             ].map((item, i) => (
                                 <div key={i} className="flex flex-col items-center gap-3">
@@ -170,11 +170,11 @@ const LandingPage: React.FC = () => {
                         viewport={{ once: true }}
                         className="pt-12 sm:pt-24 space-y-4 sm:space-y-8"
                     >
-                        <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Neural Trust Protocol</div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">TRUSTED BY BUILDERS</div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {[
                                 { title: "ZERO-DATA", desc: "No Trace Left" },
-                                { title: "EPHEMERAL", desc: "Transient Brain" },
+                                { title: "PRIVATE", desc: "Local Processing" },
                                 { title: "TRUSTED", desc: "50k+ Builders" },
                                 { title: "ELITE", desc: "Privacy First" }
                             ].map((badge, i) => (
@@ -186,7 +186,7 @@ const LandingPage: React.FC = () => {
                         </div>
                         <div className="pt-4 px-6 py-3 bg-emerald-500/5 border border-emerald-500/10 rounded-full inline-block">
                             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                                "THE MOST PRIVATE PDF SUITE EVER BUILT" — TECH PROTOCOL 2026
+                                "THE MOST PRIVATE PDF SUITE EVER BUILT" — TOP REVIEWS 2026
                             </span>
                         </div>
                     </motion.div>
@@ -200,13 +200,13 @@ const LandingPage: React.FC = () => {
                                 The Privacy<br className="hidden sm:block" /> Manifesto.
                             </h2>
                             <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
-                                In 2026, traditional cloud-first PDF suites are tied to "Cloud-First" strategies that require your data to leave your device for storage. Anti-Gravity is different. We have no storage servers. We cannot see your documents. We cannot sell your data.
+                                In 2026, most tools use "Cloud-First" strategies that send your data to corporate servers. Anti-Gravity is different. We have no storage servers. We cannot see your documents. We cannot sell your data.
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
                                 {[
-                                    { title: "ZERO KNOWLEDGE", desc: "Absolute data isolation." },
-                                    { title: "ZERO STORAGE", desc: "No server-side memory." },
-                                    { title: "EDGE NEURAL", desc: "Private AI processing." }
+                                    { title: "ABS-OLUTE PRIVACY", desc: "Your data stays with you." },
+                                    { title: "ZERO STORAGE", desc: "Nothing is saved on our end." },
+                                    { title: "LOCAL AI", desc: "Private on-device intelligence." }
                                 ].map((item, i) => (
                                     <div key={i} className="flex items-start gap-5">
                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
@@ -223,10 +223,10 @@ const LandingPage: React.FC = () => {
                                 <Shield size={160} />
                             </div>
                             <div className="space-y-6 relative z-10">
-                                <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Technical Advantage</div>
+                                <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">OUR ADVANTAGE</div>
                                 <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none">INSTANT SPEED.<br />ZERO RISK.</h3>
                                 <p className="text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
-                                    By using an ephemeral processing model, we eliminate traditional upload bottlenecks. Your documents are analyzed through a secure, transient link that clears immediately after each operation. This is the future of secure document intelligence.
+                                    By using local processing, we skip the slow uploads. Your documents are analyzed through a secure, temporary connection that clears immediately after each use. This is the future of secure document tools.
                                 </p>
                                 <div className="pt-10 flex items-center justify-between border-t border-black/10 dark:border-white/10">
                                     <div className="text-left">
@@ -258,7 +258,7 @@ const LandingPage: React.FC = () => {
                             </div>
                             <h3 className="text-xl font-black uppercase tracking-tighter text-emerald-500">Built By Cryptobulla</h3>
                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
-                                Connect with the architect behind the neural link for collaboration and updates.
+                                Connect with the developer for collaborations and latest app updates.
                             </p>
                             <a
                                 href="https://x.com/Cryptobullaaa"
@@ -267,7 +267,7 @@ const LandingPage: React.FC = () => {
                                 className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20"
                             >
                                 <Twitter size={14} fill="currentColor" />
-                                Initiate Contact
+                                SAY HELLO ON X
                             </a>
                         </div>
                     </motion.div>

@@ -121,10 +121,10 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
                             {/* Title */}
                             <h3 className="text-3xl font-black text-gray-900 dark:text-white text-center uppercase tracking-tighter leading-none mb-3">
-                                Protocol Success
+                                Task Complete
                             </h3>
                             <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 text-center uppercase tracking-[0.25em] mb-10">
-                                Asset Transformation Evaluated
+                                Your file is ready
                             </p>
 
                             {/* File info */}
@@ -155,7 +155,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-black/5 dark:border-white/5">
                                                         <Zap size={14} className="text-gray-900 dark:text-white" fill="currentColor" />
                                                         <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">
-                                                            {savings}% Compression Achieved
+                                                            Reduced by {savings}%
                                                         </span>
                                                     </div>
                                                 )}
@@ -194,7 +194,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                         className="w-full flex items-center justify-center gap-3 py-5 px-6 bg-emerald-500 text-white rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl hover:scale-105 active:scale-95"
                                     >
                                         <Share2 size={20} />
-                                        SHARE ASSET
+                                        SHARE FILE
                                     </button>
                                 )}
                                 <div className="flex gap-3">
@@ -204,14 +204,14 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                             className="flex-1 flex items-center justify-center gap-3 py-4 px-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95"
                                         >
                                             <FolderOpen size={16} />
-                                            ARCHIVE
+                                            MY FILES
                                         </button>
                                     )}
                                     <button
                                         onClick={onClose}
                                         className="flex-1 py-4 px-6 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 rounded-full font-black text-[10px] uppercase tracking-widest transition-all"
                                     >
-                                        DISMISS
+                                        DONE
                                     </button>
                                 </div>
                             </div>

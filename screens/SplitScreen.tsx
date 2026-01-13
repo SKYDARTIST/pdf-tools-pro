@@ -102,22 +102,22 @@ const SplitScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Data Decomposition</div>
+          <div className="text-technical">Available Tools / Split PDF</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Split</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Extract and isolate individual data layers into separate carriers</p>
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">Extract and save individual pages from your PDF as separate files</p>
         </div>
 
         <ToolGuide
-          title="Neural Fission Protocol"
-          description="Extract individual pages into isolated carrier streams. Decompose a single document into its component page layers."
+          title="How to split your PDF"
+          description="Break a large PDF into individual pages. Our tool will create a separate PDF for every page in your original file."
           steps={[
-            "Initialize the decomposition by uploading a PDF carrier.",
-            "AI analyzes the page count and structural complexity.",
-            "Execute Fission to decouple the page layers.",
-            "Share the resulting individual page archives."
+            "Upload the PDF you want to split.",
+            "Our tool analyzes the number of pages in your file.",
+            "Tap 'Split & Share' to start the process.",
+            "Download and save the individual page files."
           ]}
           useCases={[
-            "Page Extraction", "Document Splitting", "Content Isolation", "Asset Management"
+            "Page Extraction", "Document Splitting", "Separating Pages", "File Management"
           ]}
         />
 
@@ -129,7 +129,7 @@ const SplitScreen: React.FC = () => {
             >
               <Scissors size={32} />
             </motion.div>
-            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Extraction</span>
+            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
             <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
             <input
               type="file"
@@ -150,7 +150,7 @@ const SplitScreen: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-black uppercase tracking-tighter truncate">{file.name}</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{(file.size / 1024 / 1024).toFixed(2)} MB ARCHIVE</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{(file.size / 1024 / 1024).toFixed(2)} MB FILE</p>
               </div>
               <button
                 onClick={() => setFile(null)}
@@ -175,7 +175,7 @@ const SplitScreen: React.FC = () => {
               ) : (
                 <>
                   <Share2 size={18} strokeWidth={3} />
-                  <span>Execute Split & Share</span>
+                  <span>Split & Share Documents</span>
                 </>
               )}
             </button>

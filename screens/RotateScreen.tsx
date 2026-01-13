@@ -119,22 +119,22 @@ const RotateScreen: React.FC = () => {
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Spatial Orientation</div>
+                    <div className="text-technical">Available Tools / Rotate PDF</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Rotate</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Adjust structural alignment of asset carrier pages</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Rotate individual pages or the entire document by 90 or 180 degrees</p>
                 </div>
 
                 <ToolGuide
-                    title="Perspective Alignment Protocol"
-                    description="Correct the orientation of visual data streams. Align incorrectly scanned or captured document layers."
+                    title="How to rotate pages"
+                    description="Fix sideways or upside-down pages. Simply upload your PDF and choose the direction you want to rotate it."
                     steps={[
-                        "Initialize the alignment protocol by uploading a PDF carrier.",
-                        "Select the target orientation (90° Right, Left, or Invert).",
-                        "Validate the spatial reconstruction in the workspace.",
-                        "Execute Alignment to stabilize the document's perspective."
+                        "Upload the PDF you want to rotate.",
+                        "Choose the rotation angle (90° Right, Left, or Invert).",
+                        "Preview the changes in the app.",
+                        "Save and share your updated PDF."
                     ]}
                     useCases={[
-                        "Scan Correction", "Orientation Fixing", "Data Standardization", "Presentation Preparation"
+                        "Scan Correction", "Orientation Fixing", "Document Preparation", "Presentation Layouts"
                     ]}
                 />
 
@@ -146,7 +146,7 @@ const RotateScreen: React.FC = () => {
                         >
                             <RotateCw size={32} />
                         </motion.div>
-                        <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Alignment</span>
+                        <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
                         <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
                         <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                     </label>
@@ -159,7 +159,7 @@ const RotateScreen: React.FC = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES ARCHIVED</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES FOUND</p>
                             </div>
                             <button
                                 onClick={() => setFile(null)}
@@ -172,7 +172,7 @@ const RotateScreen: React.FC = () => {
                         <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none space-y-6">
                             <div className="flex items-center gap-3">
                                 <RotateCw size={14} className="text-black dark:text-white" />
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Orientation Protocol</h4>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Choose Rotation</h4>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -234,7 +234,7 @@ const RotateScreen: React.FC = () => {
                             <div className="flex items-center justify-center gap-3 p-6 bg-black dark:bg-white text-white dark:text-black rounded-[28px] shadow-2xl">
                                 <Loader2 className="animate-spin" size={20} />
                                 <span className="text-[10px] font-black uppercase tracking-[0.4em]">
-                                    Aligning Protocol...
+                                    Rotating pages...
                                 </span>
                             </div>
                         )}

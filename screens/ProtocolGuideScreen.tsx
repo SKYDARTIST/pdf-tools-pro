@@ -16,40 +16,40 @@ const ProtocolGuideScreen: React.FC = () => {
     const sections = [
         {
             id: 'ai',
-            title: 'Neural Operations',
-            desc: 'Sovereign Intelligence Protocols',
+            title: 'AI Tools',
+            desc: 'Powerful AI assistants for your documents',
             tools: [
                 {
                     title: 'Anti-Gravity Workspace',
-                    desc: 'Unlock insights instantly by chatting with your documents. Eliminate manual reading and extract critical facts through a high-bandwidth neural link.',
+                    desc: 'Unlock insights instantly by chatting with your documents. Eliminate manual reading and get answers quickly with our private AI.',
                     icon: Sparkles,
                     path: '/ag-workspace',
                     useCases: ['Contract Analysis', 'Study Summaries', 'Data Querying']
                 },
                 {
-                    title: 'Neural Audit',
-                    desc: 'Expose hidden risks and financial opportunities buried in fine print. Your automated expert for legal due diligence and financial payload verification.',
+                    title: 'AI Audit',
+                    desc: 'Expose hidden risks and financial opportunities buried in fine print. Your automated expert for checking long legal or financial documents.',
                     icon: Shield,
                     path: '/reader?protocol=audit',
                     useCases: ['Risk Assessment', 'Legal Review', 'Cost Auditing']
                 },
                 {
-                    title: 'Intelligence Extractor',
-                    desc: 'Turn messy scans and handwriting into sharp, structured data. Precision Vision OCR that digitalizes your paper trail with extreme fidelity.',
+                    title: 'Data Extractor',
+                    desc: 'Turn messy scans and handwriting into sharp, structured data. Smart text recognition that digitalizes your paper trail perfectly.',
                     icon: Database,
                     path: '/data-extractor',
                     useCases: ['Invoice Processing', 'Medical OCR', 'Handwritten Notes']
                 },
                 {
-                    title: 'Neural Redact',
-                    desc: 'Protect your privacy sovereignty. Automatically pinpoint and black out sensitive private info (PII) before any external transmission.',
+                    title: 'AI Redact',
+                    desc: 'Keep your personal information private. Automatically find and black out sensitive info like names and addresses.',
                     icon: EyeOff,
                     path: '/smart-redact',
-                    useCases: ['Compliance', 'Privacy Shield', 'Secure Sharing']
+                    useCases: ['Compliance', 'Privacy', 'Secure Sharing']
                 },
                 {
-                    title: 'Neural Diff',
-                    desc: 'Precision-track revisions. Instantly highlight every semantic and structural change between document versions for perfect version control.',
+                    title: 'AI Diff',
+                    desc: 'Track every revision. Instantly highlight every change between document versions so you never miss a detail.',
                     icon: GitMerge,
                     path: '/neural-diff',
                     useCases: ['Agreement Tracking', 'Audit Trails', 'Revision Sync']
@@ -58,71 +58,71 @@ const ProtocolGuideScreen: React.FC = () => {
         },
         {
             id: 'core',
-            title: 'Core Operations',
-            desc: 'Fundamental Payload Manipulation',
+            title: 'Basic Tools',
+            desc: 'Essential PDF management',
             tools: [
                 {
                     title: 'Merge',
-                    desc: 'Consolidate multiple PDF assets into a single, unified protocol. Perfect for archiving and bundle distribution.',
+                    desc: 'Combine multiple PDF files into one. Perfect for organizing reports and document bundles.',
                     icon: Combine,
                     path: '/merge',
-                    useCases: ['Combining Reports', 'Asset Bundling']
+                    useCases: ['Combining Reports', 'Bundling Files']
                 },
                 {
                     title: 'Split',
-                    desc: 'Deconstruct massive payloads into focused segments. Extract precisely the data pages you need.',
+                    desc: 'Break large PDFs into smaller parts. Extract exactly the pages you need.',
                     icon: Scissors,
                     path: '/split',
                     useCases: ['Page Extraction', 'Topic Isolation']
                 },
                 {
                     title: 'Scanner',
-                    desc: 'Convert physical atoms into digital bits. Neural-enhanced scan polisher ensures every pixel is captured with industrial clarity.',
+                    desc: 'Convert paper documents into high-quality PDFs. AI enhancement ensures every scan is clear and professional.',
                     icon: Zap,
                     path: '/scanner',
-                    useCases: ['Receipt Capture', 'Identity Logs']
+                    useCases: ['Receipt Capture', 'Scanning Documents']
                 },
                 {
                     title: 'Image to PDF',
-                    desc: 'Transform visual captures into professional PDF containers. Maintain high-resolution integrity during conversion.',
+                    desc: 'Turn your photos into professional PDF documents while keeping original high quality.',
                     icon: Image,
                     path: '/image-to-pdf',
                     useCases: ['Archiving Photos', 'Visual Documentation']
                 },
                 {
                     title: 'Rotate',
-                    desc: 'Correct orientation errors in misaligned payloads. Ensure every page of the archive is perfectly aligned for analysis.',
+                    desc: 'Fix sideways or upside-down pages. Ensure your document is perfectly aligned for reading.',
                     icon: RotateCw,
                     path: '/rotate',
-                    useCases: ['Correcting Scans', 'Visual Alignment']
+                    useCases: ['Correcting Scans', 'Fixing Alignment']
                 }
             ]
         },
         {
             id: 'security',
-            title: 'Security & Integrity',
-            desc: 'Data Sovereignty & Authentication',
+            title: 'Security & Privacy',
+            desc: 'Protect your sensitive information',
             tools: [
                 {
                     title: 'Sign',
-                    desc: 'Authorize documents with cryptographic or visual signatures. Establish legal and technical authenticity on-device.',
+                    desc: 'Sign documents securely with your signature or stamps. Everything stays safe on your device.',
                     icon: PenTool,
                     path: '/sign',
-                    useCases: ['Authorization', 'Consent Forms']
+                    useCases: ['Contracts', 'Consent Forms']
                 },
                 {
                     title: 'Watermark',
-                    desc: 'Inject classification layers or brand signatures into every page. Protect your IP against unauthorized redistribution.',
+                    desc: 'Add custom text or image watermarks to your pages. Protect your documents with your brand or status.',
                     icon: Droplet,
                     path: '/watermark',
-                    useCases: ['Branding', 'Classification', 'Copyright']
+                    useCases: ['Branding', 'Document Status', 'Copyright']
                 },
                 {
-                    title: 'Meta Engine',
-                    desc: 'Scrub or modify internal document metadata. Ensure your PDF payloads don\'t leak hidden tracking data.',
+                    title: 'PDF Metadata',
+                    desc: 'View or edit the hidden details of your PDF like Title and Author. Keep your files professional and organized.',
                     icon: FileText,
                     path: '/metadata',
-                    useCases: ['Privacy Scrubbing', 'Clean Exports']
+                    useCases: ['Privacy', 'Clean Exports', 'File Info']
                 }
             ]
         }
@@ -151,8 +151,8 @@ const ProtocolGuideScreen: React.FC = () => {
                         <ArrowLeft size={20} />
                     </motion.button>
                     <div className="space-y-2">
-                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">System Archive</div>
-                        <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Protocol Guide</h1>
+                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">How to use</div>
+                        <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tool Guide</h1>
                     </div>
                 </div>
 
@@ -162,7 +162,7 @@ const ProtocolGuideScreen: React.FC = () => {
                         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white" size={20} />
                         <input
                             type="text"
-                            placeholder="SEARCH PROTOCOLS..."
+                            placeholder="SEARCH TOOLS..."
                             className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -179,7 +179,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                     : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:bg-black/10 dark:hover:bg-white/10'
                                     }`}
                             >
-                                {tab === 'ai' ? 'Neural' : tab}
+                                {tab === 'ai' ? 'AI Tools' : tab === 'core' ? 'Basic' : tab}
                             </button>
                         ))}
                     </div>
@@ -233,7 +233,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                             onClick={() => navigate(tool.path)}
                                             className="w-full md:w-auto px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-xl"
                                         >
-                                            Incept Tool
+                                            Open Tool
                                             <ChevronRight size={14} />
                                         </motion.button>
                                     </motion.div>
@@ -246,7 +246,7 @@ const ProtocolGuideScreen: React.FC = () => {
                 {filteredSections.length === 0 && (
                     <div className="text-center py-20 opacity-30">
                         <Info size={48} className="mx-auto mb-4" />
-                        <p className="text-xs font-black uppercase tracking-widest">Protocol mismatch in archives</p>
+                        <p className="text-xs font-black uppercase tracking-widest">No tools found</p>
                     </div>
                 )}
 

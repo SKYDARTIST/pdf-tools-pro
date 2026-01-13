@@ -152,7 +152,7 @@ Output ONLY raw CSV data.`;
                 .trim();
 
             if (!cleanedResponse || cleanedResponse === '[]' || cleanedResponse === '{}') {
-                throw new Error("Neural sensor returned no clear data. The handwriting might be too faint or obscured.");
+                throw new Error("AI could not find clear data. The handwriting might be too faint or obscured.");
             }
 
             setExtractedData(cleanedResponse);
@@ -188,10 +188,10 @@ Output ONLY raw CSV data.`;
         >
             <div className="space-y-12">
                 <div className="space-y-3">
-                    <div className="text-technical">Neural Lab / Structured Data Extraction</div>
-                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Intelligence Extractor</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                        Convert unstructured PDF noise into high-fidelity data feeds
+                    <div className="text-technical">AI Tools / Data Extractor</div>
+                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Data Extractor</h1>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
+                        Convert receipts, tables, and notes into clean, structured data
                     </p>
                 </div>
 
@@ -206,16 +206,16 @@ Output ONLY raw CSV data.`;
                 ) : (
                     <div className="space-y-8">
                         <ToolGuide
-                            title="Intelligence Extraction Protocol"
-                            description="Convert physical and digital noise into structured data streams. Supports high-fidelity handwriting OCR."
+                            title="How to extract data"
+                            description="Automatically pull information from invoices, receipts, and handwritten notes. Our AI organizes it into a format you can use."
                             steps={[
-                                "Upload a PDF or image (JPG/PNG).",
-                                "Select your target data structure (JSON, CSV, or Markdown).",
-                                "Trigger the Neural Extraction.",
-                                "Download the stabilized dataset."
+                                "Upload a PDF or an image (JPG/PNG).",
+                                "Select the format you want (JSON, CSV, or Markdown).",
+                                "Tap 'Start AI Extraction' to process the file.",
+                                "Download your data file."
                             ]}
                             useCases={[
-                                "Receipts & Invoices", "Handwritten Notes", "Whiteboards", "Tabular Documents"
+                                "Receipts & Invoices", "Handwritten Notes", "Whiteboards", "Tables & Sheets"
                             ]}
                         />
                         <div className="monolith-card p-8 flex items-center justify-between">
@@ -252,7 +252,7 @@ Output ONLY raw CSV data.`;
                                         onClick={() => setFormat('markdown')}
                                         className={`px-8 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all ${format === 'markdown' ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl' : 'bg-black/5 dark:bg-white/5 opacity-40 hover:opacity-100'}`}
                                     >
-                                        <PenTool size={14} /> Intelligence Draft
+                                        <PenTool size={14} /> Text Transcription
                                     </button>
                                 </div>
 
@@ -264,7 +264,7 @@ Output ONLY raw CSV data.`;
                                     className="bg-black dark:bg-white text-white dark:text-black px-12 py-6 rounded-full text-xs font-black uppercase tracking-[0.3em] flex items-center gap-4 shadow-2xl"
                                 >
                                     {isExtracting ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
-                                    {isExtracting ? "Extracting Data Weights..." : "Extract Structured Data"}
+                                    {isExtracting ? "Extracting Content..." : "Start AI Extraction"}
                                 </motion.button>
                             </div>
                         )}
@@ -288,7 +288,7 @@ Output ONLY raw CSV data.`;
                             <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-6">
                                 <div className="flex items-center gap-3">
                                     <Sparkles size={20} className="text-emerald-500" />
-                                    <span className="text-xs font-black uppercase tracking-widest">Target Dataset Stabilized</span>
+                                    <span className="text-xs font-black uppercase tracking-widest">Data Extraction Complete</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
@@ -324,7 +324,7 @@ Output ONLY raw CSV data.`;
                                     onClick={() => navigate('/workspace')}
                                     className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                                 >
-                                    Return to Lab
+                                    Finish Task
                                 </button>
                             </div>
                         </motion.div>

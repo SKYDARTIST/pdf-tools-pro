@@ -74,10 +74,10 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
                                 <div className="relative z-10 text-center">
                                     <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tighter leading-none mb-1 sm:mb-3">
-                                        {reason === 'limit_reached' ? 'Quota Limit' : 'Anti-Gravity Pro'}
+                                        {reason === 'limit_reached' ? 'Daily Limit' : 'Anti-Gravity Pro'}
                                     </h2>
                                     <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60">
-                                        {reason === 'limit_reached' ? 'Standard Access Exhausted' : 'Initialize Full Protocol'}
+                                        {reason === 'limit_reached' ? 'Daily free tasks completed' : 'Get Unlimited Access'}
                                     </p>
                                 </div>
                             </div>
@@ -98,7 +98,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 {/* Features */}
                                 <div className="space-y-3 sm:space-y-4">
                                     <Feature icon={Zap} text="Unlimited Daily Tasks" />
-                                    <Feature icon={Sparkles} text="All 14 Neural Tools" />
+                                    <Feature icon={Sparkles} text="All 14 Powerful Tools" />
                                     <Feature icon={Check} text="Zero Watermarks • All Plans" />
                                     <Feature icon={Shield} text="100% Private Processing" />
                                 </div>
@@ -128,7 +128,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                             transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 1 }}
                                             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
                                         />
-                                        Authorize Access - $2.99
+                                        Get Pro Access - $2.99
                                     </button>
 
                                     {reason === 'limit_reached' && (
@@ -136,7 +136,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                             onClick={onClose}
                                             className="w-full py-1 text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-[0.3em] hover:text-black dark:hover:text-white transition-colors"
                                         >
-                                            Stay on Standard Protocol
+                                            Keep Free Version
                                         </button>
                                     )}
                                 </div>

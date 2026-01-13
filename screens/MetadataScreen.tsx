@@ -132,22 +132,22 @@ const MetadataScreen: React.FC = () => {
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Protocol Assets / Information Architecture</div>
+                    <div className="text-technical">Available Tools / PDF Metadata</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Meta</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Inject and modify bit-level information markers within the asset header</p>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Edit the hidden information of your PDF like Title, Author, and Keywords</p>
                 </div>
 
                 <ToolGuide
-                    title="Archetype Editing Protocol"
-                    description="Modify the hidden document identity markers. Inject and update critical bit-level headers within the PDF carrier."
+                    title="How to edit PDF properties"
+                    description="Every PDF has hidden details like Title and Author. This tool lets you view and change this information to help you organize and identify your files."
                     steps={[
-                        "Initialize the meta-extraction by uploading a PDF carrier.",
-                        "System retrieves existing identity markers (Title, Originator, Subject).",
-                        "Inject new bit-level identifiers into the marker definition fields.",
-                        "Execute Injection to permanently synchronize the archetypal metadata."
+                        "Upload the PDF you want to edit.",
+                        "Our tool finds the current Title, Author, and Subject.",
+                        "Enter the new information you want to save.",
+                        "Tap 'Save' to update the PDF with the new details."
                     ]}
                     useCases={[
-                        "Document SEO", "Version History Control", "Ownership Labeling", "File Classification Optimization"
+                        "Document Search", "File Organization", "Professional Labeling", "Adding Keywords"
                     ]}
                 />
             </div>
@@ -160,7 +160,7 @@ const MetadataScreen: React.FC = () => {
                     >
                         <Info size={32} />
                     </motion.div>
-                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Extraction</span>
+                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
                     <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
                     <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                 </label>
@@ -177,7 +177,7 @@ const MetadataScreen: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Awaiting Injection</p>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Awaiting Changes</p>
                         </div>
                         <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
                             Change
@@ -188,54 +188,54 @@ const MetadataScreen: React.FC = () => {
                     <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none space-y-8">
                         <div className="flex items-center gap-3">
                             <Tag size={14} className="text-black dark:text-white" />
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Marker Definition</h4>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Edit Information</h4>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Title */}
                             <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Asset Title</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</label>
                                 <input
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="TITLE_MARKER..."
+                                    placeholder="Document Title..."
                                     className="w-full h-14 px-6 bg-white dark:bg-black border-none rounded-2xl text-[11px] font-black uppercase tracking-widest text-gray-900 dark:text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all"
                                 />
                             </div>
 
                             {/* Author */}
                             <div className="space-y-3">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Originator</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Author</label>
                                 <input
                                     type="text"
                                     value={author}
                                     onChange={(e) => setAuthor(e.target.value)}
-                                    placeholder="ORIGIN_MARKER..."
+                                    placeholder="Author Name..."
                                     className="w-full h-14 px-6 bg-white dark:bg-black border-none rounded-2xl text-[11px] font-black uppercase tracking-widest text-gray-900 dark:text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all"
                                 />
                             </div>
 
                             {/* Subject */}
                             <div className="space-y-3 md:col-span-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Subject Scope</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Subject</label>
                                 <input
                                     type="text"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
-                                    placeholder="SCOPE_MARKER..."
+                                    placeholder="What is this PDF about?..."
                                     className="w-full h-14 px-6 bg-white dark:bg-black border-none rounded-2xl text-[11px] font-black uppercase tracking-widest text-gray-900 dark:text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all"
                                 />
                             </div>
 
                             {/* Keywords */}
                             <div className="space-y-3 md:col-span-2">
-                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Key Identifiers</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">Keywords</label>
                                 <input
                                     type="text"
                                     value={keywords}
                                     onChange={(e) => setKeywords(e.target.value)}
-                                    placeholder="KEYWORD_STREAM..."
+                                    placeholder="Keywords (comma separated)..."
                                     className="w-full h-14 px-6 bg-white dark:bg-black border-none rounded-2xl text-[11px] font-black uppercase tracking-widest text-gray-900 dark:text-white shadow-inner focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 transition-all"
                                 />
                             </div>
@@ -261,7 +261,7 @@ const MetadataScreen: React.FC = () => {
                         ) : (
                             <>
                                 <Share2 size={18} strokeWidth={3} />
-                                <span>Inject & Share Asset</span>
+                                <span>Save & Share PDF</span>
                             </>
                         )}
                     </button>

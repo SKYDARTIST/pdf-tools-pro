@@ -6,23 +6,23 @@ import { canUseAI, recordAIUsage } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
 
 const TOOL_MAPPING: Record<string, { name: string; path: string }> = {
-    'MERGE': { name: 'Merge Tool', path: '/merge' },
-    'SPLIT': { name: 'Split Tool', path: '/split' },
-    'AUDIT': { name: 'Neural Audit', path: '/reader?protocol=audit' },
-    'EXTRACT': { name: 'Intelligence Extractor', path: '/data-extractor' },
-    'REDACT': { name: 'Neural Redact', path: '/smart-redact' },
-    'SCAN': { name: 'Scanner', path: '/scanner' },
-    'SIGN': { name: 'Sign Tool', path: '/sign' },
-    'WATERMARK': { name: 'Watermark Tool', path: '/watermark' },
-    'WORKSPACE': { name: 'AI Workspace', path: '/ag-workspace' },
-    'DIFF': { name: 'Neural Diff', path: '/neural-diff' }
+    'MERGE': { name: 'Merge PDFs', path: '/merge' },
+    'SPLIT': { name: 'Split PDFs', path: '/split' },
+    'AUDIT': { name: 'AI Audit', path: '/reader?protocol=audit' },
+    'EXTRACT': { name: 'Data Extractor', path: '/data-extractor' },
+    'REDACT': { name: 'AI Redact', path: '/smart-redact' },
+    'SCAN': { name: 'Document Scanner', path: '/scanner' },
+    'SIGN': { name: 'Sign PDFs', path: '/sign' },
+    'WATERMARK': { name: 'Add Watermark', path: '/watermark' },
+    'WORKSPACE': { name: 'AI Assistant', path: '/ag-workspace' },
+    'DIFF': { name: 'Compare PDFs', path: '/neural-diff' }
 };
 
 const NeuralAssistant: React.FC = () => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<{ role: 'bot' | 'user', text: string, action?: { name: string; path: string } }[]>([
-        { role: 'bot', text: 'Anti-Gravity Neural Assistant online. The Protocol is ready for synchronization. How can I assist your document manipulation today?' }
+        { role: 'bot', text: 'Anti-Gravity Assistant online. I\'m ready to help with your documents. How can I assist you today?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -73,21 +73,21 @@ const NeuralAssistant: React.FC = () => {
         setIsLoading(true);
 
         const systemPrompt = `
-        You are the "Anti-Gravity Protocol Assistant". You are cold, efficient, helping users navigate the 15+ local PDF tools.
+        You are the "Anti-Gravity AI Assistant". You are helpful, professional, and efficient.
         
-        IDENTITY: Professional, high-tech, and brief. Use terms like "Protocol", "Payload", "Neural", "Synapse", "Archive".
+        IDENTITY: Professional, helpful, and concise. Avoid overly technical jargon when possible.
         
-        FREE GUIDANCE: Explicitly inform users that questions about how the app works are ALWAYS FREE and do not consume their AI budget. This build trust and encourages exploration.
+        FREE GUIDANCE: Inform users that questions about how the app works are ALWAYS FREE.
         
-        ZERO-CLOUD ANCHOR: The Anti-Gravity Protocol is strictly local. We do not trust the cloud with sensitive payloads. All processing is ephemeral.
+        PRIVATE & SECURE: All document processing happens locally on the device. We do not store data in the cloud.
         
         KNOWLEDGE BASE:
         1. Workspace (/ag-workspace): Chat with PDFs, summarize.
-        2. Neural Audit (/reader?protocol=audit): Risk and savings analysis.
-        3. Intelligence Extractor (/data-extractor): Vision OCR for data.
-        4. Neural Redact (/smart-redact): Auto PII detection.
-        5. Neural Diff (/neural-diff): Semantic comparison.
-        6. Core Ops: Merge (/merge), Split (/split), Rotate (/rotate), Sign (/sign), Watermark (/watermark), Scanner (/scanner), Image to PDF (/image-to-pdf).
+        2. AI Audit (/reader?protocol=audit): Risk and savings analysis.
+        3. Data Extractor (/data-extractor): Extract info from images/PDFs.
+        4. AI Redact (/smart-redact): Hide sensitive info.
+        5. Compare Files (/neural-diff): See what changed between documents.
+        6. Basic Tools: Merge (/merge), Split (/split), Rotate (/rotate), Sign (/sign), Watermark (/watermark), Scanner (/scanner), Image to PDF (/image-to-pdf).
         
         ACTION TRIGGER: If you suggest a specific tool, you MUST include the signal "ACTION_REQUIRED: [TOOL_KEY]" at the end of your message.
         TOOL_KEYS: MERGE, SPLIT, AUDIT, EXTRACT, REDACT, SCAN, SIGN, WATERMARK, WORKSPACE, DIFF.
@@ -112,7 +112,7 @@ const NeuralAssistant: React.FC = () => {
             setMessages(prev => [...prev, { role: 'bot', text: cleanText, action }]);
             await recordAIUsage(type);
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'bot', text: "Logic Interruption. Signal lost. Please retry synchronization." }]);
+            setMessages(prev => [...prev, { role: 'bot', text: "Sorry, I had trouble processing that request. Please try again." }]);
         } finally {
             setIsLoading(false);
         }
@@ -144,8 +144,8 @@ const NeuralAssistant: React.FC = () => {
                                     <Sparkles size={16} className="text-emerald-500" />
                                 </motion.div>
                                 <div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Protocol Assistant</div>
-                                    <div className="text-sm font-black uppercase tracking-tighter">Neural Link Active</div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">AI Assistant</div>
+                                    <div className="text-sm font-black uppercase tracking-tighter">Ready to help</div>
                                 </div>
                             </div>
                             <button onClick={() => setIsOpen(false)} className="hover:opacity-70 transition-opacity relative z-10">
@@ -167,7 +167,7 @@ const NeuralAssistant: React.FC = () => {
                                             ? 'bg-black text-white dark:bg-white dark:text-black rounded-tr-none'
                                             : 'bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white rounded-tl-none border border-black/5 dark:border-white/10'
                                             }`}>
-                                            {m.role === 'bot' && <div className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-2 flex items-center gap-2"><Bot size={10} /> INCOMING TRANSMISSION</div>}
+                                            {m.role === 'bot' && <div className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-2 flex items-center gap-2"><Bot size={10} /> AI MESSAGE</div>}
                                             {m.text}
                                         </div>
 
@@ -181,7 +181,7 @@ const NeuralAssistant: React.FC = () => {
                                                 className="flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20"
                                             >
                                                 <Rocket size={12} />
-                                                Launch {m.action.name}
+                                                Open {m.action.name}
                                             </motion.button>
                                         )}
                                     </div>
@@ -190,7 +190,7 @@ const NeuralAssistant: React.FC = () => {
                             {isLoading && (
                                 <div className="flex justify-start">
                                     <div className="bg-black/5 dark:bg-white/5 p-5 rounded-full rounded-tl-none animate-pulse flex flex-col gap-3">
-                                        <div className="text-[8px] font-black uppercase tracking-widest opacity-30">Decrypting...</div>
+                                        <div className="text-[8px] font-black uppercase tracking-widest opacity-30">Thinking...</div>
                                         <div className="flex gap-1.5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:0.2s]" />
@@ -219,7 +219,7 @@ const NeuralAssistant: React.FC = () => {
                             <div className="relative flex items-center gap-3 bg-black/5 dark:bg-white/5 rounded-full px-5 py-4 border border-black/5 dark:border-white/10">
                                 <input
                                     type="text"
-                                    placeholder="ASK ABOUT PROTOCOLS..."
+                                    placeholder="ASK A QUESTION..."
                                     className="flex-1 bg-transparent border-none text-[11px] font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
@@ -235,7 +235,7 @@ const NeuralAssistant: React.FC = () => {
                             </div>
                             <div className="mt-4 flex items-center justify-center gap-2 opacity-20">
                                 <ShieldAlert size={10} />
-                                <span className="text-[8px] font-black uppercase tracking-widest">Local Ephemeral Link Active</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest">Private Local AI Active</span>
                             </div>
                         </div>
                     </motion.div>

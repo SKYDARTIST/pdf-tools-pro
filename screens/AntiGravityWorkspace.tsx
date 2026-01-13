@@ -100,15 +100,15 @@ const AntiGravityWorkspace: React.FC = () => {
           SIZE: ${(selected.size / 1024).toFixed(2)} KB
           
           DOCUMENT_TEXT_PAYLOAD:
-          ${extractedText || "NO_EXTRACTABLE_TEXT: Document is image-based. Visual Neural Sight Activated."}
+          ${extractedText || "NO_EXTRACTABLE_TEXT: Document is image-based. Visual AI Analysis Activated."}
           `.trim();
       }
 
       const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
-        ? `Initialize Multimodal Protocol. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
+        ? `Initialize AI Analysis. Inspect the provided image payload(s) "${selected.name}". Conduct a comprehensive visual analysis: identify document type, extract key textual identifiers, and summarize primary intent across all provided pages. Respond with a technical, secure tone.`
         : extractedText
-          ? `Initialize Protocol. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context}`
-          : `Initialize Protocol. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
+          ? `Start Session. Execute comprehensive structural and thematic analysis on the provided payload. Focus on identifying document purpose and key technical pillars. Tone: Secure, Analytical. Payload Context: ${context}`
+          : `Start Session. Notify the user that the document appears to be image-based or scanned (No extractable text found). Explain that for deep structural analysis, a text-enabled PDF is required. Explicitly suggest they use our internal "Scanner" or "Image to PDF" tools in the Tools tab to re-process their documents into a standard format and then try again. Tone: Secure, Analytical.`;
 
       // Run analysis and naming suggestion in parallel
       const { suggestDocumentName } = await import('../services/namingService');
@@ -181,7 +181,7 @@ const AntiGravityWorkspace: React.FC = () => {
               <Sparkles size={20} className="text-white dark:text-black" />
             </div>
             <div className="space-y-0.5 min-w-0">
-              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500 truncate">Anti-Gravity Protocol</div>
+              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500 truncate">AI Assistant</div>
               <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
                 Workspace
               </h2>
@@ -210,9 +210,9 @@ const AntiGravityWorkspace: React.FC = () => {
                 <FileUp size={44} strokeWidth={1.5} />
               </div>
               <div className="text-center space-y-3">
-                <h3 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Inject Payload</h3>
+                <h3 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Upload File</h3>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em] opacity-80 max-w-[320px] leading-relaxed">
-                  Drop PDF for structural extraction and AI-powered interaction
+                  Upload a PDF to analyze it and ask questions with AI
                 </p>
               </div>
             </div>
@@ -246,7 +246,7 @@ const AntiGravityWorkspace: React.FC = () => {
             <div className="text-center space-y-6">
               <h3 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Analyzing...</h3>
               <div className="flex flex-col items-center gap-2">
-                <div className="text-technical text-emerald-500 animate-pulse">Neural Layer Deconstruction Active</div>
+                <div className="text-technical text-emerald-500 animate-pulse">Analyzing document content...</div>
                 <div className="text-[8px] font-mono text-gray-400 uppercase tracking-widest opacity-40">
                   SHA-256 CHECK: {Math.random().toString(36).substring(7).toUpperCase()}...
                 </div>
@@ -275,9 +275,9 @@ const AntiGravityWorkspace: React.FC = () => {
                     <Zap size={24} fill="currentColor" />
                   </div>
                   <div className="space-y-1">
-                    <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 dark:text-amber-500">Low Neural Budget</div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-600 dark:text-amber-500">Low AI Credits</div>
                     <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
-                      Your AI authorization is nearing exhaustion. Synchronize more credits to maintain protocol stability.
+                      You're running low on AI questions. Upgrade your plan to keep using the assistant.
                     </p>
                   </div>
                 </div>
@@ -285,7 +285,7 @@ const AntiGravityWorkspace: React.FC = () => {
                   onClick={() => navigate('/pricing')}
                   className="px-8 py-4 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
                 >
-                  Top Up Logic
+                  Get More Credits
                 </button>
               </motion.div>
             )}
@@ -300,7 +300,7 @@ const AntiGravityWorkspace: React.FC = () => {
                   <Bot size={24} className="text-emerald-400" />
                 </div>
                 <div className="flex-1">
-                  <div className="text-[9px] font-mono tracking-[0.4em] opacity-60 text-emerald-400 uppercase">Primary Insights</div>
+                  <div className="text-[9px] font-mono tracking-[0.4em] opacity-60 text-emerald-400 uppercase">Document Summary</div>
                   <AnimatePresence>
                     {suggestedName && (
                       <motion.div
@@ -328,19 +328,19 @@ const AntiGravityWorkspace: React.FC = () => {
               <div className="px-8 py-6 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-black text-white dark:bg-white dark:text-black">
                 <div className="flex items-center gap-4">
                   <MessageSquare size={20} className="text-emerald-400" />
-                  <div className="text-[9px] font-mono tracking-[0.4em] text-white">Neural Interface</div>
+                  <div className="text-[9px] font-mono tracking-[0.4em] text-white">Chat with AI</div>
                 </div>
                 <div className="flex items-center gap-6">
                   {imageContext && (
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 rounded-full border border-emerald-500/30" title="Triple-Vision Active: Analyzing the first 3 pages of this scanned document.">
                       <Sparkles size={10} className="text-emerald-400" />
-                      <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400 text-white dark:text-black">Neural Sight (First 3 Pages)</span>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-emerald-400 text-white dark:text-black">Analyzing First 3 Pages</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-black/10 rounded-full border border-white/10 dark:border-black/10">
                     <Zap size={10} className={`${canUseAI().warning ? 'text-amber-500' : 'text-neutral-500'}`} fill="currentColor" />
                     <span className={`text-[9px] font-black uppercase tracking-widest ${canUseAI().warning ? 'text-amber-500' : 'text-neutral-500'}`}>
-                      Neural Budget: {canUseAI().warning ? canUseAI().remaining : 'ACTIVE'}
+                      AI Credits: {canUseAI().warning ? canUseAI().remaining : 'ACTIVE'}
                     </span>
                   </div>
                   <motion.button
@@ -358,7 +358,7 @@ const AntiGravityWorkspace: React.FC = () => {
                 {chatHistory.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full opacity-10 text-center gap-6">
                     <ListChecks size={64} strokeWidth={1} />
-                    <p className="text-[12px] font-black uppercase tracking-[0.4em] max-w-[300px] leading-relaxed">Query the document intelligence</p>
+                    <p className="text-[12px] font-black uppercase tracking-[0.4em] max-w-[300px] leading-relaxed">Ask a question about this file</p>
                   </div>
                 )}
                 {chatHistory.map((m, i) => (
@@ -407,7 +407,7 @@ const AntiGravityWorkspace: React.FC = () => {
               <div className="p-8 border-t border-black/5 dark:border-white/10 flex gap-4">
                 <input
                   type="text"
-                  placeholder="ASK QUESTION..."
+                  placeholder="TYPE YOUR QUESTION..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
@@ -434,13 +434,13 @@ const AntiGravityWorkspace: React.FC = () => {
         className="space-y-8"
       >
         <ToolGuide
-          title="Intelligence Synergy Protocol"
-          description="Leverage the full Anti-Gravity ecosystem to transform PDFs into actionable intelligence."
+          title="AI Document Tools"
+          description="Get more from your documents with our advanced AI tools."
           steps={[
-            "Analyze documents via the Workspace for deep semantic insights.",
-            "Run Neural Audit for risk detection and savings opportunities.",
-            "Extract structured data streams via the Intelligence Extractor.",
-            "Index documents globally for instant Neural Search retrieval."
+            "Analyze documents via the Workspace for a detailed summary and Q&A.",
+            "Use AI Audit to find risks and key info in your contracts.",
+            "Convert tables and data into clean spreadsheets via the Data Extractor.",
+            "Easily search through all your uploaded files."
           ]}
           useCases={[
             "Executive Summaries", "Contract Analysis", "Financial Intelligence", "Knowledge Management"
@@ -455,7 +455,7 @@ const AntiGravityWorkspace: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             {
-              title: "Neural Audit",
+              title: "AI Audit",
               desc: "Deep risk & savings analysis",
               icon: Shield,
               path: "/reader?protocol=audit",
@@ -479,7 +479,7 @@ const AntiGravityWorkspace: React.FC = () => {
               tag: "VISION"
             },
             {
-              title: "Neural Redact",
+              title: "AI Redact",
               desc: "Vision-based PII obscuring",
               icon: EyeOff,
               path: "/smart-redact",
@@ -487,7 +487,7 @@ const AntiGravityWorkspace: React.FC = () => {
               tag: "PRIVACY"
             },
             {
-              title: "Neural Diff",
+              title: "Compare PDFs",
               desc: "Compare document versions",
               icon: GitMerge,
               path: "/neural-diff",
@@ -530,9 +530,9 @@ const AntiGravityWorkspace: React.FC = () => {
           <Info size={24} />
         </div>
         <div className="space-y-1">
-          <div className="text-technical tracking-[0.4em]">Security Multi-Protocol</div>
+          <div className="text-technical tracking-[0.4em]">Privacy & Security</div>
           <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] leading-relaxed">
-            EPHEMERAL PROCESSING ACTIVE. NO DATA PERSISTENCE BEYOND SESSION TERMINATION.
+            YOUR FILES ARE DELETED AUTOMATICALLY WHEN YOU CLOSE THIS SESSION. NO DATA IS SAVED ON OUR SERVERS.
           </p>
         </div>
       </motion.div>

@@ -156,25 +156,25 @@ const MergeScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Sequence Management</div>
+          <div className="text-technical">Sequence & Merge Management</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Merge</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Arrange and unify multi-stream data into a single carrier</p>
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Arrange and unify multiple PDFs into a single document</p>
           <div className="pt-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full neural-glow">
               <Shield size={10} className="text-emerald-500" fill="currentColor" />
-              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Elite: Zero Watermark Protocol</span>
+              <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Elite: No Watermarks</span>
             </div>
           </div>
         </div>
 
         <ToolGuide
-          title="Document Confluence Protocol"
-          description="Unified carriage for multi-stream data. Sequence and merge multiple documents into a stabilized PDF carrier."
+          title="Merge Order Guide"
+          description="Unified storage for multiple documents. Sequence and merge multiple PDFs into a single, stabilized document."
           steps={[
-            "Initialize the data stream by uploading multiple PDF files.",
-            "Arrange the operational order using the navigation controls.",
-            "Validate the sequence of document payloads.",
-            "Process the confluence protocol and share the unified carrier."
+            "Add the PDF files you want to merge.",
+            "Arrange the order using the up/down arrows.",
+            "Double-check your preferred document order.",
+            "Tap 'Merge & Share' to create your unified PDF."
           ]}
           useCases={[
             "Report Assembly", "Document Archiving", "Binder Collaboration", "Sequential Batching"
@@ -189,7 +189,7 @@ const MergeScreen: React.FC = () => {
             >
               <Plus size={24} />
             </motion.div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 dark:text-white">Initialize Data Stream</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-900 dark:text-white">Add PDFs to Merge</span>
             <input type="file" multiple accept=".pdf" className="hidden" onChange={handleFileChange} />
           </label>
 
@@ -225,7 +225,7 @@ const MergeScreen: React.FC = () => {
 
                 <div className="flex-1 min-w-0 z-10">
                   <p className="text-[11px] font-black uppercase tracking-tight truncate text-gray-900 dark:text-white">{item.name}</p>
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{(item.size / 1024 / 1024).toFixed(2)} MB ARCHIVE</p>
+                  <p className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{(item.size / 1024 / 1024).toFixed(2)} MB ARCHIVE</p>
                 </div>
 
                 <button
@@ -257,7 +257,7 @@ const MergeScreen: React.FC = () => {
           ) : (
             <>
               <Share2 size={18} strokeWidth={3} />
-              <span>Confluence & Share</span>
+              <span>Merge & Share PDF</span>
             </>
           )}
         </button>

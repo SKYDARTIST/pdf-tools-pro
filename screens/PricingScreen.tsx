@@ -24,7 +24,7 @@ const PricingScreen: React.FC = () => {
       name: 'PRO',
       price: '$2.99',
       period: 'Lifetime',
-      badge: 'PHASE 1: EARLY ACCESS',
+      badge: 'LIMITED TIME OFFER',
       features: [
         'UNLIMITED PDF tasks',
         '10 AI docs/month',
@@ -43,7 +43,7 @@ const PricingScreen: React.FC = () => {
       features: [
         '100 AI documents',
         'Never expires',
-        'Multimodal Neural Sight',
+        'Advanced AI Reading',
         'Stacks with Pro'
       ],
       cta: 'Buy AI Pack',
@@ -65,10 +65,10 @@ const PricingScreen: React.FC = () => {
           className="pt-40 text-center"
         >
           <h1 className="text-5xl font-black text-black dark:text-white uppercase tracking-tighter leading-none mb-6">
-            Protocol Access
+            Choose Your Plan
           </h1>
           <p className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-500">
-            Select Your Authorization Level
+            Get unlimited access to all tools
           </p>
         </motion.div>
 
@@ -142,7 +142,7 @@ const PricingScreen: React.FC = () => {
               {tier.name === 'AI PACK' && (
                 <div className="mt-6 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
                   <p className="text-[8px] font-mono font-bold text-emerald-500/60 uppercase tracking-widest leading-relaxed text-center">
-                    HARD USER LOGIC: 100 Massive PDFs (50pg+ each) analyzed for ~$1.50 in base cost. Your $4.99 pack is high-efficiency.
+                    Analyze 100 massive documents for just $4.99. No subscriptions, just great AI.
                   </p>
                 </div>
               )}
@@ -162,8 +162,8 @@ const PricingScreen: React.FC = () => {
           </div>
 
           <div className="space-y-4 relative z-10 text-center">
-            <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">THE EDGE ADVANTAGE</h4>
-            <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs "Legacy Cloud Suites"</p>
+            <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">THE SAVINGS ADVANTAGE</h4>
+            <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-60">Anti-Gravity vs Others</p>
           </div>
 
           <div className="space-y-12 relative z-10">
@@ -178,7 +178,7 @@ const PricingScreen: React.FC = () => {
                 {/* Standard Subscription */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-end">
-                    <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-40">Standard Subscription (Avg $20/mo)</span>
+                    <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-40">Other Apps (Monthly Subscriptions)</span>
                     <span className="text-xl font-mono font-black tabular-nums tracking-tighter opacity-80">$720.00</span>
                   </div>
                   <div className="h-2 w-full bg-white/5 dark:bg-black/5 rounded-full overflow-hidden">
@@ -211,13 +211,13 @@ const PricingScreen: React.FC = () => {
 
             {/* Combat Comparison Table */}
             <div className="pt-8 space-y-6">
-              <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-60 block border-b border-white/10 dark:border-black/10 pb-4">Protocol Combat Checklist</span>
+              <span className="text-[9px] font-mono font-black uppercase tracking-widest opacity-60 block border-b border-white/10 dark:border-black/10 pb-4">Feature Comparison</span>
               <div className="bg-white/5 dark:bg-black/5 rounded-3xl overflow-hidden border border-white/10 dark:border-black/10">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/10 dark:border-black/10">
                       <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest opacity-40">Feature</th>
-                      <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest opacity-40">Legacy Platforms</th>
+                      <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest opacity-40">Other Apps</th>
                       <th className="p-6 android-sm:p-3 text-[8px] android-sm:text-[7px] font-mono font-black uppercase tracking-widest text-emerald-500">Anti-Gravity</th>
                     </tr>
                   </thead>
@@ -243,9 +243,9 @@ const PricingScreen: React.FC = () => {
 
           <div className="p-8 bg-emerald-500/5 rounded-3xl border border-emerald-500/10 relative z-10 mt-8">
             <p className="text-[10px] font-black uppercase leading-relaxed tracking-wider opacity-90 text-center">
-              Our AI implementation uses Enterprise-grade isolation.
-              <span className="text-emerald-500"> NO DATA IS EVER USED TO TRAIN MODELS.</span><br />
-              Your documents remain 100% ephemeral and disconnected from the global training swarm.
+              We use secure, private AI technology.
+              <span className="text-emerald-500"> YOUR DATA IS NEVER USED TO TRAIN AI.</span><br />
+              Your documents are deleted automatically and never shared.
             </p>
           </div>
 
@@ -256,8 +256,8 @@ const PricingScreen: React.FC = () => {
                 <Sparkles size={20} className="text-emerald-500" />
               </div>
               <div className="space-y-1">
-                <h5 className="text-[9px] font-mono font-black uppercase tracking-[0.3em]">Transparency Audit: Why $2.99?</h5>
-                <p className="text-[8px] font-mono font-bold uppercase tracking-widest opacity-40">Zero Maintenance Philosophy</p>
+                <h5 className="text-[9px] font-mono font-black uppercase tracking-[0.3em]">Why is it only $2.99?</h5>
+                <p className="text-[8px] font-mono font-bold uppercase tracking-widest opacity-40">Fair Pricing Forever</p>
               </div>
             </div>
 
@@ -277,7 +277,7 @@ const PricingScreen: React.FC = () => {
           className="max-w-sm mx-auto space-y-8"
         >
           <div className="flex flex-col items-center pt-8 border-t border-black/5 dark:border-white/5 space-y-4">
-            <span className="text-[9px] font-black uppercase tracking-[0.5em] text-gray-300 dark:text-gray-700">Protocol Secure • 30 Day Guarantee</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.5em] text-gray-300 dark:text-gray-700">100% Secure • Private Processing</span>
             <span className="text-[8px] font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500 opacity-30">Built By Cryptobulla</span>
           </div>
         </motion.div>

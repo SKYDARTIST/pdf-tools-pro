@@ -43,11 +43,10 @@ const MyFilesScreen: React.FC = () => {
             className="min-h-screen bg-transparent pb-32 pt-40 max-w-2xl mx-auto px-6"
         >
             <div className="space-y-16">
-                {/* Header Section */}
                 <div className="space-y-4 text-center sm:text-left">
-                    <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Data Repository</div>
-                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Archives</h1>
-                    <p className="text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Secure history of processed assets</p>
+                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">My Files</div>
+                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">History</h1>
+                    <p className="text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">View your recent work</p>
                 </div>
 
                 {/* Storage Stats Grid */}
@@ -69,7 +68,7 @@ const MyFilesScreen: React.FC = () => {
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" size={20} />
                     <input
                         type="text"
-                        placeholder="SEARCH ARCHIVE..."
+                        placeholder="Search your files..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
@@ -96,14 +95,14 @@ const MyFilesScreen: React.FC = () => {
                 {/* List Management */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
-                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">{filteredHistory.length} ENTRIES FOUND</div>
+                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">{filteredHistory.length} FILES FOUND</div>
                         {history.length > 0 && (
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 onClick={handleClearAll}
                                 className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-gray-400 hover:text-red-500 transition-colors"
                             >
-                                PURGE ALL
+                                DELETE ALL
                             </motion.button>
                         )}
                     </div>
@@ -153,7 +152,7 @@ const MyFilesScreen: React.FC = () => {
                         ) : (
                             <div className="monolith-glass rounded-[40px] p-20 flex flex-col items-center justify-center border-dashed border-2 bg-transparent opacity-30">
                                 <Database size={40} className="text-gray-400 mb-6" />
-                                <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-gray-400">Archive matches null</p>
+                                <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-gray-400">No files found</p>
                             </div>
                         )}
                     </AnimatePresence>
@@ -165,7 +164,7 @@ const MyFilesScreen: React.FC = () => {
                     className="pt-12 border-t border-black/5 dark:border-white/5 flex flex-col items-center justify-center gap-2 opacity-20 hover:opacity-50 transition-opacity cursor-default"
                 >
                     <div className="flex items-center gap-3 text-gray-400">
-                        <span className="text-[9px] font-mono font-black uppercase tracking-[0.3em]">Encrypted Data Store</span>
+                        <span className="text-[9px] font-mono font-black uppercase tracking-[0.3em]">SECURE LOCAL STORAGE</span>
                     </div>
                     <span className="text-[8px] font-mono font-black uppercase tracking-[0.4em] text-gray-400">Built By Cryptobulla</span>
                 </motion.div>

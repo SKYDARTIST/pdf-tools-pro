@@ -8,35 +8,35 @@ const LEGAL_CONTENT = {
     privacy: {
         title: 'Privacy Policy',
         icon: Shield,
-        subtitle: 'Zero-Persistence Mandate',
+        subtitle: 'Your Data is Private',
         content: [
-            "Anti-Gravity operates on a strict Zero-Data mandate. We do not maintain any database of your uploaded documents or PDF content.",
-            "NEURAL PROCESSING: When you utilize the Workspace or AI tools, your document data is transmitted via secure HTTPS to the Google Gemini Neural Engine for real-time interpretation. This data is processed ephemerally and is not used for model training by Cryptobulla. By using these features, you consent to this data flow.",
-            "LOCAL STORAGE: We utilize HTML5 Web Storage (localStorage) exclusively to store your subscription status, operation counters, and session preferences. This data remains on your device and is not synchronized to any cloud service.",
-            "CONTENT REPORTING: In compliance with Google safety standards, users may flag AI-generated content for review. This triggers a localized reporting protocol to help us refine the neural filters.",
-            "ENCRYPTION: All state transitions and data flows are protected by industry-standard SSL/TLS encryption protocols."
+            "Anti-Gravity operates on a strict Privacy-First model. We do not keep a database of your uploaded documents or PDF content.",
+            "AI ASSISTANT: When you use the Workspace or AI tools, your document data is sent via secure connection to the Google Gemini AI for analysis. This data is processed temporarily and is not used to train AI models. By using these features, you agree to this.",
+            "LOCAL STORAGE: We use your phone's storage only to save your subscription status and simple app settings. This data stays on your device and is never sent to the cloud.",
+            "REPORTING: You can flag any AI-generated answer for review. This helps us improve the safety and accuracy of our AI helper.",
+            "SECURITY: All information sent through the app is protected by professional-grade secure encryption."
         ]
     },
     terms: {
         title: 'Terms of Service',
         icon: FileText,
-        subtitle: 'Protocol Usage Agreement',
+        subtitle: 'User Agreement',
         content: [
-            "By accessing the Anti-Gravity Protocol, you agree to utilize its neural assets for lawful document manipulation and personal productivity.",
-            "PROTOTYPE STATUS: Anti-Gravity is provided 'as-is' under the Cryptobulla Experimental Lab architecture. We do not guarantee 100% uptime or error-free processing.",
-            "ABUSE PREVENTION: We reserve the right to throttle or terminate access for users who attempt to bypass security layers, flood the API, or utilize the engine for malicious purposes.",
-            "OWNERSHIP: You maintain 100% ownership of any data processed through our tools. Cryptobulla maintains ownership of the UI, design, and proprietary logic."
+            "By using Anti-Gravity, you agree to use our tools for lawful purposes only.",
+            "SERVICE STATUS: Anti-Gravity is provided 'as-is'. We do not guarantee 100% uptime or that everything will work perfectly at all times.",
+            "ABUSE PREVENTION: We reserve the right to limit or stop access for users who try to hack the app, spam our AI, or use the tools for harmful activities.",
+            "OWNERSHIP: You own 100% of any files or data processed through our tools. We own the design and code of the app."
         ]
     },
     disclaimer: {
         title: 'AI Disclaimer',
         icon: Bot,
-        subtitle: 'Neural Intelligence Warning',
+        subtitle: 'Important Note about AI',
         content: [
-            "The Anti-Gravity AI is a high-performance neural interpretation engine. While highly advanced, it is subject to the limitations of Large Language Models (LLMs).",
-            "VERIFICATION REQUIRED: AI-generated summaries, extracted tables, and naming suggestions may contain 'hallucinations' or inaccuracies. Users are strictly advised to verify all critical financial, legal, or medical data extracted via the Protocol.",
-            "LIABILITY: Cryptobulla and the Anti-Gravity team are not responsible for decisions made based on AI output. The Protocol is a tool for augmentation, not a replacement for human oversight.",
-            "FORMATTING SENSITIVITY: Complex PDF structures (layers, embedded fonts, or low-quality scans) may degrade AI accuracy."
+            "The Anti-Gravity AI is an advanced system. While very powerful, it can still make mistakes, common to all AI models.",
+            "VERIFICATION REQUIRED: AI-generated summaries and checklists may occasionally contain mistakes. You should always double-check important financial, legal, or medical information.",
+            "LIABILITY: We are not responsible for decisions made based on AI output. The app is a tool to assist you, not a replacement for your own judgment.",
+            "SENSITIVITY: Very complex documents or low-quality scans may make the AI less accurate."
         ]
     }
 };
@@ -59,7 +59,7 @@ const LegalScreen: React.FC = () => {
                     className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-black dark:hover:text-white transition-all"
                 >
                     <ArrowLeft size={14} />
-                    Back to Protocol
+                    Go Back
                 </button>
 
                 {/* Header */}
@@ -93,7 +93,7 @@ const LegalScreen: React.FC = () => {
                 {/* Footer Note */}
                 <div className="pt-12 border-t border-black/5 dark:border-white/5 text-center">
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">
-                        ANTI-GRAVITY // LEGAL PROTOCOL SECURED
+                        Anti-Gravity Legal & Privacy
                     </p>
                 </div>
             </motion.div>

@@ -192,16 +192,16 @@ export const getAiPackNotification = (): { message: string; type: 'milestone' | 
     if (credits === lastNotified) return null;
 
     if (credits === 0 && lastNotified > 0) {
-        return { message: "Neural Pack Exhausted. Synchronize more credits to continue AI operations.", type: 'exhausted' };
+        return { message: "AI Credits Empty. Buy more credits to continue using AI tools.", type: 'exhausted' };
     }
 
     if (credits <= 10 && credits > 0 && lastNotified > credits) {
-        return { message: `Neural Pack Depleting: ${credits} authorizations remaining.`, type: 'warning' };
+        return { message: `AI Credits Low: ${credits} remaining.`, type: 'warning' };
     }
 
     // Every 10 milestone
     if (credits > 10 && credits % 10 === 0 && lastNotified > credits) {
-        return { message: `Neural Authorization Status: ${credits} credits remaining.`, type: 'milestone' };
+        return { message: `AI Credits: ${credits} remaining.`, type: 'milestone' };
     }
 
     return null;

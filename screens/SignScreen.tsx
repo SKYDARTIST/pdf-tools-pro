@@ -226,22 +226,22 @@ const SignScreen: React.FC = () => {
       <div className="space-y-12">
         {/* Header Section */}
         <div className="space-y-3">
-          <div className="text-technical">Protocol Assets / Digital Authorization</div>
+          <div className="text-technical">Available Tools / Sign PDF</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Sign</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Apply unique biometric data markers to verify asset ownership</p>
+          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">Draw your signature and add professional stamps to your document</p>
         </div>
 
         <ToolGuide
-          title="Identity Verification Protocol"
-          description="Authenticate the carrier with a personal signature. Embed persistent biometric markers and status stamps."
+          title="How to sign your PDF"
+          description="Sign your document easily by drawing on the screen. You can also add status stamps like 'APPROVED' or 'URGENT'."
           steps={[
-            "Initialize the authorization by uploading a PDF carrier.",
-            "Capture your biometric signature on the digital canvas.",
-            "Apply Neural Stamps for additional status markers (DRAFT, URGENT, etc).",
-            "Execute Authorization to embed the markers onto the document layer."
+            "Upload the PDF you want to sign.",
+            "Draw your signature in the signature box.",
+            "Choose a status stamp if you need one.",
+            "Tap 'Sign & Share' to save your signed document."
           ]}
           useCases={[
-            "Contract Execution", "Approval Workflows", "Official Authentications", "Personal Validation"
+            "Contracts", "Agreements", "Official Forms", "Personal Documents"
           ]}
         />
 
@@ -253,7 +253,7 @@ const SignScreen: React.FC = () => {
             >
               <PenTool size={32} />
             </motion.div>
-            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Initialize Authorization</span>
+            <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
             <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
           </label>
@@ -269,7 +269,7 @@ const SignScreen: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-black uppercase tracking-tighter truncate">{file.name}</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Awaiting Identity Input</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Ready for signature</p>
               </div>
               <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">Clear</button>
             </motion.div>
@@ -278,7 +278,7 @@ const SignScreen: React.FC = () => {
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <Eraser size={14} className="text-black dark:text-white" />
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Identity Capture</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Draw signature</h4>
                 </div>
                 <button onClick={clearCanvas} className="text-[10px] font-black uppercase tracking-widest text-rose-500 px-3 py-1 bg-rose-500/10 rounded-lg">Reset</button>
               </div>
@@ -297,7 +297,7 @@ const SignScreen: React.FC = () => {
                 />
                 {!isSigned && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black dark:text-white">Authorization Required</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black dark:text-white">Draw here</p>
                   </div>
                 )}
               </div>
@@ -306,7 +306,7 @@ const SignScreen: React.FC = () => {
             <div className="monolith-card p-6 bg-black/5 dark:bg-white/5 border-none space-y-6">
               <div className="flex items-center gap-3">
                 <StampIcon size={14} className="text-black dark:text-white" />
-                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Neural Stamps Protocol</h4>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Add status stamp</h4>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {STAMPS.map((stamp) => (
@@ -332,7 +332,7 @@ const SignScreen: React.FC = () => {
 
             <div className="p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-3xl flex items-center gap-4 text-emerald-500">
               <CheckCircle2 size={18} />
-              <p className="text-[9px] font-black uppercase tracking-[0.2em]">End-to-end encrypted identity capture active</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em]">Secure local signing active</p>
             </div>
           </div>
         )}
@@ -358,7 +358,7 @@ const SignScreen: React.FC = () => {
         ) : (
           <>
             <Share2 size={18} strokeWidth={3} />
-            <span>Authorize & Share PDF</span>
+            <span>Sign & Share PDF</span>
           </>
         )}
       </button>
