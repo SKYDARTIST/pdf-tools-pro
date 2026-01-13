@@ -140,7 +140,7 @@ const LandingPage: React.FC = () => {
 
                         <div className="flex flex-col items-center gap-2">
                             <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.5em] opacity-40">
-                                v2.1.1-Stable
+                                v2.2.0 Stable
                             </div>
                             <div className="h-[1px] w-12 bg-black/10 dark:bg-white/10" />
                         </div>
