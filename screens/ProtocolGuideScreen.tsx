@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import {
-    BookOpen, Zap, Image, Combine, Scissors, FileText, PenTool, RotateCw,
-    Droplet, FileImage, Trash2, Hash, Shield, Search, Sparkles, Database,
+Droplet, FileImage, Trash2, Hash, Shield, Search, Sparkles, Database,
     GitMerge, EyeOff, Headphones, ArrowLeft, ChevronRight, Info
 } from 'lucide-react';
+import NeuralPulse from '../components/NeuralPulse';
 
 
 const ProtocolGuideScreen: React.FC = () => {
@@ -24,35 +20,40 @@ const ProtocolGuideScreen: React.FC = () => {
                     desc: 'Chat with your documents for instant answers.',
                     icon: Sparkles,
                     path: '/ag-workspace',
-                    useCases: ['Contract Analysis', 'Study Summaries', 'Data Querying']
+                    useCases: ['Contract Analysis', 'Study Summaries', 'Data Querying'],
+                    isElite: true
                 },
                 {
                     title: 'AI Audit',
                     desc: 'Expose hidden risks and financial gaps in fine print.',
                     icon: Shield,
                     path: '/reader?protocol=audit',
-                    useCases: ['Risk Assessment', 'Legal Review', 'Cost Auditing']
+                    useCases: ['Risk Assessment', 'Legal Review', 'Cost Auditing'],
+                    isElite: true
                 },
                 {
                     title: 'Data Extractor',
                     desc: 'Turn messy scans and handwriting into sharp data.',
                     icon: Database,
                     path: '/data-extractor',
-                    useCases: ['Invoice Processing', 'Medical OCR', 'Handwritten Notes']
+                    useCases: ['Invoice Processing', 'Medical OCR', 'Handwritten Notes'],
+                    isElite: true
                 },
                 {
                     title: 'AI Redact',
                     desc: 'Securely black out sensitive personal data.',
                     icon: EyeOff,
                     path: '/smart-redact',
-                    useCases: ['Compliance', 'Privacy', 'Secure Sharing']
+                    useCases: ['Compliance', 'Privacy', 'Secure Sharing'],
+                    isElite: true
                 },
                 {
                     title: 'AI Diff',
                     desc: 'Highlight every change between document versions.',
                     icon: GitMerge,
                     path: '/neural-diff',
-                    useCases: ['Agreement Tracking', 'Audit Trails', 'Revision Sync']
+                    useCases: ['Agreement Tracking', 'Audit Trails', 'Revision Sync'],
+                    isElite: true
                 }
             ]
         },
@@ -66,21 +67,24 @@ const ProtocolGuideScreen: React.FC = () => {
                     desc: 'Combine multiple PDF files into one. Perfect for organizing reports and document bundles.',
                     icon: Combine,
                     path: '/merge',
-                    useCases: ['Combining Reports', 'Bundling Files']
+                    useCases: ['Combining Reports', 'Bundling Files'],
+                    isPopular: true
                 },
                 {
                     title: 'Split',
                     desc: 'Break large PDFs into smaller parts. Extract exactly the pages you need.',
                     icon: Scissors,
                     path: '/split',
-                    useCases: ['Page Extraction', 'Topic Isolation']
+                    useCases: ['Page Extraction', 'Topic Isolation'],
+                    isPopular: true
                 },
                 {
                     title: 'Scanner',
                     desc: 'Convert paper documents into high-quality PDFs. AI enhancement ensures every scan is clear and professional.',
                     icon: Zap,
                     path: '/scanner',
-                    useCases: ['Receipt Capture', 'Scanning Documents']
+                    useCases: ['Receipt Capture', 'Scanning Documents'],
+                    isPopular: true
                 },
                 {
                     title: 'Image to PDF',
@@ -108,7 +112,8 @@ const ProtocolGuideScreen: React.FC = () => {
                     desc: 'Sign documents securely with your signature or stamps. Everything stays safe on your device.',
                     icon: PenTool,
                     path: '/sign',
-                    useCases: ['Contracts', 'Consent Forms']
+                    useCases: ['Contracts', 'Consent Forms'],
+                    isElite: true
                 },
                 {
                     title: 'Watermark',
@@ -122,7 +127,8 @@ const ProtocolGuideScreen: React.FC = () => {
                     desc: 'View or edit the hidden details of your PDF like Title and Author. Keep your files professional and organized.',
                     icon: FileText,
                     path: '/metadata',
-                    useCases: ['Privacy', 'Clean Exports', 'File Info']
+                    useCases: ['Privacy', 'Clean Exports', 'File Info'],
+                    isElite: true
                 }
             ]
         }
@@ -151,8 +157,8 @@ const ProtocolGuideScreen: React.FC = () => {
                         <ArrowLeft size={20} />
                     </motion.button>
                     <div className="space-y-2">
-                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">How to use</div>
-                        <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tool Guide</h1>
+                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-500">Operation Manual</div>
+                        <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Guide</h1>
                     </div>
                 </div>
 
@@ -189,13 +195,16 @@ const ProtocolGuideScreen: React.FC = () => {
                 <div className="space-y-16">
                     {filteredSections.map((section) => (
                         <div key={section.id} className="space-y-6">
-                            <div className="px-2">
-                                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-gray-900 dark:text-white mb-1">
-                                    {section.title}
-                                </h2>
-                                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                                    {section.desc}
-                                </p>
+                            <div className="px-2 flex items-center gap-3">
+                                {section.id === 'ai' && <NeuralPulse color="bg-emerald-500" size="sm" />}
+                                <div className="space-y-1">
+                                    <h2 className="text-sm font-black uppercase tracking-[0.3em] text-gray-900 dark:text-white">
+                                        {section.title}
+                                    </h2>
+                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                        {section.desc}
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
@@ -205,16 +214,34 @@ const ProtocolGuideScreen: React.FC = () => {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.05 }}
-                                        className="monolith-glass rounded-[40px] group p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-none shadow-sm hover:shadow-xl transition-all"
+                                        className={`monolith-glass rounded-[40px] group p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-none shadow-sm hover:shadow-xl transition-all relative overflow-hidden ${tool.isElite ? 'shadow-[0_0_40px_rgba(16,185,129,0.05)] border-emerald-500/10' : ''
+                                            }`}
                                     >
+                                        {tool.isElite && (
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/20" />
+                                        )}
                                         <div className="flex items-start gap-5 flex-1">
-                                            <div className="w-14 h-14 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                                            <div className={`w-14 h-14 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all ${tool.isElite ? 'text-emerald-500 ring-2 ring-emerald-500/20' : ''
+                                                }`}>
                                                 <tool.icon size={28} strokeWidth={1.5} />
                                             </div>
                                             <div className="space-y-3">
-                                                <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-none">
-                                                    {tool.title}
-                                                </h3>
+                                                <div className="flex items-center gap-3">
+                                                    <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-none">
+                                                        {tool.title}
+                                                    </h3>
+                                                    {tool.isElite && (
+                                                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full">
+                                                            <Sparkles size={8} className="text-emerald-500 animate-pulse" />
+                                                            <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">ELITE AI</span>
+                                                        </div>
+                                                    )}
+                                                    {tool.isPopular && !tool.isElite && (
+                                                        <div className="px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">
+                                                            <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">POPULAR</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed max-w-md">
                                                     {tool.desc}
                                                 </p>
@@ -231,9 +258,12 @@ const ProtocolGuideScreen: React.FC = () => {
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => navigate(tool.path)}
-                                            className="w-full md:w-auto px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-xl"
+                                            className={`w-full md:w-auto px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-xl ${tool.isElite
+                                                    ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                                                    : 'bg-black dark:bg-white text-white dark:text-black'
+                                                }`}
                                         >
-                                            Open Tool
+                                            {tool.isElite ? 'Deploy Assistant' : 'Open Tool'}
                                             <ChevronRight size={14} />
                                         </motion.button>
                                     </motion.div>
