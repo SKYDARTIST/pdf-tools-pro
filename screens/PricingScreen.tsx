@@ -2,13 +2,17 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Check, Zap, Sparkles } from 'lucide-react';
-import { upgradeTier, addAiPackCredits, SubscriptionTier } from '../services/subscriptionService';
+import { getSubscription, upgradeTier, addAiPackCredits, SubscriptionTier } from '../services/subscriptionService';
 
 const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
 
+  const sub = getSubscription();
+  const currentTier = sub.tier;
+
   const tiers = [
     {
+      id: SubscriptionTier.FREE,
       name: 'FREE',
       price: '$0',
       period: 'Forever',
@@ -17,10 +21,11 @@ const PricingScreen: React.FC = () => {
         '1 AI doc/week',
         'Zero Watermarks'
       ],
-      cta: 'Current Plan',
-      disabled: true
+      cta: currentTier === SubscriptionTier.FREE ? 'You are here' : 'Free Tier',
+      disabled: currentTier === SubscriptionTier.FREE
     },
     {
+      id: SubscriptionTier.PRO,
       name: 'PRO',
       price: '$2.99',
       period: 'Lifetime',
@@ -32,7 +37,8 @@ const PricingScreen: React.FC = () => {
         'Lifetime access',
         'All PDF tools'
       ],
-      cta: 'Get Pro',
+      cta: currentTier === SubscriptionTier.PRO ? 'Plan Active' : 'Get Pro',
+      disabled: currentTier === SubscriptionTier.PRO,
       popular: true
     },
     {
@@ -80,7 +86,7 @@ const PricingScreen: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, type: "spring", stiffness: 100, damping: 20 }}
-              className={`monolith-glass rounded-[40px] p-8 flex flex-col relative group transition-all duration-500 ${tier.popular ? 'bg-black/80 dark:bg-white text-white dark:text-black border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10'}`}
+              className={`monolith-glass rounded-[40px] p-8 flex flex-col relative group transition-all duration-500 ${tier.popular ? 'bg-black/80 dark:bg-white text-white dark:text-black border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20' : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10'} ${tier.disabled ? 'ring-2 ring-emerald-500/30' : ''}`}
             >
               {tier.popular && (
                 <div className="absolute -top-4 inset-x-0 flex justify-center items-center gap-1.5 px-4 pointer-events-none">
@@ -95,7 +101,12 @@ const PricingScreen: React.FC = () => {
 
               {/* Header */}
               <div className="mb-10">
-                <h3 className={`text-[9px] font-mono font-black uppercase tracking-[0.3em] mb-4 ${tier.popular ? 'text-emerald-400' : 'text-gray-500'}`}>{tier.name}</h3>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className={`text-[9px] font-mono font-black uppercase tracking-[0.3em] ${tier.popular ? 'text-emerald-400' : 'text-gray-500'}`}>{tier.name}</h3>
+                  {tier.disabled && (
+                    <span className="text-[7px] font-mono font-black bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase tracking-widest">ACTIVE</span>
+                  )}
+                </div>
                 <div className="flex items-baseline gap-2">
                   <span className={`text-5xl font-mono font-black tabular-nums tracking-tighter ${tier.popular ? 'text-white dark:text-black' : 'text-black dark:text-white'}`}>{tier.price}</span>
                   <span className="text-[9px] font-mono font-bold uppercase tracking-widest opacity-40">{tier.period}</span>
@@ -123,15 +134,15 @@ const PricingScreen: React.FC = () => {
                   if (tier.name === 'PRO') {
                     upgradeTier(SubscriptionTier.PRO);
                     alert('Lifetime Pro activated! All premium features unlocked.');
-                    navigate('/ag-workspace');
+                    window.location.reload();
                   } else if (tier.name === 'AI PACK') {
                     addAiPackCredits(100);
                     alert('100 AI credits added. AI features activated!');
-                    navigate('/ag-workspace');
+                    window.location.reload();
                   }
                 }}
                 className={`w-full py-5 rounded-3xl font-mono font-black text-[10px] uppercase tracking-[0.2em] transition-all relative overflow-hidden shadow-lg ${tier.disabled
-                  ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed'
+                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default shadow-none'
                   : tier.popular
                     ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95'
                     : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
@@ -140,9 +151,12 @@ const PricingScreen: React.FC = () => {
                 {tier.cta}
               </motion.button>
               {tier.name === 'AI PACK' && (
-                <div className="mt-6 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-                  <p className="text-[8px] font-mono font-bold text-emerald-500/60 uppercase tracking-widest leading-relaxed text-center">
-                    Analyze 100 massive documents for just $4.99. No subscriptions, just great AI.
+                <div className="mt-8 p-6 bg-emerald-500/10 rounded-[32px] border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                  <p className="text-[10px] font-mono font-black text-emerald-500 uppercase tracking-widest leading-relaxed text-center">
+                    Analyze 100 massive documents for just $4.99.
+                  </p>
+                  <p className="text-[7px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.3em] mt-2 text-center">
+                    No subscriptions • Pure Intelligence
                   </p>
                 </div>
               )}
