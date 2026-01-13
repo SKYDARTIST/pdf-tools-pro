@@ -1,15 +1,37 @@
-Droplet, FileImage, Trash2, Hash, Shield, Search, Sparkles, Database,
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import {
+    BookOpen, Zap, Image, Combine, Scissors, FileText, PenTool, RotateCw,
+    Droplet, FileImage, Trash2, Hash, Shield, Search, Sparkles, Database,
     GitMerge, EyeOff, Headphones, ArrowLeft, ChevronRight, Info
 } from 'lucide-react';
 import NeuralPulse from '../components/NeuralPulse';
 
+
+interface ToolDefinition {
+    title: string;
+    desc: string;
+    icon: any;
+    path: string;
+    useCases: string[];
+    isElite?: boolean;
+    isPopular?: boolean;
+}
+
+interface SectionDefinition {
+    id: string;
+    title: string;
+    desc: string;
+    tools: ToolDefinition[];
+}
 
 const ProtocolGuideScreen: React.FC = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeSection, setActiveSection] = useState<'all' | 'ai' | 'core' | 'security'>('all');
 
-    const sections = [
+    const sections: SectionDefinition[] = [
         {
             id: 'ai',
             title: 'AI Tools',
@@ -259,8 +281,8 @@ const ProtocolGuideScreen: React.FC = () => {
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => navigate(tool.path)}
                                             className={`w-full md:w-auto px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-xl ${tool.isElite
-                                                    ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                                                    : 'bg-black dark:bg-white text-white dark:text-black'
+                                                ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                                                : 'bg-black dark:bg-white text-white dark:text-black'
                                                 }`}
                                         >
                                             {tool.isElite ? 'Deploy Assistant' : 'Open Tool'}
