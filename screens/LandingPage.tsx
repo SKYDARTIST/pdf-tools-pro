@@ -59,118 +59,107 @@ const LandingPage: React.FC = () => {
                     </motion.div>
                 </div>
 
-                <div className="relative z-10 max-w-sm w-full space-y-14 sm:space-y-24 text-center">
+                <div className="relative z-10 max-w-sm w-full space-y-24 sm:space-y-32 text-center">
                     {/* Brand Signature */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1 }}
-                        className="space-y-12"
+                        className="space-y-16"
                     >
-                        <div className="flex justify-center mb-4 sm:mb-12 relative">
-                            {/* Abstract Blueprint Grid Behind Logo */}
-                            <div className="absolute inset-x-0 -top-20 h-64 opacity-[0.03] dark:opacity-[0.07] pointer-events-none -z-10">
-                                <svg viewBox="0 0 400 400" className="w-full h-full animate-[pulse_8s_infinite]">
-                                    <path d="M0 200 H400 M200 0 V400 M100 0 V400 M300 0 V400 M0 100 H400 M0 300 H400" stroke="currentColor" strokeWidth="1" fill="none" />
+                        <div className="flex justify-center mb-8 relative">
+                            {/* Drastically Subtler Grid */}
+                            <div className="absolute inset-x-0 -top-20 h-64 opacity-[0.01] dark:opacity-[0.03] pointer-events-none -z-10">
+                                <svg viewBox="0 0 400 400" className="w-full h-full">
+                                    <path d="M0 200 H400 M200 0 V400" stroke="currentColor" strokeWidth="1" fill="none" />
                                     <circle cx="200" cy="200" r="100" stroke="currentColor" strokeWidth="0.5" fill="none" />
-                                    <circle cx="200" cy="200" r="150" stroke="currentColor" strokeWidth="0.5" fill="none" strokeDasharray="10 10" />
                                 </svg>
                             </div>
 
                             <motion.div
                                 animate={{
-                                    rotate: [0, 5, -5, 0],
                                     boxShadow: [
-                                        "0 0 20px rgba(16, 185, 129, 0.1)",
-                                        "0 0 40px rgba(16, 185, 129, 0.3)",
-                                        "0 0 20px rgba(16, 185, 129, 0.1)"
+                                        "0 0 20px rgba(16, 185, 129, 0.05)",
+                                        "0 0 40px rgba(16, 185, 129, 0.15)",
+                                        "0 0 20px rgba(16, 185, 129, 0.05)"
                                     ]
                                 }}
                                 transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                                className="px-5 sm:px-8 py-3 bg-white dark:bg-white/5 rounded-full border border-black/5 dark:border-white/10 flex items-center gap-3 shadow-xl backdrop-blur-md"
+                                className="px-6 py-2 bg-emerald-500/5 dark:bg-white/5 rounded-full border border-emerald-500/10 flex items-center gap-3 backdrop-blur-md"
                             >
                                 <NeuralPulse color="bg-emerald-500" size="sm" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500 dark:text-emerald-400">AI SECURE & ACTIVE</span>
+                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-500">PRIVACY GUARD ACTIVE</span>
                             </motion.div>
                         </div>
 
                         <motion.h1
                             style={{
-                                rotateX: mousePos.y * 0.2,
-                                rotateY: mousePos.x * -0.2,
-                                filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.1))',
+                                rotateX: mousePos.y * 0.1,
+                                rotateY: mousePos.x * -0.1,
                                 letterSpacing: '-0.08em'
                             }}
-                            className="text-5xl android-sm:text-4xl sm:text-8xl font-black uppercase leading-[0.85] text-gray-900 dark:text-white drop-shadow-2xl px-2"
+                            className="text-6xl android-sm:text-5xl sm:text-9xl font-black uppercase leading-[0.8] text-gray-900 dark:text-white drop-shadow-2xl"
                         >
-                            ANTIGRAVITY<br />AI PDF
+                            ANTI<br />GRAVITY
                         </motion.h1>
 
-                        <div className="mt-14 space-y-10">
-
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20 android-sm:text-[8px] android-sm:px-3">
-                                    PRIVACY BY DESIGN • PRIVATE AI
-                                </div>
-
-                            </div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.6em] text-gray-400 opacity-60">
+                            Elite AI • Zero Cloud • Private
                         </div>
                     </motion.div>
 
-                    {/* Entry CTA */}
+                    {/* Entry CTA - Boosted Spacing */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="space-y-8 android-sm:space-y-4 mt-20"
+                        className="space-y-12"
                     >
                         <motion.button
                             whileHover={{
                                 scale: 1.02,
-                                y: -8,
-                                boxShadow: "0 40px 80px -20px rgba(16, 185, 129, 0.4)"
+                                y: -4,
+                                boxShadow: "0 30px 60px -15px rgba(16, 185, 129, 0.3)"
                             }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => navigate('/workspace')}
-                            className="w-full bg-emerald-500 dark:bg-white text-white dark:text-black py-8 android-sm:py-5 sm:py-10 rounded-[32px] sm:rounded-[40px] flex items-center justify-center group shadow-2xl shadow-emerald-500/20 dark:shadow-none relative overflow-hidden btn-neural"
+                            className="w-full bg-black dark:bg-white text-white dark:text-black py-8 rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden"
                         >
-                            <span className="text-sm font-black uppercase tracking-[0.5em] relative z-10 android-sm:text-[10px]">Open App Workspace</span>
-                            <ArrowRight size={22} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10 android-sm:w-4 text-white dark:text-black" />
+                            <span className="text-xs font-black uppercase tracking-[0.5em] relative z-10">Launch Workspace</span>
+                            <ArrowRight size={20} className="ml-5 group-hover:translate-x-3 transition-transform relative z-10" />
                         </motion.button>
 
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.5em] opacity-40">
-                                v2.2.0 Stable
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="text-[8px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-[0.8em]">
+                                v2.2.0 Stable Build
                             </div>
-                            <div className="h-[1px] w-12 bg-black/10 dark:bg-white/10" />
                         </div>
                     </motion.div>
 
-                    {/* Media Desk / Social Proof Section */}
+                    {/* Simplified Social Proof - Single Airy Row */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
-                        className="pt-12 sm:pt-24 space-y-4 sm:space-y-8"
+                        className="pt-24 space-y-12"
                     >
-                        <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">TRUSTED BY BUILDERS</div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="h-[1px] w-full bg-black/5 dark:bg-white/5" />
+
+                        <div className="flex justify-between items-center gap-2">
                             {[
-                                { title: "ZERO-DATA", desc: "No Trace Left" },
-                                { title: "PRIVATE", desc: "Local Processing" },
-                                { title: "TRUSTED", desc: "50k+ Builders" },
-                                { title: "ELITE", desc: "Privacy First" }
+                                { title: "50K+", desc: "Builders" },
+                                { title: "ZERO", desc: "Cloud" },
+                                { title: "100%", desc: "Private" }
                             ].map((badge, i) => (
-                                <div key={i} className="p-4 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5">
-                                    <div className="text-[10px] font-black uppercase tracking-tighter">{badge.title}</div>
-                                    <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1 text-nowrap">{badge.desc}</div>
+                                <div key={i} className="flex flex-col items-center">
+                                    <div className="text-[14px] font-black uppercase tracking-tighter">{badge.title}</div>
+                                    <div className="text-[7px] font-black text-gray-400 uppercase tracking-[0.3em] mt-1">{badge.desc}</div>
                                 </div>
                             ))}
                         </div>
-                        <div className="pt-4 px-6 py-3 bg-emerald-500/5 border border-emerald-500/10 rounded-full inline-block">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
-                                "THE MOST PRIVATE PDF SUITE EVER BUILT" — TOP REVIEWS 2026
-                            </span>
+
+                        <div className="text-[8px] font-black uppercase tracking-[0.3em] text-emerald-500/60 transition-opacity hover:opacity-100">
+                            "The Future of Secure Document Intelligence"
                         </div>
                     </motion.div>
                 </div>
