@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic, Info } from 'lucide-react';
+import { FileUp, BookOpen, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, X, Zap, ZapOff, Activity, Share2, Headphones, GitBranch, Play, Square, Loader2, Sparkles, Shield, Mic, Info, CheckCircle2 } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -588,12 +588,12 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                         <ToolGuide
                             title={
                                 protocol === 'briefing' ? "Audio Quick-Briefing Guide" :
-                                    protocol === 'audit' ? "Document Safety Audit Guide" :
+                                    protocol === 'audit' ? "Deep Audit Protocol" :
                                         "Document Reader Guide"
                             }
                             description={
                                 protocol === 'briefing' ? "Listen to your document like a professional podcast. Put on your headphones and learn on the go." :
-                                    protocol === 'audit' ? "Deep-layer document check. Find hidden risks, errors, and important legal details automatically." :
+                                    protocol === 'audit' ? "Our AI performs a deep-layer document check, identifying hidden risks, financial discrepancies, and legal exposure." :
                                         "A high-quality reading experience optimized for focus and long documents."
                             }
                             steps={
@@ -603,10 +603,10 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                     "Tap 'Start Audio' to generate your custom podcast briefing.",
                                     "Listen now or download the audio for your commute."
                                 ] : protocol === 'audit' ? [
-                                    "Upload the PDF you want to audit.",
-                                    "Run the 'Safety Audit' for a deep risk assessment.",
-                                    "Our AI finds critical errors, savings, and legal issues.",
-                                    "Get a clear, easy-to-read Risk Analysis report."
+                                    "Upload your PDF for analysis.",
+                                    "Initiate the 'Deep Audit' for a comprehensive risk assessment.",
+                                    "Our AI identifies critical errors, potential savings, and legal vulnerabilities.",
+                                    "Receive a clear, actionable Risk Analysis report."
                                 ] : [
                                     "Upload the PDF you want to read.",
                                     "Use zoom or 'Mobile View' for the best comfort.",
@@ -618,11 +618,21 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                 protocol === 'briefing' ? [
                                     "Commuter Learning", "Executive Summaries", "Listen while driving", "Audio Study"
                                 ] : protocol === 'audit' ? [
-                                    "Legal Checks", "Financial Review", "Contract Testing", "Investment Analysis"
+                                    "Legal Compliance", "Financial Integrity", "Contractual Risk", "Investment Due Diligence"
                                 ] : [
                                     "Deep Reading", "Technical Review", "Learning", "Document View"
                                 ]
                             }
+                            samplePreview={protocol === 'audit' ? {
+                                label: 'DEEP AUDIT REPORT',
+                                previewText: `### [CRITICAL FINDINGS]
+! Clause 14.2: Termination penalty exceeds state legal limits (potential $45k liability).
+! Missing Force Majeure definitions for regional cloud outages.
+
+### [STRATEGIC OPPORTUNITIES]
+- Consolidate vendor licenses under Section 8 to save ~12% annually ($14,200).
+- Mathematical error in Appendix B total calculation found (+$2,400 correction required).`
+                            } : undefined}
                         />
                     )}
 
@@ -637,7 +647,7 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                             <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">
                                 {protocol === 'audit' ? "Upload Document for Audit" :
                                     protocol === 'briefing' ? "Upload Document for Audio" :
-                                        "Tap to Open PDF"}
+                                        "Drag & Drop or Click to Open PDF"}
                             </span>
                             <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
                         </label>
@@ -658,6 +668,10 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                                             <Shield size={16} fill={isAuditing ? "currentColor" : "none"} />
                                             {isAuditing ? "Building Risk Report..." : "Start Safety Audit"}
                                         </motion.button>
+                                        <div className="flex flex-col gap-1 items-end pr-2">
+                                            <div className="text-[7px] font-mono font-black text-emerald-500 uppercase tracking-widest opacity-60">Engine Depth: Pro</div>
+                                            <div className="text-[6px] font-mono text-gray-400 uppercase tracking-widest opacity-40">~15s per 100 pages</div>
+                                        </div>
                                         <motion.button
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => {

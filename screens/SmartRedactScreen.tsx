@@ -22,6 +22,7 @@ const SmartRedactScreen: React.FC = () => {
     const [status, setStatus] = useState<'idle' | 'scanning' | 'ready' | 'processing' | 'done'>('idle');
     const [redactedContent, setRedactedContent] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
+    const [redactionStyle, setRedactionStyle] = useState<'blackbox' | 'blur' | 'pixelate'>('blackbox');
     const [localSanitizationStats, setLocalSanitizationStats] = useState({ emails: 0, phones: 0 });
     const [filters, setFilters] = useState({
         identity: true,
@@ -260,8 +261,8 @@ const SmartRedactScreen: React.FC = () => {
                         Automatically hide sensitive info like names, emails, and bank details
                     </p>
                     <div className="pt-2 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">100% Watermark Free: Clean and Private Output</span>
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">100% Watermark Free: Clean and Private Output</span>
                     </div>
                 </div>
 
@@ -273,7 +274,7 @@ const SmartRedactScreen: React.FC = () => {
                         >
                             <Shield size={32} />
                         </motion.div>
-                        <span className="text-sm font-black uppercase tracking-widest">Tap to upload document</span>
+                        <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Drag & Drop or Click to Open PDF/Image</span>
                         <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
                     </label>
                 ) : null}
@@ -296,6 +297,21 @@ const SmartRedactScreen: React.FC = () => {
                             useCases={[
                                 "ID Cards", "Bank Statements", "Hiding Personal Info", "Public Records", "Privacy Compliance"
                             ]}
+                            samplePreview={{
+                                label: 'PII REDACTION',
+                                previewText: `### [PII SCAN COMPLETE]
+Name: [REDACTED]
+Email: [REDACTED]
+Phone: [REDACTED]
+
+### [FINANCIAL DATA]
+Account #: [REDACTED]
+Routing: [REDACTED]
+Balance: $12,450.00 (PRESERVED)
+
+### [STATUS]
+12 high-risk vectors neutralized locally.`
+                            }}
                         />
                     </motion.div>
                 )}
@@ -315,16 +331,46 @@ const SmartRedactScreen: React.FC = () => {
                                 </div>
                             </div>
                             {status === 'ready' && (
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={startRedaction}
-                                    className="bg-black dark:bg-white text-white dark:text-black px-8 android-sm:px-4 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex-shrink-0"
-                                >
-                                    <span>Redact</span>
-                                </motion.button>
+                                <>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={startRedaction}
+                                        className="bg-black dark:bg-white text-white dark:text-black px-8 android-sm:px-4 py-4 rounded-full text-[10px] font-black uppercase tracking-widest flex-shrink-0"
+                                    >
+                                        <span>Redact</span>
+                                    </motion.button>
+                                    <div className="flex flex-col gap-1 items-end pr-2">
+                                        <div className="text-[7px] font-mono font-black text-emerald-500 uppercase tracking-widest opacity-60">Engine: Neural Redact 3.0</div>
+                                        <div className="text-[6px] font-mono text-gray-400 uppercase tracking-widest opacity-40">Privacy Shield Mode (~8s/doc)</div>
+                                    </div>
+                                </>
                             )}
                         </div>
+
+                        {status === 'ready' && (
+                            <div className="monolith-card p-4 flex items-center justify-between border-none bg-black/5 dark:bg-white/5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Redaction Style</span>
+                                <div className="flex gap-2">
+                                    {[
+                                        { id: 'blackbox', label: 'Black Box' },
+                                        { id: 'blur', label: 'Blur' },
+                                        { id: 'pixelate', label: 'Pixelate' }
+                                    ].map(style => (
+                                        <button
+                                            key={style.id}
+                                            onClick={() => setRedactionStyle(style.id as any)}
+                                            className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${redactionStyle === style.id
+                                                ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
+                                                : 'text-gray-400 hover:bg-black/5'
+                                                }`}
+                                        >
+                                            {style.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {status === 'ready' && (
                             <div className="monolith-card p-6 space-y-6">

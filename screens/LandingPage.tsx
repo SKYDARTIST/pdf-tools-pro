@@ -85,10 +85,10 @@ const LandingPage: React.FC = () => {
                                     ]
                                 }}
                                 transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                                className="px-6 py-2 bg-emerald-500/5 dark:bg-white/5 rounded-full border border-emerald-500/10 flex items-center gap-3 backdrop-blur-md"
+                                className="px-6 py-2 bg-[#E6FAF5] dark:bg-white/5 rounded-full border border-[#00D9A3]/20 flex items-center gap-3 backdrop-blur-md"
                             >
-                                <NeuralPulse color="bg-emerald-500" size="sm" />
-                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-emerald-500">PRIVACY GUARD ACTIVE</span>
+                                <NeuralPulse color="bg-[#00C896]" size="sm" />
+                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#00C896]">PRIVACY GUARD ACTIVE</span>
                             </motion.div>
                         </div>
 
@@ -98,12 +98,12 @@ const LandingPage: React.FC = () => {
                                 rotateY: mousePos.x * -0.1,
                                 letterSpacing: '-0.08em'
                             }}
-                            className="text-6xl android-sm:text-5xl sm:text-9xl font-black uppercase leading-[0.8] text-gray-900 dark:text-white drop-shadow-2xl"
+                            className="text-6xl android-sm:text-5xl sm:text-9xl font-black uppercase leading-[0.8] text-[#000000] dark:text-white drop-shadow-2xl"
                         >
                             ANTI<br />GRAVITY
                         </motion.h1>
 
-                        <div className="text-[10px] font-black uppercase tracking-[0.6em] text-gray-400 opacity-60">
+                        <div className="text-[10px] font-black uppercase tracking-[0.6em] text-[#2D3748] dark:text-gray-400 opacity-60">
                             Elite AI • Zero Cloud • Private
                         </div>
                     </motion.div>
@@ -151,88 +151,94 @@ const LandingPage: React.FC = () => {
                                 { title: "ZERO", desc: "Cloud" },
                                 { title: "100%", desc: "Private" }
                             ].map((badge, i) => (
-                                <div key={i} className="flex flex-col items-center">
-                                    <div className="text-[14px] font-black uppercase tracking-tighter">{badge.title}</div>
-                                    <div className="text-[7px] font-black text-gray-400 uppercase tracking-[0.3em] mt-1">{badge.desc}</div>
-                                </div>
+                                <React.Fragment key={i}>
+                                    <div className="flex flex-col items-center">
+                                        <div className="text-[16px] font-black uppercase tracking-tighter text-[#000000] dark:text-white">{badge.title}</div>
+                                        <div className="text-[7px] font-black text-[#718096] uppercase tracking-[0.3em] mt-1">{badge.desc}</div>
+                                    </div>
+                                    {i < 2 && <div className="h-8 w-[1px] bg-[#E2E8F0] dark:bg-white/10" />}
+                                </React.Fragment>
                             ))}
                         </div>
 
-                        <div className="text-[8px] font-black uppercase tracking-[0.3em] text-emerald-500/60 transition-opacity hover:opacity-100">
+                        <div className="text-[8px] font-black uppercase tracking-[0.3em] text-[#00C896]/60 transition-opacity hover:opacity-100">
                             "The Future of Secure Document Intelligence"
                         </div>
                     </motion.div>
                 </div>
 
                 {/* Privacy Manifesto Offset Section */}
-                <div className="w-full max-w-6xl mx-auto pt-16 sm:pt-32 pb-10 sm:pb-16 px-6 sm:px-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
-                        <div className="space-y-10">
-                            <h2 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-[0.9]">
-                                Our Privacy<br className="hidden sm:block" /> Promise.
-                            </h2>
-                            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
-                                We believe your data belongs to you. Anti-Gravity processes everything locally on your device, ensuring total privacy without any cloud storage.
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
-                                {[
-                                    { title: "ABS-OLUTE PRIVACY", desc: "Your data stays with you." },
-                                    { title: "ZERO STORAGE", desc: "Nothing is saved on our end." },
-                                    { title: "LOCAL AI", desc: "Private on-device intelligence." }
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-start gap-5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
-                                        <div className="space-y-1">
-                                            <div className="text-[11px] font-black uppercase tracking-[0.2em]">{item.title}</div>
-                                            <div className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">{item.desc}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-[48px] p-8 sm:p-14 space-y-8 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
-                                <Shield size={160} />
-                            </div>
-                            <div className="space-y-6 relative z-10">
-                                <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">OUR ADVANTAGE</div>
-                                <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none">INSTANT SPEED.<br />ZERO RISK.</h3>
-                                <p className="text-xs sm:text-sm font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
-                                    By using local processing, we skip the slow uploads. Your documents are analyzed privately on your device. This is the future of secure document tools.
+                <div className="w-full bg-[#F7FFFC] dark:bg-black py-24 sm:py-32 border-y border-[#00C896]/5 shadow-inner">
+                    <div className="max-w-6xl mx-auto px-6 sm:px-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
+                            <div className="space-y-10">
+                                <h2 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase leading-[0.9] text-[#000000] dark:text-white">
+                                    Our Privacy<br className="hidden sm:block" /> Promise.
+                                </h2>
+                                <p className="text-sm sm:text-base text-[#2D3748] dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
+                                    We believe your data belongs to you. Anti-Gravity processes everything locally on your device, ensuring total privacy without any cloud storage.
                                 </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
+                                    {[
+                                        { title: "ABS-OLUTE PRIVACY", desc: "Your data stays with you." },
+                                        { title: "ZERO STORAGE", desc: "Nothing is saved on our end." },
+                                        { title: "LOCAL AI", desc: "Private on-device intelligence." }
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-start gap-5">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] mt-2 shrink-0 shadow-[0_0_8px_rgba(0,200,150,0.4)]" />
+                                            <div className="space-y-1">
+                                                <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#000000] dark:text-white">{item.title}</div>
+                                                <div className="text-[10px] font-black text-[#718096] dark:text-gray-500 uppercase tracking-widest">{item.desc}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-[#FFFFFF] dark:bg-white/5 border border-[#E2E8F0] dark:border-white/5 shadow-2xl rounded-[48px] p-8 sm:p-14 space-y-8 relative overflow-hidden group hover:translate-y-[-4px] transition-transform">
+                                <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity text-[#00C896]">
+                                    <Shield size={160} />
+                                </div>
+                                <div className="space-y-6 relative z-10">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#718096] opacity-60">OUR ADVANTAGE</div>
+                                    <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none text-[#000000] dark:text-white">INSTANT SPEED.<br />ZERO RISK.</h3>
+                                    <p className="text-xs sm:text-sm font-bold text-[#4A5568] dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
+                                        By using local processing, we skip the slow uploads. Your documents are analyzed privately on your device. This is the future of secure document tools.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Communication Protocol / Contact Section */}
-                <div className="w-full max-w-sm mx-auto pt-12 sm:pt-24 pb-16 sm:pb-32 px-8 text-center">
-                    <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="p-10 monolith-glass rounded-[48px] border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden group"
-                    >
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50" />
-                        <div className="space-y-6 relative z-10">
-                            <div className="flex justify-center mb-4">
-                                <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500">
-                                    <MessageSquare size={24} />
-                                </div>
-                            </div>
-                            <h3 className="text-xl font-black uppercase tracking-tighter text-emerald-500">Built By Cryptobulla</h3>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
-                                Connect with the developer for collaborations and latest app updates.
-                            </p>
-                            <a
-                                href="https://x.com/Cryptobullaaa"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-3 px-8 py-4 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-500/20"
+                    <div className="w-full bg-[#FFFCF7] dark:bg-black py-24 sm:py-32">
+                        <div className="max-w-4xl mx-auto px-8 text-center">
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                className="p-10 monolith-glass rounded-[48px] border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden group"
                             >
-                                <Twitter size={14} fill="currentColor" />
-                                SAY HELLO ON X
-                            </a>
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50" />
+                                <div className="space-y-6 relative z-10">
+                                    <div className="flex justify-center mb-4">
+                                        <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-500">
+                                            <MessageSquare size={24} />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-xl font-black uppercase tracking-tighter text-[#00C896]">Built By Cryptobulla</h3>
+                                    <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest leading-relaxed">
+                                        Connect with the developer for collaborations and latest app updates.
+                                    </p>
+                                    <a
+                                        href="https://x.com/Cryptobullaaa"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-[#00D9A3] to-[#00C896] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:scale-105 transition-all shadow-xl shadow-[#00C896]/30"
+                                    >
+                                        <Twitter size={14} fill="currentColor" />
+                                        SAY HELLO ON X
+                                    </a>
+                                </div>
+                            </motion.div>
                         </div>
-                    </motion.div>
+                    </div>
                 </div>
             </main>
 

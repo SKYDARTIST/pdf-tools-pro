@@ -119,7 +119,7 @@ const NeuralAssistant: React.FC = () => {
     };
 
     return (
-        <div className="fixed bottom-24 android-sm:bottom-32 right-6 z-50 pointer-events-none">
+        <div className="fixed bottom-28 android-sm:bottom-36 right-8 z-[50] pointer-events-none">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -261,16 +261,20 @@ const NeuralAssistant: React.FC = () => {
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsOpen(!isOpen)}
-                className="pointer-events-auto w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center relative overflow-hidden group border border-white/10 dark:border-black/10 z-50 shadow-2xl"
+                className="pointer-events-auto w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center relative group border border-white/10 dark:border-black/10 z-[50] shadow-2xl"
             >
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Internal Clipped Content for Gradient */}
+                <div className="absolute inset-0 rounded-3xl overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-indigo-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+
                 {isOpen ? <ChevronDown size={28} /> : <MessageSquare size={28} />}
 
                 {!isOpen && (
                     <motion.div
                         animate={{ scale: [1, 1.3, 1] }}
                         transition={{ repeat: Infinity, duration: 2 }}
-                        className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-black shadow-lg shadow-emerald-500/50"
+                        className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-emerald-500 rounded-full border-[2.5px] border-white dark:border-black shadow-lg shadow-emerald-500/60"
                     />
                 )}
             </motion.button>

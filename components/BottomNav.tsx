@@ -25,7 +25,7 @@ const BottomNav: React.FC = () => {
     return (
         <div
             style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
-            className="fixed left-1/2 -translate-x-1/2 z-50 w-[calc(100%-3rem)] max-w-sm pointer-events-none"
+            className="fixed left-1/2 -translate-x-1/2 z-[90] w-[calc(100%-3rem)] max-w-sm pointer-events-none"
         >
             <motion.nav
                 initial={{ y: 80, opacity: 0 }}

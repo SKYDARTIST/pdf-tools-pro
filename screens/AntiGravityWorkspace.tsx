@@ -210,9 +210,9 @@ const AntiGravityWorkspace: React.FC = () => {
                 <FileUp size={44} strokeWidth={1.5} />
               </div>
               <div className="text-center space-y-3">
-                <h3 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Upload File</h3>
+                <h3 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Drag & Drop</h3>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em] opacity-80 max-w-[320px] leading-relaxed">
-                  Upload a PDF to analyze it and ask questions with AI
+                  or click to upload a PDF for AI analysis
                 </p>
               </div>
             </div>
@@ -460,7 +460,7 @@ const AntiGravityWorkspace: React.FC = () => {
               icon: Shield,
               path: "/reader?protocol=audit",
               color: "text-emerald-500",
-              tag: "ELITE"
+              tag: "ELITE AI"
             },
             {
               title: "Intelligence Briefing",
@@ -484,7 +484,7 @@ const AntiGravityWorkspace: React.FC = () => {
               icon: EyeOff,
               path: "/smart-redact",
               color: "text-rose-500",
-              tag: "PRIVACY"
+              tag: "PII"
             },
             {
               title: "Compare PDFs",
@@ -502,11 +502,11 @@ const AntiGravityWorkspace: React.FC = () => {
               onClick={() => navigate(tool.path)}
               className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
             >
-              <div className="absolute top-4 right-4 text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 opacity-80 uppercase tracking-widest bg-emerald-500/5 group-hover:scale-110 transition-transform">
+              <div className="absolute top-4 right-4 text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 opacity-80 uppercase tracking-widest bg-emerald-500/5 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
                 {tool.tag}
               </div>
-              <div className={`p-4 bg-black/5 dark:bg-white/5 rounded-2xl ${tool.color} group-hover:scale-110 transition-transform`}>
-                <tool.icon size={20} />
+              <div className={`p-6 bg-black/5 dark:bg-white/5 rounded-2xl ${tool.color} group-hover:scale-110 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all duration-500`}>
+                <tool.icon size={24} />
               </div>
               <div>
                 <div className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white mb-1">{tool.title}</div>

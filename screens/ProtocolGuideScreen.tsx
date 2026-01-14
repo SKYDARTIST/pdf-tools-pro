@@ -166,143 +166,156 @@ const ProtocolGuideScreen: React.FC = () => {
     })).filter(section => section.tools.length > 0);
 
     return (
-        <div className="min-h-screen bg-transparent pb-32 pt-40 max-w-2xl mx-auto px-6">
-            <div className="space-y-16">
-                {/* Header Section */}
-                <div className="flex items-center gap-4 mb-8">
-                    <motion.button
-                        whileHover={{ scale: 1.1, x: -2 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => navigate('/workspace')}
-                        className="w-10 h-10 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center text-gray-900 dark:text-white border border-black/5 dark:border-white/10"
-                    >
-                        <ArrowLeft size={20} />
-                    </motion.button>
-                    <div className="space-y-2">
-                        <div className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-500">Operation Manual</div>
-                        <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Guide</h1>
-                    </div>
-                </div>
+        <div className="min-h-screen bg-white dark:bg-black pb-32 pt-32 relative overflow-hidden transition-colors duration-500">
+            {/* Subtle Tech Grid matching core UI */}
+            <div className="absolute inset-0 opacity-[0.3] dark:opacity-[0.2] pointer-events-none"
+                style={{
+                    backgroundImage: `
+                        radial-gradient(circle at 50% 0%, rgba(0, 200, 150, 0.05) 0%, transparent 40%),
+                        radial-gradient(var(--grid-dark) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '100% 100%, 32px 32px'
+                }}
+            />
 
-                {/* Search & Tabs */}
-                <div className="space-y-6">
-                    <div className="relative">
-                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white" size={20} />
-                        <input
-                            type="text"
-                            placeholder="SEARCH TOOLS..."
-                            className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+            <div className="max-w-2xl mx-auto px-6 relative z-10">
+                <div className="space-y-12">
+                    <div className="flex items-center gap-6 relative">
+                        <motion.button
+                            whileHover={{ scale: 1.1, x: -4 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => navigate('/workspace')}
+                            className="w-12 h-12 bg-white/80 dark:bg-white/5 backdrop-blur-xl rounded-full flex items-center justify-center text-gray-500 dark:text-white border border-gray-100 dark:border-white/10 shadow-sm transition-all"
+                        >
+                            <ArrowLeft size={22} />
+                        </motion.button>
+                        <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500">Operation</span>
+                                <div className="w-4 h-px bg-gray-200 dark:bg-white/10" />
+                                <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500">Manual</span>
+                            </div>
+                            <h1 className="text-5xl font-black tracking-tighter text-black dark:text-white uppercase leading-none">Guide</h1>
+                        </div>
                     </div>
 
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                        {['all', 'ai', 'core', 'security'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveSection(tab as any)}
-                                className={`px-6 py-2.5 rounded-full text-[9px] font-mono font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSection === tab
-                                    ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/10'
-                                    : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:bg-black/10 dark:hover:bg-white/10'
-                                    }`}
-                            >
-                                {tab === 'ai' ? 'AI Tools' : tab === 'core' ? 'Basic' : tab}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                    {/* Search & Tabs */}
+                    <div className="space-y-6">
+                        <div className="relative group">
+                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-[#00C896] transition-colors" size={18} />
+                            <input
+                                type="text"
+                                placeholder="SEARCH TOOLS..."
+                                className="w-full bg-white/80 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-3xl py-4.5 pl-14 pr-6 text-[11px] font-black uppercase tracking-widest text-black dark:text-white placeholder:text-gray-400 transition-all shadow-sm focus:outline-none focus:border-[#00C896]/30"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
 
-                {/* Content */}
-                <div className="space-y-16">
-                    {filteredSections.map((section) => (
-                        <div key={section.id} className="space-y-6">
-                            <div className="px-2 flex items-center gap-3">
-                                {section.id === 'ai' && <NeuralPulse color="bg-emerald-500" size="sm" />}
-                                <div className="space-y-1">
-                                    <h2 className="text-sm font-black uppercase tracking-[0.3em] text-gray-900 dark:text-white">
-                                        {section.title}
-                                    </h2>
-                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 mx-[-24px] px-6">
+                            {['all', 'ai', 'core', 'security'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveSection(tab as any)}
+                                    className={`px-6 py-2.5 rounded-full text-[9px] font-mono font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeSection === tab
+                                        ? 'bg-black dark:bg-white text-white dark:text-black border-transparent shadow-lg'
+                                        : 'bg-white/80 dark:bg-white/5 text-gray-500 border-gray-100 dark:border-white/10 hover:border-[#00C896]/30'
+                                        }`}
+                                >
+                                    {tab === 'ai' ? 'AI Assistant' : tab === 'core' ? 'Core' : tab}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-16 pt-8">
+                        {filteredSections.map((section) => (
+                            <div key={section.id} className="space-y-8">
+                                <div className="px-1 flex flex-col gap-3">
+                                    <div className="flex items-center gap-3">
+                                        {section.id === 'ai' && <Sparkles size={14} className="text-[#00C896]" />}
+                                        <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-black dark:text-white">
+                                            {section.title}
+                                        </h2>
+                                        <div className="flex-1 h-px bg-gray-100 dark:bg-white/5" />
+                                    </div>
+                                    <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">
                                         {section.desc}
                                     </p>
                                 </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 gap-4">
-                                {section.tools.map((tool, i) => (
-                                    <motion.div
-                                        key={tool.title}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.05 }}
-                                        className={`monolith-glass rounded-[40px] group p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-none shadow-sm hover:shadow-xl transition-all relative overflow-hidden ${tool.isElite ? 'shadow-[0_0_40px_rgba(16,185,129,0.05)] border-emerald-500/10' : ''
-                                            }`}
-                                    >
-                                        {tool.isElite && (
-                                            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/20" />
-                                        )}
-                                        <div className="flex items-start gap-5 flex-1">
-                                            <div className={`w-14 h-14 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all ${tool.isElite ? 'text-emerald-500 ring-2 ring-emerald-500/20' : ''
-                                                }`}>
-                                                <tool.icon size={28} strokeWidth={1.5} />
-                                            </div>
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-3">
-                                                    <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white leading-none">
-                                                        {tool.title}
-                                                    </h3>
-                                                    {tool.isElite && (
-                                                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full">
-                                                            <Sparkles size={8} className="text-emerald-500 animate-pulse" />
-                                                            <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">ELITE AI</span>
-                                                        </div>
-                                                    )}
-                                                    {tool.isPopular && !tool.isElite && (
-                                                        <div className="px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full">
-                                                            <span className="text-[7px] font-black text-gray-400 uppercase tracking-widest">POPULAR</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed max-w-md">
-                                                    {tool.desc}
-                                                </p>
-                                                <div className="flex flex-wrap gap-2 pt-1">
-                                                    {tool.useCases.map(uc => (
-                                                        <span key={uc} className="text-[8px] font-mono font-black uppercase tracking-widest px-2 py-0.5 bg-black/5 dark:bg-white/5 rounded-full text-gray-400">
-                                                            {uc}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => navigate(tool.path)}
-                                            className={`w-full md:w-auto px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-xl ${tool.isElite
-                                                ? 'bg-emerald-500 text-white shadow-emerald-500/20'
-                                                : 'bg-black dark:bg-white text-white dark:text-black'
+                                <div className="grid grid-cols-1 gap-6">
+                                    {section.tools.map((tool, i) => (
+                                        <motion.div
+                                            key={tool.title}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: i * 0.05 }}
+                                            whileHover={{ y: -2 }}
+                                            className={`rounded-3xl group p-6 flex flex-col items-start gap-6 border transition-all duration-300 relative overflow-hidden bg-white/80 dark:bg-black/40 backdrop-blur-3xl border-gray-100 dark:border-white/5 shadow-sm hover:shadow-xl ${tool.isElite ? 'dark:border-[#00C896]/20' : ''
                                                 }`}
                                         >
-                                            {tool.isElite ? 'Deploy Assistant' : 'Open Tool'}
-                                            <ChevronRight size={14} />
-                                        </motion.button>
-                                    </motion.div>
-                                ))}
+                                            <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+                                                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-gray-200 dark:via-white/10 to-transparent" />
+                                            </div>
+
+                                            <div className="flex items-start gap-5 w-full">
+                                                <div className={`w-12 h-12 bg-black/5 dark:bg-white/5 rounded-xl flex items-center justify-center shrink-0 border border-black/5 dark:border-white/10 ${tool.isElite ? 'text-[#00C896]' : 'text-gray-400 dark:text-gray-500'
+                                                    }`}>
+                                                    <tool.icon size={24} strokeWidth={1.5} />
+                                                </div>
+                                                <div className="space-y-3 flex-1">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <h3 className="text-[17px] font-black uppercase tracking-tight text-black dark:text-white leading-none">
+                                                            {tool.title}
+                                                        </h3>
+                                                        {tool.isElite && (
+                                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#00C896]/10 border border-[#00C896]/20 rounded-lg">
+                                                                <Sparkles size={8} className="text-[#00C896]" />
+                                                                <span className="text-[7px] font-black text-[#00C896] uppercase tracking-widest">AI ELITE</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[11px] font-bold text-gray-600 dark:text-gray-400 leading-snug">
+                                                        {tool.desc}
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-2 pt-1">
+                                                        {tool.useCases.map(uc => (
+                                                            <span key={uc} className="text-[8px] font-mono font-black uppercase tracking-widest px-2.5 py-1 bg-black/5 dark:bg-white/5 rounded-lg text-gray-500 dark:text-gray-500 border border-black/5 dark:border-transparent">
+                                                                {uc}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <motion.button
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => navigate(tool.path)}
+                                                className={`w-full py-4 rounded-2xl text-[9px] font-mono font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${tool.isElite
+                                                    ? 'bg-[#00C896] text-white shadow-lg'
+                                                    : 'bg-black dark:bg-white text-white dark:text-black'
+                                                    }`}
+                                            >
+                                                {tool.isElite ? 'Deploy Neural Link' : 'Open Core Tool'}
+                                                <ChevronRight size={14} />
+                                            </motion.button>
+                                        </motion.div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-
-                {filteredSections.length === 0 && (
-                    <div className="text-center py-20 opacity-30">
-                        <Info size={48} className="mx-auto mb-4" />
-                        <p className="text-xs font-black uppercase tracking-widest">No tools found</p>
+                        ))}
                     </div>
-                )}
+
+                    {filteredSections.length === 0 && (
+                        <div className="text-center py-20 opacity-30 text-black dark:text-white">
+                            <Info size={40} className="mx-auto mb-4" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">Protocol Search Error: No Assets Found</p>
+                        </div>
+                    )}
 
 
+                </div>
             </div>
         </div>
     );

@@ -27,15 +27,23 @@ const HomeScreen: React.FC = () => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="space-y-8 text-center"
+        className="space-y-12 text-center"
       >
-        <div className="flex flex-col items-center space-y-4">
-          <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Security Active</div>
-          <h2 className="text-6xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">
+        <div className="flex flex-col items-center space-y-6">
+          <motion.div
+            initial={{ opacity: 0.8 }}
+            animate={{ opacity: [0.8, 1, 0.8] }}
+            transition={{ duration: 3, repeat: Infinity }}
+            className="px-4 py-1.5 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)] flex items-center gap-2"
+          >
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            <span className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-emerald-600 dark:text-emerald-500">Security Active</span>
+          </motion.div>
+          <h2 className="text-6xl font-black tracking-tighter text-[#000000] dark:text-white uppercase leading-none">
             Workspace
           </h2>
         </div>
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
+        <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-[0.4em] leading-relaxed">
           Ready to process your documents
         </p>
       </motion.div>
@@ -57,7 +65,7 @@ const HomeScreen: React.FC = () => {
             whileHover={{ y: -4, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate('/ag-workspace')}
-            className="monolith-glass p-10 cursor-pointer group relative overflow-hidden bg-black/60 text-white border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.1)] rounded-[40px]"
+            className="monolith-glass p-10 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-[#0c0c0c] to-[#1a1a1a] text-white border border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[40px]"
           >
             <div className="absolute top-1/2 -translate-y-1/2 -right-10 opacity-[0.05] group-hover:opacity-10 group-hover:-right-5 transition-all duration-700">
               <Sparkles size={160} />
@@ -65,15 +73,15 @@ const HomeScreen: React.FC = () => {
             <div className="relative z-10 flex items-center justify-between">
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#00C896] animate-pulse shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
                   <h3 className="text-2xl font-black uppercase tracking-tighter">Anti-Gravity AI</h3>
                 </div>
-                <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-60 text-emerald-400">
+                <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-80 text-emerald-400">
                   Smart AI analysis
                 </p>
               </div>
-              <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center backdrop-blur-md border border-white/5">
-                <Sparkles size={24} className="text-emerald-400" />
+              <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner group-hover:scale-110 transition-transform">
+                <Sparkles size={24} className="text-[#00C896]" />
               </div>
             </div>
           </motion.div>
@@ -89,17 +97,17 @@ const HomeScreen: React.FC = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 + (i * 0.1) }}
-                whileHover={{ y: -4 }}
+                whileHover={{ y: -4, borderSecondary: 'rgba(0,200,150,0.2)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(action.path)}
-                className="monolith-card p-6 cursor-pointer flex items-center gap-5"
+                className="monolith-card p-6 cursor-pointer flex items-center gap-5 group"
               >
-                <div className="w-12 h-12 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0">
-                  <action.icon size={20} className="text-gray-900 dark:text-white" />
+                <div className="w-12 h-12 bg-[#E6FAF5] dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <action.icon size={20} className="text-[#00C896] dark:text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-black uppercase tracking-tighter">{action.label}</h4>
-                  <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">{action.desc}</p>
+                  <h4 className="text-sm font-black uppercase tracking-tighter text-[#000000] dark:text-white">{action.label}</h4>
+                  <p className="text-[10px] font-bold text-[#718096] dark:text-gray-400 uppercase tracking-widest">{action.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -108,9 +116,9 @@ const HomeScreen: React.FC = () => {
       </div>
 
       {/* Data Feed */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between px-1">
-          <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Recent Files</div>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between px-2">
+          <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Recent Files</div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate('/my-files')}
@@ -157,9 +165,9 @@ const HomeScreen: React.FC = () => {
                 </motion.div>
               ))
             ) : (
-              <div className="monolith-card p-16 flex flex-col items-center justify-center border-dashed border-2 opacity-30">
-                <FolderOpen size={32} className="text-gray-500 mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">History Empty</p>
+              <div className="monolith-card p-16 flex flex-col items-center justify-center border-dashed border-2 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 opacity-60">
+                <FolderOpen size={32} className="text-[#718096] mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[#718096]">History Empty</p>
               </div>
             )}
           </AnimatePresence>

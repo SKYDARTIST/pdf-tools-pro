@@ -57,7 +57,7 @@ const Header: React.FC = () => {
   return (
     <header
       style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
-      className="fixed left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] max-w-2xl h-12 sm:h-14 monolith-glass rounded-full flex items-center justify-between px-2 sm:px-4 shadow-2xl"
+      className="fixed left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-1.5rem)] max-w-2xl h-12 sm:h-14 monolith-glass rounded-full flex items-center justify-between px-2 sm:px-4 shadow-2xl"
     >
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {!isHome && (

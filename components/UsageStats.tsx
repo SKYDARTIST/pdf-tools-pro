@@ -29,7 +29,7 @@ const UsageStats: React.FC = () => {
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="monolith-glass rounded-[32px] p-2 flex items-center justify-around gap-4 border border-black/5 dark:border-white/10"
+            className="monolith-card rounded-[40px] p-2 flex items-center justify-around gap-0 border border-[#E2E8F0] dark:border-white/10 shadow-sm"
         >
             {statCards.map((card, i) => (
                 <div key={card.label} className="flex items-center gap-4 py-2 px-4">
@@ -37,10 +37,10 @@ const UsageStats: React.FC = () => {
                         <card.icon size={14} className="text-gray-900 dark:text-white" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-xl font-black tracking-tighter text-gray-900 dark:text-white leading-none">
+                        <span className="text-2xl font-black tracking-tighter text-[#000000] dark:text-white leading-none">
                             {card.value}
                         </span>
-                        <span className="text-[7px] font-black uppercase tracking-[0.2em] text-gray-400">
+                        <span className="text-[8px] font-black uppercase tracking-[0.3em] text-[#2D3748] dark:text-gray-400 opacity-80 mt-1">
                             {card.label}
                         </span>
                     </div>

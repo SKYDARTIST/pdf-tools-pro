@@ -217,6 +217,22 @@ Output ONLY raw CSV data.`;
                             useCases={[
                                 "Receipts & Invoices", "Handwritten Notes", "Whiteboards", "Tables & Sheets"
                             ]}
+                            samplePreview={{
+                                label: 'JSON EXTRACTION',
+                                previewText: `{
+  "documentType": "invoice",
+  "header": {
+    "vendor": "Neural Systems LLC",
+    "invoiceNo": "INV-2026-88",
+    "date": "2026-01-14"
+  },
+  "lineItems": [
+    { "desc": "GPU Cloud Compute", "qty": 1, "amt": 1200.00 },
+    { "desc": "Storage Tier 1", "qty": 5, "amt": 250.00 }
+  ],
+  "totals": { "total": 1450.00 }
+}`
+                            }}
                         />
                         <div className="monolith-card p-8 flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -266,6 +282,10 @@ Output ONLY raw CSV data.`;
                                     {isExtracting ? <Loader2 size={18} className="animate-spin" /> : <Database size={18} />}
                                     {isExtracting ? "Extracting Content..." : "Start AI Extraction"}
                                 </motion.button>
+                                <div className="flex flex-col gap-1 items-center">
+                                    <div className="text-[8px] font-mono font-black text-emerald-500 uppercase tracking-widest opacity-60">Engine: Vision OCR 4.0</div>
+                                    <div className="text-[7px] font-mono text-gray-400 uppercase tracking-widest opacity-40">Handwriting & Table Optimized</div>
+                                </div>
                             </div>
                         )}
                     </div>

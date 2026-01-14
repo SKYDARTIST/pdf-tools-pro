@@ -45,34 +45,40 @@ const ToolsScreen: React.FC = () => {
     });
 
     const renderGrid = (items: typeof tools) => (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-10">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-12">
             {items.map((tool, i) => (
                 <motion.div
                     key={tool.title}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    whileHover={{ y: -4, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => navigate(tool.path)}
-                    className="monolith-glass rounded-[40px] cursor-pointer p-4 flex flex-col items-center text-center gap-2 border-none shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+                    className="monolith-card rounded-[40px] cursor-pointer p-6 flex flex-col items-center text-center gap-3 border border-[#E2E8F0] dark:border-white/5 shadow-sm hover:shadow-2xl hover:border-[#00C896]/30 transition-all group relative overflow-hidden"
                 >
-                    {tool.isPro && (
-                        <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500/20" />
-                    )}
+                    {/* Neural Decoration */}
+                    <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#00C896]/5 rounded-full blur-2xl group-hover:bg-[#00C896]/10 transition-colors" />
 
-                    <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
-                        <tool.icon size={18} className="transition-colors" strokeWidth={2.5} />
+                    <div className="w-14 h-14 bg-[#E6FAF5] dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                        <tool.icon size={20} className="text-[#00C896] dark:text-white" strokeWidth={2.5} />
                     </div>
 
                     <div className="min-w-0 px-1">
-                        <div className="flex flex-col items-center gap-1.5 mb-1">
-                            <h3 className="text-[11px] font-black uppercase tracking-wider text-black dark:text-white leading-none">{tool.title}</h3>
+                        <div className="flex flex-col items-center gap-2 mb-1.5">
+                            <h3 className="text-[10px] font-black uppercase tracking-wider text-[#000000] dark:text-white leading-none">{tool.title}</h3>
                             {tool.isPro && (
-                                <span className="text-[7px] font-mono font-black bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full uppercase tracking-widest">ELITE</span>
+                                <motion.span
+                                    initial={{ opacity: 0.8 }}
+                                    animate={{ opacity: [0.8, 1, 0.8] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="text-[6px] font-mono font-black bg-[#E6FAF5] text-[#00C896] px-2 py-0.5 rounded-full uppercase tracking-widest border border-[#00C896]/20 shadow-[0_0_10px_rgba(0,200,150,0.1)]"
+                                >
+                                    ELITE
+                                </motion.span>
                             )}
                         </div>
-                        <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-tight line-clamp-2 max-w-[110px]">{tool.desc}</p>
+                        <p className="text-[9px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-tight leading-relaxed line-clamp-2 max-w-[120px]">{tool.desc}</p>
                     </div>
 
                     <motion.button
@@ -87,9 +93,9 @@ const ToolsScreen: React.FC = () => {
                                 }
                             }));
                         }}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all opacity-80 group-hover:opacity-100 z-20"
+                        className="absolute top-3 right-3 p-1.5 rounded-lg bg-[#00C896]/10 text-[#00C896] hover:bg-[#00C896] hover:text-white transition-all opacity-40 group-hover:opacity-100 z-20"
                     >
-                        <Sparkles size={10} />
+                        <Sparkles size={8} />
                     </motion.button>
                 </motion.div>
             ))}
@@ -105,9 +111,9 @@ const ToolsScreen: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-4"
                 >
-                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.3em] text-gray-500">Document Engine</div>
-                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Tools</h1>
-                    <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Select an optimized tool for your workflow</p>
+                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Document Engine</div>
+                    <h1 className="text-5xl font-black tracking-tighter text-[#000000] dark:text-white uppercase leading-none">Tools</h1>
+                    <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-[0.4em]">Select an optimized tool for your workflow</p>
                 </motion.div>
 
                 <TaskCounter variant="inline" />
@@ -119,11 +125,11 @@ const ToolsScreen: React.FC = () => {
                     transition={{ delay: 0.1 }}
                     className="relative group"
                 >
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 group-focus-within:text-black dark:group-focus-within:text-white transition-colors" size={20} />
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#718096] dark:text-gray-400 group-focus-within:text-[#00C896] transition-colors" size={20} />
                     <input
                         type="search"
                         placeholder="Search for a tool..."
-                        className="w-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-black transition-all shadow-sm"
+                        className="w-full bg-[#FFFFFF] dark:bg-white/5 border border-[#E2E8F0] dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-[#000000] dark:text-white focus:outline-none focus:border-[#00C896]/30 focus:shadow-[0_0_20px_rgba(0,200,150,0.05)] transition-all shadow-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -134,16 +140,17 @@ const ToolsScreen: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="flex gap-2 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6"
+                    className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6"
                 >
                     {['all', 'popular', 'security', 'convert'].map((cat) => (
                         <motion.button
                             key={cat}
+                            whileHover={{ y: -2 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setActiveCategory(cat as any)}
-                            className={`px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all ${activeCategory === cat
-                                ? 'bg-black dark:bg-white text-white dark:text-black shadow-xl ring-4 ring-black/5 dark:ring-white/5'
-                                : 'bg-black/5 dark:bg-white/5 text-gray-500 hover:bg-black/10 dark:hover:bg-white/10'
+                            className={`px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all border ${activeCategory === cat
+                                ? 'bg-[#000000] dark:bg-white text-white dark:text-black shadow-2xl ring-4 ring-black/5 dark:ring-white/5 border-transparent'
+                                : 'bg-[#FFFFFF] dark:bg-white/5 text-[#718096] border-[#E2E8F0] dark:border-white/10 hover:border-[#00C896]/30 hover:text-[#00C896]'
                                 }`}
                         >
                             {cat === 'all' ? 'All' : cat}
@@ -164,10 +171,11 @@ const ToolsScreen: React.FC = () => {
                                 const toolsInCat = tools.filter(t => t.cat === meta.id);
                                 if (toolsInCat.length === 0) return null;
                                 return (
-                                    <div key={meta.id} className="space-y-8">
-                                        <div className="flex items-center gap-3 ml-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60">{meta.label}</h2>
+                                    <div key={meta.id} className="space-y-10">
+                                        <div className="flex items-center gap-4 ml-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
+                                            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#000000] dark:text-gray-100">{meta.label}</h2>
+                                            <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-white/5" />
                                         </div>
                                         {renderGrid(toolsInCat)}
                                     </div>
