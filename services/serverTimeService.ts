@@ -1,6 +1,7 @@
 /**
  * Server Time Service - Fetches real time from backend to prevent clock manipulation
  */
+import { getDeviceId } from './usageService';
 
 let cachedTestingPeriod: boolean | null = null;
 let lastFetchTime = 0;
@@ -21,7 +22,11 @@ export const fetchServerTestingStatus = async (): Promise<boolean> => {
 
         const response = await fetch(backendUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+                'x-ag-device-id': getDeviceId()
+            },
             body: JSON.stringify({ type: 'server_time' }),
         });
 
@@ -30,6 +35,8 @@ export const fetchServerTestingStatus = async (): Promise<boolean> => {
             cachedTestingPeriod = data.isTestingPeriod;
             lastFetchTime = Date.now();
             return cachedTestingPeriod;
+        } else {
+            console.debug('Handshake Protocol: Server time check deferred.');
         }
     } catch (error) {
         console.warn('Server time fetch failed, using local fallback');

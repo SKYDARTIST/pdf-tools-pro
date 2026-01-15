@@ -4,13 +4,14 @@
  * In 2026, this is used to verify that requests come from a legitimate, 
  * unmodified version of the app installed via the Google Play Store.
  */
+import { getDeviceId } from './usageService';
 
 export const getIntegrityToken = async (): Promise<string> => {
     // Note: In a production Android environment with Capacitor, this would call 
     // a native plugin for the Play Integrity API.
     // Documentation: https://developer.android.com/google/play/integrity
 
-    const deviceId = localStorage.getItem('ag_device_id') || 'unrecognized_device';
+    const deviceId = getDeviceId();
     const timestamp = Date.now();
     const nonce = Math.random().toString(36).substring(7);
 

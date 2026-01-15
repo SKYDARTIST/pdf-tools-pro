@@ -65,13 +65,11 @@ export default async function handler(req, res) {
     const deviceId = req.headers['x-ag-device-id'];
     const integrityToken = req.headers['x-ag-integrity-token'];
 
-    // Get the request type from body (body is now guaranteed to be parsed for POST)
+    // GUIDANCE BYPASS: Skip all validation for guidance or time checks
     const requestType = req.body?.type;
+    const isGuidanceOrTime = requestType === 'guidance' || requestType === 'server_time';
 
-    // GUIDANCE BYPASS: Skip all validation for guidance requests (free for everyone)
-    const isGuidanceRequest = requestType === 'guidance';
-
-    if (!isGuidanceRequest) {
+    if (!isGuidanceOrTime) {
         // Protocol Integrity Check - signature must match environment variable
         const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE;
 

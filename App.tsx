@@ -1,35 +1,39 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import HomeScreen from './screens/HomeScreen';
-import MergeScreen from './screens/MergeScreen';
-import SplitScreen from './screens/SplitScreen';
-import RemovePagesScreen from './screens/RemovePagesScreen';
-import ImageToPdfScreen from './screens/ImageToPdfScreen';
-import PricingScreen from './screens/PricingScreen';
-import TextToPdfScreen from './screens/TextToPdfScreen';
-import ScannerScreen from './screens/ScannerScreen';
-import WatermarkScreen from './screens/WatermarkScreen';
-import SignScreen from './screens/SignScreen';
-import ViewScreen from './screens/ViewScreen';
-import ExtractTextScreen from './screens/ExtractTextScreen';
-import AISettingsScreen from './screens/AISettingsScreen';
-import ReaderScreen from './screens/ReaderScreen';
-import RotateScreen from './screens/RotateScreen';
-import PageNumbersScreen from './screens/PageNumbersScreen';
-import ExtractImagesScreen from './screens/ExtractImagesScreen';
-import MetadataScreen from './screens/MetadataScreen';
-import ToolsScreen from './screens/ToolsScreen';
-import AntiGravityWorkspace from './screens/AntiGravityWorkspace';
-import TableExtractorScreen from './screens/TableExtractorScreen';
-import MyFilesScreen from './screens/MyFilesScreen';
-import SmartRedactScreen from './screens/SmartRedactScreen';
-import PrivacyManifestoScreen from './screens/PrivacyManifestoScreen';
+
+// Critical screens - loaded immediately
 import LandingPage from './screens/LandingPage';
-import LegalScreen from './screens/LegalScreen';
-import NeuralDiffScreen from './screens/NeuralDiffScreen';
-import DataExtractorScreen from './screens/DataExtractorScreen';
-import ProtocolGuideScreen from './screens/ProtocolGuideScreen';
+import HomeScreen from './screens/HomeScreen';
+
+// Lazy loaded tool screens
+const MergeScreen = lazy(() => import('./screens/MergeScreen'));
+const SplitScreen = lazy(() => import('./screens/SplitScreen'));
+const RemovePagesScreen = lazy(() => import('./screens/RemovePagesScreen'));
+const ImageToPdfScreen = lazy(() => import('./screens/ImageToPdfScreen'));
+const PricingScreen = lazy(() => import('./screens/PricingScreen'));
+const TextToPdfScreen = lazy(() => import('./screens/TextToPdfScreen'));
+const ScannerScreen = lazy(() => import('./screens/ScannerScreen'));
+const WatermarkScreen = lazy(() => import('./screens/WatermarkScreen'));
+const SignScreen = lazy(() => import('./screens/SignScreen'));
+const ViewScreen = lazy(() => import('./screens/ViewScreen'));
+const ExtractTextScreen = lazy(() => import('./screens/ExtractTextScreen'));
+const AISettingsScreen = lazy(() => import('./screens/AISettingsScreen'));
+const ReaderScreen = lazy(() => import('./screens/ReaderScreen'));
+const RotateScreen = lazy(() => import('./screens/RotateScreen'));
+const PageNumbersScreen = lazy(() => import('./screens/PageNumbersScreen'));
+const ExtractImagesScreen = lazy(() => import('./screens/ExtractImagesScreen'));
+const MetadataScreen = lazy(() => import('./screens/MetadataScreen'));
+const ToolsScreen = lazy(() => import('./screens/ToolsScreen'));
+const AntiGravityWorkspace = lazy(() => import('./screens/AntiGravityWorkspace'));
+const TableExtractorScreen = lazy(() => import('./screens/TableExtractorScreen'));
+const MyFilesScreen = lazy(() => import('./screens/MyFilesScreen'));
+const SmartRedactScreen = lazy(() => import('./screens/SmartRedactScreen'));
+const PrivacyManifestoScreen = lazy(() => import('./screens/PrivacyManifestoScreen'));
+const LegalScreen = lazy(() => import('./screens/LegalScreen'));
+const NeuralDiffScreen = lazy(() => import('./screens/NeuralDiffScreen'));
+const DataExtractorScreen = lazy(() => import('./screens/DataExtractorScreen'));
+const ProtocolGuideScreen = lazy(() => import('./screens/ProtocolGuideScreen'));
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
@@ -137,38 +141,40 @@ const App: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.1, ease: "linear" }}
             >
-              <Routes location={location}>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/workspace" element={<HomeScreen />} />
-                <Route path="/tools" element={<ToolsScreen />} />
-                <Route path="/merge" element={<MergeScreen />} />
-                <Route path="/split" element={<SplitScreen />} />
-                <Route path="/remove-pages" element={<RemovePagesScreen />} />
-                <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
+              <Suspense fallback={null}>
+                <Routes location={location}>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/workspace" element={<HomeScreen />} />
+                  <Route path="/tools" element={<ToolsScreen />} />
+                  <Route path="/merge" element={<MergeScreen />} />
+                  <Route path="/split" element={<SplitScreen />} />
+                  <Route path="/remove-pages" element={<RemovePagesScreen />} />
+                  <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
 
-                <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
-                <Route path="/scanner" element={<ScannerScreen />} />
-                <Route path="/watermark" element={<WatermarkScreen />} />
-                <Route path="/sign" element={<SignScreen />} />
-                <Route path="/view" element={<ViewScreen />} />
-                <Route path="/extract-text" element={<ExtractTextScreen />} />
-                <Route path="/reader" element={<ReaderScreen />} />
-                <Route path="/rotate" element={<RotateScreen />} />
-                <Route path="/page-numbers" element={<PageNumbersScreen />} />
-                <Route path="/extract-images" element={<ExtractImagesScreen />} />
-                <Route path="/metadata" element={<MetadataScreen />} />
-                <Route path="/ai-settings" element={<AISettingsScreen />} />
-                <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
-                <Route path="/table-extractor" element={<TableExtractorScreen />} />
-                <Route path="/my-files" element={<MyFilesScreen />} />
-                <Route path="/smart-redact" element={<SmartRedactScreen />} />
-                <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
-                <Route path="/neural-diff" element={<NeuralDiffScreen />} />
-                <Route path="/data-extractor" element={<DataExtractorScreen />} />
-                <Route path="/pricing" element={<PricingScreen />} />
-                <Route path="/legal/:type" element={<LegalScreen />} />
-                <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
-              </Routes>
+                  <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
+                  <Route path="/scanner" element={<ScannerScreen />} />
+                  <Route path="/watermark" element={<WatermarkScreen />} />
+                  <Route path="/sign" element={<SignScreen />} />
+                  <Route path="/view" element={<ViewScreen />} />
+                  <Route path="/extract-text" element={<ExtractTextScreen />} />
+                  <Route path="/reader" element={<ReaderScreen />} />
+                  <Route path="/rotate" element={<RotateScreen />} />
+                  <Route path="/page-numbers" element={<PageNumbersScreen />} />
+                  <Route path="/extract-images" element={<ExtractImagesScreen />} />
+                  <Route path="/metadata" element={<MetadataScreen />} />
+                  <Route path="/ai-settings" element={<AISettingsScreen />} />
+                  <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
+                  <Route path="/table-extractor" element={<TableExtractorScreen />} />
+                  <Route path="/my-files" element={<MyFilesScreen />} />
+                  <Route path="/smart-redact" element={<SmartRedactScreen />} />
+                  <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
+                  <Route path="/neural-diff" element={<NeuralDiffScreen />} />
+                  <Route path="/data-extractor" element={<DataExtractorScreen />} />
+                  <Route path="/pricing" element={<PricingScreen />} />
+                  <Route path="/legal/:type" element={<LegalScreen />} />
+                  <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
+                </Routes>
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </PullToRefresh>

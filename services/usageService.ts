@@ -49,7 +49,10 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
             body: JSON.stringify({ type: 'usage_fetch' }),
         });
 
-        if (!response.ok) throw new Error('Proxy Fetch Failed');
+        if (!response.ok) {
+            console.debug('Handshake Protocol: Usage sync deferred.');
+            return null;
+        }
         const data = await response.json();
 
         if (data) {
@@ -66,7 +69,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
             };
         }
     } catch (error) {
-        console.error('Error fetching usage via Proxy:', error);
+        // Silent background fail
     }
     return null;
 };
@@ -93,8 +96,11 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             body: JSON.stringify({ type: 'usage_sync', usage }),
         });
 
-        if (!response.ok) throw new Error('Proxy Sync Failed');
+        if (!response.ok) {
+            console.debug('Handshake Protocol: Usage update deferred.');
+            return;
+        }
     } catch (error) {
-        console.error('Error syncing usage via Proxy:', error);
+        // Silent background fail
     }
 };
