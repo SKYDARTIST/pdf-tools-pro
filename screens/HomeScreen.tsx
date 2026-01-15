@@ -138,6 +138,7 @@ const HomeScreen: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                   whileHover={{ x: 4 }}
+                  onClick={() => navigate('/reader?protocol=read')}
                   className="monolith-card p-5 flex items-center gap-4 cursor-pointer relative overflow-hidden"
                 >
                   <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">

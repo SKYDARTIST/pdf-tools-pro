@@ -119,7 +119,7 @@ const NeuralAssistant: React.FC = () => {
     };
 
     return (
-        <div className="fixed bottom-28 android-sm:bottom-36 right-8 z-[50] pointer-events-none">
+        <div className="fixed bottom-36 android-sm:bottom-44 right-8 z-[100] mb-[env(safe-area-inset-bottom)] pointer-events-none">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div

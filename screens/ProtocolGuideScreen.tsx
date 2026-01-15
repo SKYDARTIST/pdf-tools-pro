@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     BookOpen, Zap, Image, Combine, Scissors, FileText, PenTool, RotateCw,
-    Droplet, FileImage, Trash2, Hash, Shield, Search, Sparkles, Database,
+    Droplet, FileImage, Trash2, Hash, Shield, Sparkles, Database,
     GitMerge, EyeOff, Headphones, ArrowLeft, ChevronRight, Info
 } from 'lucide-react';
 import NeuralPulse from '../components/NeuralPulse';
@@ -28,7 +28,6 @@ interface SectionDefinition {
 
 const ProtocolGuideScreen: React.FC = () => {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
     const [activeSection, setActiveSection] = useState<'all' | 'ai' | 'core' | 'security'>('all');
 
     const sections: SectionDefinition[] = [
@@ -159,9 +158,7 @@ const ProtocolGuideScreen: React.FC = () => {
     const filteredSections = sections.map(section => ({
         ...section,
         tools: section.tools.filter(tool =>
-            (activeSection === 'all' || activeSection === section.id) &&
-            (tool.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                tool.desc.toLowerCase().includes(searchQuery.toLowerCase()))
+            (activeSection === 'all' || activeSection === section.id)
         )
     })).filter(section => section.tools.length > 0);
 
@@ -199,19 +196,8 @@ const ProtocolGuideScreen: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Search & Tabs */}
+                    {/* Tabs */}
                     <div className="space-y-6">
-                        <div className="relative group">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-[#00C896] transition-colors" size={18} />
-                            <input
-                                type="text"
-                                placeholder="SEARCH TOOLS..."
-                                className="w-full bg-white/80 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-3xl py-4.5 pl-14 pr-6 text-[11px] font-black uppercase tracking-widest text-black dark:text-white placeholder:text-gray-400 transition-all shadow-sm focus:outline-none focus:border-[#00C896]/30"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-
                         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 mx-[-24px] px-6">
                             {['all', 'ai', 'core', 'security'].map((tab) => (
                                 <button

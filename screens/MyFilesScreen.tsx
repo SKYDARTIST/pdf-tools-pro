@@ -194,7 +194,19 @@ const MyFilesScreen: React.FC = () => {
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ delay: i * 0.02 }}
                                         whileHover={{ x: 6 }}
-                                        className="monolith-card rounded-[40px] p-6 flex items-center gap-6 group border border-[#E2E8F0] dark:border-white/5 bg-[#FFFFFF] dark:bg-white/5 shadow-sm hover:shadow-xl"
+                                        onClick={() => {
+                                            const pathMap: Record<string, string> = {
+                                                'extract-text': '/ag-workspace',
+                                                'merge': '/merge',
+                                                'split': '/split',
+                                                'sign': '/sign',
+                                                'watermark': '/watermark',
+                                                'image-to-pdf': '/image-to-pdf',
+                                                'metadata': '/metadata'
+                                            };
+                                            navigate(pathMap[entry.operation] || '/tools');
+                                        }}
+                                        className="monolith-card rounded-[40px] p-6 flex items-center gap-6 group border border-[#E2E8F0] dark:border-white/5 bg-[#FFFFFF] dark:bg-white/5 shadow-sm hover:shadow-xl cursor-pointer"
                                     >
                                         <div className="w-14 h-14 rounded-2xl bg-[#E6FAF5] dark:bg-white/10 flex items-center justify-center shrink-0 border border-[#00C896]/10 group-hover:scale-110 transition-transform">
                                             <FileText size={24} className="text-[#00C896] dark:text-white" />
@@ -258,9 +270,6 @@ const MyFilesScreen: React.FC = () => {
                                             <Sparkles size={14} />
                                             Start New Project
                                         </motion.button>
-                                        <button className="text-[9px] font-mono font-black uppercase tracking-widest text-[#A0AEC0] hover:text-[#718096] transition-colors">
-                                            Import Existing PDF
-                                        </button>
                                     </div>
                                 </div>
                             </div>

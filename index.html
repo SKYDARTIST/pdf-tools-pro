@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <!-- Cache busting for Android WebView -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -24,6 +24,17 @@
                 }
             }
         }
+    </script>
+    <!-- Blocking script to apply dark mode BEFORE React hydrates -->
+    <script>
+            (function () {
+                try {
+                    var saved = localStorage.getItem('darkMode');
+                    if (saved && JSON.parse(saved)) {
+                        document.documentElement.classList.add('dark');
+                    }
+                } catch (e) { }
+            })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

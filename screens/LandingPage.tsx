@@ -168,7 +168,7 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Privacy Manifesto Offset Section */}
-                <div className="w-full bg-[#F7FFFC] dark:bg-black py-24 sm:py-32 border-y border-[#00C896]/5 shadow-inner">
+                <div className="w-full bg-[#F7FFFC] dark:bg-[#050505] py-24 sm:py-32 border-y border-[#00C896]/5 shadow-inner">
                     <div className="max-w-6xl mx-auto px-6 sm:px-12">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-start">
                             <div className="space-y-10">
@@ -209,7 +209,7 @@ const LandingPage: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="w-full bg-[#FFFCF7] dark:bg-black py-24 sm:py-32">
+                    <div className="w-full bg-[#FFFCF7] dark:bg-[#080808] py-24 sm:py-32">
                         <div className="max-w-4xl mx-auto px-8 text-center">
                             <motion.div
                                 whileHover={{ scale: 1.05 }}
