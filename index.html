@@ -32,6 +32,7 @@
                     var saved = localStorage.getItem('darkMode');
                     if (saved && JSON.parse(saved)) {
                         document.documentElement.classList.add('dark');
+                        document.documentElement.style.backgroundColor = '#000000';
                     }
                 } catch (e) { }
             })();

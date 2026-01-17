@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Scissors, FileText, Share2, Loader2, FileUp } from 'lucide-react';
+import { Scissors, FileText, Share2, Loader2, FileUp, Package } from 'lucide-react';
 import { splitPdf } from '../services/pdfService';
 import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
@@ -11,6 +11,7 @@ import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import JSZip from 'jszip';
 
 const SplitScreen: React.FC = () => {
   const [file, setFile] = useState<FileItem | null>(null);
@@ -53,13 +54,19 @@ const SplitScreen: React.FC = () => {
     setIsProcessing(true);
     try {
       const results = await splitPdf(file.file);
+
+      // Bundle all pages into a single ZIP file
+      const zip = new JSZip();
+      const baseName = file.name.replace('.pdf', '');
+
       for (let i = 0; i < results.length; i++) {
         const data = results[i];
-        const blob = new Blob([data as any], { type: 'application/pdf' });
-        await downloadFile(blob, `page_${i + 1}_${file.name}`);
-        // Small delay between multiple downloads
-        if (results.length > 1) await new Promise(r => setTimeout(r, 200));
+        zip.file(`page_${i + 1}_${baseName}.pdf`, data);
       }
+
+      // Generate ZIP and download as single file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      await downloadFile(zipBlob, `${baseName}_split_pages.zip`);
 
       // Increment task counter
       TaskLimitManager.incrementTask();
@@ -75,9 +82,9 @@ const SplitScreen: React.FC = () => {
       // Clear file removed - deferred
       setSuccessData({
         isOpen: true,
-        fileName: file.name,
+        fileName: `${baseName}_split_pages.zip`,
         originalSize: file.size,
-        finalSize: results.reduce((acc, r) => acc + r.length, 0)
+        finalSize: zipBlob.size
       });
     } catch (err) {
       alert('Error splitting PDF');

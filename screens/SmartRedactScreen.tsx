@@ -22,7 +22,7 @@ const SmartRedactScreen: React.FC = () => {
     const [status, setStatus] = useState<'idle' | 'scanning' | 'ready' | 'processing' | 'done'>('idle');
     const [redactedContent, setRedactedContent] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
-    const [redactionStyle, setRedactionStyle] = useState<'blackbox' | 'blur' | 'pixelate'>('blackbox');
+
     const [localSanitizationStats, setLocalSanitizationStats] = useState({ emails: 0, phones: 0 });
     const [filters, setFilters] = useState({
         identity: true,
@@ -348,29 +348,7 @@ Balance: $12,450.00 (PRESERVED)
                             )}
                         </div>
 
-                        {status === 'ready' && (
-                            <div className="monolith-card p-4 flex items-center justify-between border-none bg-black/5 dark:bg-white/5">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Redaction Style</span>
-                                <div className="flex gap-2">
-                                    {[
-                                        { id: 'blackbox', label: 'Black Box' },
-                                        { id: 'blur', label: 'Blur' },
-                                        { id: 'pixelate', label: 'Pixelate' }
-                                    ].map(style => (
-                                        <button
-                                            key={style.id}
-                                            onClick={() => setRedactionStyle(style.id as any)}
-                                            className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${redactionStyle === style.id
-                                                ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
-                                                : 'text-gray-400 hover:bg-black/5'
-                                                }`}
-                                        >
-                                            {style.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+
 
                         {status === 'ready' && (
                             <div className="monolith-card p-6 space-y-6">
