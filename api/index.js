@@ -274,7 +274,7 @@ export default async function handler(req, res) {
                 return cachedModels;
             }
         } catch (e) { }
-        return ["gemini-2.0-flash", "gemini-1.5-flash"];
+        return ["gemini-2.5-flash", "gemini-1.5-flash"];
     };
 
 
@@ -388,7 +388,7 @@ ${documentText || "No text content - analyzing image only."}`;
                     promptPayload = `Generate a professional, high-quality image based on this request. ADHERE TO SAFETY POLICIES: NO VIOLENCE, NO NSFW, NO HATE. REQUEST: ${prompt}`;
 
                     // Specific model for visuals - include 2.0 standards
-                    const allowedModels = ['gemini-2.0-flash', 'gemini-2.0-pro', 'gemini-2.5-flash-image', 'imagen-3', 'gemini-1.5-flash'];
+                    const allowedModels = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-image', 'imagen-3', 'gemini-1.5-flash'];
                     if (!allowedModels.includes(modelName)) {
                         continue;
                     }
