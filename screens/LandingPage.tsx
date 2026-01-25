@@ -147,7 +147,7 @@ const LandingPage: React.FC = () => {
 
                         <div className="flex justify-between items-center gap-2">
                             {[
-                                { title: "50K+", desc: "Builders" },
+                                { title: "LOCAL", desc: "GEMINI AI" },
                                 { title: "ZERO", desc: "Cloud" },
                                 { title: "100%", desc: "Private" }
                             ].map((badge, i) => (
