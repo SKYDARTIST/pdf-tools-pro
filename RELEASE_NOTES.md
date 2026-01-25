@@ -1,4 +1,4 @@
-v2.4.1 - Stability & Momentum
+v2.6.0 - Stability & Momentum
 - Added "23+ Active Testers" milestone tracking.
 - Implemented "LOCAL GEMINI AI" verification indicators.
 - Ensured "100% Watermark Free" output across all tools.
