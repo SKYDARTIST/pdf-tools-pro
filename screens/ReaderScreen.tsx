@@ -244,7 +244,16 @@ const ReaderScreen: React.FC = () => {
 
             // @ts-ignore - passing extra mimeType for backend precision
             // For images, pass empty string - the image itself contains the document content
+            console.log('🔍 DEBUG Mindmap Request:', {
+                fileType: file.type,
+                hasImage: !!imageBase64,
+                imageLength: imageBase64?.length || 0,
+                textLength: text.length,
+                textContent: text.substring(0, 50),
+                mimeType: fileMime
+            });
             const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
+            console.log('🔍 DEBUG Mindmap Response:', response.substring(0, 200));
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 setMindMapData('');

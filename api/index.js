@@ -393,13 +393,26 @@ ${documentText || "No text content - analyzing image only."}`;
                         continue;
                     }
                 } else if (type === 'mindmap' || type === 'outline' || type === 'audio_script' || type === 'redact' || type === 'table') {
+                    // DEBUG: Log what we're receiving
+                    console.log('🔍 Backend DEBUG:', {
+                        type,
+                        hasImage: !!image,
+                        imageLength: image ? (Array.isArray(image) ? image[0]?.length : image.length) : 0,
+                        documentText: documentText,
+                        documentTextType: typeof documentText,
+                        documentTextLength: documentText?.length || 0,
+                        willUseImageInstruction: !!(image && !documentText)
+                    });
+
                     // For these types with images, use image-friendly system instruction
                     if (image && !documentText) {
                         // Image only - analyze the image directly
+                        console.log('✅ Using IMAGE instruction');
                         const imageInstruction = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Analyze the provided image to extract information and insights. Maintain a professional, technical tone.`;
                         promptPayload = `${imageInstruction}\n\n${prompt}`;
                     } else {
                         // Text or PDF - include document context
+                        console.log('❌ Using TEXT instruction - documentText:', documentText);
                         promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
                     }
                 } else {
