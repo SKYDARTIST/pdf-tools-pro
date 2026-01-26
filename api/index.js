@@ -185,42 +185,66 @@ export default async function handler(req, res) {
                     timestamp: new Date().toISOString()
                 });
 
-                // CRITICAL: Use upsert instead of update to handle new devices
-                // If device row doesn't exist, it will be created; otherwise, it will be updated
-                const { error } = await supabase
-                    .from('ag_user_usage')
-                    .upsert({
-                        device_id: deviceId,
-                        tier: usage.tier,
-                        operations_today: usage.operationsToday,
-                        ai_docs_weekly: usage.aiDocsThisWeek,
-                        ai_docs_monthly: usage.aiDocsThisMonth,
-                        ai_pack_credits: usage.aiPackCredits,
-                        last_reset_daily: usage.lastOperationReset,
-                        last_reset_weekly: usage.lastAiWeeklyReset,
-                        last_reset_monthly: usage.lastAiMonthlyReset,
-                        trial_start_date: usage.trialStartDate,
-                    }, {
-                        onConflict: 'device_id'
+                try {
+                    // CRITICAL: Use upsert instead of update to handle new devices
+                    // If device row doesn't exist, it will be created; otherwise, it will be updated
+                    // Data must be an array for upsert to work properly
+                    const { data, error } = await supabase
+                        .from('ag_user_usage')
+                        .upsert(
+                            [{
+                                device_id: deviceId,
+                                tier: usage.tier,
+                                operations_today: usage.operationsToday,
+                                ai_docs_weekly: usage.aiDocsThisWeek,
+                                ai_docs_monthly: usage.aiDocsThisMonth,
+                                ai_pack_credits: usage.aiPackCredits,
+                                last_reset_daily: usage.lastOperationReset,
+                                last_reset_weekly: usage.lastAiWeeklyReset,
+                                last_reset_monthly: usage.lastAiMonthlyReset,
+                                trial_start_date: usage.trialStartDate,
+                            }],
+                            { onConflict: 'device_id' }
+                        );
+
+                    if (error) {
+                        console.error('Anti-Gravity API: usage_sync upsert error:', {
+                            message: error.message,
+                            code: error.code,
+                            status: error.status,
+                            details: error.details,
+                            hint: error.hint,
+                            deviceId,
+                            tier: usage.tier,
+                            aiPackCredits: usage.aiPackCredits,
+                            timestamp: new Date().toISOString()
+                        });
+                        return res.status(400).json({
+                            error: "Usage sync failed",
+                            details: error.message,
+                            code: error.code
+                        });
+                    }
+
+                    console.log('Anti-Gravity API: ✅ usage_sync completed successfully for device:', {
+                        deviceId,
+                        aiPackCredits: usage.aiPackCredits,
+                        timestamp: new Date().toISOString()
                     });
 
-                if (error) {
-                    console.error('Anti-Gravity API: usage_sync upsert failed:', {
-                        error: error.message,
-                        errorCode: error.code,
+                    return res.status(200).json({ success: true });
+                } catch (syncError) {
+                    console.error('Anti-Gravity API: usage_sync sync error:', {
+                        error: syncError.message,
+                        stack: syncError.stack,
                         deviceId,
                         timestamp: new Date().toISOString()
                     });
-                    throw error;
+                    return res.status(500).json({
+                        error: "Database sync error",
+                        details: syncError.message
+                    });
                 }
-
-                console.log('Anti-Gravity API: ✅ usage_sync completed successfully for device:', {
-                    deviceId,
-                    aiPackCredits: usage.aiPackCredits,
-                    timestamp: new Date().toISOString()
-                });
-
-                return res.status(200).json({ success: true });
             }
         } catch (dbError) {
             console.error("Database Proxy Error:", dbError);
