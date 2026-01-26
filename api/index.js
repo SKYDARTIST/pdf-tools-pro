@@ -185,9 +185,12 @@ export default async function handler(req, res) {
                     timestamp: new Date().toISOString()
                 });
 
+                // CRITICAL: Use upsert instead of update to handle new devices
+                // If device row doesn't exist, it will be created; otherwise, it will be updated
                 const { error } = await supabase
                     .from('ag_user_usage')
-                    .update({
+                    .upsert({
+                        device_id: deviceId,
                         tier: usage.tier,
                         operations_today: usage.operationsToday,
                         ai_docs_weekly: usage.aiDocsThisWeek,
@@ -197,12 +200,14 @@ export default async function handler(req, res) {
                         last_reset_weekly: usage.lastAiWeeklyReset,
                         last_reset_monthly: usage.lastAiMonthlyReset,
                         trial_start_date: usage.trialStartDate,
-                    })
-                    .eq('device_id', deviceId);
+                    }, {
+                        onConflict: 'device_id'
+                    });
 
                 if (error) {
-                    console.error('Anti-Gravity API: usage_sync update failed:', {
+                    console.error('Anti-Gravity API: usage_sync upsert failed:', {
                         error: error.message,
+                        errorCode: error.code,
                         deviceId,
                         timestamp: new Date().toISOString()
                     });
