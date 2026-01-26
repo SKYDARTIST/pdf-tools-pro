@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, Table, Database, Loader2, Sparkles, Check, X, AlertCircle, Share2, FileJson, FileSpreadsheet, PenTool, Flag } from 'lucide-react';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
-import UpgradeModal from '../components/UpgradeModal';
+import AiLimitModal from '../components/AiLimitModal';
 import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
 import SuccessModal from '../components/SuccessModal';
@@ -25,7 +25,8 @@ const DataExtractorScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showAiLimit, setShowAiLimit] = useState(false);
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,9 +56,16 @@ const DataExtractorScreen: React.FC = () => {
         }
 
 
-        const aiCheck = canUseAI();
+        // HEAVY AI Operation - Data Extractor consumes credits
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
             return;
         }
 
@@ -138,7 +146,8 @@ Output ONLY raw CSV data.`;
             }
 
             // @ts-ignore - passing extra mimeType for backend precision
-            const response = await askGemini(prompt, text || "Analyzing image...", "table", imageBase64 || undefined, fileMime);
+            // For images, pass empty string - the image itself contains the data
+            const response = await askGemini(prompt, text, "table", imageBase64 || undefined, fileMime);
 
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
@@ -156,7 +165,7 @@ Output ONLY raw CSV data.`;
             }
 
             setExtractedData(cleanedResponse);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
         } catch (err: any) {
             setError(err.message || "Extraction failed. Visual data may be too obscured or file corrupted.");
             console.error(err);
@@ -368,9 +377,12 @@ Output ONLY raw CSV data.`;
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
             />
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
+            <AiLimitModal
+                isOpen={showAiLimit}
+                onClose={() => setShowAiLimit(false)}
+                blockMode={aiLimitInfo.blockMode}
+                used={aiLimitInfo.used}
+                limit={aiLimitInfo.limit}
             />
 
             {successData && (

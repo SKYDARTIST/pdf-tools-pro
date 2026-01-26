@@ -5,10 +5,11 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { downloadFile } from '../services/downloadService';
-import UpgradeModal from '../components/UpgradeModal';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '../services/subscriptionService';
+import AiLimitModal from '../components/AiLimitModal';
+import { compressImage } from '../utils/imageProcessor';
 import MindMapComponent from '../components/MindMapComponent';
 import { askGemini } from '../services/aiService';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
@@ -51,7 +52,8 @@ const ReaderScreen: React.FC = () => {
     const [showMindMapSettings, setShowMindMapSettings] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showAiLimit, setShowAiLimit] = useState(false);
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
 
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
     const [isAuditing, setIsAuditing] = useState(false);
@@ -164,11 +166,8 @@ const ReaderScreen: React.FC = () => {
             return;
         }
 
-        const aiCheck = canUseAI();
-        if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
-            return;
-        }
+        // GUIDANCE AI Operation - MindMap is FREE for all users
+        // No need to check limits, GUIDANCE is always allowed
 
         if (isMindMapMode && !settings) {
             setIsMindMapMode(false);
@@ -191,36 +190,50 @@ const ReaderScreen: React.FC = () => {
         setIsGeneratingMindMap(true);
         try {
             let text = "";
+            let imageBase64 = "";
+            let fileMime = file.type || 'image/jpeg';
             let startPage = 1;
             let endPage = numPages; // Default to all pages
 
-            if (settings?.range) {
-                const parts = settings.range.split('-').map(p => parseInt(p.trim()));
-                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                    startPage = Math.max(1, parts[0]);
-                    endPage = Math.min(parts[1], numPages);
-                } else if (parts.length === 1 && !isNaN(parts[0])) {
-                    startPage = Math.max(1, parts[0]);
-                    endPage = Math.min(parts[0] + 9, numPages); // Default to 10 pages from start
+            if (file.type === "application/pdf") {
+                // Handle PDF files
+                if (settings?.range) {
+                    const parts = settings.range.split('-').map(p => parseInt(p.trim()));
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        startPage = Math.max(1, parts[0]);
+                        endPage = Math.min(parts[1], numPages);
+                    } else if (parts.length === 1 && !isNaN(parts[0])) {
+                        startPage = Math.max(1, parts[0]);
+                        endPage = Math.min(parts[0] + 9, numPages); // Default to 10 pages from start
+                    }
                 }
+
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer, startPage, endPage);
+            } else {
+                // Handle Image files
+                const rawBase64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsDataURL(file);
+                });
+                imageBase64 = await compressImage(rawBase64);
             }
 
-            const buffer = await file.arrayBuffer();
-            text = await extractTextFromPdf(buffer, startPage, endPage);
-
-            const prompt = `Perform a high-quality AI document map. 
-            Target Range: Pages ${startPage} to ${endPage}.
+            const prompt = `Perform a high-quality AI document map.
+            ${file.type === "application/pdf" ? `Target Range: Pages ${startPage} to ${endPage}.` : ''}
             Strategic Focus: ${settings?.focus || "Core document architecture and key thematic pillars"}.
-            
+
             STRUCTURE RULES:
             - Root: The absolute central concept (MAX 1).
             - Level 1: Primary strategic pillars (MAX 5).
             - Level 2: Critical evidentiary sub-nodes (MAX 3 per pillar).
             - LABEL LIMIT: Each node MUST be 1-2 words maximum. No sentences. Use punchy, nouns/verbs.
-            
+
             OUTPUT FORMAT:
             A simple indented list using dashes (-). No bolding, no extra text, no symbols except dashes for hierarchy.
-            
+
             Example:
             Artificial Intelligence
             - Neural Networks
@@ -229,14 +242,16 @@ const ReaderScreen: React.FC = () => {
             - Machine Learning
             `;
 
-            const response = await askGemini(prompt, text, "mindmap");
+            // @ts-ignore - passing extra mimeType for backend precision
+            // For images, pass empty string - the image itself contains the document content
+            const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 setMindMapData('');
                 return;
             }
             setMindMapData(response);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.GUIDANCE); // FREE - no credits consumed
         } catch (error) {
             console.error("AI Document Map Generation Failed:", error);
         } finally {
@@ -262,11 +277,8 @@ const ReaderScreen: React.FC = () => {
         }
 
 
-        const aiCheck = canUseAI();
-        if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
-            return;
-        }
+        // GUIDANCE AI Operation - Audio Briefing is FREE for all users
+        // No need to check limits, GUIDANCE is always allowed
 
         if (audioScript && !settings) {
             startSpeaking(audioScript);
@@ -282,27 +294,43 @@ const ReaderScreen: React.FC = () => {
         setIsGeneratingAudio(true);
         try {
             let text = "";
+            let imageBase64 = "";
+            let fileMime = file.type || 'image/jpeg';
             let startPage = 1;
             let endPage = numPages;
 
-            if (settings?.range) {
-                const parts = settings.range.split('-').map(p => parseInt(p.trim()));
-                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                    startPage = Math.max(1, parts[0]);
-                    endPage = Math.min(parts[1], numPages);
+            if (file.type === "application/pdf") {
+                // Handle PDF files
+                if (settings?.range) {
+                    const parts = settings.range.split('-').map(p => parseInt(p.trim()));
+                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                        startPage = Math.max(1, parts[0]);
+                        endPage = Math.min(parts[1], numPages);
+                    }
                 }
+
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer, startPage, endPage);
+            } else {
+                // Handle Image files
+                console.log('Audio: Processing image file');
+                const rawBase64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsDataURL(file);
+                });
+                imageBase64 = await compressImage(rawBase64);
+                console.log('Audio: Image compressed, length:', imageBase64.length);
             }
 
-            const buffer = await file.arrayBuffer();
-            text = await extractTextFromPdf(buffer, startPage, endPage);
-
             const prompt = `Convert this high-stakes intelligence context into a professional podcast script.
-            Target Range: ${settings?.range || "Full Document"}.
+            ${file.type === "application/pdf" ? `Target Range: ${settings?.range || "Full Document"}.` : ''}
             Focus: ${settings?.focus || "Strategic summary and key structural insights"}.
-            
+
             ROLE: Act as a professional intelligence host. Providing a high-end strategic download.
             TONE: Elite, objective, clear.
-            
+
             RULES:
             - START DIRECTLY with 'Welcome to Anti-Gravity.'
             - Focus on clarity and narrative flow.
@@ -310,7 +338,9 @@ const ReaderScreen: React.FC = () => {
             - Length: Optimized for a 2-3 minute briefing.
             `;
 
-            const response = await askGemini(prompt, text, "audio_script");
+            // @ts-ignore - passing extra mimeType for backend precision
+            // For images, pass empty string - the image itself contains the document content
+            const response = await askGemini(prompt, text, "audio_script", imageBase64 || undefined, fileMime);
 
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
@@ -323,7 +353,7 @@ const ReaderScreen: React.FC = () => {
             }
 
             setAudioScript(response);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.GUIDANCE); // FREE - no credits consumed
             startSpeaking(response);
         } catch (error) {
             console.error("Audio Generation Failed:", error);
@@ -455,11 +485,8 @@ const ReaderScreen: React.FC = () => {
         }
 
 
-        const aiCheck = canUseAI();
-        if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
-            return;
-        }
+        // GUIDANCE AI Operation - Outline is FREE for all users
+        // No need to check limits, GUIDANCE is always allowed
 
         setIsOutlineMode(true);
         setIsMindMapMode(false);
@@ -471,23 +498,41 @@ const ReaderScreen: React.FC = () => {
         setIsGeneratingOutline(true);
         try {
             let text = fluidContent;
+            let imageBase64 = "";
+            let fileMime = file.type || 'image/jpeg';
+
             if (!text) {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer);
-                setFluidContent(text);
+                if (file.type === "application/pdf") {
+                    // Handle PDF files
+                    const buffer = await file.arrayBuffer();
+                    text = await extractTextFromPdf(buffer);
+                    setFluidContent(text);
+                } else {
+                    // Handle Image files
+                    const rawBase64 = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = (error) => reject(error);
+                        reader.readAsDataURL(file);
+                    });
+                    imageBase64 = await compressImage(rawBase64);
+                }
             }
+
             const isBriefing = protocol === 'briefing';
             const contextPrompt = isBriefing
                 ? "Synthesize this document into a high-fidelity Strategic Executive Summary. Focus on macro-level insights, key architectural decisions, and the 'bottom line' for an elite decision-maker. Output as markdown."
                 : "Synthesize this document into a professional, high-fidelity executive outline. Use clear headings and bullet points. Focus on key decisions, findings, and actionable data. Output as markdown.";
 
-            const response = await askGemini(contextPrompt, text, "outline");
+            // @ts-ignore - passing extra mimeType for backend precision
+            // For images, pass empty string - the image itself contains the document content
+            const response = await askGemini(contextPrompt, text, "outline", imageBase64 || undefined, fileMime);
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
             }
             setOutlineData(response);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.GUIDANCE); // FREE - no credits consumed
         } catch (error) {
             console.error("Outline Generation Failed:", error);
         } finally {
@@ -505,9 +550,16 @@ const ReaderScreen: React.FC = () => {
         }
 
 
-        const aiCheck = canUseAI();
+        // HEAVY AI Operation - Audit consumes credits
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
             return;
         }
 
@@ -518,13 +570,33 @@ const ReaderScreen: React.FC = () => {
 
         try {
             let text = fluidContent;
+            let imageBase64 = "";
+            let fileMime = file.type || 'image/jpeg';
+
             if (!text) {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer);
-                setFluidContent(text);
+                if (file.type === "application/pdf") {
+                    // Handle PDF files
+                    const buffer = await file.arrayBuffer();
+                    text = await extractTextFromPdf(buffer);
+                    setFluidContent(text);
+                } else {
+                    // Handle Image files
+                    console.log('Audit: Processing image file');
+                    const rawBase64 = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = (error) => reject(error);
+                        reader.readAsDataURL(file);
+                    });
+                    imageBase64 = await compressImage(rawBase64);
+                    console.log('Audit: Image compressed, length:', imageBase64.length);
+                }
             }
-            const response = await askGemini(`Perform a high-level AI Audit of this document. 
-Identify hidden risks, financial discrepancies, and legal exposure. 
+
+            // @ts-ignore - passing extra mimeType for backend precision
+            // For images, pass empty string - the image itself contains the document content
+            const response = await askGemini(`Perform a high-level AI Audit of this document.
+Identify hidden risks, financial discrepancies, and legal exposure.
 
 REPORT STRUCTURE:
 1. ### [SCOPE OF ANALYSIS]
@@ -534,13 +606,13 @@ REPORT STRUCTURE:
 3. ### [STRATEGIC OPPORTUNITIES]
    - Suggest potential savings or logic improvements.
 
-Be direct and objective. Use a professional technical tone. Output as markdown.`, text, "redact");
+Be direct and objective. Use a professional technical tone. Output as markdown.`, text, "redact", imageBase64 || undefined, fileMime);
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
             }
             setAuditData(response);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
         } catch (error) {
             console.error("Audit Failed:", error);
         } finally {
@@ -1085,9 +1157,12 @@ Be direct and objective. Use a professional technical tone. Output as markdown.`
                 onClose={() => setShowReport(false)}
             />
 
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
+            <AiLimitModal
+                isOpen={showAiLimit}
+                onClose={() => setShowAiLimit(false)}
+                blockMode={aiLimitInfo.blockMode}
+                used={aiLimitInfo.used}
+                limit={aiLimitInfo.limit}
             />
             <MindMapSettingsModal
                 isOpen={showMindMapSettings}

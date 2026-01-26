@@ -9,6 +9,21 @@ export enum SubscriptionTier {
     LIFETIME = 'lifetime'
 }
 
+// AI Operation Types - Determines if credits are consumed
+export enum AiOperationType {
+    // HEAVY: Consumes AI credits (Workspace, Audit, Briefing, Extractor, Redact, Compare)
+    HEAVY = 'heavy',
+    // GUIDANCE: Free for all users (Scanner guidance, Reader mindmaps/outlines)
+    GUIDANCE = 'guidance'
+}
+
+// Blocking modes when AI limits are hit
+export enum AiBlockMode {
+    BUY_PRO = 'buy_pro',           // Free user needs to buy Pro
+    BUY_CREDITS = 'buy_credits',   // Pro user needs to buy AI Pack
+    NONE = 'none'                   // No blocking
+}
+
 export interface UserSubscription {
     tier: SubscriptionTier;
     operationsToday: number;
@@ -46,19 +61,21 @@ const PREMIUM_LIMITS = {
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (): Promise<UserSubscription> => {
+    /* DISABLED for IAP verification
     const supabaseUsage = await fetchUserUsage();
     if (supabaseUsage) {
         saveSubscription(supabaseUsage);
         return supabaseUsage;
     }
+    */
     return getSubscription();
 };
 
 // Get current subscription from localStorage
 export const getSubscription = (): UserSubscription => {
-    // TESTING PERIOD: All users get Pro + 100 credits until Jan 28, 2026
-    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
-    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
+    // TESTING PERIOD: (DISABLED for IAP testing)
+    const TESTING_PERIOD_END = new Date('2026-01-20T23:59:59Z'); // Expired date
+    const isTestingPeriod = false;
 
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -77,17 +94,25 @@ export const getSubscription = (): UserSubscription => {
             saveSubscription(subscription);
         }
 
+        // CROSS-SYNC: If TaskLimitManager says they are Pro, but subscription says Free, fix it.
+        // This handles state desync from legacy testing reset scripts.
+        if (TaskLimitManager.isPro() && subscription.tier === SubscriptionTier.FREE) {
+            subscription.tier = SubscriptionTier.PRO;
+            saveSubscription(subscription);
+        }
+
         return subscription;
     }
 
     // Default: Pro tier with 100 credits during testing, otherwise free
     const now = new Date().toISOString();
+    const isProFromLimit = TaskLimitManager.isPro();
     const defaultSubscription = {
-        tier: isTestingPeriod ? SubscriptionTier.PRO : SubscriptionTier.FREE,
+        tier: isProFromLimit || isTestingPeriod ? SubscriptionTier.PRO : SubscriptionTier.FREE,
         operationsToday: 0,
         aiDocsThisWeek: 0,
         aiDocsThisMonth: 0,
-        aiPackCredits: isTestingPeriod ? 100 : 0,
+        aiPackCredits: isProFromLimit || isTestingPeriod ? 100 : 0,
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
@@ -104,6 +129,7 @@ export const saveSubscription = (subscription: UserSubscription): void => {
 
 // Check if user is within the 20-day trial period
 export const isInTrialPeriod = (): boolean => {
+    /* DISABLED for IAP verification
     const subscription = getSubscription();
 
     // If no trial start date, they're an old user - no trial
@@ -116,6 +142,8 @@ export const isInTrialPeriod = (): boolean => {
     const daysSinceTrialStart = Math.floor((now.getTime() - trialStart.getTime()) / (24 * 60 * 60 * 1000));
 
     return daysSinceTrialStart < 20;
+    */
+    return false;
 };
 
 // Check if user can perform a PDF operation
@@ -216,15 +244,21 @@ export const ackAiNotification = (): void => {
 };
 
 // Check if user can use AI
-export const canUseAI = (operationType: 'document' | 'guidance' = 'document'): { allowed: boolean; reason?: string; remaining?: number; warning?: boolean } => {
+export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY): {
+    allowed: boolean;
+    reason?: string;
+    remaining?: number;
+    warning?: boolean;
+    blockMode?: AiBlockMode;
+} => {
     // GUIDANCE: Always allowed for all users (Zero Cost to users)
-    if (operationType === 'guidance') {
-        return { allowed: true };
+    if (operationType === AiOperationType.GUIDANCE) {
+        return { allowed: true, blockMode: AiBlockMode.NONE };
     }
 
     // 20-DAY TRIAL: Unlimited AI usage
     if (isInTrialPeriod()) {
-        return { allowed: true };
+        return { allowed: true, blockMode: AiBlockMode.NONE };
     }
 
     const subscription = getSubscription();
@@ -233,7 +267,7 @@ export const canUseAI = (operationType: 'document' | 'guidance' = 'document'): {
 
     // 1. Check AI Pack Credits First (High Priority)
     if (subscription.aiPackCredits > 0) {
-        return { allowed: true, remaining: subscription.aiPackCredits, warning };
+        return { allowed: true, remaining: subscription.aiPackCredits, warning, blockMode: AiBlockMode.NONE };
     }
 
     // 2. Weekly Reset for Free Tier
@@ -259,24 +293,26 @@ export const canUseAI = (operationType: 'document' | 'guidance' = 'document'): {
         if (subscription.aiDocsThisWeek >= FREE_LIMITS.aiDocsPerWeek) {
             return {
                 allowed: false,
-                reason: `You've used your 1 free AI document this week. Upgrade to Pro for 10 AI documents per month!`
+                reason: `You've used your 1 free AI document this week. Upgrade to Pro for 10 AI documents per month or buy an AI Pack!`,
+                blockMode: AiBlockMode.BUY_PRO
             };
         }
-        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerWeek - subscription.aiDocsThisWeek, warning };
+        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerWeek - subscription.aiDocsThisWeek, warning, blockMode: AiBlockMode.NONE };
     }
 
     if (subscription.tier === SubscriptionTier.PRO) {
         if (subscription.aiDocsThisMonth >= PRO_LIMITS.aiDocsPerMonth) {
             return {
                 allowed: false,
-                reason: `You've used your 10 AI documents this month. Get an AI Pack for more credits!`
+                reason: `You've used all 10 AI documents this month. Buy an AI Pack for 100 more credits!`,
+                blockMode: AiBlockMode.BUY_CREDITS
             };
         }
-        return { allowed: true, remaining: PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning };
+        return { allowed: true, remaining: PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning, blockMode: AiBlockMode.NONE };
     }
 
     // Premium and Lifetime have unlimited
-    return { allowed: true };
+    return { allowed: true, blockMode: AiBlockMode.NONE };
 };
 
 // Check if a specific credit level is a milestone the user should be notified about
@@ -294,18 +330,25 @@ export const recordOperation = (): void => {
 };
 
 // Record an AI usage
-export const recordAIUsage = async (operationType: 'document' | 'guidance' = 'document'): Promise<void> => {
-    // Skip recording for guidance
-    if (operationType === 'guidance') return;
+export const recordAIUsage = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<void> => {
+    // Skip recording for guidance - it's free!
+    if (operationType === AiOperationType.GUIDANCE) {
+        console.log('AI Usage: GUIDANCE operation - no credits consumed');
+        return;
+    }
 
     const subscription = getSubscription();
 
+    // Only consume credits for HEAVY operations
     if (subscription.aiPackCredits > 0) {
         subscription.aiPackCredits -= 1;
+        console.log(`AI Usage: HEAVY operation - AI Pack credits: ${subscription.aiPackCredits} remaining`);
     } else if (subscription.tier === SubscriptionTier.FREE) {
         subscription.aiDocsThisWeek += 1;
+        console.log(`AI Usage: HEAVY operation - Free tier: ${subscription.aiDocsThisWeek}/${FREE_LIMITS.aiDocsPerWeek} used this week`);
     } else if (subscription.tier === SubscriptionTier.PRO) {
         subscription.aiDocsThisMonth += 1;
+        console.log(`AI Usage: HEAVY operation - Pro tier: ${subscription.aiDocsThisMonth}/${PRO_LIMITS.aiDocsPerMonth} used this month`);
     }
 
     saveSubscription(subscription);
@@ -319,9 +362,10 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
     subscription.purchaseToken = purchaseToken;
 
     // TESTING PERIOD: Also grant 100 Neural Pack credits with Pro upgrade
+    // BUT only if they don't already have credits (don't overwrite existing credits from Supabase restore)
     const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
     const isTestingPeriod = new Date() < TESTING_PERIOD_END;
-    if (isTestingPeriod && tier === SubscriptionTier.PRO) {
+    if (isTestingPeriod && tier === SubscriptionTier.PRO && !subscription.aiPackCredits) {
         subscription.aiPackCredits = 100;
     }
 
@@ -341,22 +385,11 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
 };
 
 // Add AI Pack Credits
-// During testing period (until Jan 28, 2026): Refills to 100 credits for free
 export const addAiPackCredits = (amount: number = 100): void => {
     const subscription = getSubscription();
 
-    // TESTING PERIOD: Refill to 100 instead of adding
-    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
-    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
-
-    if (isTestingPeriod) {
-        // Refill to 100 (free renewal for testers)
-        subscription.aiPackCredits = 100;
-        subscription.tier = SubscriptionTier.PRO;  // Also ensure Pro tier
-    } else {
-        // Normal behavior: add to existing credits
-        subscription.aiPackCredits = (subscription.aiPackCredits || 0) + amount;
-    }
+    // Simple production behavior: add to existing credits
+    subscription.aiPackCredits = (subscription.aiPackCredits || 0) + amount;
 
     saveSubscription(subscription);
     syncUsageToServer(subscription);

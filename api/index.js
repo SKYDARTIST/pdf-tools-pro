@@ -392,6 +392,16 @@ ${documentText || "No text content - analyzing image only."}`;
                     if (!allowedModels.includes(modelName)) {
                         continue;
                     }
+                } else if (type === 'mindmap' || type === 'outline' || type === 'audio_script' || type === 'redact' || type === 'table') {
+                    // For these types with images, use image-friendly system instruction
+                    if (image && !documentText) {
+                        // Image only - analyze the image directly
+                        const imageInstruction = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Analyze the provided image to extract information and insights. Maintain a professional, technical tone.`;
+                        promptPayload = `${imageInstruction}\n\n${prompt}`;
+                    } else {
+                        // Text or PDF - include document context
+                        promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
+                    }
                 } else {
                     promptPayload = `${SYSTEM_INSTRUCTION}\n\nQUERY: ${prompt}\n\nDOCUMENT CONTEXT:\n${documentText || "No context provided."}`;
                 }

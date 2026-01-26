@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, FileUp, Zap, Check, ShieldAlert, Loader2, Share2, Eye, EyeOff, User, Mail, CreditCard, Fingerprint } from 'lucide-react';
 import { askGemini } from '../services/aiService';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
-import UpgradeModal from '../components/UpgradeModal';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '../services/subscriptionService';
+import AiLimitModal from '../components/AiLimitModal';
 import ToolGuide from '../components/ToolGuide';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
@@ -31,7 +31,8 @@ const SmartRedactScreen: React.FC = () => {
         identifiers: true
     });
     const [isCooling, setIsCooling] = useState(false);
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showAiLimit, setShowAiLimit] = useState(false);
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
@@ -186,9 +187,16 @@ const SmartRedactScreen: React.FC = () => {
             return;
         }
 
-        const aiCheck = canUseAI();
+        // HEAVY AI Operation - Smart Redact consumes credits
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
             return;
         }
 
@@ -203,7 +211,7 @@ const SmartRedactScreen: React.FC = () => {
             } else if (file.type.startsWith('image/')) {
                 const rawBase64 = await fileToBase64(file);
                 imageBase64 = await compressImage(rawBase64);
-                contentToProcess = "Analyzing image for PII vectors.";
+                contentToProcess = ""; // Empty string - image contains the content
             }
 
             setStatus('processing');
@@ -239,7 +247,7 @@ const SmartRedactScreen: React.FC = () => {
             // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
             const finalSanitized = localRegexSanitize(response);
             setRedactedContent(finalSanitized);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
             setStatus('done');
         } catch (error) {
             console.error("Redaction Failed:", error);
@@ -478,9 +486,12 @@ Balance: $12,450.00 (PRESERVED)
                 )}
             </div>
             <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
+            <AiLimitModal
+                isOpen={showAiLimit}
+                onClose={() => setShowAiLimit(false)}
+                blockMode={aiLimitInfo.blockMode}
+                used={aiLimitInfo.used}
+                limit={aiLimitInfo.limit}
             />
             <AIOptInModal
                 isOpen={showConsent}
