@@ -194,6 +194,7 @@ class BillingService {
 
             // CRITICAL: Fetch existing usage from Supabase BEFORE syncing purchases
             // This ensures we restore the user's actual remaining credits, not reset them
+            let restoredFromSupabase = false;
             try {
                 const { fetchUserUsage } = await import('./usageService');
                 const existingUsage = await fetchUserUsage();
@@ -208,6 +209,7 @@ class BillingService {
                     const { saveSubscription } = await import('./subscriptionService');
                     saveSubscription(existingUsage);
                     console.log('Anti-Gravity Billing: ✅ Usage restored from Supabase');
+                    restoredFromSupabase = true;
                 }
             } catch (supabaseError) {
                 console.log('Anti-Gravity Billing: Supabase fetch skipped (offline or first install)');
@@ -250,7 +252,21 @@ class BillingService {
             if (hasPro) {
                 console.log('Anti-Gravity Billing: ✅ Pro status detected - Upgrading...');
                 TaskLimitManager.upgradeToPro();
-                upgradeTier(SubscriptionTier.PRO);
+
+                // Only call upgradeTier if we didn't restore from Supabase
+                // This prevents overwriting actual usage data with testing period bonus
+                if (!restoredFromSupabase) {
+                    upgradeTier(SubscriptionTier.PRO);
+                } else {
+                    // Just sync the tier without triggering credit bonuses
+                    const subscription = TaskLimitManager.getSubscriptionSync();
+                    if (subscription && subscription.tier !== SubscriptionTier.PRO) {
+                        subscription.tier = SubscriptionTier.PRO;
+                        const { saveSubscription } = await import('./subscriptionService');
+                        saveSubscription(subscription);
+                    }
+                }
+
                 console.log('Anti-Gravity Billing: ✅ Pro upgrade complete');
                 alert('✅ Pro status synced from Google Play!');
             } else {
