@@ -401,11 +401,12 @@ ${documentText || "No text content - analyzing image only."}`;
                         documentText: documentText,
                         documentTextType: typeof documentText,
                         documentTextLength: documentText?.length || 0,
-                        willUseImageInstruction: !!(image && !documentText)
+                        willUseImageInstruction: !!(image && (!documentText || documentText.trim() === ''))
                     });
 
                     // For these types with images, use image-friendly system instruction
-                    if (image && !documentText) {
+                    // Check for empty string or whitespace-only string
+                    if (image && (!documentText || documentText.trim() === '')) {
                         // Image only - analyze the image directly
                         console.log('✅ Using IMAGE instruction');
                         const imageInstruction = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Analyze the provided image to extract information and insights. Maintain a professional, technical tone.`;
