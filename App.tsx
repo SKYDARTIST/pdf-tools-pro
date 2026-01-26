@@ -42,6 +42,8 @@ import PullToRefresh from './components/PullToRefresh';
 import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
 import { initServerTime } from './services/serverTimeService';
 import BillingService from './services/billingService';
+import { initializePersistentLogging } from './services/persistentLogService';
+import DebugLogPanel from './components/DebugLogPanel';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
@@ -50,9 +52,11 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
+  const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
   // Sync with Supabase and fetch server time on mount
   React.useEffect(() => {
+    initializePersistentLogging(); // Start capturing logs to localStorage
     initSubscription();
     initServerTime();  // Fetch server time to prevent clock manipulation
   }, []);
@@ -90,6 +94,32 @@ const App: React.FC = () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('touchstart', handleMove);
       window.removeEventListener('touchmove', handleMove);
+    };
+  }, []);
+
+  // Triple-tap to open debug logs
+  const tapCountRef = React.useRef(0);
+  React.useEffect(() => {
+    let tapTimeout: NodeJS.Timeout;
+
+    const handleTap = () => {
+      tapCountRef.current += 1;
+      clearTimeout(tapTimeout);
+
+      if (tapCountRef.current === 3) {
+        setDebugPanelOpen(true);
+        tapCountRef.current = 0;
+      }
+
+      tapTimeout = setTimeout(() => {
+        tapCountRef.current = 0;
+      }, 500);
+    };
+
+    window.addEventListener('click', handleTap);
+    return () => {
+      window.removeEventListener('click', handleTap);
+      clearTimeout(tapTimeout);
     };
   }, []);
 
@@ -208,6 +238,7 @@ const App: React.FC = () => {
         }}
       />
       {!isLandingPage && <NeuralAssistant />}
+      <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
     </div>
   );
 };
