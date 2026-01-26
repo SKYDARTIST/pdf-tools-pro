@@ -1,13 +1,12 @@
 import * as pdfjs from 'pdfjs-dist';
 
-// Use a specific version for the worker to match package.json
-const PDFJS_VERSION = '5.4.530';
-// unpkg usually supports the modern .mjs worker for PDF.js v5+
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
+// Configure PDF.js worker - using local bundle for Capacitor stability
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: number, endPage?: number): Promise<string> => {
     try {
-        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const data = new Uint8Array(arrayBuffer.slice(0));
+        const loadingTask = pdfjs.getDocument({ data });
         const pdf = await loadingTask.promise;
         let fullText = '';
 
@@ -52,12 +51,13 @@ export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: n
 export const renderPageToImage = async (arrayBuffer: ArrayBuffer, pageNumber: number = 1): Promise<string> => {
     try {
         console.log("🎬 Initiating Neural Rendering Fallback...");
-        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const data = new Uint8Array(arrayBuffer.slice(0));
+        const loadingTask = pdfjs.getDocument({ data });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(pageNumber);
         console.log("📄 Page loaded for rendering");
 
-        const viewport = page.getViewport({ scale: 2.0 }); // Increased scale for better visual analysis
+        const viewport = page.getViewport({ scale: 0.8 }); // Further reduced for maximum split speed
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
 
@@ -73,7 +73,7 @@ export const renderPageToImage = async (arrayBuffer: ArrayBuffer, pageNumber: nu
             canvas: canvas
         } as any).promise;
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75); // Reduced quality for 40% smaller size and faster export
         console.log("✅ Rendering complete. Base64 snapshot generated.");
         return dataUrl;
     } catch (error) {

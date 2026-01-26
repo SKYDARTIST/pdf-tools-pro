@@ -66,14 +66,30 @@ export default async function handler(req, res) {
     const integrityToken = req.headers['x-ag-integrity-token'];
 
     // GUIDANCE BYPASS: Skip all validation for guidance or time checks
-    const requestType = req.body?.type;
+    const { type: requestType = '', usage = null } = req.body || {};
     const isGuidanceOrTime = requestType === 'guidance' || requestType === 'server_time';
+
+    console.log('Anti-Gravity API: Incoming request:', {
+        type: requestType,
+        deviceId: deviceId?.substring(0, 8) + '...',
+        hasSignature: !!signature,
+        hasIntegrityToken: !!integrityToken,
+        isGuidanceOrTime,
+        timestamp: new Date().toISOString()
+    });
 
     if (!isGuidanceOrTime) {
         // Protocol Integrity Check - signature must match environment variable
         const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE;
 
         if (!expectedSignature || signature !== expectedSignature) {
+            console.error('Anti-Gravity API: Signature validation failed:', {
+                expected: expectedSignature ? '***SET***' : '***NOT_SET***',
+                received: signature ? '***SET***' : '***NOT_SET***',
+                match: expectedSignature && signature === expectedSignature,
+                requestType,
+                deviceId: deviceId?.substring(0, 8) + '...'
+            });
             return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
         }
 
@@ -105,18 +121,10 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Neural Link Offline", details: "API configuration missing." });
     }
 
-    // =============================================================================
-    // TESTER PROMO PERIOD: All users get Pro + 100 Neural Pack until Jan 28, 2026
-    // =============================================================================
-    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
-    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
-
     // Stage 1.5: Server Time Check (for frontend anti-manipulation)
     if (requestType === 'server_time') {
         return res.status(200).json({
-            serverTime: new Date().toISOString(),
-            isTestingPeriod: isTestingPeriod,
-            testingEndsAt: TESTING_PERIOD_END.toISOString()
+            serverTime: new Date().toISOString()
         });
     }
 
@@ -135,16 +143,16 @@ export default async function handler(req, res) {
                 if (error && error.code !== 'PGRST116') throw error;
 
                 if (!data) {
-                    // Initialize new user
+                    // Initialize new user with free tier
                     const trialStartDate = new Date().toISOString();
                     const { data: newUser, error: createError } = await supabase
                         .from('ag_user_usage')
                         .insert([{
                             device_id: deviceId,
-                            tier: isTestingPeriod ? 'pro' : 'free',  // Pro during testing
+                            tier: 'free',
                             operations_today: 0,
                             ai_docs_weekly: 0,
-                            ai_pack_credits: isTestingPeriod ? 100 : 0,  // 100 credits during testing
+                            ai_pack_credits: 0,
                             trial_start_date: trialStartDate
                         }])
                         .select()
@@ -163,21 +171,20 @@ export default async function handler(req, res) {
                     data.trial_start_date = trialStartDate;
                 }
 
-                // TESTING PERIOD UPGRADE: Give all existing users Pro + 100 credits
-                if (isTestingPeriod && (data.tier !== 'pro' || data.ai_pack_credits < 100)) {
-                    await supabase
-                        .from('ag_user_usage')
-                        .update({ tier: 'pro', ai_pack_credits: 100 })
-                        .eq('device_id', deviceId);
-                    data.tier = 'pro';
-                    data.ai_pack_credits = 100;
-                }
-
                 return res.status(200).json(data);
             }
 
             if (requestType === 'usage_sync') {
                 const { usage } = req.body;
+                if (!usage) return res.status(400).json({ error: "Missing usage payload" });
+
+                console.log('Anti-Gravity API: Processing usage_sync for device:', {
+                    deviceId,
+                    tier: usage.tier,
+                    aiPackCredits: usage.aiPackCredits,
+                    timestamp: new Date().toISOString()
+                });
+
                 const { error } = await supabase
                     .from('ag_user_usage')
                     .update({
@@ -193,7 +200,21 @@ export default async function handler(req, res) {
                     })
                     .eq('device_id', deviceId);
 
-                if (error) throw error;
+                if (error) {
+                    console.error('Anti-Gravity API: usage_sync update failed:', {
+                        error: error.message,
+                        deviceId,
+                        timestamp: new Date().toISOString()
+                    });
+                    throw error;
+                }
+
+                console.log('Anti-Gravity API: ✅ usage_sync completed successfully for device:', {
+                    deviceId,
+                    aiPackCredits: usage.aiPackCredits,
+                    timestamp: new Date().toISOString()
+                });
+
                 return res.status(200).json({ success: true });
             }
         } catch (dbError) {

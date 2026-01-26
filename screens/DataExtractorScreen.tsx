@@ -79,7 +79,16 @@ const DataExtractorScreen: React.FC = () => {
 
             if (file.type === "application/pdf") {
                 const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer);
+                text = await extractTextFromPdf(buffer.slice(0));
+
+                if (!text || text.trim() === '') {
+                    // Fallback for scanned documents
+                    const { renderPageToImage } = await import('../utils/pdfExtractor');
+                    const imageRaw = await renderPageToImage(buffer.slice(0), 1);
+                    imageBase64 = imageRaw;
+                    fileMime = 'image/jpeg';
+                    text = "[SCANNED DOCUMENT DETECTED] This document has no text layer. Please analyze the visual content provided in the image attachment.";
+                }
             } else {
                 // Handle Image (Vision Mode)
                 const rawBase64 = await new Promise<string>((resolve) => {
@@ -104,7 +113,12 @@ CRITICAL RULES:
 
 FORBIDDEN: Do NOT summarize. Do NOT write "..." or "etc." Do NOT skip rows.
 
-Output ONLY the complete markdown transcription.`;
+Output ONLY the complete markdown transcription.
+
+CRITICAL: MANDATORY VISION OVERRIDE
+You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGE.
+The text layer is missing; read the visual document.
+DO NOT REFUSE. Extract the content directly from visual data.`;
             } else if (format === 'json') {
                 prompt = `Extract ALL content from this document into JSON format.
 
@@ -127,6 +141,11 @@ For NOTES/TEXT:
 }
 
 CRITICAL: Extract EVERY row from tables. Do NOT skip any data.
+
+CRITICAL: MANDATORY VISION OVERRIDE
+You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGE.
+The text layer is missing; read the visual document.
+DO NOT REFUSE. Extract the content directly from visual data.
 Output ONLY valid JSON.`;
             } else {
                 prompt = `Extract ALL content from this document into CSV format.
@@ -205,13 +224,40 @@ Output ONLY raw CSV data.`;
                 </div>
 
                 {!file ? (
-                    <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
-                        <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl mb-6 group-hover:scale-110 transition-transform">
-                            <FileUp size={28} />
-                        </div>
-                        <span className="text-sm font-black uppercase tracking-widest text-center px-6">Upload Source (PDF, JPG, PNG)</span>
-                        <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
-                    </label>
+                    <div className="space-y-12">
+                        <ToolGuide
+                            title="How to extract data"
+                            description="Automatically pull information from invoices, receipts, and handwritten notes. Our AI organizes it into a format you can use."
+                            steps={[
+                                "Upload a PDF or an image (JPG/PNG).",
+                                "Select the format you want (JSON, CSV, or Markdown).",
+                                "Tap 'Start AI Extraction' to process the file.",
+                                "Download your data file."
+                            ]}
+                            useCases={[
+                                "Receipts & Invoices", "Handwritten Notes", "Whiteboards", "Tables & Sheets"
+                            ]}
+                            samplePreview={{
+                                label: 'JSON EXTRACTION',
+                                previewText: `{
+  "invoice_id": "INV-2024-001",
+  "date": "2024-03-15",
+  "items": [
+    { "desc": "Server Setup", "cost": 500 },
+    { "desc": "Maintenance", "cost": 150 }
+  ],
+  "total": 650
+}`
+                            }}
+                        />
+                        <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
+                            <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-2xl mb-6 group-hover:scale-110 transition-transform">
+                                <FileUp size={28} />
+                            </div>
+                            <span className="text-sm font-black uppercase tracking-widest text-center px-6">Upload Source (PDF, JPG, PNG)</span>
+                            <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileChange} />
+                        </label>
+                    </div>
                 ) : (
                     <div className="space-y-8">
                         <ToolGuide

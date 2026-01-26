@@ -18,7 +18,6 @@ export default defineConfig(({ mode }) => {
     build: {
       chunkSizeWarningLimit: 2000,
       rollupOptions: {
-        external: ['@capgo/native-purchases'],
         output: {
           manualChunks: undefined
         }

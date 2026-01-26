@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Cpu, Shield, Zap } from 'lucide-react';
+import BillingService from '../services/billingService';
 
 const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const [stage, setStage] = useState(0);
@@ -12,19 +13,50 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     ];
 
     useEffect(() => {
+        let isMounted = true;
+
+        // AI Sync: Initialize billing on boot (but defer purchase restore)
+        const syncBilling = async () => {
+            try {
+                console.log('🚀 SystemBoot: Starting billing initialization...');
+                console.log('🚀 SystemBoot: Initializing billing...');
+                // Initialize billing early to set up the native plugin
+                const initResult = await BillingService.initialize();
+                console.log('🚀 SystemBoot: Billing initialized:', initResult);
+
+                // CRITICAL: Defer purchase restoration until AFTER boot completes
+                // This ensures Capacitor and Google Play are fully ready
+                // We'll trigger this from the main app after boot screen closes
+                console.log('🚀 SystemBoot: Billing initialization complete (restore deferred to app load)');
+            } catch (error) {
+                console.error('🚀 Boot Sync Error:', error);
+                console.error('🚀 Error type:', error instanceof Error ? error.constructor.name : typeof error);
+                console.error('🚀 Error message:', error instanceof Error ? error.message : String(error));
+            }
+        };
+
+        console.log('🚀 SystemBoot: useEffect started');
+        syncBilling();
+
         const timer = setInterval(() => {
             setStage(prev => {
                 if (prev >= stages.length - 1) {
                     clearInterval(timer);
-                    setTimeout(onComplete, 500);
+                    // Add a tiny extra delay to ensure smooth transition
+                    setTimeout(() => {
+                        if (isMounted) onComplete();
+                    }, 500);
                     return prev;
                 }
                 return prev + 1;
             });
-        }, 250);
+        }, 300); // Slightly slower for more "engine-like" feel during sync
 
-        return () => clearInterval(timer);
-    }, [onComplete, stages.length]);
+        return () => {
+            isMounted = false;
+            clearInterval(timer);
+        };
+    }, [onComplete]);
 
     return (
         <motion.div
@@ -77,7 +109,7 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
             </div>
 
             <div className="absolute bottom-12 left-0 right-0 flex justify-center">
-                <span className="text-[10px] font-black tracking-[0.5em] text-white/10 uppercase">v2.1</span>
+                <span className="text-[10px] font-black tracking-[0.5em] text-white/10 uppercase">v2.8.0</span>
             </div>
         </motion.div>
     );

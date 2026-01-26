@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, GitMerge, ListCheck, Loader2, Sparkles, Check, X, AlertCircle } from 'lucide-react';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { askGemini } from '../services/aiService';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
-import UpgradeModal from '../components/UpgradeModal';
+import AiLimitModal from '../components/AiLimitModal';
 import ToolGuide from '../components/ToolGuide';
 import NeuralCoolingUI from '../components/NeuralCoolingUI';
 import AIOptInModal from '../components/AIOptInModal';
@@ -26,7 +26,8 @@ const NeuralDiffScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showAiLimit, setShowAiLimit] = useState(false);
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
@@ -56,19 +57,30 @@ const NeuralDiffScreen: React.FC = () => {
             return;
         }
 
-        const aiCheck = canUseAI();
-        if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
-            return;
-        }
+
 
         setIsAnalyzing(true);
         setError('');
 
         try {
             // Extract text from both
-            const text1 = await extractTextFromPdf(await file1.arrayBuffer());
-            const text2 = await extractTextFromPdf(await file2.arrayBuffer());
+            // Extract text from both Version 1 and Version 2
+            const buf1 = await file1.arrayBuffer();
+            const buf2 = await file2.arrayBuffer();
+            let text1 = await extractTextFromPdf(buf1.slice(0));
+            let text2 = await extractTextFromPdf(buf2.slice(0));
+
+            let images: string[] = [];
+
+            // Fallback: If either document has no text, render images for visual comparison
+            if (!text1 || !text1.trim() || !text2 || !text2.trim()) {
+                const { renderPageToImage } = await import('../utils/pdfExtractor');
+                const img1 = await renderPageToImage(buf1.slice(0), 1);
+                const img2 = await renderPageToImage(buf2.slice(0), 2);
+                images = [img1, img2];
+                text1 = text1 || "[SCANNED DOCUMENT 1]";
+                text2 = text2 || "[SCANNED DOCUMENT 2]";
+            }
 
             // Analyze with Gemini
             const prompt = `Perform a semantic comparison between these two document versions. 
@@ -80,15 +92,20 @@ const NeuralDiffScreen: React.FC = () => {
             2. Numerical changes (Prices, Dates)
             3. New Additions or Deletions
             
-            Format the output with bold headers and bullet points. Focus on risk and semantic changes.`;
+            Format the output with bold headers and bullet points. Focus on risk and semantic changes.
+            
+            CRITICAL: MANDATORY VISION OVERRIDE
+            You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGES.
+            If the text layer is missing or mismatched, use your vision to compare the visual appearance.
+            DO NOT REFUSE. Identify differences directly from visual data.`;
 
-            const response = await askGemini(prompt, "Comparing two document versions.", "diff");
+            const response = await askGemini(prompt, "Comparing two document versions.", "diff", images.length > 0 ? images : undefined);
             if (response.startsWith('AI_RATE_LIMIT')) {
                 setIsCooling(true);
                 return;
             }
             setDiffResult(response);
-            await recordAIUsage();
+
         } catch (err) {
             setError("Analysis failed. Ensure both files are readable PDFs.");
             console.error(err);
@@ -273,9 +290,12 @@ const NeuralDiffScreen: React.FC = () => {
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
             />
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
+            <AiLimitModal
+                isOpen={showAiLimit}
+                onClose={() => setShowAiLimit(false)}
+                blockMode={aiLimitInfo.blockMode}
+                used={aiLimitInfo.used}
+                limit={aiLimitInfo.limit}
             />
 
             {successData && (

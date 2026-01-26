@@ -23,7 +23,6 @@ const ReaderScreen = lazy(() => import('./screens/ReaderScreen'));
 const RotateScreen = lazy(() => import('./screens/RotateScreen'));
 const PageNumbersScreen = lazy(() => import('./screens/PageNumbersScreen'));
 const ExtractImagesScreen = lazy(() => import('./screens/ExtractImagesScreen'));
-const MetadataScreen = lazy(() => import('./screens/MetadataScreen'));
 const ToolsScreen = lazy(() => import('./screens/ToolsScreen'));
 const AntiGravityWorkspace = lazy(() => import('./screens/AntiGravityWorkspace'));
 const TableExtractorScreen = lazy(() => import('./screens/TableExtractorScreen'));
@@ -42,6 +41,7 @@ import NeuralAssistant from './components/NeuralAssistant';
 import PullToRefresh from './components/PullToRefresh';
 import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
 import { initServerTime } from './services/serverTimeService';
+import BillingService from './services/billingService';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
@@ -161,7 +161,7 @@ const App: React.FC = () => {
                   <Route path="/rotate" element={<RotateScreen />} />
                   <Route path="/page-numbers" element={<PageNumbersScreen />} />
                   <Route path="/extract-images" element={<ExtractImagesScreen />} />
-                  <Route path="/metadata" element={<MetadataScreen />} />
+
                   <Route path="/ai-settings" element={<AISettingsScreen />} />
                   <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
                   <Route path="/table-extractor" element={<TableExtractorScreen />} />
@@ -186,6 +186,14 @@ const App: React.FC = () => {
             onComplete={() => {
               setIsBooting(false);
               sessionStorage.setItem('boot_complete', 'true');
+
+              // CRITICAL: Defer purchase restore until AFTER boot screen completes
+              // This ensures Capacitor bridge and Google Play are fully initialized
+              // Call it async without awaiting to avoid delaying the boot completion
+              console.log('🚀 App: Boot screen complete - triggering purchase restore...');
+              BillingService.syncPurchasesWithState().catch(error => {
+                console.error('🚀 App: Deferred purchase restore error:', error);
+              });
             }}
           />
         )}

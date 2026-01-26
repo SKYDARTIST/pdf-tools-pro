@@ -66,10 +66,15 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
                 lastAiWeeklyReset: data.last_reset_weekly,
                 lastAiMonthlyReset: data.last_reset_monthly,
                 trialStartDate: data.trial_start_date,
+                hasReceivedBonus: data.has_received_bonus || false,
             };
         }
     } catch (error) {
-        // Silent background fail
+        console.error('Anti-Gravity Billing: fetchUserUsage failed:', {
+            error: error instanceof Error ? error.message : String(error),
+            deviceId,
+            timestamp: new Date().toISOString()
+        });
     }
     return null;
 };
@@ -85,11 +90,22 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             ? 'http://localhost:3000/api/index'
             : 'https://pdf-tools-pro-indol.vercel.app/api/index';
 
+        const signature = import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+
+        console.log('Anti-Gravity Billing: Syncing usage to server...', {
+            deviceId,
+            aiPackCredits: usage.aiPackCredits,
+            tier: usage.tier,
+            hasIntegrityToken: !!integrityToken,
+            hasSignature: !!signature,
+            timestamp: new Date().toISOString()
+        });
+
         const response = await fetch(backendUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+                'x-ag-signature': signature,
                 'x-ag-device-id': deviceId,
                 'x-ag-integrity-token': integrityToken
             },
@@ -97,10 +113,35 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         });
 
         if (!response.ok) {
-            console.debug('Handshake Protocol: Usage update deferred.');
+            const responseBody = await response.text();
+            let errorDetails = {};
+            try {
+                errorDetails = JSON.parse(responseBody);
+            } catch {
+                errorDetails = { rawResponse: responseBody };
+            }
+
+            console.error('Anti-Gravity Billing: syncUsageToServer failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                errorDetails,
+                aiPackCredits: usage.aiPackCredits,
+                tier: usage.tier,
+                timestamp: new Date().toISOString()
+            });
             return;
         }
+
+        console.log('Anti-Gravity Billing: ✅ Usage synced successfully', {
+            aiPackCredits: usage.aiPackCredits,
+            tier: usage.tier,
+            timestamp: new Date().toISOString()
+        });
     } catch (error) {
-        // Silent background fail
+        console.error('Anti-Gravity Billing: syncUsageToServer network error:', {
+            error: error instanceof Error ? error.message : String(error),
+            deviceId,
+            timestamp: new Date().toISOString()
+        });
     }
 };

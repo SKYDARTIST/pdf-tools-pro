@@ -5,13 +5,12 @@ import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Share2 
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getReconstructionProtocol, getPolisherProtocol, ScanFilters } from '../services/polisherService';
 import { askGemini } from '../services/aiService';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import { recordAIUsage, AiOperationType } from '../services/subscriptionService';
 import { downloadFile } from '../services/downloadService';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import ToolGuide from '../components/ToolGuide';
-import UpgradeModal from '../components/UpgradeModal';
 import NeuralPulse from '../components/NeuralPulse';
 import { compressImage } from '../utils/imageProcessor';
 
@@ -29,7 +28,6 @@ const ScannerScreen: React.FC = () => {
   const [showConsent, setShowConsent] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const location = useLocation();
 
@@ -221,11 +219,8 @@ const ScannerScreen: React.FC = () => {
     }
 
 
-    const aiCheck = canUseAI();
-    if (!aiCheck.allowed) {
-      setShowUpgradeModal(true);
-      return;
-    }
+    // GUIDANCE AI Operation - Scanner guidance is FREE for all users
+    // No need to check limits, GUIDANCE is always allowed
 
     setIsPolishing(true);
     setError(null);
@@ -244,7 +239,7 @@ const ScannerScreen: React.FC = () => {
       setAppliedFilters(filters);
 
       setSuggestedName(nameSuggestion.replace(/ /g, '_'));
-      await recordAIUsage();
+      await recordAIUsage(AiOperationType.GUIDANCE); // FREE - no credits consumed
     } catch (err) {
       console.error("Enhancement failed", err);
       setError("Enhancement failed. Please try again.");
@@ -560,10 +555,6 @@ const ScannerScreen: React.FC = () => {
       <AIReportModal
         isOpen={showReport}
         onClose={() => setShowReport(false)}
-      />
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
       />
     </motion.div>
   );

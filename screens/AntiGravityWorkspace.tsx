@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, Loader2, Bot, Info, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, GitMerge, Database, Shield, Search, Scan, Headphones, EyeOff } from 'lucide-react';
 import { askGemini } from '../services/aiService';
-import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits } from '../services/subscriptionService';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, getCurrentLimits, AiOperationType } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
+import AiLimitModal from '../components/AiLimitModal';
 import NeuralPulse from '../components/NeuralPulse';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import ToolGuide from '../components/ToolGuide';
@@ -29,6 +30,8 @@ const AntiGravityWorkspace: React.FC = () => {
   const [showReport, setShowReport] = useState(false);
   const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [showAiLimit, setShowAiLimit] = useState(false);
+  const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -46,9 +49,17 @@ const AntiGravityWorkspace: React.FC = () => {
   };
 
   const processFile = async (selected: File) => {
-    const check = canUseAI();
+    // HEAVY AI Operation - Workspace consumes credits
+    const check = canUseAI(AiOperationType.HEAVY);
     if (!check.allowed) {
-      alert(check.reason);
+      // Show AI Limit Modal instead of alert
+      const subscription = getSubscription();
+      setAiLimitInfo({
+        blockMode: check.blockMode,
+        used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+        limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+      });
+      setShowAiLimit(true);
       return;
     }
 
@@ -86,7 +97,7 @@ const AntiGravityWorkspace: React.FC = () => {
         if (!extractedText) {
           console.log("⚠️ No text found. Triggering Triple-Vision Fallback...");
           // NEURAL SIGHT FALLBACK: Render first 3 pages if no text layer exists
-          base64Images = await renderMultiplePagesToImages(arrayBuffer, 3);
+          base64Images = await renderMultiplePagesToImages(arrayBuffer.slice(0), 3);
           console.log(`Fallback Images Generated: ${(base64Images as string[]).length}`);
           if ((base64Images as string[]).length > 0) {
             setImageContext(base64Images);
@@ -137,7 +148,7 @@ const AntiGravityWorkspace: React.FC = () => {
         neuralSignature: neuralSignature.replace(/\n|"/g, '')
       });
 
-      await recordAIUsage(); // Record successful AI document extraction
+      await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation - consumes credits
     } catch (error) {
       console.error('Error processing PDF:', error);
       setAnalysis(`Document "${selected.name}" processed. AI is ready for your questions.`);
@@ -263,7 +274,7 @@ const AntiGravityWorkspace: React.FC = () => {
             className="flex-1 flex flex-col space-y-8"
           >
             {/* Low Credit Alert */}
-            {canUseAI().warning && (
+            {canUseAI(AiOperationType.HEAVY).warning && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -338,9 +349,9 @@ const AntiGravityWorkspace: React.FC = () => {
                     </div>
                   )}
                   <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 dark:bg-black/10 rounded-full border border-white/10 dark:border-black/10">
-                    <Zap size={10} className={`${canUseAI().warning ? 'text-amber-500' : 'text-neutral-500'}`} fill="currentColor" />
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${canUseAI().warning ? 'text-amber-500' : 'text-neutral-500'}`}>
-                      AI Credits: {canUseAI().warning ? canUseAI().remaining : 'ACTIVE'}
+                    <Zap size={10} className={`${canUseAI(AiOperationType.HEAVY).warning ? 'text-amber-500' : 'text-neutral-500'}`} fill="currentColor" />
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${canUseAI(AiOperationType.HEAVY).warning ? 'text-amber-500' : 'text-neutral-500'}`}>
+                      AI Credits: {canUseAI(AiOperationType.HEAVY).warning ? canUseAI(AiOperationType.HEAVY).remaining : 'ACTIVE'}
                     </span>
                   </div>
                   <motion.button
@@ -486,14 +497,7 @@ const AntiGravityWorkspace: React.FC = () => {
               color: "text-rose-500",
               tag: "PII"
             },
-            {
-              title: "Compare PDFs",
-              desc: "Compare document versions",
-              icon: GitMerge,
-              path: "/neural-diff",
-              color: "text-blue-400",
-              tag: "COMPARE"
-            }
+
           ].map((tool, i) => (
             <motion.button
               key={i}
@@ -550,6 +554,14 @@ const AntiGravityWorkspace: React.FC = () => {
       <AIReportModal
         isOpen={showReport}
         onClose={() => setShowReport(false)}
+      />
+
+      <AiLimitModal
+        isOpen={showAiLimit}
+        onClose={() => setShowAiLimit(false)}
+        blockMode={aiLimitInfo.blockMode}
+        used={aiLimitInfo.used}
+        limit={aiLimitInfo.limit}
       />
     </motion.div>
   );

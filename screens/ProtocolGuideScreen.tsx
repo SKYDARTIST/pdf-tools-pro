@@ -142,14 +142,6 @@ const ProtocolGuideScreen: React.FC = () => {
                     icon: Droplet,
                     path: '/watermark',
                     useCases: ['Branding', 'Document Status', 'Copyright']
-                },
-                {
-                    title: 'PDF Metadata',
-                    desc: 'View or edit the hidden details of your PDF like Title and Author. Keep your files professional and organized.',
-                    icon: FileText,
-                    path: '/metadata',
-                    useCases: ['Privacy', 'Clean Exports', 'File Info'],
-                    isElite: true
                 }
             ]
         }

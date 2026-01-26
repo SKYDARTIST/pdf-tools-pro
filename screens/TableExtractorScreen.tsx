@@ -5,8 +5,8 @@ import { FileSpreadsheet, FileUp, Loader2, Bot, Share2, Table as TableIcon, X, C
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
 import { downloadFile } from '../services/downloadService';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
-import UpgradeModal from '../components/UpgradeModal';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '../services/subscriptionService';
+import AiLimitModal from '../components/AiLimitModal';
 import ToolGuide from '../components/ToolGuide';
 import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
@@ -24,7 +24,8 @@ const TableExtractorScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [showAiLimit, setShowAiLimit] = useState(false);
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
@@ -44,9 +45,16 @@ const TableExtractorScreen: React.FC = () => {
 
 
     const processFile = async (selected: File) => {
-        const aiCheck = canUseAI();
+        // HEAVY AI Operation - Table Extractor consumes credits
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            setShowUpgradeModal(true);
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
             return;
         }
 
@@ -59,8 +67,16 @@ const TableExtractorScreen: React.FC = () => {
 
             if (selected.type === 'application/pdf') {
                 const arrayBuffer = await selected.arrayBuffer();
-                const text = await extractTextFromPdf(arrayBuffer);
-                extractedTables = await extractTablesFromDocument(text);
+                const text = await extractTextFromPdf(arrayBuffer.slice(0));
+
+                if (!text || text.trim() === '') {
+                    // Fallback for scanned documents
+                    const { renderPageToImage } = await import('../utils/pdfExtractor');
+                    const imageBase64 = await renderPageToImage(arrayBuffer.slice(0), 1);
+                    extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                } else {
+                    extractedTables = await extractTablesFromDocument(text);
+                }
             } else if (selected.type.startsWith('image/')) {
                 const reader = new FileReader();
                 const rawBase64 = await new Promise<string>((resolve) => {
@@ -72,7 +88,7 @@ const TableExtractorScreen: React.FC = () => {
             }
 
             setTables(extractedTables);
-            await recordAIUsage();
+            await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
             setStatus('done');
         } catch (err) {
             console.error("Extraction Failed:", err);
@@ -296,9 +312,12 @@ const TableExtractorScreen: React.FC = () => {
                 isOpen={showReport}
                 onClose={() => setShowReport(false)}
             />
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
+            <AiLimitModal
+                isOpen={showAiLimit}
+                onClose={() => setShowAiLimit(false)}
+                blockMode={aiLimitInfo.blockMode}
+                used={aiLimitInfo.used}
+                limit={aiLimitInfo.limit}
             />
 
             {successData && (

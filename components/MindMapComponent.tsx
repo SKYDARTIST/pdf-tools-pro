@@ -35,12 +35,20 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
 
         // Root node
         const firstLine = lines[0]?.replace(/^#+\s*/, '').trim() || 'Central Concept';
-        result.push({ id: 'root', text: firstLine, x: 0, y: 0, children: [] });
+        // Enforce 2 word limit for root
+        const rootText = firstLine.split(' ').slice(0, 2).join(' ');
+        result.push({ id: 'root', text: rootText, x: 0, y: 0, children: [] });
         stack.push({ id: 'root', indent: -1 });
 
+        let childCount = 0;
         lines.slice(1).forEach((line, index) => {
+            if (childCount >= 12) return; // Enforce 12 branch limit
+
             const indent = line.search(/\S/);
-            const text = line.trim().replace(/^[-*+]\s*/, '');
+            let text = line.trim().replace(/^[-*+]\s*/, '');
+            // Enforce 2 word limit for branches
+            text = text.split(' ').slice(0, 2).join(' ');
+
             const id = `node-${index}`;
 
             while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
@@ -52,11 +60,14 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             result.push(newNode);
 
             const parent = result.find(n => n.id === parentId);
-            if (parent) parent.children.push(id);
+            if (parent) {
+                parent.children.push(id);
+                if (parentId === 'root') childCount++;
+            }
             stack.push({ id, indent });
         });
 
-        const layoutNode = (nodeId: string, startAngle: number, endAngle: number, level: number) => {
+        const layoutNode = (nodeId: string, startAngle: number, endAngle: number, level: number, index: number) => {
             const node = result.find(n => n.id === nodeId);
             if (!node || nodeId === 'root') return;
 
@@ -64,7 +75,17 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             if (!parent) return;
 
             const angle = (startAngle + endAngle) / 2;
-            const distance = level === 1 ? 650 : 450; // Maximum spacing to ensure zero overlap
+            const childCount = result.filter(n => n.parent === node.parent).length;
+
+            // Dynamic distance: Scale out based on sibling density to prevent overlap
+            // Diameter is ~150px, we want ~50px padding, so ~200px per node on circumference
+            // Circumference = 2 * PI * distance. So distance = (200 * childCount) / (2 * PI)
+            const minDistance = level === 1 ? 650 : 450;
+            const densityDistance = (200 * childCount) / (2 * Math.PI);
+            let distance = Math.max(minDistance, densityDistance);
+
+            // Stagger level distances for children to avoid cluster collisions
+            if (level > 1) distance += (index % 3) * 100;
 
             node.x = parent.x + Math.cos(angle) * distance;
             node.y = parent.y + Math.sin(angle) * distance;
@@ -74,7 +95,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                 node.children.forEach((childId, i) => {
                     const cStart = startAngle + (i * sectorSize);
                     const cEnd = cStart + sectorSize;
-                    layoutNode(childId, cStart, cEnd, level + 1);
+                    layoutNode(childId, cStart, cEnd, level + 1, i);
                 });
             }
         };
@@ -85,7 +106,7 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
             root.children.forEach((childId, i) => {
                 const start = i * sectorSize;
                 const end = start + sectorSize;
-                layoutNode(childId, start, end, 1);
+                layoutNode(childId, start, end, 1, i);
             });
         }
         return result;
@@ -312,18 +333,50 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
                                 textAnchor="middle"
                                 fill={node.id === 'root' ? '#000000' : '#ffffff'}
                                 style={{
-                                    fontSize: node.id === 'root' ? '20px' : '14px', // Reduced to fit
+                                    fontSize: (() => {
+                                        const isRoot = node.id === 'root';
+                                        let baseSize = isRoot ? 22 : 14;
+                                        const words = node.text.split(' ');
+                                        const longestWord = words.reduce((a, b) => a.length > b.length ? a : b, "");
+                                        if (longestWord.length > 8) baseSize *= 0.85;
+                                        if (longestWord.length > 12) baseSize *= 0.7;
+                                        return `${baseSize}px`;
+                                    })(),
                                     fontWeight: '900',
                                     textTransform: 'uppercase',
                                     fontFamily: 'SF Pro Display, system-ui, sans-serif',
                                     pointerEvents: 'none'
                                 }}
                             >
-                                {node.text.split(' ').map((word, i, arr) => (
-                                    <tspan key={i} x={node.x} dy={i === 0 ? (arr.length > 1 ? '-0.3em' : '0.35em') : '1.1em'}>
-                                        {word}
-                                    </tspan>
-                                ))}
+                                {(() => {
+                                    const words = node.text.split(' ');
+                                    const lines: string[] = [];
+                                    const isRoot = node.id === 'root';
+                                    const maxChars = isRoot ? 14 : 10;
+                                    let currentLine = "";
+
+                                    words.forEach(word => {
+                                        if ((currentLine + word).length > maxChars && currentLine.length > 0) {
+                                            lines.push(currentLine.trim());
+                                            currentLine = word + " ";
+                                        } else {
+                                            currentLine += word + " ";
+                                        }
+                                    });
+                                    if (currentLine.trim()) lines.push(currentLine.trim());
+
+                                    const lineHeight = 1.1; // em
+                                    // Calculate starting offset to center vertically
+                                    // The midpoint of N lines is (N-1)/2 line-heights away from the first line
+                                    const rawDy = ((lines.length - 1) * lineHeight / 2) - 0.35;
+                                    const startDy = `${-rawDy}em`;
+
+                                    return lines.map((line, i) => (
+                                        <tspan key={i} x={node.x} dy={i === 0 ? startDy : `${lineHeight}em`}>
+                                            {line}
+                                        </tspan>
+                                    ));
+                                })()}
                             </text>
                         </g>
                     ))}

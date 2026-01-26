@@ -23,8 +23,10 @@ const ToolsScreen: React.FC = () => {
 
     const tools = [
         { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular', isPro: true },
+
         { title: 'Read', desc: 'Secure PDF Reader', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
         { title: 'Merge', desc: 'Merge PDF Documents', icon: Combine, path: '/merge', cat: 'popular' },
+        { title: 'Compare', desc: 'Compare PDF Versions', icon: GitMerge, path: '/neural-diff', cat: 'popular' },
         { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular' },
         { title: 'Sign', desc: 'Sign PDF High-Security', icon: PenTool, path: '/sign', cat: 'security', isPro: true },
         { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
@@ -34,7 +36,6 @@ const ToolsScreen: React.FC = () => {
         { title: 'Get Images', desc: 'Extract PDF Images', icon: FileImage, path: '/extract-images', cat: 'convert' },
         { title: 'Remove', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'popular' },
-        { title: 'PDF Metadata', desc: 'Edit Document Info', icon: FileText, path: '/metadata', cat: 'security', isPro: true },
     ];
 
     const filtered = tools.filter(tool => {

@@ -51,21 +51,62 @@ export const downloadFile = async (
     } else {
         // Android/Mobile - Use "Native Share" flow for 100% stability + flexibility
         try {
-            // Convert blob to base64
-            const reader = new FileReader();
-            const base64Data = await new Promise<string>((resolve, reject) => {
-                reader.onloadend = () => {
-                    const result = reader.result as string;
-                    const base64 = result.split(',')[1];
-                    resolve(base64);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
 
             console.log('📱 Preparing mobile asset via Native Cache...');
-            // Centralize caching via our optimized bridge-enabled helper
-            const uri = await saveBase64ToCache(base64Data, filename);
+
+            // OPTIMIZATION: Use chunked writing for large files to bypass Capacitor Bridge limits
+            let uri = "";
+            const chunkSize = 1024 * 1024 * 5; // 5MB chunks for better throughput
+            if (blob.size > chunkSize) {
+                console.log(`📦 Large file detected (${(blob.size / 1024 / 1024).toFixed(2)}MB). Using throttled chunk transfer...`);
+                const totalChunks = Math.ceil(blob.size / chunkSize);
+
+                for (let i = 0; i < totalChunks; i++) {
+                    const start = i * chunkSize;
+                    const end = Math.min(start + chunkSize, blob.size);
+                    const chunk = blob.slice(start, end);
+
+                    // Convert chunk to base64
+                    const base64Chunk = await new Promise<string>((resolve, reject) => {
+                        const r = new FileReader();
+                        r.onloadend = () => resolve((r.result as string).split(',')[1]);
+                        r.onerror = reject;
+                        r.readAsDataURL(chunk);
+                    });
+
+                    if (i === 0) {
+                        uri = await saveBase64ToCache(base64Chunk, filename);
+                    } else {
+                        // Priority 1: High-Speed Native Append Bridge
+                        let success = false;
+                        if (Capacitor.getPlatform() === 'android' && (window as any).AndroidDownloadBridge?.appendToCache) {
+                            success = (window as any).AndroidDownloadBridge.appendToCache(base64Chunk, filename);
+                        }
+
+                        // Priority 2: Capacitor Filesystem Fallback
+                        if (!success) {
+                            await Filesystem.appendFile({
+                                path: filename,
+                                data: base64Chunk,
+                                directory: Directory.Cache
+                            });
+                        }
+                    }
+
+                    // Throttling: Give bridge/UI thread 100ms to breathe
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    console.log(`🚚 Chunk ${i + 1}/${totalChunks} synchronized.`);
+                }
+            } else {
+                // Small file: Standard fast path
+                const base64Data = await new Promise<string>((resolve, reject) => {
+                    const r = new FileReader();
+                    r.onloadend = () => resolve((r.result as string).split(',')[1]);
+                    r.onerror = reject;
+                    r.readAsDataURL(blob);
+                });
+                uri = await saveBase64ToCache(base64Data, filename);
+            }
 
             console.log('📡 Triggering Native Share Sheet:', uri);
             await Share.share({

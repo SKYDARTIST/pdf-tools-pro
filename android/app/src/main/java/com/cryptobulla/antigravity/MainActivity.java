@@ -109,6 +109,25 @@ public class MainActivity extends BridgeActivity {
         }
 
         @JavascriptInterface
+        public boolean appendToCache(String base64Data, String filename) {
+            try {
+                byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
+                File cacheDir = getCacheDir();
+                File file = new File(cacheDir, filename);
+
+                // Use true for append mode
+                try (FileOutputStream fos = new FileOutputStream(file, true)) {
+                    fos.write(fileBytes);
+                    fos.flush();
+                }
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        @JavascriptInterface
         public void downloadFile(String base64Data, String filename, String mimeType) {
             runOnUiThread(() -> {
                 try {

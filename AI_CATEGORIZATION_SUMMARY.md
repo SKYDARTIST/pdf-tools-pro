@@ -1,4 +1,4 @@
-# AI Operation Categorization - Implementation Summary
+# AI Operation Categorization - Final Implementation Summary
 
 ## ✅ Completed Changes
 
@@ -6,110 +6,35 @@
 - **subscriptionService.ts**:
   - ✅ Added `AiOperationType` enum (HEAVY, GUIDANCE)
   - ✅ Added `AiBlockMode` enum (BUY_PRO, BUY_CREDITS, NONE)
-  - ✅ Updated `canUseAI()` to accept `AiOperationType` parameter
-  - ✅ Updated `recordAIUsage()` to only consume credits for HEAVY operations
-  - ✅ Returns `blockMode` to show appropriate upgrade modal
+  - ✅ Updated `canUseAI()` to support categorization
+  - ✅ Updated `recordAIUsage()` to consume credits ONLY for HEAVY operations
 
-### 2. New Component
-- **AiLimitModal.tsx**: ✅ Created
-  - Shows clear upgrade path based on block mode
-  - Free users: Option to buy Pro OR AI Pack
-  - Pro users: Option to buy AI Pack only
-  - No UI changes to existing design
+### 2. Heavy AI Screens (Credit Consuming)
+These screens now correctly deduct credits and block when empty:
+- ✅ **AntiGravityWorkspace.tsx**: Workspace processing
+- ✅ **DataExtractorScreen.tsx**: Multi-format data extraction
+- ✅ **TableExtractorScreen.tsx**: Table-to-CSV conversion
+- ✅ **SmartRedactScreen.tsx**: PII identification and removal
+- ✅ **NeuralDiffScreen.tsx**: Semantic document comparison
 
-### 3. Updated Heavy AI Screens (✅ Completed)
-These screens now use `AiOperationType.HEAVY` and consume credits:
-- ✅ AntiGravityWorkspace.tsx
-- ✅ DataExtractorScreen.tsx
-- ✅ TableExtractorScreen.tsx
+### 3. Light AI Screens (Free Guidance)
+These features are now zero-cost to ensure maximum utility for free users:
+- ✅ **ScannerScreen.tsx**: Auto-polishing and naming suggestions
+- ✅ **ReaderScreen.tsx**: Mind map generation and document outlining
 
-## 🔄 Remaining Work
+### 4. UI Refinements
+- [ ] **MindMapComponent.tsx**: Fix text overflow in central node by implementing dynamic font scaling and better vertical centering for multi-line text.
+- ✅ **TaskCounter.tsx**: Added AI Credit visibility in the header
+- ✅ **AiLimitModal.tsx**: Integrated into all Heavy screens
+- ✅ **ReaderScreen.tsx**: Stabilized PDF.js initialization to prevent crashes
 
-### Heavy AI Screens (Need Update)
-These screens need the same pattern applied:
+## 🧪 Verification Results
+- [x] HEAVY operations deduct 1 AI credit correctly
+- [x] GUIDANCE operations (Scanner/Reader) consume 0 credits
+- [x] Free users see "Upgrade to Pro" modal when hitting limits
+- [x] Pro users see "Buy AI Pack" modal when hitting credits limit
+- [x] AI credits are visible in the top header as requested
+- [x] PDF Viewer loads without "Invariant failed" error
 
-1. **SmartRedactScreen.tsx**
-2. **NeuralDiffScreen.tsx**
-
-### Light AI Screens (Need Update)
-These screens should use `AiOperationType.GUIDANCE` (free):
-
-1. **ScannerScreen.tsx**
-2. **ReaderScreen.tsx**
-
-## 📋 Pattern to Apply
-
-### For Heavy AI Screens:
-```typescript
-// 1. Import additions
-import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '../services/subscriptionService';
-import AiLimitModal from '../components/AiLimitModal';
-
-// 2. State additions
-const [showAiLimit, setShowAiLimit] = useState(false);
-const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
-
-// 3. Check AI usage (replace existing canUseAI check)
-const aiCheck = canUseAI(AiOperationType.HEAVY);
-if (!aiCheck.allowed) {
-    const subscription = getSubscription();
-    setAiLimitInfo({
-        blockMode: aiCheck.blockMode,
-        used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-        limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-    });
-    setShowAiLimit(true);
-    return;
-}
-
-// 4. Record usage (replace existing recordAIUsage call)
-await recordAIUsage(AiOperationType.HEAVY);
-
-// 5. Add modal component (replace UpgradeModal)
-<AiLimitModal
-    isOpen={showAiLimit}
-    onClose={() => setShowAiLimit(false)}
-    blockMode={aiLimitInfo.blockMode}
-    used={aiLimitInfo.used}
-    limit={aiLimitInfo.limit}
-/>
-```
-
-### For Light AI Screens (Scanner, Reader):
-```typescript
-// 1. Import additions
-import { AiOperationType } from '../services/subscriptionService';
-
-// 2. Check AI usage (if needed - usually GUIDANCE is always allowed)
-const aiCheck = canUseAI(AiOperationType.GUIDANCE); // Always returns allowed: true
-
-// 3. Record usage (if any AI calls are made)
-await recordAIUsage(AiOperationType.GUIDANCE); // Doesn't consume any credits
-
-// Note: For pure guidance features, you may not even need to call canUseAI or recordAIUsage
-```
-
-## 🎯 Expected Behavior After Implementation
-
-### Free Users:
-- **Light features** (Scanner guidance, Reader mindmaps): ✅ Always free
-- **Heavy features**: 1 per week
-  - On limit: Modal shows "Upgrade to Pro" OR "Buy AI Pack"
-
-### Pro Users:
-- **Light features**: ✅ Always free
-- **Heavy features**: 10 per month
-  - On limit: Modal shows "Buy AI Pack" only
-
-### AI Pack Users (Free or Pro):
-- **Light features**: ✅ Always free
-- **Heavy features**: Uses pack credits first
-  - After pack depleted: Falls back to tier limits
-
-## 🧪 Testing Checklist
-- [ ] Heavy AI tool blocks after limit
-- [ ] Light AI tools never block
-- [ ] AI Pack credits are consumed for Heavy operations only
-- [ ] Correct modal shows based on user tier (BUY_PRO vs BUY_CREDITS)
-- [ ] Manual Pro activation still works
-- [ ] Purchase acknowledgment works for future purchases
+> [!IMPORTANT]
+> Anti-Gravity is now running on **AI Protocol v2.8.0**, which introduces the Hybrid Credit/Tier system to the Closed Testing group.

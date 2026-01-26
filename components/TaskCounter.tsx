@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Zap, Crown } from 'lucide-react';
+import { Activity, Zap, Crown, Sparkles } from 'lucide-react';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import NeuralPulse from './NeuralPulse';
 
@@ -15,19 +15,37 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
     const isPro = TaskLimitManager.isPro();
     const remaining = TaskLimitManager.getRemainingTasks();
 
+    const subscription = TaskLimitManager.getSubscriptionSync();
+    const aiCredits = subscription?.aiPackCredits || 0;
+
     if (isPro) {
         if (variant === 'header') {
             return (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0"
-                >
-                    <Crown size={12} fill="currentColor" className="text-emerald-500" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 whitespace-nowrap">
-                        PRO ACTIVE
-                    </span>
-                </motion.div>
+                <div className="flex items-center gap-1.5 shrink-0 overflow-hidden">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0"
+                    >
+                        <Crown size={12} fill="currentColor" className="text-emerald-500" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 whitespace-nowrap">
+                            PRO ACTIVE
+                        </span>
+                    </motion.div>
+
+                    {aiCredits > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00C896]/10 border border-[#00C896]/20 rounded-full shrink-0 shadow-[0_0_15px_rgba(0,200,150,0.1)]"
+                        >
+                            <Sparkles size={11} className="text-[#00C896]" fill="currentColor" />
+                            <span className="text-[9px] font-black uppercase tracking-tighter text-[#00C896] whitespace-nowrap">
+                                {aiCredits}
+                            </span>
+                        </motion.div>
+                    )}
+                </div>
             );
         }
 

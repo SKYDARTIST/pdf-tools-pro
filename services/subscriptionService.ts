@@ -36,6 +36,7 @@ export interface UserSubscription {
     trialStartDate?: string; // ISO date - when the 20-day trial started
     purchaseToken?: string;
     lastNotifiedCredits?: number;
+    hasReceivedBonus: boolean;
 }
 
 const STORAGE_KEY = 'pdf_tools_subscription';
@@ -73,10 +74,6 @@ export const initSubscription = async (): Promise<UserSubscription> => {
 
 // Get current subscription from localStorage
 export const getSubscription = (): UserSubscription => {
-    // TESTING PERIOD: (DISABLED for IAP testing)
-    const TESTING_PERIOD_END = new Date('2026-01-20T23:59:59Z'); // Expired date
-    const isTestingPeriod = false;
-
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
         const subscription = JSON.parse(stored);
@@ -84,13 +81,6 @@ export const getSubscription = (): UserSubscription => {
         // RETROACTIVE TRIAL: Add trial start date to existing users who don't have it
         if (!subscription.trialStartDate) {
             subscription.trialStartDate = new Date().toISOString();
-            saveSubscription(subscription);
-        }
-
-        // TESTING PERIOD: Force Pro + 100 credits if not already
-        if (isTestingPeriod && (subscription.tier !== SubscriptionTier.PRO || subscription.aiPackCredits < 100)) {
-            subscription.tier = SubscriptionTier.PRO;
-            subscription.aiPackCredits = 100;
             saveSubscription(subscription);
         }
 
@@ -104,19 +94,20 @@ export const getSubscription = (): UserSubscription => {
         return subscription;
     }
 
-    // Default: Pro tier with 100 credits during testing, otherwise free
+    // Default: Free tier with no credits (until purchased)
     const now = new Date().toISOString();
     const isProFromLimit = TaskLimitManager.isPro();
     const defaultSubscription = {
-        tier: isProFromLimit || isTestingPeriod ? SubscriptionTier.PRO : SubscriptionTier.FREE,
+        tier: isProFromLimit ? SubscriptionTier.PRO : SubscriptionTier.FREE,
         operationsToday: 0,
         aiDocsThisWeek: 0,
         aiDocsThisMonth: 0,
-        aiPackCredits: isProFromLimit || isTestingPeriod ? 100 : 0,
+        aiPackCredits: isProFromLimit ? 100 : 0,
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
         trialStartDate: now,
+        hasReceivedBonus: false,
     };
     saveSubscription(defaultSubscription);
     return defaultSubscription;
@@ -343,6 +334,13 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     if (subscription.aiPackCredits > 0) {
         subscription.aiPackCredits -= 1;
         console.log(`AI Usage: HEAVY operation - AI Pack credits: ${subscription.aiPackCredits} remaining`);
+
+        // CRITICAL: If credits reached zero, acknowledge the purchase to Google Play
+        // This marks it as "consumed" so it won't be restored again
+        if (subscription.aiPackCredits === 0) {
+            console.log('AI Usage: ⚠️ AI Pack fully consumed - marking as consumed on Google Play');
+            markAiPackConsumed();
+        }
     } else if (subscription.tier === SubscriptionTier.FREE) {
         subscription.aiDocsThisWeek += 1;
         console.log(`AI Usage: HEAVY operation - Free tier: ${subscription.aiDocsThisWeek}/${FREE_LIMITS.aiDocsPerWeek} used this week`);
@@ -355,19 +353,43 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     await syncUsageToServer(subscription);
 };
 
+// Mark AI Pack as consumed to prevent re-restoration after uninstall
+const markAiPackConsumed = (): void => {
+    try {
+        // Store a flag that we've consumed the AI Pack
+        // This prevents granting credits for the same purchase multiple times
+        const consumedPurchases = JSON.parse(localStorage.getItem('consumed_purchases') || '[]');
+
+        // Only add if not already marked as consumed
+        if (!consumedPurchases.some((p: any) => p.productId === 'ai_pack_100')) {
+            consumedPurchases.push({
+                productId: 'ai_pack_100',
+                consumedAt: new Date().toISOString()
+            });
+            localStorage.setItem('consumed_purchases', JSON.stringify(consumedPurchases));
+        }
+
+        console.log('AI Usage: AI Pack fully consumed - will not be restored again on reinstall');
+    } catch (error) {
+        console.error('AI Usage: Failed to mark AI Pack as consumed:', error);
+    }
+};
+
+// Check if a purchase has already been consumed (granted credits)
+export const isAiPackAlreadyConsumed = (): boolean => {
+    try {
+        const consumedPurchases = JSON.parse(localStorage.getItem('consumed_purchases') || '[]');
+        return consumedPurchases.some((p: any) => p.productId === 'ai_pack_100');
+    } catch {
+        return false;
+    }
+};
+
 // Upgrade user to a tier
 export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): void => {
     const subscription = getSubscription();
     subscription.tier = tier;
     subscription.purchaseToken = purchaseToken;
-
-    // TESTING PERIOD: Also grant 100 Neural Pack credits with Pro upgrade
-    // BUT only if they don't already have credits (don't overwrite existing credits from Supabase restore)
-    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
-    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
-    if (isTestingPeriod && tier === SubscriptionTier.PRO && !subscription.aiPackCredits) {
-        subscription.aiPackCredits = 100;
-    }
 
     saveSubscription(subscription);
 

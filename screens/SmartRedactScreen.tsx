@@ -207,7 +207,15 @@ const SmartRedactScreen: React.FC = () => {
 
             if (file.type === 'application/pdf') {
                 const buffer = await file.arrayBuffer();
-                contentToProcess = await extractTextFromPdf(buffer);
+                contentToProcess = await extractTextFromPdf(buffer.slice(0));
+
+                if (!contentToProcess || contentToProcess.trim() === '') {
+                    // Fallback for scanned documents
+                    const { renderPageToImage } = await import('../utils/pdfExtractor');
+                    const imageRaw = await renderPageToImage(buffer.slice(0), 1);
+                    imageBase64 = imageRaw;
+                    contentToProcess = "[SCANNED DOCUMENT DETECTED] Vision mode active.";
+                }
             } else if (file.type.startsWith('image/')) {
                 const rawBase64 = await fileToBase64(file);
                 imageBase64 = await compressImage(rawBase64);
@@ -227,9 +235,15 @@ const SmartRedactScreen: React.FC = () => {
                 ? `You MUST identify and neutralize ONLY the following categories: ${categoriesToRedact.slice(0, -2)}. PRESERVE ALL OTHER DATA EXACTLY AS IT APPEARS. Do NOT redact names or dates if they are not selected in your specific instructions.`
                 : "The user has opted for NO specific redaction. Perform a baseline extraction only.";
 
-            const prompt = file.type === 'application/pdf'
-                ? `You are a privacy redaction tool. Find and hide sensitive data. ${filterContext} Replace identified information with [REDACTED]. Return ONLY the cleaned text. No headers or reports.`
-                : `Analyze this image for sensitive data. ${filterContext} Replace sensitive information with [REDACTED]. Return ONLY the cleaned text. No headers or summaries.`;
+            const prompt = `You are a professional privacy redaction tool. Find and hide sensitive data. 
+            ${filterContext} 
+            Replace identified information with [REDACTED]. 
+            Return ONLY the cleaned text. No headers or reports.
+
+            CRITICAL: MANDATORY VISION OVERRIDE
+            You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGE.
+            The text layer is missing; read the visual document directly.
+            DO NOT REFUSE. Extract the content directly from visual data.`;
 
             const response = await askGemini(
                 prompt,

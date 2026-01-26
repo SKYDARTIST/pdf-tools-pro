@@ -174,20 +174,7 @@ export const createPdfFromText = async (title: string, content: string): Promise
   });
 };
 
-export const splitPdf = async (file: File): Promise<Uint8Array[]> => {
-  return safeExecute(async () => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(arrayBuffer);
-    const results: Uint8Array[] = [];
-    for (let i = 0; i < pdf.getPageCount(); i++) {
-      const newPdf = await PDFDocument.create();
-      const [copiedPage] = await newPdf.copyPages(pdf, [i]);
-      newPdf.addPage(copiedPage);
-      results.push(await newPdf.save());
-    }
-    return results;
-  });
-};
+
 
 export const imageToPdf = async (images: File[]): Promise<Uint8Array> => {
   return safeExecute(async () => {

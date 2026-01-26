@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Scissors, FileText, Share2, Loader2, FileUp, Package } from 'lucide-react';
-import { splitPdf } from '../services/pdfService';
+import { renderPageToImage } from '../utils/pdfExtractor';
+import { PDFDocument } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
 import { FileItem } from '../types';
 import ToolGuide from '../components/ToolGuide';
@@ -53,19 +54,50 @@ const SplitScreen: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      const results = await splitPdf(file.file);
+      console.log('✂️ Neural Split: Initializing streaming document fragmentation...');
+
+      const arrayBuffer = await file.file.arrayBuffer();
+      // Load with robust options to prevent crashes on complex documents
+      const pdfDoc = await PDFDocument.load(arrayBuffer, {
+        ignoreEncryption: true,
+        throwOnInvalidObject: false
+      });
+      const pageCount = pdfDoc.getPageCount();
+      const baseName = file.name.replace('.pdf', '');
 
       // Bundle all pages into a single ZIP file
       const zip = new JSZip();
-      const baseName = file.name.replace('.pdf', '');
 
-      for (let i = 0; i < results.length; i++) {
-        const data = results[i];
-        zip.file(`page_${i + 1}_${baseName}.pdf`, data);
+      const CONCURRENCY = 8; // Render 8 pages in parallel for hyper-speed splitting
+      for (let i = 0; i < pageCount; i += CONCURRENCY) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + CONCURRENCY, pageCount); j++) {
+          batch.push(
+            renderPageToImage(arrayBuffer, j + 1).then(imageData => ({
+              index: j,
+              data: imageData.split(',')[1]
+            }))
+          );
+        }
+        const results = await Promise.all(batch);
+        results.forEach(({ index, data }) => {
+          zip.file(`page_${index + 1}_${baseName}.jpg`, data, { base64: true });
+        });
+
+        if (i % 25 === 0 || i + CONCURRENCY >= pageCount) {
+          console.log(`🧬 Fragmenting (Image Mode): ${Math.min(i + CONCURRENCY, pageCount)}/${pageCount}`);
+        }
       }
 
+      console.log('📦 Finalizing Neural ZIP container (Export Path)...');
       // Generate ZIP and download as single file
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipBlob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+
+      console.log(`📡 Dispatching ${Math.round(zipBlob.size / 1024 / 1024)}MB ZIP to Neural Share...`);
       await downloadFile(zipBlob, `${baseName}_split_pages.zip`);
 
       // Increment task counter
@@ -79,7 +111,6 @@ const SplitScreen: React.FC = () => {
         status: 'success'
       });
 
-      // Clear file removed - deferred
       setSuccessData({
         isOpen: true,
         fileName: `${baseName}_split_pages.zip`,
@@ -87,7 +118,8 @@ const SplitScreen: React.FC = () => {
         finalSize: zipBlob.size
       });
     } catch (err) {
-      alert('Error splitting PDF');
+      console.error('Split/Zip Failure:', err);
+      alert('Error splitting PDF: ' + (err instanceof Error ? err.message : 'Resource exhaustion'));
 
       FileHistoryManager.addEntry({
         fileName: `split_failed_${file.name}`,

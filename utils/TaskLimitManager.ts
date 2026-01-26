@@ -143,23 +143,26 @@ class TaskLimitManager {
      * Check if user is Pro
      */
     static isPro(): boolean {
-        // TESTING PERIOD: Use server-verified time to prevent clock manipulation
-        // Import dynamically to avoid circular dependencies
+        // 1. Check primary task limit storage
+        const data = this.getData();
+        if (data.isPro) return true;
+
+        // 2. Check secondary subscription storage (Healer Logic)
         try {
-            const { isTestingPeriodSync } = require('../services/serverTimeService');
-            if (isTestingPeriodSync()) {
-                return true;
+            const subStored = localStorage.getItem('pdf_tools_subscription');
+            if (subStored) {
+                const sub = JSON.parse(subStored);
+                if (sub.tier === 'pro' || sub.tier === 'premium' || sub.tier === 'lifetime') {
+                    // Sync back to primary storage if missing
+                    this.upgradeToPro();
+                    return true;
+                }
             }
         } catch (e) {
-            // Fallback to local time if service not available
-            const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
-            if (new Date() < TESTING_PERIOD_END) {
-                return true;
-            }
+            console.error('Error in Pro cross-sync:', e);
         }
 
-        const data = this.getData();
-        return data.isPro;
+        return false;
     }
 
     /**
@@ -192,10 +195,16 @@ class TaskLimitManager {
     }
 
     /**
-     * Reset all data (for testing)
+     * Get the full subscription state
      */
-    static reset(): void {
-        localStorage.removeItem(STORAGE_KEY);
+    static getSubscriptionSync(): any {
+        const STORAGE_KEY_SUB = 'pdf_tools_subscription';
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY_SUB);
+            return stored ? JSON.parse(stored) : null;
+        } catch (e) {
+            return null;
+        }
     }
 }
 

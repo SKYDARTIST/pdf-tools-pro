@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Crown, Zap, Shield, Sparkles, Check } from 'lucide-react';
+import { X, Crown, Zap, Shield, Sparkles, Check, Loader2 } from 'lucide-react';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import { upgradeTier, SubscriptionTier } from '../services/subscriptionService';
+import BillingService, { PRO_PRODUCT_ID } from '../services/billingService';
 
 interface UpgradeModalProps {
     isOpen: boolean;
@@ -17,14 +18,30 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 }) => {
     const remaining = TaskLimitManager.getRemainingTasks();
     const limit = TaskLimitManager.getDailyLimit();
+    const [isLoading, setIsLoading] = useState(false);
+    const [displayPrice, setDisplayPrice] = useState('$2.99');
 
-    const handleUpgrade = () => {
-        // TODO: Integrate payment system (Stripe/Paddle)
-        // For now, just upgrade locally for testing
-        TaskLimitManager.upgradeToPro();
-        upgradeTier(SubscriptionTier.PRO);
-        onClose();
-        window.location.reload(); // Refresh to update UI
+    useEffect(() => {
+        // Price is locked to Dollars ($) as requested.
+    }, [isOpen]);
+
+    const handleUpgrade = async () => {
+        setIsLoading(true);
+        try {
+            const success = await BillingService.purchasePro();
+            console.log('Purchase result in UI:', success);
+            if (success) {
+                onClose();
+                window.location.reload();
+            } else {
+                alert('Payment was not completed. If the Google Play window did not open, please check your network.');
+            }
+        } catch (error: any) {
+            console.error('Upgrade failed:', error);
+            alert('Critial Error: ' + (error.message || 'Unknown error during upgrade'));
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -87,7 +104,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 {/* Pricing */}
                                 <div className="text-center">
                                     <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
-                                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">$2.99</span>
+                                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{displayPrice}</span>
                                         <span className="text-[10px] sm:text-sm font-bold text-slate-400 dark:text-gray-600">one-time</span>
                                     </div>
                                     <p className="text-[10px] sm:text-xs font-bold text-violet-600 dark:text-violet-500">
@@ -111,7 +128,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity</span>
-                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">$2.99 LIFETIME</span>
+                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">{displayPrice} LIFETIME</span>
                                     </div>
                                 </div>
                             </div>
@@ -121,14 +138,22 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 <div className="space-y-3 sm:space-y-4">
                                     <button
                                         onClick={handleUpgrade}
-                                        className="w-full py-4 sm:py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-[10px] sm:text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group"
+                                        disabled={isLoading}
+                                        className="w-full py-4 sm:py-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-[10px] sm:text-xs uppercase tracking-[0.2em] shadow-xl hover:brightness-110 active:scale-95 transition-all relative overflow-hidden group flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
                                         <motion.div
                                             animate={{ x: ['-100%', '200%'] }}
                                             transition={{ repeat: Infinity, duration: 2.5, ease: "linear", repeatDelay: 1 }}
                                             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
                                         />
-                                        Get Pro Access - $2.99
+                                        {isLoading ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            `Get Pro Access - ${displayPrice}`
+                                        )}
                                     </button>
 
                                     {reason === 'limit_reached' && (

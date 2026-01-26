@@ -201,8 +201,7 @@ const MyFilesScreen: React.FC = () => {
                                                 'split': '/split',
                                                 'sign': '/sign',
                                                 'watermark': '/watermark',
-                                                'image-to-pdf': '/image-to-pdf',
-                                                'metadata': '/metadata'
+                                                'image-to-pdf': '/image-to-pdf'
                                             };
                                             navigate(pathMap[entry.operation] || '/tools');
                                         }}
