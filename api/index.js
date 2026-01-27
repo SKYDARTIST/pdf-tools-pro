@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-ag-signature, x-ag-device-id, x-ag-integrity-token');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-signature, x-ag-device-id, x-ag-integrity-token');
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
