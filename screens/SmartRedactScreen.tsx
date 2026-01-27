@@ -12,6 +12,9 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import { downloadFile } from '../services/downloadService';
+import { AuthModal } from '../components/AuthModal';
+import { getCurrentUser } from '../services/googleAuthService';
+import { initSubscription } from '../services/subscriptionService';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '../utils/imageProcessor';
@@ -36,6 +39,7 @@ const SmartRedactScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
+    const [authModalOpen, setAuthModalOpen] = useState(false);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
     const navigate = useNavigate();
 
@@ -181,6 +185,13 @@ const SmartRedactScreen: React.FC = () => {
 
     const startRedaction = async () => {
         if (!file) return;
+
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
 
         if (!hasConsent) {
             setShowConsent(true);
@@ -546,6 +557,16 @@ Balance: $12,450.00 (PRESERVED)
                     }}
                 />
             )}
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={async () => {
+                    const user = await getCurrentUser();
+                    if (user) await initSubscription();
+                    startRedaction();
+                }}
+            />
         </motion.div>
     );
 };

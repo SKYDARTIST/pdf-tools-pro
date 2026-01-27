@@ -11,6 +11,9 @@ import AIReportModal from '../components/AIReportModal';
 import AiLimitModal from '../components/AiLimitModal';
 import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
+import { AuthModal } from '../components/AuthModal';
+import { getCurrentUser } from '../services/googleAuthService';
+import { initSubscription } from '../services/subscriptionService';
 import SuccessModal from '../components/SuccessModal';
 import { compressImage } from '../utils/imageProcessor';
 
@@ -28,6 +31,7 @@ const DataExtractorScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -49,6 +53,13 @@ const DataExtractorScreen: React.FC = () => {
 
     const runExtraction = async () => {
         if (!file) return;
+
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
 
         if (!hasConsent) {
             setShowConsent(true);
@@ -447,12 +458,20 @@ Output ONLY raw CSV data.`;
                     onViewFiles={() => {
                         setSuccessData(null);
                         setFile(null);
-                        setExtractedData('');
-                        setError('');
                         navigate('/my-files');
                     }}
                 />
             )}
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={async () => {
+                    const user = await getCurrentUser();
+                    if (user) await initSubscription();
+                    runExtraction();
+                }}
+            />
         </motion.div >
     );
 };

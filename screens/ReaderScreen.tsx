@@ -20,6 +20,9 @@ import ToolGuide from '../components/ToolGuide';
 import MindMapSettingsModal from '../components/MindMapSettingsModal';
 import NeuralProtocolBrief from '../components/NeuralProtocolBrief';
 import BriefingSettingsModal from '../components/BriefingSettingsModal';
+import { AuthModal } from '../components/AuthModal';
+import { getCurrentUser } from '../services/googleAuthService';
+import { initSubscription } from '../services/subscriptionService';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
 // Configure PDF.js worker - using local file for offline/Capacitor support
@@ -59,6 +62,7 @@ const ReaderScreen: React.FC = () => {
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
+    const [authModalOpen, setAuthModalOpen] = useState(false);
 
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
     const [isAuditing, setIsAuditing] = useState(false);
@@ -172,6 +176,14 @@ const ReaderScreen: React.FC = () => {
 
     const generateMindMap = async (settings?: { range: string; focus: string }) => {
         if (!file || isGeneratingMindMap) return;
+
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         if (!hasConsent) { setPendingAction(() => () => generateMindMap(settings)); setShowConsent(true); return; }
         if (isMindMapMode && !settings) { setIsMindMapMode(false); return; }
         if (!settings && !mindMapData) { setShowMindMapSettings(true); return; }
@@ -258,6 +270,14 @@ const ReaderScreen: React.FC = () => {
 
     const toggleAudioNarrator = async (settings?: { range: string; focus: string }) => {
         if (isAudioPlaying) { resetAllStates(); return; }
+
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         if (!hasConsent) { setPendingAction(() => () => toggleAudioNarrator(settings)); setShowConsent(true); return; }
         if (audioScript && !settings) { startSpeaking(audioScript); return; }
         if (!settings && numPages > 1) { setShowBriefingSettings(true); return; }
@@ -308,6 +328,14 @@ const ReaderScreen: React.FC = () => {
 
     const generateOutline = async () => {
         if (!file || isGeneratingOutline) return;
+
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         if (isOutlineMode) { setIsOutlineMode(false); return; }
         if (!hasConsent) { setPendingAction(() => generateOutline); setShowConsent(true); return; }
 
@@ -363,6 +391,14 @@ const ReaderScreen: React.FC = () => {
 
     const runNeuralAudit = async () => {
         if (!file || isAuditing) return;
+
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         if (!hasConsent) { setPendingAction(() => runNeuralAudit); setShowConsent(true); return; }
 
         const aiCheck = canUseAI(AiOperationType.HEAVY);
@@ -695,6 +731,15 @@ const ReaderScreen: React.FC = () => {
             <MindMapSettingsModal isOpen={showMindMapSettings} numPages={numPages} onClose={() => setShowMindMapSettings(false)} onConfirm={(s: any) => generateMindMap(s)} />
             <NeuralProtocolBrief isOpen={showBrief} onClose={() => setShowBrief(false)} type={briefType} />
             <BriefingSettingsModal isOpen={showBriefingSettings} onClose={() => setShowBriefingSettings(false)} numPages={numPages} onConfirm={(s: any) => toggleAudioNarrator(s)} />
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={async () => {
+                    const user = await getCurrentUser();
+                    if (user) await initSubscription();
+                }}
+            />
         </motion.div >
     );
 };

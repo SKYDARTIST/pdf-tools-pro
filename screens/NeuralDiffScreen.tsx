@@ -12,6 +12,9 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag, Share2 } from 'lucide-react';
 import { createPdfFromText } from '../services/pdfService';
+import { AuthModal } from '../components/AuthModal';
+import { getCurrentUser } from '../services/googleAuthService';
+import { initSubscription } from '../services/subscriptionService';
 import { downloadFile } from '../services/downloadService';
 import SuccessModal from '../components/SuccessModal';
 
@@ -29,6 +32,7 @@ const NeuralDiffScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
@@ -52,8 +56,28 @@ const NeuralDiffScreen: React.FC = () => {
     const runNeuralDiff = async () => {
         if (!file1 || !file2) return;
 
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setAuthModalOpen(true);
+            return;
+        }
+
         if (!hasConsent) {
             setShowConsent(true);
+            return;
+        }
+
+        // HEAVY AI Operation - Neural Diff consumes credits
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        if (!aiCheck.allowed) {
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
             return;
         }
 
@@ -312,11 +336,20 @@ const NeuralDiffScreen: React.FC = () => {
                     originalSize={successData.originalSize}
                     finalSize={successData.finalSize}
                     onViewFiles={() => {
-                        setSuccessData(null);
                         navigate('/my-files');
                     }}
                 />
             )}
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={async () => {
+                    const user = await getCurrentUser();
+                    if (user) await initSubscription();
+                    runNeuralDiff();
+                }}
+            />
         </motion.div >
     );
 };

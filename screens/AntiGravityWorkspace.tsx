@@ -13,6 +13,9 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import ToolGuide from '../components/ToolGuide';
 import { PDFDocument } from 'pdf-lib';
 import { extractTextFromPdf, renderMultiplePagesToImages } from '../utils/pdfExtractor';
+import { AuthModal } from '../components/AuthModal';
+import { getCurrentUser } from '../services/googleAuthService';
+import { initSubscription } from '../services/subscriptionService';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +35,7 @@ const AntiGravityWorkspace: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [showAiLimit, setShowAiLimit] = useState(false);
   const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -49,6 +53,14 @@ const AntiGravityWorkspace: React.FC = () => {
   };
 
   const processFile = async (selected: File) => {
+    // 1. Auth Check (Google Auth)
+    const user = await getCurrentUser();
+    if (!user) {
+      setPendingAction(() => () => processFile(selected));
+      setAuthModalOpen(true);
+      return;
+    }
+
     // HEAVY AI Operation - Workspace consumes credits
     const check = canUseAI(AiOperationType.HEAVY);
     if (!check.allowed) {
@@ -562,6 +574,22 @@ const AntiGravityWorkspace: React.FC = () => {
         blockMode={aiLimitInfo.blockMode}
         used={aiLimitInfo.used}
         limit={aiLimitInfo.limit}
+      />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={async () => {
+          // Refresh subscription to get latest credits
+          const user = await getCurrentUser();
+          if (user) await initSubscription();
+
+          // Resume pending action if any
+          if (pendingAction) {
+            pendingAction();
+            setPendingAction(null);
+          }
+        }}
       />
     </motion.div>
   );

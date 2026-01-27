@@ -41,6 +41,8 @@ export default async function handler(req, res) {
     // CORS: Strict Whitelist (No trailing slashes)
     const ALLOWED_ORIGINS = [
         'capacitor://localhost',
+        'http://localhost',
+        'https://localhost',
         'http://localhost:3000',
         'http://localhost:5173',
         'https://pdf-tools-pro.vercel.app',

@@ -63,20 +63,33 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
     try {
         const isCapacitor = !!(window as any).Capacitor;
         const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
+
+        const { getCurrentUser } = await import('./googleAuthService');
+        const googleUser = await getCurrentUser();
+
+        // AUTH STRATEGY: Prefer Google Auth, fallback to Device ID
+        const headers: any = {
+            'Content-Type': 'application/json',
+            'Authorization': await AuthService.getAuthHeader(),
+            'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+            'x-ag-integrity-token': integrityToken
+        };
+
+        if (googleUser) {
+            headers['Authorization'] = `Bearer ${googleUser.google_uid}`;
+        } else {
+            headers['x-ag-device-id'] = deviceId;
+        }
+
+        const apiEndpoint = googleUser ? '/api/user/subscription' : '/api/index';
         const backendUrl = isDevelopment
-            ? 'http://localhost:3000/api/index'
-            : 'https://pdf-tools-pro-indol.vercel.app/api/index';
+            ? `http://localhost:3000${apiEndpoint}`
+            : `https://pdf-tools-pro-indol.vercel.app${apiEndpoint}`;
 
         const response = await fetch(backendUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': await AuthService.getAuthHeader(),
-                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
-                'x-ag-device-id': deviceId,
-                'x-ag-integrity-token': integrityToken
-            },
-            body: JSON.stringify({ type: 'usage_fetch' }),
+            method: googleUser ? 'GET' : 'POST',
+            headers: headers,
+            body: googleUser ? undefined : JSON.stringify({ type: 'usage_fetch' }),
         });
 
         if (!response.ok) {
@@ -123,14 +136,35 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
     try {
         const isCapacitor = !!(window as any).Capacitor;
         const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
+
+        const { getCurrentUser } = await import('./googleAuthService');
+        const googleUser = await getCurrentUser();
+
+        // Use the new Unified API endpoint if possible, or fallback to index
+        const apiEndpoint = googleUser ? '/api/user/subscription' : '/api/index';
+
         const backendUrl = isDevelopment
-            ? 'http://localhost:3000/api/index'
-            : 'https://pdf-tools-pro-indol.vercel.app/api/index';
+            ? `http://localhost:3000${apiEndpoint}`
+            : `https://pdf-tools-pro-indol.vercel.app${apiEndpoint}`;
 
         const signature = import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
 
+        // AUTH STRATEGY
+        const headers: any = {
+            'Content-Type': 'application/json',
+            'Authorization': await AuthService.getAuthHeader(),
+            'x-ag-signature': signature,
+            'x-ag-integrity-token': integrityToken
+        };
+
+        if (googleUser) {
+            headers['Authorization'] = `Bearer ${googleUser.google_uid}`;
+        } else {
+            headers['x-ag-device-id'] = deviceId;
+        }
+
         console.log('Anti-Gravity Billing: Syncing usage to server...', {
-            deviceId,
+            deviceId: googleUser ? googleUser.email : deviceId,
             aiPackCredits: usage.aiPackCredits,
             tier: usage.tier,
             hasIntegrityToken: !!integrityToken,
@@ -138,16 +172,14 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             timestamp: new Date().toISOString()
         });
 
+        // Payload Key Fix: new API expects flat object, old API expects { type, usage }
+        // We will adapt payload based on endpoint
+        const payload = googleUser ? usage : { type: 'usage_sync', usage };
+
         const response = await fetch(backendUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': await AuthService.getAuthHeader(),
-                'x-ag-signature': signature,
-                'x-ag-device-id': deviceId,
-                'x-ag-integrity-token': integrityToken
-            },
-            body: JSON.stringify({ type: 'usage_sync', usage }),
+            headers: headers,
+            body: JSON.stringify(payload),
         });
 
         if (!response.ok) {

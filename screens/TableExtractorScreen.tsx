@@ -13,6 +13,9 @@ import AIReportModal from '../components/AIReportModal';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { Flag } from 'lucide-react';
 import { compressImage } from '../utils/imageProcessor';
+import { AuthModal } from '../components/AuthModal';
+import { getCurrentUser } from '../services/googleAuthService';
+import { initSubscription } from '../services/subscriptionService';
 import SuccessModal from '../components/SuccessModal';
 
 const TableExtractorScreen: React.FC = () => {
@@ -28,6 +31,7 @@ const TableExtractorScreen: React.FC = () => {
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -45,6 +49,14 @@ const TableExtractorScreen: React.FC = () => {
 
 
     const processFile = async (selected: File) => {
+        // AUTH CHECK (Google Auth)
+        const user = await getCurrentUser();
+        if (!user) {
+            setPendingFile(selected);
+            setAuthModalOpen(true);
+            return;
+        }
+
         // HEAVY AI Operation - Table Extractor consumes credits
         const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
@@ -337,11 +349,23 @@ const TableExtractorScreen: React.FC = () => {
                         setSuccessData(null);
                         setStatus('idle');
                         setTables([]);
-                        setFile(null);
                         navigate('/my-files');
                     }}
                 />
             )}
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={async () => {
+                    const user = await getCurrentUser();
+                    if (user) await initSubscription();
+                    if (pendingFile) {
+                        processFile(pendingFile);
+                        setPendingFile(null);
+                    }
+                }}
+            />
         </motion.div>
     );
 };

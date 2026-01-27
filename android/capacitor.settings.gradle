@@ -2,6 +2,9 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
+include ':capacitor-community-play-integrity'
+project(':capacitor-community-play-integrity').projectDir = new File('../node_modules/@capacitor-community/play-integrity/android')
+
 include ':capacitor-community-text-to-speech'
 project(':capacitor-community-text-to-speech').projectDir = new File('../node_modules/@capacitor-community/text-to-speech/android')
 
@@ -13,9 +16,6 @@ project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacit
 
 include ':capacitor-share'
 project(':capacitor-share').projectDir = new File('../node_modules/@capacitor/share/android')
-
-include ':capacitor-community-play-integrity'
-project(':capacitor-community-play-integrity').projectDir = new File('../node_modules/@capacitor-community/play-integrity/android')
 
 include ':capgo-native-purchases'
 project(':capgo-native-purchases').projectDir = new File('../node_modules/@capgo/native-purchases/android')

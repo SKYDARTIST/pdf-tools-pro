@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Critical screens - loaded immediately
 import LandingPage from './screens/LandingPage';
@@ -201,80 +202,81 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
-      {!isLandingPage && <Header />}
-      <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
-        <PullToRefresh onRefresh={handleGlobalRefresh}>
-          <AnimatePresence>
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.1, ease: "linear" }}
-            >
-              <Suspense fallback={null}>
-                <Routes location={location}>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/workspace" element={<HomeScreen />} />
-                  <Route path="/tools" element={<ToolsScreen />} />
-                  <Route path="/merge" element={<MergeScreen />} />
-                  <Route path="/split" element={<SplitScreen />} />
-                  <Route path="/remove-pages" element={<RemovePagesScreen />} />
-                  <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "PLACEHOLDER_CLIENT_ID"}>
+      <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
+        {!isLandingPage && <Header />}
+        <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
+          <PullToRefresh onRefresh={handleGlobalRefresh}>
+            <AnimatePresence>
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1, ease: "linear" }}
+              >
+                <Suspense fallback={null}>
+                  <Routes location={location}>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/workspace" element={<HomeScreen />} />
+                    <Route path="/tools" element={<ToolsScreen />} />
+                    <Route path="/merge" element={<MergeScreen />} />
+                    <Route path="/split" element={<SplitScreen />} />
+                    <Route path="/remove-pages" element={<RemovePagesScreen />} />
+                    <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
+                    <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
+                    <Route path="/scanner" element={<ScannerScreen />} />
+                    <Route path="/watermark" element={<WatermarkScreen />} />
+                    <Route path="/sign" element={<SignScreen />} />
+                    <Route path="/view" element={<ViewScreen />} />
+                    <Route path="/extract-text" element={<ExtractTextScreen />} />
+                    <Route path="/reader" element={<ReaderScreen />} />
+                    <Route path="/rotate" element={<RotateScreen />} />
+                    <Route path="/page-numbers" element={<PageNumbersScreen />} />
+                    <Route path="/extract-images" element={<ExtractImagesScreen />} />
 
-                  <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
-                  <Route path="/scanner" element={<ScannerScreen />} />
-                  <Route path="/watermark" element={<WatermarkScreen />} />
-                  <Route path="/sign" element={<SignScreen />} />
-                  <Route path="/view" element={<ViewScreen />} />
-                  <Route path="/extract-text" element={<ExtractTextScreen />} />
-                  <Route path="/reader" element={<ReaderScreen />} />
-                  <Route path="/rotate" element={<RotateScreen />} />
-                  <Route path="/page-numbers" element={<PageNumbersScreen />} />
-                  <Route path="/extract-images" element={<ExtractImagesScreen />} />
+                    <Route path="/ai-settings" element={<AISettingsScreen />} />
+                    <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
+                    <Route path="/table-extractor" element={<TableExtractorScreen />} />
+                    <Route path="/my-files" element={<MyFilesScreen />} />
+                    <Route path="/smart-redact" element={<SmartRedactScreen />} />
+                    <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
+                    <Route path="/neural-diff" element={<NeuralDiffScreen />} />
+                    <Route path="/data-extractor" element={<DataExtractorScreen />} />
+                    <Route path="/pricing" element={<PricingScreen />} />
+                    <Route path="/legal/:type" element={<LegalScreen />} />
+                    <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
+                  </Routes>
+                </Suspense>
+              </motion.div>
+            </AnimatePresence>
+          </PullToRefresh>
+        </main>
+        {!isLandingPage && <BottomNav />}
+        <AnimatePresence>
+          {isBooting && (
+            <SystemBoot
+              onComplete={() => {
+                // Mark animation as done, but let the useEffect above handle the actual dismissal
+                // based on isDataReady
+                setBootAnimFinished(true);
+              }}
+            />
+          )}
+        </AnimatePresence>
 
-                  <Route path="/ai-settings" element={<AISettingsScreen />} />
-                  <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
-                  <Route path="/table-extractor" element={<TableExtractorScreen />} />
-                  <Route path="/my-files" element={<MyFilesScreen />} />
-                  <Route path="/smart-redact" element={<SmartRedactScreen />} />
-                  <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
-                  <Route path="/neural-diff" element={<NeuralDiffScreen />} />
-                  <Route path="/data-extractor" element={<DataExtractorScreen />} />
-                  <Route path="/pricing" element={<PricingScreen />} />
-                  <Route path="/legal/:type" element={<LegalScreen />} />
-                  <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
-                </Routes>
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
-        </PullToRefresh>
-      </main>
-      {!isLandingPage && <BottomNav />}
-      <AnimatePresence>
-        {isBooting && (
-          <SystemBoot
-            onComplete={() => {
-              // Mark animation as done, but let the useEffect above handle the actual dismissal
-              // based on isDataReady
-              setBootAnimFinished(true);
-            }}
-          />
-        )}
-      </AnimatePresence>
-
-      <AiPackNotification
-        message={activeNotification?.message || null}
-        type={activeNotification?.type || null}
-        onClose={() => {
-          ackAiNotification();
-          setActiveNotification(null);
-        }}
-      />
-      {!isLandingPage && <NeuralAssistant />}
-      <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
-    </div>
+        <AiPackNotification
+          message={activeNotification?.message || null}
+          type={activeNotification?.type || null}
+          onClose={() => {
+            ackAiNotification();
+            setActiveNotification(null);
+          }}
+        />
+        {!isLandingPage && <NeuralAssistant />}
+        <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
+      </div>
+    </GoogleOAuthProvider>
   );
 };
 
