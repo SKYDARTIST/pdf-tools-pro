@@ -15,10 +15,16 @@ export const getIntegrityToken = async (): Promise<string> => {
     if (isDevelopment) {
         console.warn('Anti-Gravity Integrity: Using MOCK token (Dev Mode)');
         const deviceId = await getDeviceId();
+
+        // Secure Nonce for Mock
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        const secureNonce = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+
         const payload = {
             deviceId,
             timestamp: Date.now(),
-            nonce: Math.random().toString(36).substring(7),
+            nonce: secureNonce,
             platform: 'mock-dev',
             version: '0.0.0-dev'
         };

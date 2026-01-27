@@ -8,11 +8,26 @@ const DEVICE_ID_KEY = 'ag_device_id';
 
 const generateUUID = () => {
     try {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-            return crypto.randomUUID();
+        if (typeof crypto !== 'undefined') {
+            if (crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            if (crypto.getRandomValues) {
+                const buff = new Uint8Array(16);
+                crypto.getRandomValues(buff);
+                buff[6] = (buff[6] & 0x0f) | 0x40; // Version 4
+                buff[8] = (buff[8] & 0x3f) | 0x80; // Variant 10
+                return [...buff].map((b, i) => {
+                    const hex = b.toString(16).padStart(2, '0');
+                    if (i === 4 || i === 6 || i === 8 || i === 10) return '-' + hex;
+                    return hex;
+                }).join('');
+            }
         }
     } catch (e) { }
 
+    // Extreme fallback (only if crypto API is completely missing)
+    console.warn('Crypto API missing, using insecure fallback');
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
         const r = (Math.random() * 16) | 0;
         const v = c === 'x' ? r : (r & 0x3) | 0x8;
