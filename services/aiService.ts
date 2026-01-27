@@ -9,6 +9,7 @@ const aiCache = new Map<string, string>();
 import { getDeviceId } from './usageService';
 import { getIntegrityToken } from './integrityService';
 import AuthService from './authService';
+import Config from './configService';
 
 export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' | 'guidance' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
   // Neuro-Caching Logic
@@ -19,15 +20,8 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
   }
 
   try {
-    // ANDROID/CAPACITOR FIX: 
-    // Capacitor serves the app from https://localhost/, but we need to use production API
-    const isCapacitor = !!(window as any).Capacitor;
-    const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
-
     // Always use production URL for Capacitor builds
-    const backendUrl = isDevelopment
-      ? 'http://localhost:3000/api/index'
-      : 'https://pdf-tools-pro-indol.vercel.app/api/index';
+    const backendUrl = `${Config.VITE_AG_API_URL}/api/index`;
 
     const integrityToken = await getIntegrityToken();
     const deviceId = await getDeviceId();
@@ -39,7 +33,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
         headers: {
           'Content-Type': 'application/json',
           'Authorization': await AuthService.getAuthHeader(),
-          'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+          'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
           'x-ag-device-id': deviceId,
           'x-ag-integrity-token': integrityToken
         },

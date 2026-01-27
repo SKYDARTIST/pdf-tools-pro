@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+
 
 // Critical screens - loaded immediately
 import LandingPage from './screens/LandingPage';
@@ -34,6 +34,7 @@ const LegalScreen = lazy(() => import('./screens/LegalScreen'));
 const NeuralDiffScreen = lazy(() => import('./screens/NeuralDiffScreen'));
 const DataExtractorScreen = lazy(() => import('./screens/DataExtractorScreen'));
 const ProtocolGuideScreen = lazy(() => import('./screens/ProtocolGuideScreen'));
+const GoogleAuthCallback = lazy(() => import('./screens/GoogleAuthCallback'));
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
@@ -48,12 +49,25 @@ import DebugLogPanel from './components/DebugLogPanel';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
+import { AuthModal } from './components/AuthModal';
+import { getCurrentUser } from './services/googleAuthService';
+import { App as CapApp } from '@capacitor/app';
+
 const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
+  const [authModalOpen, setAuthModalOpen] = React.useState(false);
+
+  // Catch Google OAuth redirect from the root
+  React.useEffect(() => {
+    if (window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=')) {
+      console.log('🔑 App: Found OAuth token in hash, pushing to callback processor');
+      navigate('/auth-callback' + window.location.hash, { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const [isDataReady, setIsDataReady] = React.useState(false);
   const [bootAnimFinished, setBootAnimFinished] = React.useState(false);
@@ -65,9 +79,11 @@ const App: React.FC = () => {
         initializePersistentLogging(); // Start capturing logs to localStorage
         initServerTime();  // Fetch server time immediately (non-blocking)
 
-        // NON-BLOCKING: Start subscription fetch in background
-        // Allow app to launch immediately with cached credentials
-        initSubscription().catch(e => console.warn('Background subscription sync failed:', e));
+        // BLOCKING: Start subscription fetch and wait for it
+        // This ensures the app doesn't show "Free" tier if user is actually "Pro"
+        console.log('🚀 App: Syncing subscription state...');
+        await initSubscription().catch(e => console.warn('Critical subscription sync failed:', e));
+
         console.log('🚀 App: Critical initialization complete');
       } catch (e) {
         console.error('🚀 App: Initialization error:', e);
@@ -96,6 +112,77 @@ const App: React.FC = () => {
     }
   }, [isDataReady, bootAnimFinished, isBooting]);
 
+  // Mobile Compatibility: Handle Custom Scheme Deep Links
+  React.useEffect(() => {
+    const handleUrl = (url: string) => {
+      if (url.includes('com.cryptobulla.antigravity')) {
+        // Close modal immediately if it was open
+        setAuthModalOpen(false);
+
+        // WHITELIST VALIDATION: Prevent unauthorized navigation via deep links
+        const WHITELIST_ROUTES = [
+          'workspace', 'tools', 'merge', 'split', 'remove-pages',
+          'image-to-pdf', 'text-to-pdf', 'scanner', 'watermark',
+          'sign', 'view', 'extract-text', 'reader', 'rotate',
+          'page-numbers', 'extract-images', 'ai-settings',
+          'ag-workspace', 'table-extractor', 'my-files',
+          'smart-redact', 'neural-diff', 'data-extractor',
+          'auth-callback'
+        ];
+
+        // SPLIT STRATEGY: Handle both 'com.cryptobulla.antigravity:/' and 'com.cryptobulla.antigravity://'
+        let slug = '';
+        if (url.includes('com.cryptobulla.antigravity://')) {
+          slug = url.split('com.cryptobulla.antigravity://').pop() || '';
+        } else {
+          slug = url.split('com.cryptobulla.antigravity:/').pop() || '';
+        }
+
+        if (slug) {
+          const target = slug.startsWith('/') ? slug.substring(1) : slug;
+          const cleanSlug = target.split(/[?#]/)[0]; // Remove query/hash for validation
+
+          if (WHITELIST_ROUTES.includes(cleanSlug)) {
+            console.log('🔗 Deep Link Verified:', cleanSlug);
+            navigate('/' + target, { replace: true });
+          } else {
+            console.warn('🛡️ Security: Blocked unauthorized deep link:', cleanSlug);
+          }
+        }
+      }
+    };
+
+    // Capacitor App Plugin Listener (Industry Standard)
+    CapApp.addListener('appUrlOpen', (data: any) => {
+      handleUrl(data.url);
+    });
+
+    // Fallback for some environments
+    const handleAppUrl = (e: any) => handleUrl(e.detail?.url || e.url);
+    window.addEventListener('appUrlOpen', handleAppUrl);
+
+    if ((window as any).Capacitor) {
+      const meta = document.createElement('meta');
+      meta.name = 'google-signin-disable-fedcm';
+      meta.content = 'true';
+      document.head.appendChild(meta);
+    }
+    return () => {
+      window.removeEventListener('appUrlOpen', handleAppUrl);
+    };
+  }, [navigate]);
+
+  // Auth Success Listener: Definitive fix for UI hangs
+  React.useEffect(() => {
+    const handleAuthSuccess = () => {
+      console.log('🔑 App: Auth Success event received, force-closing modal');
+      setAuthModalOpen(false);
+    };
+
+    window.addEventListener('neural-auth-success', handleAuthSuccess);
+    return () => window.removeEventListener('neural-auth-success', handleAuthSuccess);
+  }, []);
+
   // Global AI Notification Listener
   React.useEffect(() => {
     if (!isDataReady) return; // Don't check notifications until data is ready
@@ -112,8 +199,23 @@ const App: React.FC = () => {
 
     // Also poll occasionally or listen for storage events if needed
     const interval = setInterval(checkNotification, 2000);
-    return () => clearInterval(interval);
-  }, [location.pathname, isDataReady]);
+
+    // Watch for Auth Success and close modal
+    const checkAuthStatus = async () => {
+      const user = localStorage.getItem('google_uid');
+      if (user && authModalOpen) {
+        console.log('🛡️ App: Authenticated user detected, closing modal');
+        setAuthModalOpen(false);
+      }
+    };
+    checkAuthStatus();
+    const authInterval = setInterval(checkAuthStatus, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(authInterval);
+    };
+  }, [location.pathname, isDataReady, authModalOpen]);
 
   React.useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
@@ -201,82 +303,98 @@ const App: React.FC = () => {
     return <div className="min-h-screen bg-black" />; // Or a spinner
   }
 
+  // Provider removed: Google Login now handled via manual OAuth redirect in AuthModal
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "PLACEHOLDER_CLIENT_ID"}>
-      <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
-        {!isLandingPage && <Header />}
-        <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
-          <PullToRefresh onRefresh={handleGlobalRefresh}>
-            <AnimatePresence>
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.1, ease: "linear" }}
-              >
-                <Suspense fallback={null}>
-                  <Routes location={location}>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/workspace" element={<HomeScreen />} />
-                    <Route path="/tools" element={<ToolsScreen />} />
-                    <Route path="/merge" element={<MergeScreen />} />
-                    <Route path="/split" element={<SplitScreen />} />
-                    <Route path="/remove-pages" element={<RemovePagesScreen />} />
-                    <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
-                    <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
-                    <Route path="/scanner" element={<ScannerScreen />} />
-                    <Route path="/watermark" element={<WatermarkScreen />} />
-                    <Route path="/sign" element={<SignScreen />} />
-                    <Route path="/view" element={<ViewScreen />} />
-                    <Route path="/extract-text" element={<ExtractTextScreen />} />
-                    <Route path="/reader" element={<ReaderScreen />} />
-                    <Route path="/rotate" element={<RotateScreen />} />
-                    <Route path="/page-numbers" element={<PageNumbersScreen />} />
-                    <Route path="/extract-images" element={<ExtractImagesScreen />} />
 
-                    <Route path="/ai-settings" element={<AISettingsScreen />} />
-                    <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
-                    <Route path="/table-extractor" element={<TableExtractorScreen />} />
-                    <Route path="/my-files" element={<MyFilesScreen />} />
-                    <Route path="/smart-redact" element={<SmartRedactScreen />} />
-                    <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
-                    <Route path="/neural-diff" element={<NeuralDiffScreen />} />
-                    <Route path="/data-extractor" element={<DataExtractorScreen />} />
-                    <Route path="/pricing" element={<PricingScreen />} />
-                    <Route path="/legal/:type" element={<LegalScreen />} />
-                    <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
-                  </Routes>
-                </Suspense>
-              </motion.div>
-            </AnimatePresence>
-          </PullToRefresh>
-        </main>
-        {!isLandingPage && <BottomNav />}
-        <AnimatePresence>
-          {isBooting && (
-            <SystemBoot
-              onComplete={() => {
-                // Mark animation as done, but let the useEffect above handle the actual dismissal
-                // based on isDataReady
-                setBootAnimFinished(true);
-              }}
-            />
-          )}
-        </AnimatePresence>
+    <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
+      {!isLandingPage && <Header />}
+      <main className={`flex-1 ${isLandingPage ? '' : 'overflow-y-auto pb-20'} scroll-smooth bg-transparent`}>
+        <PullToRefresh onRefresh={handleGlobalRefresh}>
+          <AnimatePresence>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1, ease: "linear" }}
+            >
+              <Suspense fallback={null}>
+                <Routes location={location}>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/workspace" element={<HomeScreen />} />
+                  <Route path="/tools" element={<ToolsScreen />} />
+                  <Route path="/merge" element={<MergeScreen />} />
+                  <Route path="/split" element={<SplitScreen />} />
+                  <Route path="/remove-pages" element={<RemovePagesScreen />} />
+                  <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
+                  <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
+                  <Route path="/scanner" element={<ScannerScreen />} />
+                  <Route path="/watermark" element={<WatermarkScreen />} />
+                  <Route path="/sign" element={<SignScreen />} />
+                  <Route path="/view" element={<ViewScreen />} />
+                  <Route path="/extract-text" element={<ExtractTextScreen />} />
+                  <Route path="/reader" element={<ReaderScreen />} />
+                  <Route path="/rotate" element={<RotateScreen />} />
+                  <Route path="/page-numbers" element={<PageNumbersScreen />} />
+                  <Route path="/extract-images" element={<ExtractImagesScreen />} />
 
-        <AiPackNotification
-          message={activeNotification?.message || null}
-          type={activeNotification?.type || null}
-          onClose={() => {
-            ackAiNotification();
-            setActiveNotification(null);
-          }}
-        />
-        {!isLandingPage && <NeuralAssistant />}
-        <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
-      </div>
-    </GoogleOAuthProvider>
+                  <Route path="/ai-settings" element={<AISettingsScreen />} />
+                  <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
+                  <Route path="/table-extractor" element={<TableExtractorScreen />} />
+                  <Route path="/my-files" element={<MyFilesScreen />} />
+                  <Route path="/smart-redact" element={<SmartRedactScreen />} />
+                  <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
+                  <Route path="/neural-diff" element={<NeuralDiffScreen />} />
+                  <Route path="/data-extractor" element={<DataExtractorScreen />} />
+                  <Route path="/pricing" element={<PricingScreen />} />
+                  <Route path="/legal/:type" element={<LegalScreen />} />
+                  <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
+                  <Route path="/auth-callback" element={<GoogleAuthCallback />} />
+                </Routes>
+              </Suspense>
+            </motion.div>
+          </AnimatePresence>
+        </PullToRefresh>
+      </main>
+      {!isLandingPage && <BottomNav />}
+      <AnimatePresence>
+        {isBooting && (
+          <SystemBoot
+            onComplete={() => {
+              // Mark animation as done, but let the useEffect above handle the actual dismissal
+              // based on isDataReady
+              setBootAnimFinished(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AiPackNotification
+        message={activeNotification?.message || null}
+        type={activeNotification?.type || null}
+        onClose={() => {
+          ackAiNotification();
+          setActiveNotification(null);
+        }}
+      />
+      {!isLandingPage && <NeuralAssistant />}
+      <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={async () => {
+          // Reload app data after login
+          const user = await getCurrentUser();
+          if (user) {
+            await initSubscription(user as any);
+            // Force re-render with new data
+            window.location.reload();
+          }
+        }}
+      />
+    </div>
+
   );
 };
 

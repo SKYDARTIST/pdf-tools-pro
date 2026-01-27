@@ -11,6 +11,7 @@ import AIReportModal from '../components/AIReportModal';
 import AiLimitModal from '../components/AiLimitModal';
 import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
+import { useAIAuth } from '../hooks/useAIAuth';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -31,7 +32,7 @@ const DataExtractorScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -54,10 +55,8 @@ const DataExtractorScreen: React.FC = () => {
     const runExtraction = async () => {
         if (!file) return;
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
             return;
         }
 
@@ -468,7 +467,7 @@ Output ONLY raw CSV data.`;
                 onClose={() => setAuthModalOpen(false)}
                 onSuccess={async () => {
                     const user = await getCurrentUser();
-                    if (user) await initSubscription();
+                    if (user) await initSubscription(user);
                     runExtraction();
                 }}
             />

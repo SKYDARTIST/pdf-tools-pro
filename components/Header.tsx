@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Crown, Zap, Moon, Sun, Sparkles } from 'lucide-react';
+import { ArrowLeft, Crown, Zap, Moon, Sun, Sparkles, User } from 'lucide-react';
 import TaskCounter from './TaskCounter';
 import UpgradeModal from './UpgradeModal';
+import { getCurrentUser, GoogleUser } from '../services/googleAuthService';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Header: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [user, setUser] = useState<GoogleUser | null>(null);
   const isHome = location.pathname === '/' || location.pathname === '/workspace';
 
   useEffect(() => {
@@ -54,6 +56,19 @@ const Header: React.FC = () => {
     }
   };
 
+  // Auth Sync
+  useEffect(() => {
+    const fetchUser = async () => {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    };
+    fetchUser();
+
+    const handleAuthChange = () => fetchUser();
+    window.addEventListener('neural-auth-success', handleAuthChange);
+    return () => window.removeEventListener('neural-auth-success', handleAuthChange);
+  }, []);
+
   return (
     <header
       style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
@@ -95,6 +110,27 @@ const Header: React.FC = () => {
         />
 
         <div className="w-[1px] h-5 bg-gray-900/10 dark:bg-white/10 mx-0.5 hidden xs:block" />
+
+        {/* User Profile Avatar */}
+        <AnimatePresence>
+          {user && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              onClick={() => navigate('/ai-settings')}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-emerald-500/30 overflow-hidden cursor-pointer shrink-0"
+            >
+              {user.picture ? (
+                <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center">
+                  <User size={14} className="text-emerald-500" />
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Dark Mode Toggle */}
         <motion.button

@@ -14,11 +14,13 @@ import ToolGuide from '../components/ToolGuide';
 import { PDFDocument } from 'pdf-lib';
 import { extractTextFromPdf, renderMultiplePagesToImages } from '../utils/pdfExtractor';
 import { AuthModal } from '../components/AuthModal';
+import { useAIAuth } from '../hooks/useAIAuth';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
+  const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
   const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'lifting' | 'analyzed'>('idle');
@@ -35,13 +37,18 @@ const AntiGravityWorkspace: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [showAiLimit, setShowAiLimit] = useState(false);
   const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
-  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
 
-      // Check for consent first
+      // 1. Auth & Subscription Check
+      if (!await checkAndPrepareAI()) {
+        setPendingAction(() => () => processFile(selected));
+        return;
+      }
+
+      // 2. Consent Check
       if (!hasConsent) {
         setPendingAction(() => () => processFile(selected));
         setShowConsent(true);
@@ -53,11 +60,10 @@ const AntiGravityWorkspace: React.FC = () => {
   };
 
   const processFile = async (selected: File) => {
-    // 1. Auth Check (Google Auth)
-    const user = await getCurrentUser();
-    if (!user) {
+    // Check for consent (re-check in case it was called from pending action)
+    if (!hasConsent) {
       setPendingAction(() => () => processFile(selected));
-      setAuthModalOpen(true);
+      setShowConsent(true);
       return;
     }
 
@@ -582,7 +588,7 @@ const AntiGravityWorkspace: React.FC = () => {
         onSuccess={async () => {
           // Refresh subscription to get latest credits
           const user = await getCurrentUser();
-          if (user) await initSubscription();
+          if (user) await initSubscription(user);
 
           // Resume pending action if any
           if (pendingAction) {

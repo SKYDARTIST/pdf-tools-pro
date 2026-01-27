@@ -88,12 +88,20 @@ public class MainActivity extends BridgeActivity {
      */
     public class DownloadBridge {
 
+        private String sanitizeFilename(String filename) {
+            if (filename == null)
+                return "download_" + System.currentTimeMillis();
+            // Remove path traversal components and restrict to safe chars
+            return filename.replaceAll("[^a-zA-Z0-9._-]", "_").replaceAll("\\.\\.+", ".");
+        }
+
         @JavascriptInterface
         public String saveToCache(String base64Data, String filename) {
             try {
+                String safeName = sanitizeFilename(filename);
                 byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
                 File cacheDir = getCacheDir();
-                File file = new File(cacheDir, filename);
+                File file = new File(cacheDir, safeName);
 
                 try (FileOutputStream fos = new FileOutputStream(file)) {
                     fos.write(fileBytes);
@@ -111,9 +119,10 @@ public class MainActivity extends BridgeActivity {
         @JavascriptInterface
         public boolean appendToCache(String base64Data, String filename) {
             try {
+                String safeName = sanitizeFilename(filename);
                 byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
                 File cacheDir = getCacheDir();
-                File file = new File(cacheDir, filename);
+                File file = new File(cacheDir, safeName);
 
                 // Use true for append mode
                 try (FileOutputStream fos = new FileOutputStream(file, true)) {
@@ -129,6 +138,7 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void downloadFile(String base64Data, String filename, String mimeType) {
+            final String safeName = sanitizeFilename(filename);
             runOnUiThread(() -> {
                 try {
                     // Decode base64 to bytes
@@ -136,13 +146,13 @@ public class MainActivity extends BridgeActivity {
 
                     // Use DownloadManager for Android 10+
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                        saveFileModern(fileBytes, filename, mimeType);
+                        saveFileModern(fileBytes, safeName, mimeType);
                     } else {
-                        saveFileLegacy(fileBytes, filename);
+                        saveFileLegacy(fileBytes, safeName);
                     }
 
                     Toast.makeText(MainActivity.this,
-                            "Downloaded: " + filename,
+                            "Downloaded: " + safeName,
                             Toast.LENGTH_LONG).show();
 
                 } catch (Exception e) {

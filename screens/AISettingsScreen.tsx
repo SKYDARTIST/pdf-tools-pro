@@ -1,11 +1,21 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentUser, logout, GoogleUser } from '../services/googleAuthService';
 
 const AISettingsScreen: React.FC = () => {
   const [isAiEnabled, setIsAiEnabled] = useState(true);
+  const [user, setUser] = useState<GoogleUser | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    };
+    fetchUser();
+  }, []);
 
   return (
     <motion.div
@@ -77,6 +87,53 @@ const AISettingsScreen: React.FC = () => {
           </motion.div>
         </motion.div>
 
+        {/* User Profile Section - Integrated Design */}
+        <AnimatePresence>
+          {user && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="monolith-card p-8 space-y-8 border-none"
+            >
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-3xl border-2 border-emerald-500/20 overflow-hidden shrink-0">
+                  {user.picture ? (
+                    <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center">
+                      <User size={24} className="text-emerald-500" />
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white truncate">{user.name}</h4>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 truncate">{user.email}</p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-black/5 dark:border-white/5 flex flex-col gap-4">
+                <div className="flex items-center gap-3 text-emerald-500">
+                  <Shield size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Neural Link Secure</span>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02, x: 5 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    logout();
+                    navigate('/');
+                  }}
+                  className="flex items-center gap-3 text-red-500/60 hover:text-red-500 transition-colors group"
+                >
+                  <LogOut size={16} className="group-hover:rotate-12 transition-transform" />
+                  <span className="text-[11px] font-black uppercase tracking-[0.4em]">Disconnect Account</span>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Technical Detail Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
@@ -101,8 +158,6 @@ const AISettingsScreen: React.FC = () => {
             </motion.div>
           ))}
         </div>
-
-
 
         {/* Platform Protocol Transparency */}
         <div className="monolith-card p-8 space-y-6 border-dashed border-2 border-black/10 dark:border-white/10 bg-transparent shadow-none">

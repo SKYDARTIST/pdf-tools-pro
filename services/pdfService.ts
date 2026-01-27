@@ -65,6 +65,20 @@ const safeExecute = async <T>(fn: () => Promise<T>): Promise<T> => {
   }
 };
 
+/**
+ * Sanitizes text for pdf-lib standard fonts (WinAnsiEncoding)
+ * Prevents crashes on smart quotes, em-dashes, and other UTF-8 characters.
+ */
+const sanitizeForWinAnsi = (text: string): string => {
+  if (!text) return "";
+  return text
+    .replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+    .replace(/[\u2013\u2014]/g, '-') // En/Em dashes
+    .replace(/\u2026/g, '...')      // Ellipsis
+    .replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, '?'); // Replace unknown chars with ?
+};
+
 export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const mergedPdf = await PDFDocument.create();
@@ -108,6 +122,9 @@ export const createPdfFromText = async (title: string, content: string): Promise
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+    const safeTitle = sanitizeForWinAnsi(title);
+    const safeContent = sanitizeForWinAnsi(content);
+
     let page = pdfDoc.addPage([600, 800]);
     const { width, height } = page.getSize();
     const margin = 50;
@@ -115,7 +132,7 @@ export const createPdfFromText = async (title: string, content: string): Promise
     let y = height - margin;
 
     // Draw Title
-    page.drawText(title, {
+    page.drawText(safeTitle, {
       x: margin,
       y: y,
       size: 18,
@@ -126,7 +143,7 @@ export const createPdfFromText = async (title: string, content: string): Promise
 
     const fontSize = 10;
     const lineHeight = fontSize * 1.5;
-    const lines = content.split('\n');
+    const lines = safeContent.split('\n');
 
     for (const line of lines) {
       if (!line.trim()) {

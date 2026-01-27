@@ -13,6 +13,7 @@ import AIReportModal from '../components/AIReportModal';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { Flag } from 'lucide-react';
 import { compressImage } from '../utils/imageProcessor';
+import { useAIAuth } from '../hooks/useAIAuth';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -31,7 +32,7 @@ const TableExtractorScreen: React.FC = () => {
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -49,11 +50,9 @@ const TableExtractorScreen: React.FC = () => {
 
 
     const processFile = async (selected: File) => {
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
             setPendingFile(selected);
-            setAuthModalOpen(true);
             return;
         }
 
@@ -359,7 +358,7 @@ const TableExtractorScreen: React.FC = () => {
                 onClose={() => setAuthModalOpen(false)}
                 onSuccess={async () => {
                     const user = await getCurrentUser();
-                    if (user) await initSubscription();
+                    if (user) await initSubscription(user);
                     if (pendingFile) {
                         processFile(pendingFile);
                         setPendingFile(null);

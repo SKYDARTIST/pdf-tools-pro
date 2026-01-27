@@ -12,6 +12,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import { downloadFile } from '../services/downloadService';
+import { useAIAuth } from '../hooks/useAIAuth';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -39,7 +40,7 @@ const SmartRedactScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
     const navigate = useNavigate();
 
@@ -114,6 +115,7 @@ const SmartRedactScreen: React.FC = () => {
             });
         } catch (error) {
             console.error("PDF Export Failed:", error);
+            alert("Neural PDF engine failed to compile the report. Please try the 'Text' or 'Image' export option.");
         }
     };
 
@@ -186,10 +188,8 @@ const SmartRedactScreen: React.FC = () => {
     const startRedaction = async () => {
         if (!file) return;
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
             return;
         }
 
@@ -563,7 +563,7 @@ Balance: $12,450.00 (PRESERVED)
                 onClose={() => setAuthModalOpen(false)}
                 onSuccess={async () => {
                     const user = await getCurrentUser();
-                    if (user) await initSubscription();
+                    if (user) await initSubscription(user);
                     startRedaction();
                 }}
             />

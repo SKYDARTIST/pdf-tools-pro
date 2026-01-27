@@ -20,6 +20,7 @@ import ToolGuide from '../components/ToolGuide';
 import MindMapSettingsModal from '../components/MindMapSettingsModal';
 import NeuralProtocolBrief from '../components/NeuralProtocolBrief';
 import BriefingSettingsModal from '../components/BriefingSettingsModal';
+import { useAIAuth } from '../hooks/useAIAuth';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -62,7 +63,7 @@ const ReaderScreen: React.FC = () => {
     const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
-    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
 
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
     const [isAuditing, setIsAuditing] = useState(false);
@@ -177,10 +178,9 @@ const ReaderScreen: React.FC = () => {
     const generateMindMap = async (settings?: { range: string; focus: string }) => {
         if (!file || isGeneratingMindMap) return;
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
+            setPendingAction(() => () => generateMindMap(settings));
             return;
         }
 
@@ -271,10 +271,9 @@ const ReaderScreen: React.FC = () => {
     const toggleAudioNarrator = async (settings?: { range: string; focus: string }) => {
         if (isAudioPlaying) { resetAllStates(); return; }
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
+            setPendingAction(() => () => toggleAudioNarrator(settings));
             return;
         }
 
@@ -329,10 +328,9 @@ const ReaderScreen: React.FC = () => {
     const generateOutline = async () => {
         if (!file || isGeneratingOutline) return;
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
+            setPendingAction(() => generateOutline);
             return;
         }
 
@@ -392,10 +390,9 @@ const ReaderScreen: React.FC = () => {
     const runNeuralAudit = async () => {
         if (!file || isAuditing) return;
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
+            setPendingAction(() => runNeuralAudit);
             return;
         }
 
@@ -737,7 +734,12 @@ const ReaderScreen: React.FC = () => {
                 onClose={() => setAuthModalOpen(false)}
                 onSuccess={async () => {
                     const user = await getCurrentUser();
-                    if (user) await initSubscription();
+                    if (user) await initSubscription(user);
+
+                    if (pendingAction) {
+                        pendingAction();
+                        setPendingAction(null);
+                    }
                 }}
             />
         </motion.div >

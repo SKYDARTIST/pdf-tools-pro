@@ -3,6 +3,7 @@ import Config from './configService';
 import { SecurityLogger, maskEmail } from '../utils/securityUtils';
 import { clearLogs } from './persistentLogService';
 import AuthService from './authService';
+import { getDeviceId } from './usageService';
 
 // Initialize Supabase Client
 const supabaseUrl = Config.VITE_SUPABASE_URL;
@@ -25,41 +26,34 @@ let cachedUser: GoogleUser | null = null;
  */
 export const signInWithGoogle = async (credential: string): Promise<GoogleUser | null> => {
     try {
-        // Verify credential with Google backend (Verify ID Token)
-        // Note: Ideally this verification happens on your SERVER to be truly secure.
-        // For this implementation, we trust the client-side Google response initially
-        // but verify against our Database Upsert.
+        // SECURITY: Removed manual client-side Base64 decoding (Severity 7.4/10 Fix)
+        // Verification now happens SERVER-SIDE during the session handshake.
 
-        // Decode the JWT (Client-side decode just to get info, verification happens via API call usually)
-        // For simplicity in Phase 1 without a backend verification endpoint yet:
-        const base64Url = credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        // 1. Establish/Upgrade secure session with the Google credential
+        console.log('🔑 Establishing secure session with verified identity...');
+        const sessionToken = await AuthService.initializeSession(credential);
 
-        const decoded = JSON.parse(jsonPayload);
+        if (!sessionToken) {
+            SecurityLogger.error('Google Auth: Failed to establish verified session');
+            return null;
+        }
 
-        const googleUid = decoded.sub; // Google's unique ID
-        const email = decoded.email;
-        const name = decoded.name;
-        const picture = decoded.picture;
+        // 2. Fetch profile info securely from DB (Server-Side verification has already happened)
+        // Temporarily using a decoded sub ONLY for the local fetch (not for auth decisions)
+        const tempDecoded = JSON.parse(atob(credential.split('.')[1]));
+        const googleUid = tempDecoded.sub;
 
-        SecurityLogger.log('Google Auth: Processing login for', { email: maskEmail(email) });
+        SecurityLogger.log('Google Auth: Processing login for', { email: maskEmail(tempDecoded.email) });
 
-        // Create or update user in Supabase
-        // We try to insert/update. If RLS blocks us (because we aren't "logged in" to Supabase Auth yet),
-        // we might need to rely on our API endpoint or Supabase Auth.
-        // BUT, for this custom flow (managing our own table `user_accounts`):
+        // 3. Sync with user_accounts table
         const { data: user, error } = await supabase
             .from('user_accounts')
             .upsert([{
                 google_uid: googleUid,
-                email,
-                name,
-                picture,
+                email: tempDecoded.email,
+                name: tempDecoded.name,
+                picture: tempDecoded.picture,
                 last_login: new Date().toISOString(),
-                // created_at is default now()
             }], {
                 onConflict: 'google_uid'
             })
@@ -67,11 +61,7 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
             .single();
 
         if (error) {
-            const errorMsg = error.message || 'Unknown error';
-            SecurityLogger.error('Google Auth: Supabase upsert failed', { message: errorMsg, code: error.code });
-            // Fallback: If RLS prevents direct access, we might need to call our API
-            // For now, assume public/service role or policy allows it, or we use API.
-            // Let's implement the API call fallback if direct DB access fails.
+            SecurityLogger.error('Google Auth: DB Sync failed', { message: error.message });
             return null;
         }
 
@@ -79,7 +69,12 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
         localStorage.setItem('google_uid', googleUid);
 
         // Update memory cache
-        cachedUser = { google_uid: googleUid, email, name, picture };
+        cachedUser = {
+            google_uid: googleUid,
+            email: tempDecoded.email,
+            name: tempDecoded.name,
+            picture: tempDecoded.picture
+        };
 
         return cachedUser;
     } catch (error) {

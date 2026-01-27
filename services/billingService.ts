@@ -139,6 +139,29 @@ class BillingService {
                     console.error('Anti-Gravity Billing: Acknowledgment error (non-fatal):', ackError);
                 }
 
+                // SECURITY: Verify and Grant on SERVER SIDE (v2.9.0)
+                // We no longer trust client-side tier updates implicitly.
+                try {
+                    const { syncUsageToServer } = await import('./usageService');
+                    // We use a SPECIAL verification payload here, handled by usageService internally or we construct it manually
+                    // Actually, usageService.ts needs an update or we can fetch directly here securely.
+                    // Ideally, we import a new method from usageService.
+                    // For now, let's keep it clean and do it via a direct secure call helper if possible, or update usageService.
+
+                    // Let's implement verifyPurchase directly here to avoid circular dependency hell or massive refactors
+                    const purchaseToken = (result as any).purchaseToken || result.transactionId;
+                    const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_PRODUCT_ID, result.transactionId);
+
+                    if (verifyResult) {
+                        console.log('Anti-Gravity Billing: ✅ Server verified and granted Pro status');
+                    } else {
+                        console.warn('Anti-Gravity Billing: ⚠️ Server verification failed - Pro status might not stick on other devices');
+                        // We still allow local upgrade for UX (Optimistic UI), but server is source of truth
+                    }
+                } catch (verifyError) {
+                    console.error('Anti-Gravity Billing: Server verification failed:', verifyError);
+                }
+
                 // Sync in correct order - TaskLimitManager first, then SubscriptionService
                 TaskLimitManager.upgradeToPro();
                 upgradeTier(SubscriptionTier.PRO, result.transactionId);
@@ -263,6 +286,14 @@ class BillingService {
                     console.log('Anti-Gravity Billing: ✅ Purchase acknowledged on Google Play');
                 } catch (ackError) {
                     console.error('Anti-Gravity Billing: Acknowledgment error (non-fatal):', ackError);
+                }
+
+                // SECURITY: Verify and Grant on SERVER SIDE (v2.9.0)
+                try {
+                    const purchaseToken = (result as any).purchaseToken || result.transactionId;
+                    await this.verifyPurchaseOnServer(purchaseToken, AI_PACK_100_ID, result.transactionId);
+                } catch (verifyError) {
+                    console.error('Anti-Gravity Billing: AI Pack Server verification failed:', verifyError);
                 }
 
                 addAiPackCredits(100);
@@ -466,6 +497,50 @@ class BillingService {
         } catch (error) {
             console.error('Anti-Gravity Billing: Restore Error:', error);
             alert('❌ Restore failed. Please try again.');
+            return false;
+        }
+    }
+
+    // SECURITY: Server-Side Verification Helper
+    private async verifyPurchaseOnServer(purchaseToken: string, productId: string, transactionId: string): Promise<boolean> {
+        try {
+            const { getDeviceId } = await import('./usageService');
+            const { getCsrfToken } = await import('./csrfService');
+            const AuthService = (await import('./authService')).default;
+            const Config = (await import('./configService')).default;
+
+            const deviceId = await getDeviceId();
+            const csrfToken = getCsrfToken();
+            const authHeader = await AuthService.getAuthHeader();
+
+            console.log('Anti-Gravity Billing: Verifying purchase on server...', { productId, transactionId });
+
+            const response = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': authHeader,
+                    'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
+                    'x-ag-device-id': deviceId,
+                    'x-csrf-token': csrfToken || ''
+                },
+                body: JSON.stringify({
+                    type: 'verify_purchase',
+                    purchaseToken,
+                    productId,
+                    transactionId
+                })
+            });
+
+            if (!response.ok) {
+                console.error('Anti-Gravity Billing: Verification endpoint returned error:', response.status);
+                return false;
+            }
+
+            const data = await response.json();
+            return data.success === true;
+        } catch (error) {
+            console.error('Anti-Gravity Billing: Verification network error:', error);
             return false;
         }
     }

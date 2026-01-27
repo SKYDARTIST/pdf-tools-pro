@@ -12,6 +12,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag, Share2 } from 'lucide-react';
 import { createPdfFromText } from '../services/pdfService';
+import { useAIAuth } from '../hooks/useAIAuth';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -32,7 +33,7 @@ const NeuralDiffScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const [authModalOpen, setAuthModalOpen] = useState(false);
+    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
@@ -56,10 +57,8 @@ const NeuralDiffScreen: React.FC = () => {
     const runNeuralDiff = async () => {
         if (!file1 || !file2) return;
 
-        // AUTH CHECK (Google Auth)
-        const user = await getCurrentUser();
-        if (!user) {
-            setAuthModalOpen(true);
+        // 1. Auth & Subscription Check
+        if (!await checkAndPrepareAI()) {
             return;
         }
 
@@ -346,7 +345,7 @@ const NeuralDiffScreen: React.FC = () => {
                 onClose={() => setAuthModalOpen(false)}
                 onSuccess={async () => {
                     const user = await getCurrentUser();
-                    if (user) await initSubscription();
+                    if (user) await initSubscription(user);
                     runNeuralDiff();
                 }}
             />

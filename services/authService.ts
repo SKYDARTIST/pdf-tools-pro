@@ -13,16 +13,20 @@ class AuthService {
     private tokenExpiry: number = 0;
 
     /**
-     * initializes the secure session by exchanging integrity proofs for a session token
+     * initializes the secure session by exchanging integrity proofs (and optionally identity) for a session token
      */
-    async initializeSession(): Promise<string | null> {
-        // If we have a valid token, return it
-        if (this.sessionToken && Date.now() < this.tokenExpiry) {
+    async initializeSession(credential?: string): Promise<string | null> {
+        // If we have a valid token AND no new identity is being bound, return it
+        const isExpired = !this.sessionToken || Date.now() >= this.tokenExpiry;
+        const needsRefresh = !isExpired && (this.tokenExpiry - Date.now() < 5 * 60 * 1000); // 5 min buffer
+
+        // If it's valid and NOT a forced login (credential provided), return existing
+        if (!isExpired && !needsRefresh && !credential) {
             return this.sessionToken;
         }
 
         try {
-            console.log('Anti-Gravity Auth: Initializing secure session...');
+            console.log(credential ? 'Anti-Gravity Auth: UPGRADING session identity...' : 'Anti-Gravity Auth: Handshaking...');
             const deviceId = await getDeviceId();
             const integrityToken = await getIntegrityToken();
             const signature = Config.VITE_AG_PROTOCOL_SIGNATURE;
@@ -35,7 +39,10 @@ class AuthService {
                     'x-ag-device-id': deviceId,
                     'x-ag-integrity-token': integrityToken
                 },
-                body: JSON.stringify({ type: 'session_init' })
+                body: JSON.stringify({
+                    type: 'session_init',
+                    credential // PASS verified ID token to backend
+                })
             });
 
             if (!response.ok) {
@@ -46,15 +53,14 @@ class AuthService {
             const data = await response.json();
             if (data.sessionToken) {
                 this.sessionToken = data.sessionToken;
-                // expired in 1 hour usually, but we'll respect server or default to 55 mins
+                // Expiry buffer: 55 mins (server issues 1h)
                 this.tokenExpiry = Date.now() + (55 * 60 * 1000);
 
-                // SECURITY: Store CSRF token received from server for subsequent requests
                 if (data.csrfToken) {
                     setCsrfToken(data.csrfToken);
                 }
 
-                console.log('Anti-Gravity Auth: ✅ Secure session established');
+                console.log('Anti-Gravity Auth: ✅ Secure session synchronized');
                 return this.sessionToken;
             }
         } catch (error) {
@@ -65,10 +71,10 @@ class AuthService {
 
     /**
      * Returns the Authorization header value (Bearer <token>)
-     * Automatically refreshes session if needed
+     * Automatically triggers silent refresh if nearing expiry
      */
     async getAuthHeader(): Promise<string> {
-        let token = await this.initializeSession();
+        const token = await this.initializeSession();
         return token ? `Bearer ${token}` : '';
     }
 
