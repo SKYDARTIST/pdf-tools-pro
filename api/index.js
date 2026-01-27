@@ -78,43 +78,70 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString()
     });
 
-    if (!isGuidanceOrTime) {
-        // Protocol Integrity Check - signature must match environment variable
+    // STAGE 0: Session Authentication & Integrity
+    // --------------------------------------------------------------------------------
+    const { createHmac } = await import('node:crypto');
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'FALLBACK_SECRET_DO_NOT_USE_IN_PROD';
+
+    // Helper: Generate Session Token (Stateless HMAC)
+    const generateSessionToken = (deviceId) => {
+        const payload = JSON.stringify({
+            uid: deviceId,
+            exp: Date.now() + (60 * 60 * 1000), // 1 hour expiry
+            scope: 'access'
+        });
+        const signature = createHmac('sha256', secret).update(payload).digest('hex');
+        return Buffer.from(payload).toString('base64') + '.' + signature;
+    };
+
+    // Helper: Verify Session Token
+    const verifySessionToken = (token) => {
+        if (!token) return null;
+        try {
+            const [b64Payload, signature] = token.split('.');
+            if (!b64Payload || !signature) return null;
+
+            const expectedSignature = createHmac('sha256', secret).update(Buffer.from(b64Payload, 'base64').toString()).digest('hex');
+            if (signature !== expectedSignature) return null;
+
+            const payload = JSON.parse(Buffer.from(b64Payload, 'base64').toString());
+            if (Date.now() > payload.exp) return null; // Expired
+
+            return payload;
+        } catch (e) { return null; }
+    };
+
+    // Handshake Endpoint: Exchange Integrity Token for Session Token
+    if (requestType === 'session_init') {
         const envSignature = process.env.AG_PROTOCOL_SIGNATURE;
-
-        if (!envSignature) {
-            console.warn('CRITICAL WARNING: AG_PROTOCOL_SIGNATURE not set in Vercel - using insecure default');
-        }
-
         const expectedSignature = envSignature || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
 
-        if (!expectedSignature || signature !== expectedSignature) {
-            console.error('Anti-Gravity API: Signature validation failed:', {
-                expected: expectedSignature ? '***SET***' : '***NOT_SET***',
-                received: signature ? '***SET***' : '***NOT_SET***',
-                match: expectedSignature && signature === expectedSignature,
-                requestType,
-                deviceId: deviceId?.substring(0, 8) + '...'
-            });
-            return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL', details: 'Neural link signature invalid or missing.' });
+        // 1. Verify Protocol Signature
+        if (!signature || signature !== expectedSignature) {
+            return res.status(401).json({ error: 'UNAUTHORIZED_PROTOCOL' });
         }
 
-        if (!deviceId) {
-            return res.status(401).json({ error: 'MISSING_IDENTITY', details: 'Device identification payload is empty.' });
-        }
-
-        // Play Integrity Verification (Simulation)
+        // 2. Verify Mock Integrity (Phase 6: Upgrade this to Google Play API)
         if (!integrityToken) {
-            return res.status(401).json({ error: 'INTEGRITY_FAILURE', details: 'Play Integrity token missing. Session discarded.' });
+            return res.status(401).json({ error: 'INTEGRITY_REQUIRED' });
         }
 
-        try {
-            const decoded = JSON.parse(Buffer.from(integrityToken, 'base64').toString());
-            if (decoded.deviceId !== deviceId) {
-                return res.status(401).json({ error: 'INTEGRITY_MISMATCH', details: 'Device ID does not match integrity payload.' });
-            }
-        } catch (e) {
-            return res.status(401).json({ error: 'INTEGRITY_CORRUPTION', details: 'Integrity payload is malformed.' });
+        // 3. Issue Session Token
+        const token = generateSessionToken(deviceId);
+        return res.status(200).json({ sessionToken: token });
+    }
+
+    if (!isGuidanceOrTime) {
+        // Enforce Session Token for all other requests
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        const session = verifySessionToken(token);
+
+        if (!session || session.uid !== deviceId) {
+            // Fallback for transition period: If strict env var not set, allow old method?
+            // NO. User requested "Fix ASAP". Strict enforcement.
+            console.warn(`Anti-Gravity Security: Blocked unauthenticated request from ${deviceId}`);
+            return res.status(401).json({ error: 'INVALID_SESSION', details: 'Session expired or invalid. Please restart app.' });
         }
     }
 

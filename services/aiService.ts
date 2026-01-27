@@ -8,6 +8,7 @@ const aiCache = new Map<string, string>();
 
 import { getDeviceId } from './usageService';
 import { getIntegrityToken } from './integrityService';
+import AuthService from './authService';
 
 export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' | 'guidance' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
   // Neuro-Caching Logic
@@ -37,6 +38,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': await AuthService.getAuthHeader(),
           'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
           'x-ag-device-id': deviceId,
           'x-ag-integrity-token': integrityToken

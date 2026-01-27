@@ -1,5 +1,6 @@
 import { UserSubscription, SubscriptionTier } from './subscriptionService';
 import { getIntegrityToken } from './integrityService';
+import AuthService from './authService';
 
 import { Device } from '@capacitor/device';
 
@@ -55,6 +56,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': await AuthService.getAuthHeader(),
                 'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
                 'x-ag-device-id': deviceId,
                 'x-ag-integrity-token': integrityToken
@@ -125,6 +127,7 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': await AuthService.getAuthHeader(),
                 'x-ag-signature': signature,
                 'x-ag-device-id': deviceId,
                 'x-ag-integrity-token': integrityToken
