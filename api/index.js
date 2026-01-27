@@ -87,16 +87,16 @@ export default async function handler(req, res) {
         return id.substring(0, 8) + '...' + id.substring(id.length - 4);
     };
 
-    // GUIDANCE BYPASS: Skip all validation for guidance or time checks
+    // GUIDANCE BYPASS: Skip all validation for guidance requests only
     const { type: requestType = '', usage = null } = req.body || {};
-    const isGuidanceOrTime = requestType === 'guidance' || requestType === 'server_time';
+    const isGuidance = requestType === 'guidance';
 
     console.log('Anti-Gravity API: Incoming request:', {
         type: requestType,
         deviceId: deviceId?.substring(0, 8) + '...',
         hasSignature: !!signature,
         hasIntegrityToken: !!integrityToken,
-        isGuidanceOrTime,
+        isGuidance,
         timestamp: new Date().toISOString()
     });
 
@@ -251,15 +251,13 @@ export default async function handler(req, res) {
         return res.status(200).json({ sessionToken: token, csrfToken: csrfToken });
     }
 
-    if (!isGuidanceOrTime) {
-        // Enforce Session Token for all other requests
+    if (!isGuidance) {
+        // Enforce Session Token for all non-guidance requests (includes server_time)
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
         const session = verifySessionToken(token);
 
         if (!session || session.uid !== deviceId) {
-            // Fallback for transition period: If strict env var not set, allow old method?
-            // NO. User requested "Fix ASAP". Strict enforcement.
             console.warn(`Anti-Gravity Security: Blocked unauthenticated request from ${maskDeviceId(deviceId)}`);
             return res.status(401).json({ error: 'INVALID_SESSION', details: 'Session expired or invalid. Please restart app.' });
         }

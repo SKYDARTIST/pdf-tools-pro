@@ -2,6 +2,8 @@
  * Server Time Service - Fetches real time from backend for clock validation
  */
 import { getDeviceId } from './usageService';
+import Config from './configService';
+import AuthService from './authService';
 
 let lastFetchTime = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // Cache for 5 minutes
@@ -14,18 +16,19 @@ export const fetchServerTime = async (): Promise<string | null> => {
     }
 
     try {
-        const isCapacitor = !!(window as any).Capacitor;
-        const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
-        const backendUrl = isDevelopment
-            ? 'http://localhost:3000/api/index'
-            : 'https://pdf-tools-pro-indol.vercel.app/api/index';
+        const backendUrl = `${Config.VITE_AG_API_URL}/api/index`;
+        const deviceId = await getDeviceId();
+
+        // SECURITY: Require authenticated session token for server_time endpoint
+        const authHeader = await AuthService.getAuthHeader();
 
         const response = await fetch(backendUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
-                'x-ag-device-id': await getDeviceId()
+                'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
+                'x-ag-device-id': deviceId,
+                'Authorization': authHeader
             },
             body: JSON.stringify({ type: 'server_time' }),
         });
