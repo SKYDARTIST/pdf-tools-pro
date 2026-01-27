@@ -22,7 +22,7 @@ let lastDiscovery = 0;
 
 // RATE LIMITING (In-Memory for Warm Instances)
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 Minute
-const MAX_REQUESTS = 30; // 30 reqs / min
+const MAX_REQUESTS = 10; // 10 reqs / min
 const ipRequestCounts = new Map(); // Store: { count, startTime }
 
 // Cleanup interval (every 5 mins) to prevent memory leaks
