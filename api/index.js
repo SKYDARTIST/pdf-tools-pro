@@ -80,7 +80,13 @@ export default async function handler(req, res) {
 
     if (!isGuidanceOrTime) {
         // Protocol Integrity Check - signature must match environment variable
-        const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+        const envSignature = process.env.AG_PROTOCOL_SIGNATURE;
+
+        if (!envSignature) {
+            console.warn('CRITICAL WARNING: AG_PROTOCOL_SIGNATURE not set in Vercel - using insecure default');
+        }
+
+        const expectedSignature = envSignature || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
 
         if (!expectedSignature || signature !== expectedSignature) {
             console.error('Anti-Gravity API: Signature validation failed:', {

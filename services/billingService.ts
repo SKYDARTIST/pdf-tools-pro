@@ -143,13 +143,28 @@ class BillingService {
                 TaskLimitManager.upgradeToPro();
                 upgradeTier(SubscriptionTier.PRO, result.transactionId);
 
-                // Verify both storages are synced
+                // STRICT VERIFICATION: Ensure both storage systems agreed
                 const isProInLimit = TaskLimitManager.isPro();
                 const subscription = TaskLimitManager.getSubscriptionSync();
+                const isProInSub = subscription?.tier === SubscriptionTier.PRO || subscription?.tier === SubscriptionTier.PREMIUM || subscription?.tier === SubscriptionTier.LIFETIME;
+
+                if (!isProInLimit || !isProInSub) {
+                    console.warn('Anti-Gravity Billing: ⚠️ Storage drift detected immediately after purchase', {
+                        isProInLimit,
+                        isProInSub
+                    });
+
+                    // RETRY: Try one more forceful sync
+                    if (isProInLimit && !isProInSub) {
+                        upgradeTier(SubscriptionTier.PRO, result.transactionId);
+                    } else if (!isProInLimit) {
+                        TaskLimitManager.upgradeToPro();
+                    }
+                }
+
                 console.log('Anti-Gravity Billing: Post-purchase verification:', {
-                    isProInLimit,
-                    subscriptionTier: subscription?.tier,
-                    aiPackCredits: subscription?.aiPackCredits
+                    isProInLimit: TaskLimitManager.isPro(),
+                    subscriptionTier: TaskLimitManager.getSubscriptionSync()?.tier,
                 });
 
                 alert('Upgrade Successful! Pro features are now unlocked.');
@@ -173,7 +188,25 @@ class BillingService {
                     TaskLimitManager.upgradeToPro();
                     upgradeTier(SubscriptionTier.PRO, undefined, true);
 
+                    // STRICT VERIFICATION: Ensure both storage systems agreed
+                    const isProInLimit = TaskLimitManager.isPro();
                     const subscription = TaskLimitManager.getSubscriptionSync();
+                    const isProInSub = subscription?.tier === SubscriptionTier.PRO || subscription?.tier === SubscriptionTier.PREMIUM || subscription?.tier === SubscriptionTier.LIFETIME;
+
+                    if (!isProInLimit || !isProInSub) {
+                        console.warn('Anti-Gravity Billing: ⚠️ Storage drift detected after "already owned" activation', {
+                            isProInLimit,
+                            isProInSub
+                        });
+
+                        // RETRY: Try one more forceful sync
+                        if (isProInLimit && !isProInSub) {
+                            upgradeTier(SubscriptionTier.PRO, undefined, true);
+                        } else if (!isProInLimit) {
+                            TaskLimitManager.upgradeToPro();
+                        }
+                    }
+
                     console.log('Anti-Gravity Billing: ✅ Pro directly activated after "already owned" detection:', {
                         tier: subscription?.tier,
                         aiPackCredits: subscription?.aiPackCredits
@@ -386,7 +419,26 @@ class BillingService {
                     hasProRestore = true;
                     console.log('Anti-Gravity Billing: ✅ Restoring Pro status from manual restore...');
                     TaskLimitManager.upgradeToPro();
-                    upgradeTier(SubscriptionTier.PRO, purchase.transactionId);
+                    upgradeTier(SubscriptionTier.PRO, purchase.transactionId, true);
+
+                    // STRICT VERIFICATION: Ensure both storage systems agreed
+                    const isProInLimit = TaskLimitManager.isPro();
+                    const subscription = TaskLimitManager.getSubscriptionSync();
+                    const isProInSub = subscription?.tier === SubscriptionTier.PRO || subscription?.tier === SubscriptionTier.PREMIUM || subscription?.tier === SubscriptionTier.LIFETIME;
+
+                    if (!isProInLimit || !isProInSub) {
+                        console.warn('Anti-Gravity Billing: ⚠️ Storage drift detected after manual restore', {
+                            isProInLimit,
+                            isProInSub
+                        });
+
+                        // RETRY: Try one more forceful sync
+                        if (isProInLimit && !isProInSub) {
+                            upgradeTier(SubscriptionTier.PRO, purchase.transactionId, true);
+                        } else if (!isProInLimit) {
+                            TaskLimitManager.upgradeToPro();
+                        }
+                    }
                     alert('✅ Pro status restored!');
                 }
 

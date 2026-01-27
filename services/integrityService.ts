@@ -7,6 +7,9 @@
 import { getDeviceId } from './usageService';
 
 export const getIntegrityToken = async (): Promise<string> => {
+    // WARNING: MOCK IMPLEMENTATION FOR DEVELOPMENT ONLY
+    // This must be replaced with @capacitor-community/google-play-integrity
+    // or Firebase App Check before production.
     // Note: In a production Android environment with Capacitor, this would call 
     // a native plugin for the Play Integrity API.
     // Documentation: https://developer.android.com/google/play/integrity
