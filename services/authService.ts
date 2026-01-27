@@ -1,13 +1,11 @@
 import { getDeviceId } from './usageService';
 import { getIntegrityToken } from './integrityService';
+import Config from './configService';
+import { setCsrfToken, clearCsrfToken } from './csrfService';
 
 // Backend URL selection (DRY principle)
 const getBackendUrl = () => {
-    const isCapacitor = !!(window as any).Capacitor;
-    const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
-    return isDevelopment
-        ? 'http://localhost:3000/api/index'
-        : 'https://pdf-tools-pro-indol.vercel.app/api/index';
+    return `${Config.VITE_AG_API_URL}/api/index`;
 };
 
 class AuthService {
@@ -27,7 +25,7 @@ class AuthService {
             console.log('Anti-Gravity Auth: Initializing secure session...');
             const deviceId = await getDeviceId();
             const integrityToken = await getIntegrityToken();
-            const signature = import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+            const signature = Config.VITE_AG_PROTOCOL_SIGNATURE;
 
             const response = await fetch(getBackendUrl(), {
                 method: 'POST',
@@ -50,6 +48,12 @@ class AuthService {
                 this.sessionToken = data.sessionToken;
                 // expired in 1 hour usually, but we'll respect server or default to 55 mins
                 this.tokenExpiry = Date.now() + (55 * 60 * 1000);
+
+                // SECURITY: Store CSRF token received from server for subsequent requests
+                if (data.csrfToken) {
+                    setCsrfToken(data.csrfToken);
+                }
+
                 console.log('Anti-Gravity Auth: ✅ Secure session established');
                 return this.sessionToken;
             }
@@ -74,6 +78,8 @@ class AuthService {
     clearSession() {
         this.sessionToken = null;
         this.tokenExpiry = 0;
+        // SECURITY: Clear CSRF token on logout
+        clearCsrfToken();
     }
 }
 

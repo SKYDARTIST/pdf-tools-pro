@@ -1,6 +1,9 @@
 import { UserSubscription, SubscriptionTier } from './subscriptionService';
 import { getIntegrityToken } from './integrityService';
 import AuthService from './authService';
+import Config from './configService';
+import { SecurityLogger, maskString } from '../utils/securityUtils';
+import { getCsrfToken } from './csrfService';
 
 import { Device } from '@capacitor/device';
 
@@ -68,23 +71,20 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
         const googleUser = await getCurrentUser();
 
         // AUTH STRATEGY: Prefer Google Auth, fallback to Device ID
+        const authHeader = await AuthService.getAuthHeader();
         const headers: any = {
             'Content-Type': 'application/json',
-            'Authorization': await AuthService.getAuthHeader(),
-            'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
+            'Authorization': authHeader,
+            'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
             'x-ag-integrity-token': integrityToken
         };
 
-        if (googleUser) {
-            headers['Authorization'] = `Bearer ${googleUser.google_uid}`;
-        } else {
+        if (!googleUser) {
             headers['x-ag-device-id'] = deviceId;
         }
 
         const apiEndpoint = googleUser ? '/api/user/subscription' : '/api/index';
-        const backendUrl = isDevelopment
-            ? `http://localhost:3000${apiEndpoint}`
-            : `https://pdf-tools-pro-indol.vercel.app${apiEndpoint}`;
+        const backendUrl = `${Config.VITE_AG_API_URL}${apiEndpoint}`;
 
         const response = await fetch(backendUrl, {
             method: googleUser ? 'GET' : 'POST',
@@ -95,8 +95,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
         if (!response.ok) {
             console.error('Anti-Gravity Billing: fetchUserUsage response not OK:', {
                 status: response.status,
-                statusText: response.statusText,
-                deviceId
+                statusText: response.statusText
             });
             return null;
         }
@@ -122,7 +121,6 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
     } catch (error) {
         console.error('Anti-Gravity Billing: fetchUserUsage failed:', {
             error: error instanceof Error ? error.message : String(error),
-            deviceId,
             timestamp: new Date().toISOString()
         });
     }
@@ -143,11 +141,9 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         // Use the new Unified API endpoint if possible, or fallback to index
         const apiEndpoint = googleUser ? '/api/user/subscription' : '/api/index';
 
-        const backendUrl = isDevelopment
-            ? `http://localhost:3000${apiEndpoint}`
-            : `https://pdf-tools-pro-indol.vercel.app${apiEndpoint}`;
+        const backendUrl = `${Config.VITE_AG_API_URL}${apiEndpoint}`;
 
-        const signature = import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+        const signature = Config.VITE_AG_PROTOCOL_SIGNATURE;
 
         // AUTH STRATEGY
         const headers: any = {
@@ -157,18 +153,19 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             'x-ag-integrity-token': integrityToken
         };
 
-        if (googleUser) {
-            headers['Authorization'] = `Bearer ${googleUser.google_uid}`;
-        } else {
+        if (!googleUser) {
             headers['x-ag-device-id'] = deviceId;
+            // SECURITY: Add CSRF token for state-changing requests (usage_sync)
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+                headers['x-csrf-token'] = csrfToken;
+            }
         }
 
-        console.log('Anti-Gravity Billing: Syncing usage to server...', {
-            deviceId: googleUser ? googleUser.email : deviceId,
+        SecurityLogger.log('Anti-Gravity Billing: Syncing usage to server...', {
+            user: googleUser ? googleUser.email : maskString(deviceId),
             aiPackCredits: usage.aiPackCredits,
             tier: usage.tier,
-            hasIntegrityToken: !!integrityToken,
-            hasSignature: !!signature,
             timestamp: new Date().toISOString()
         });
 
@@ -210,7 +207,6 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
     } catch (error) {
         console.error('Anti-Gravity Billing: syncUsageToServer network error:', {
             error: error instanceof Error ? error.message : String(error),
-            deviceId,
             timestamp: new Date().toISOString()
         });
     }

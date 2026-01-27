@@ -147,6 +147,20 @@ export default async function handler(req, res) {
         return Buffer.from(payload).toString('base64') + '.' + signature;
     };
 
+    // Helper: Generate CSRF Token (prevents cross-site request forgery on POST endpoints)
+    const generateCsrfToken = (deviceId) => {
+        const now = Date.now();
+        const randomBytes = Buffer.from(`${deviceId}-${now}-${Math.random()}`).toString('base64');
+        const csrfPayload = JSON.stringify({
+            csrf_jti: randomBytes,
+            uid: deviceId,
+            iat: now,
+            exp: now + (60 * 60 * 1000) // 1 hour expiry
+        });
+        const csrfSignature = createHmac('sha256', secret).update(csrfPayload).digest('hex');
+        return Buffer.from(csrfPayload).toString('base64') + '.' + csrfSignature;
+    };
+
     // Helper: Verify Session Token with strict validation
     const verifySessionToken = (token) => {
         if (!token || typeof token !== 'string') return null;
@@ -184,6 +198,39 @@ export default async function handler(req, res) {
         } catch (e) { return null; }
     };
 
+    // Helper: Verify CSRF Token
+    const verifyCsrfToken = (token) => {
+        if (!token || typeof token !== 'string') return null;
+        try {
+            const [b64Payload, signature] = token.split('.');
+            if (!b64Payload || !signature) return null;
+
+            const payloadStr = Buffer.from(b64Payload, 'base64').toString();
+            const expectedSignature = createHmac('sha256', secret).update(payloadStr).digest('hex');
+
+            // Constant-time comparison
+            if (signature.length !== expectedSignature.length) return null;
+            let signatureMatch = true;
+            for (let i = 0; i < signature.length; i++) {
+                if (signature[i] !== expectedSignature[i]) signatureMatch = false;
+            }
+            if (!signatureMatch) return null;
+
+            const payload = JSON.parse(payloadStr);
+
+            // Strict field validation
+            if (!payload.csrf_jti || typeof payload.csrf_jti !== 'string') return null;
+            if (!payload.uid || typeof payload.uid !== 'string') return null;
+            if (!payload.exp || typeof payload.exp !== 'number') return null;
+            if (!payload.iat || typeof payload.iat !== 'number') return null;
+
+            // Expiration check
+            if (Date.now() > payload.exp) return null;
+
+            return payload;
+        } catch (e) { return null; }
+    };
+
     // Handshake Endpoint: Exchange Integrity Token for Session Token
     if (requestType === 'session_init') {
         const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE;
@@ -198,9 +245,10 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'INTEGRITY_REQUIRED' });
         }
 
-        // 3. Issue Session Token
+        // 3. Issue Session Token and CSRF Token
         const token = generateSessionToken(deviceId);
-        return res.status(200).json({ sessionToken: token });
+        const csrfToken = generateCsrfToken(deviceId);
+        return res.status(200).json({ sessionToken: token, csrfToken: csrfToken });
     }
 
     if (!isGuidanceOrTime) {
@@ -280,6 +328,14 @@ export default async function handler(req, res) {
             }
 
             if (requestType === 'usage_sync') {
+                // SECURITY: CSRF Protection - Verify CSRF token for state-changing requests
+                const csrfHeader = req.headers['x-csrf-token'];
+                const csrfPayload = verifyCsrfToken(csrfHeader);
+                if (!csrfPayload || csrfPayload.uid !== deviceId) {
+                    console.warn(`Anti-Gravity Security: CSRF validation failed for ${maskDeviceId(deviceId)}`);
+                    return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED', details: 'Invalid or missing CSRF token. Please reinitialize session.' });
+                }
+
                 const { usage } = req.body;
                 if (!usage) return res.status(400).json({ error: "Missing usage payload" });
 
