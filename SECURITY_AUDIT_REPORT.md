@@ -23,7 +23,7 @@ The codebase has received **significant security improvements** since the previo
 
 **Exposed Credentials**:
 ```
-VITE_GEMINI_API_KEY=AIzaSyBtfpR6ayCJgAQ6_JYREdrGDLuu6FVCeJA
+VITE_GEMINI_API_KEY=AIzaSy... (LEAKED_KEY_MASKED)
 VITE_SUPABASE_ANON_KEY=eyJhbGc...acvpbJi0N0eWE6J8ohjvkJWCxV7cg6IEUpWAYlILl48
 VITE_AG_PROTOCOL_SIGNATURE=fc8b2c89aa9e3726cb7d28b974189e0de0bb4223c6ac39d2f6a3dd15f6eaaba8
 ```
