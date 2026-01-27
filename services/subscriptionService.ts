@@ -386,7 +386,7 @@ export const isAiPackAlreadyConsumed = (): boolean => {
 };
 
 // Upgrade user to a tier
-export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): void => {
+export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string, skipBonus: boolean = false): void => {
     const subscription = getSubscription();
     subscription.tier = tier;
     subscription.purchaseToken = purchaseToken;
@@ -400,6 +400,19 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
         }
     } catch (e) {
         console.warn("TaskLimitManager sync failed");
+    }
+
+    // TESTING PERIOD: Also grant 100 Neural Pack credits with Pro upgrade
+    // BUT only if they haven't received it before (prevents reset on reinstall)
+    // AND if skipBonus is false (restored users don't get new bonus)
+    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
+    if (!skipBonus && isTestingPeriod && tier === SubscriptionTier.PRO && !subscription.hasReceivedBonus) {
+        if (!subscription.aiPackCredits || subscription.aiPackCredits === 0) {
+            subscription.aiPackCredits = 100;
+        }
+        subscription.hasReceivedBonus = true;
+        saveSubscription(subscription); // Ensure we save the bonus update
     }
 
     // Persist to Supabase so it's not overwritten on next reload

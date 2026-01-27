@@ -29,6 +29,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       : 'https://pdf-tools-pro-indol.vercel.app/api/index';
 
     const integrityToken = await getIntegrityToken();
+    const deviceId = await getDeviceId();
 
     let response: Response;
     try {
@@ -37,7 +38,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
         headers: {
           'Content-Type': 'application/json',
           'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
-          'x-ag-device-id': getDeviceId(),
+          'x-ag-device-id': deviceId,
           'x-ag-integrity-token': integrityToken
         },
         body: JSON.stringify({ prompt, documentText: documentText || "", type, image, mimeType }),

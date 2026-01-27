@@ -171,7 +171,7 @@ class BillingService {
                 // Directly activate Pro locally since we've confirmed ownership
                 try {
                     TaskLimitManager.upgradeToPro();
-                    upgradeTier(SubscriptionTier.PRO);
+                    upgradeTier(SubscriptionTier.PRO, undefined, true);
 
                     const subscription = TaskLimitManager.getSubscriptionSync();
                     console.log('Anti-Gravity Billing: ✅ Pro directly activated after "already owned" detection:', {

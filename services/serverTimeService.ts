@@ -25,7 +25,7 @@ export const fetchServerTime = async (): Promise<string | null> => {
             headers: {
                 'Content-Type': 'application/json',
                 'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE',
-                'x-ag-device-id': getDeviceId()
+                'x-ag-device-id': await getDeviceId()
             },
             body: JSON.stringify({ type: 'server_time' }),
         });

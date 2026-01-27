@@ -11,7 +11,7 @@ export const getIntegrityToken = async (): Promise<string> => {
     // a native plugin for the Play Integrity API.
     // Documentation: https://developer.android.com/google/play/integrity
 
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const timestamp = Date.now();
     const nonce = Math.random().toString(36).substring(7);
 

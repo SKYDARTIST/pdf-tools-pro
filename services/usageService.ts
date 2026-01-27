@@ -1,6 +1,8 @@
 import { UserSubscription, SubscriptionTier } from './subscriptionService';
 import { getIntegrityToken } from './integrityService';
 
+import { Device } from '@capacitor/device';
+
 const DEVICE_ID_KEY = 'ag_device_id';
 
 const generateUUID = () => {
@@ -17,8 +19,19 @@ const generateUUID = () => {
     });
 };
 
-// Get or generate a unique ID for this device/browser
-export const getDeviceId = (): string => {
+// Get or generate a persistent ID for this device
+export const getDeviceId = async (): Promise<string> => {
+    try {
+        // Try to get hardware ID first (Android/iOS)
+        const info = await Device.getId();
+        if (info && info.identifier) {
+            return info.identifier;
+        }
+    } catch (e) {
+        // Fallback for web or if plugin fails
+    }
+
+    // Fallback: localStorage
     let id = localStorage.getItem(DEVICE_ID_KEY);
     if (!id) {
         id = generateUUID();
@@ -28,7 +41,7 @@ export const getDeviceId = (): string => {
 };
 
 export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const integrityToken = await getIntegrityToken();
 
     try {
@@ -50,25 +63,32 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
         });
 
         if (!response.ok) {
-            console.debug('Handshake Protocol: Usage sync deferred.');
+            console.error('Anti-Gravity Billing: fetchUserUsage response not OK:', {
+                status: response.status,
+                statusText: response.statusText,
+                deviceId
+            });
             return null;
         }
+
         const data = await response.json();
 
-        if (data) {
-            return {
-                tier: data.tier as SubscriptionTier,
-                operationsToday: data.operations_today,
-                aiDocsThisWeek: data.ai_docs_weekly,
-                aiDocsThisMonth: data.ai_docs_monthly,
-                aiPackCredits: data.ai_pack_credits,
-                lastOperationReset: data.last_reset_daily,
-                lastAiWeeklyReset: data.last_reset_weekly,
-                lastAiMonthlyReset: data.last_reset_monthly,
-                trialStartDate: data.trial_start_date,
-                hasReceivedBonus: data.has_received_bonus || false,
-            };
-        }
+        // Map snake_case response from Supabase to camelCase UserSubscription
+        const subscription: UserSubscription = {
+            tier: data.tier,
+            operationsToday: data.operations_today || 0,
+            aiDocsThisWeek: data.ai_docs_weekly || 0,
+            aiDocsThisMonth: data.ai_docs_monthly || 0,
+            aiPackCredits: data.ai_pack_credits || 0,
+            lastOperationReset: data.last_reset_daily || new Date().toISOString(),
+            lastAiWeeklyReset: data.last_reset_weekly || new Date().toISOString(),
+            lastAiMonthlyReset: data.last_reset_monthly || new Date().toISOString(),
+            trialStartDate: data.trial_start_date,
+            hasReceivedBonus: data.has_received_bonus || false,
+            purchaseToken: undefined // Not persisted in this table
+        };
+
+        return subscription;
     } catch (error) {
         console.error('Anti-Gravity Billing: fetchUserUsage failed:', {
             error: error instanceof Error ? error.message : String(error),
@@ -80,7 +100,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
 };
 
 export const syncUsageToServer = async (usage: UserSubscription): Promise<void> => {
-    const deviceId = getDeviceId();
+    const deviceId = await getDeviceId();
     const integrityToken = await getIntegrityToken();
 
     try {
