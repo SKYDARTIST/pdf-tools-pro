@@ -338,21 +338,22 @@ export default async function handler(req, res) {
 
                     return res.status(200).json({ success: true });
                 } catch (syncError) {
+                    const errorMsg = syncError instanceof Error ? syncError.message : 'Unknown error';
                     console.error('Anti-Gravity API: usage_sync sync error:', {
-                        error: syncError.message,
-                        stack: syncError.stack,
+                        message: errorMsg,
                         deviceId: maskDeviceId(deviceId),
                         timestamp: new Date().toISOString()
                     });
                     return res.status(500).json({
                         error: "Database sync error",
-                        details: syncError.message
+                        details: errorMsg
                     });
                 }
             }
         } catch (dbError) {
-            console.error("Database Proxy Error:", dbError);
-            return res.status(500).json({ error: "Database Sync Error", details: dbError.message });
+            const errorMsg = dbError instanceof Error ? dbError.message : 'Unknown error';
+            console.error("Database Proxy Error:", { message: errorMsg, timestamp: new Date().toISOString() });
+            return res.status(500).json({ error: "Database Sync Error", details: errorMsg });
         }
     }
 
@@ -366,7 +367,7 @@ export default async function handler(req, res) {
                 .single();
 
             if (error && error.code !== 'PGRST116') {
-                console.error("Supabase Sync Error:", error);
+                console.error("Supabase Sync Error:", { message: error.message, code: error.code, timestamp: new Date().toISOString() });
             } else if (usage) {
                 // Check for 20-day trial bypass
                 let isTrial = false;

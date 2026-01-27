@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import Config from './configService';
+import { SecurityLogger, maskEmail } from '../utils/securityUtils';
 
 // Initialize Supabase Client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''; // Use Anon Key for client-side
+const supabaseUrl = Config.VITE_SUPABASE_URL;
+const supabaseKey = Config.VITE_SUPABASE_ANON_KEY; // Use Anon Key for client-side
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -12,6 +14,9 @@ export interface GoogleUser {
     name: string;
     picture: string;
 }
+
+// Memory cache for the current user profile to avoid redundant DB calls per session
+let cachedUser: GoogleUser | null = null;
 
 /**
  * Exchange Google credential for Supabase session
@@ -38,7 +43,7 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
         const name = decoded.name;
         const picture = decoded.picture;
 
-        console.log('Google Auth: Processing login for', email);
+        SecurityLogger.log('Google Auth: Processing login for', { email: maskEmail(email) });
 
         // Create or update user in Supabase
         // We try to insert/update. If RLS blocks us (because we aren't "logged in" to Supabase Auth yet),
@@ -60,22 +65,24 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
             .single();
 
         if (error) {
-            console.error('Google Auth: Supabase upsert failed', error);
+            const errorMsg = error.message || 'Unknown error';
+            SecurityLogger.error('Google Auth: Supabase upsert failed', { message: errorMsg, code: error.code });
             // Fallback: If RLS prevents direct access, we might need to call our API
             // For now, assume public/service role or policy allows it, or we use API.
             // Let's implement the API call fallback if direct DB access fails.
             return null;
         }
 
-        // Store session info locally
+        // Store ONLY the UID locally (No PII in localStorage for security/GDPR)
         localStorage.setItem('google_uid', googleUid);
-        localStorage.setItem('user_email', email);
-        localStorage.setItem('user_name', name);
-        localStorage.setItem('user_picture', picture);
 
-        return { google_uid: googleUid, email, name, picture };
+        // Update memory cache
+        cachedUser = { google_uid: googleUid, email, name, picture };
+
+        return cachedUser;
     } catch (error) {
-        console.error('Google Auth: Sign in error', error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        SecurityLogger.error('Google Auth: Sign in error', { message: errorMsg });
         return null;
     }
 };
@@ -87,23 +94,51 @@ export const getCurrentUser = async (): Promise<GoogleUser | null> => {
     const googleUid = localStorage.getItem('google_uid');
     if (!googleUid) return null;
 
-    const email = localStorage.getItem('user_email') || '';
-    const name = localStorage.getItem('user_name') || '';
-    const picture = localStorage.getItem('user_picture') || '';
+    // 1. Check Memory Cache first
+    if (cachedUser && cachedUser.google_uid === googleUid) {
+        return cachedUser;
+    }
 
-    // Return local cached user immediately for UI speed
-    return { google_uid: googleUid, email, name, picture };
+    // 2. Fetch from DB if not in memory (On-demand PII retrieval)
+    try {
+        const { data, error } = await supabase
+            .from('user_accounts')
+            .select('google_uid, email, name, picture')
+            .eq('google_uid', googleUid)
+            .single();
+
+        if (data && !error) {
+            cachedUser = data as GoogleUser;
+            return cachedUser;
+        }
+    } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+        SecurityLogger.error('Google Auth: Failed to fetch user profile', { message: errorMsg });
+    }
+
+    return null;
 };
 
 /**
  * Logout user
  */
 export const logout = (): void => {
+    // 1. Clear Auth Keys
     localStorage.removeItem('google_uid');
-    localStorage.removeItem('user_email');
-    localStorage.removeItem('user_name');
-    localStorage.removeItem('user_picture');
 
-    // Optional: Redirect or reload
+    // Clear Memory Cache
+    cachedUser = null;
+
+    // 2. Clear Subscription & Billing Keys
+    localStorage.removeItem('pdf_tools_subscription');
+    localStorage.removeItem('pdf_tools_task_limit');
+    localStorage.removeItem('consumed_purchases');
+
+    // 3. Optional: Clear cached Integrity tokens
+    localStorage.removeItem('integrity_token');
+
+    SecurityLogger.log('Google Auth: Session purged. Hard reloading...');
+
+    // Hard reload to reset all memory states
     window.location.reload();
 };
