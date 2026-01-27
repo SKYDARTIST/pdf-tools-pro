@@ -20,33 +20,41 @@ const supabase = supabaseUrl && supabaseKey
 let cachedModels = null;
 let lastDiscovery = 0;
 
+// RATE LIMITING (In-Memory for Warm Instances)
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 Minute
+const MAX_REQUESTS = 30; // 30 reqs / min
+const ipRequestCounts = new Map(); // Store: { count, startTime }
+
+// Cleanup interval (every 5 mins) to prevent memory leaks
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, data] of ipRequestCounts.entries()) {
+        if (now - data.startTime > RATE_LIMIT_WINDOW) {
+            ipRequestCounts.delete(key);
+        }
+    }
+}, 5 * 60 * 1000);
+
 export default async function handler(req, res) {
     const origin = req.headers.origin;
 
-    // CORS: Allow specific origins. Local network IPs allowed only outside of production.
-    const isLocalhost = origin && (
-        origin.includes('localhost') ||
-        origin.includes('127.0.0.1') ||
-        origin.startsWith('capacitor://')
-    );
+    // CORS: Strict Whitelist (No trailing slashes)
+    const ALLOWED_ORIGINS = [
+        'capacitor://localhost',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://pdf-tools-pro.vercel.app',
+        'https://pdf-tools-pro-indol.vercel.app'
+    ];
 
-    const isProduction = origin && (
-        origin.includes('pdf-tools-pro.vercel.app')
-    );
-
-    const isLocalNetwork = origin && (
-        origin.includes('192.168.') ||
-        origin.includes('172.') ||
-        origin.includes('10.')
-    );
-
-    // Only allow local network IPs if we are NOT in production
-    const isDevEnv = process.env.VERCEL_ENV !== 'production';
-    const allowedOrigin = isLocalhost || isProduction || (isDevEnv && isLocalNetwork);
+    // Check for exact match
+    const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin);
 
     if (allowedOrigin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        // CREDENTIALS DISABLED: We use JWTs in headers (Bearer), not Cookies.
+        // Enabling credentials with reflected origin is a security risk (CSRF).
+        // res.setHeader('Access-Control-Allow-Credentials', 'true'); 
     }
 
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -83,6 +91,29 @@ export default async function handler(req, res) {
         isGuidanceOrTime,
         timestamp: new Date().toISOString()
     });
+
+    // STAGE -1: Rate Limiting
+    // --------------------------------------------------------------------------------
+    const rateLimitKey = deviceId || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+
+    if (rateLimitKey) {
+        const usageData = ipRequestCounts.get(rateLimitKey) || { count: 0, startTime: now };
+
+        // Reset window if expired
+        if (now - usageData.startTime > RATE_LIMIT_WINDOW) {
+            usageData.count = 0;
+            usageData.startTime = now;
+        }
+
+        usageData.count++;
+        ipRequestCounts.set(rateLimitKey, usageData);
+
+        if (usageData.count > MAX_REQUESTS) {
+            console.warn(`Anti-Gravity Security: Rate limit exceeded for ${rateLimitKey}`);
+            return res.status(429).json({ error: "Rate limit exceeded. Please try again in a minute." });
+        }
+    }
 
     // STAGE 0: Session Authentication & Integrity
     // --------------------------------------------------------------------------------
