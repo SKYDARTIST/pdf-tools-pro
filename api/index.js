@@ -81,6 +81,12 @@ export default async function handler(req, res) {
     const deviceId = req.headers['x-ag-device-id'];
     const integrityToken = req.headers['x-ag-integrity-token'];
 
+    // Helper: Mask device ID for safe logging
+    const maskDeviceId = (id) => {
+        if (!id) return 'unknown';
+        return id.substring(0, 8) + '...' + id.substring(id.length - 4);
+    };
+
     // GUIDANCE BYPASS: Skip all validation for guidance or time checks
     const { type: requestType = '', usage = null } = req.body || {};
     const isGuidanceOrTime = requestType === 'guidance' || requestType === 'server_time';
@@ -94,57 +100,62 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString()
     });
 
-    // STAGE -1: Rate Limiting
-    // --------------------------------------------------------------------------------
-    const rateLimitKey = deviceId || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const now = Date.now();
-
-    if (rateLimitKey) {
-        const usageData = ipRequestCounts.get(rateLimitKey) || { count: 0, startTime: now };
-
-        // Reset window if expired
-        if (now - usageData.startTime > RATE_LIMIT_WINDOW) {
-            usageData.count = 0;
-            usageData.startTime = now;
-        }
-
-        usageData.count++;
-        ipRequestCounts.set(rateLimitKey, usageData);
-
-        if (usageData.count > MAX_REQUESTS) {
-            console.warn(`Anti-Gravity Security: Rate limit exceeded for ${rateLimitKey}`);
-            return res.status(429).json({ error: "Rate limit exceeded. Please try again in a minute." });
-        }
-    }
-
-    // STAGE 0: Session Authentication & Integrity
+    // STAGE 0: Session Authentication & Integrity (moved before rate limiting)
     // --------------------------------------------------------------------------------
     const { createHmac } = await import('node:crypto');
-    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'FALLBACK_SECRET_DO_NOT_USE_IN_PROD';
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // Helper: Generate Session Token (Stateless HMAC)
+    if (!secret) {
+        console.error('FATAL: SUPABASE_SERVICE_ROLE_KEY environment variable is required for session token signing');
+        return res.status(500).json({ error: 'Internal Server Error: Authentication not configured' });
+    }
+
+    // Helper: Generate Session Token (Stateless HMAC with enhanced validation fields)
     const generateSessionToken = (deviceId) => {
+        const now = Date.now();
         const payload = JSON.stringify({
             uid: deviceId,
-            exp: Date.now() + (60 * 60 * 1000), // 1 hour expiry
-            scope: 'access'
+            iat: now,  // Issued at - for freshness validation
+            exp: now + (60 * 60 * 1000), // 1 hour expiry
+            scope: 'access',
+            jti: Buffer.from(`${deviceId}-${now}-${Math.random()}`).toString('base64') // JWT ID - unique token identifier
         });
         const signature = createHmac('sha256', secret).update(payload).digest('hex');
         return Buffer.from(payload).toString('base64') + '.' + signature;
     };
 
-    // Helper: Verify Session Token
+    // Helper: Verify Session Token with strict validation
     const verifySessionToken = (token) => {
-        if (!token) return null;
+        if (!token || typeof token !== 'string') return null;
         try {
             const [b64Payload, signature] = token.split('.');
             if (!b64Payload || !signature) return null;
 
-            const expectedSignature = createHmac('sha256', secret).update(Buffer.from(b64Payload, 'base64').toString()).digest('hex');
-            if (signature !== expectedSignature) return null;
+            const payloadStr = Buffer.from(b64Payload, 'base64').toString();
+            const expectedSignature = createHmac('sha256', secret).update(payloadStr).digest('hex');
 
-            const payload = JSON.parse(Buffer.from(b64Payload, 'base64').toString());
-            if (Date.now() > payload.exp) return null; // Expired
+            // Constant-time comparison to prevent timing attacks
+            if (signature.length !== expectedSignature.length) return null;
+            let signatureMatch = true;
+            for (let i = 0; i < signature.length; i++) {
+                if (signature[i] !== expectedSignature[i]) signatureMatch = false;
+            }
+            if (!signatureMatch) return null;
+
+            const payload = JSON.parse(payloadStr);
+
+            // Strict field validation
+            if (!payload.uid || typeof payload.uid !== 'string') return null; // UID required
+            if (!payload.exp || typeof payload.exp !== 'number') return null; // Exp required
+            if (!payload.iat || typeof payload.iat !== 'number') return null; // IAT required
+            if (!payload.jti || typeof payload.jti !== 'string') return null; // JTI required
+            if (payload.scope !== 'access') return null; // Scope must be 'access'
+
+            // Expiration check
+            if (Date.now() > payload.exp) return null;
+
+            // Token freshness check (not issued in the future by more than 5 seconds)
+            if (payload.iat > Date.now() + 5000) return null;
 
             return payload;
         } catch (e) { return null; }
@@ -152,8 +163,7 @@ export default async function handler(req, res) {
 
     // Handshake Endpoint: Exchange Integrity Token for Session Token
     if (requestType === 'session_init') {
-        const envSignature = process.env.AG_PROTOCOL_SIGNATURE;
-        const expectedSignature = envSignature || 'AG_NEURAL_LINK_2026_PROTOTYPE_SECURE';
+        const expectedSignature = process.env.AG_PROTOCOL_SIGNATURE;
 
         // 1. Verify Protocol Signature
         if (!signature || signature !== expectedSignature) {
@@ -179,8 +189,31 @@ export default async function handler(req, res) {
         if (!session || session.uid !== deviceId) {
             // Fallback for transition period: If strict env var not set, allow old method?
             // NO. User requested "Fix ASAP". Strict enforcement.
-            console.warn(`Anti-Gravity Security: Blocked unauthenticated request from ${deviceId}`);
+            console.warn(`Anti-Gravity Security: Blocked unauthenticated request from ${maskDeviceId(deviceId)}`);
             return res.status(401).json({ error: 'INVALID_SESSION', details: 'Session expired or invalid. Please restart app.' });
+        }
+    }
+
+    // STAGE -0.5: Rate Limiting (after session validation)
+    // Apply rate limiting using verified device ID to prevent token hijacking attacks
+    const rateLimitKey = deviceId || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+
+    if (rateLimitKey) {
+        const usageData = ipRequestCounts.get(rateLimitKey) || { count: 0, startTime: now };
+
+        // Reset window if expired
+        if (now - usageData.startTime > RATE_LIMIT_WINDOW) {
+            usageData.count = 0;
+            usageData.startTime = now;
+        }
+
+        usageData.count++;
+        ipRequestCounts.set(rateLimitKey, usageData);
+
+        if (usageData.count > MAX_REQUESTS) {
+            console.warn(`Anti-Gravity Security: Rate limit exceeded for ${maskDeviceId(rateLimitKey)}`);
+            return res.status(429).json({ error: "Rate limit exceeded. Please try again in a minute." });
         }
     }
 
@@ -251,30 +284,30 @@ export default async function handler(req, res) {
                 if (!usage) return res.status(400).json({ error: "Missing usage payload" });
 
                 console.log('Anti-Gravity API: Processing usage_sync for device:', {
-                    deviceId,
+                    deviceId: maskDeviceId(deviceId),
                     tier: usage.tier,
-                    aiPackCredits: usage.aiPackCredits,
                     timestamp: new Date().toISOString()
                 });
 
                 try {
+                    const device_id_to_sync = deviceId;
                     // CRITICAL: Use upsert instead of update to handle new devices
                     // If device row doesn't exist, it will be created; otherwise, it will be updated
                     // Data must be an array for upsert to work properly
+                    // STRICT: Do NOT trust the client for ai_pack_credits or tier.
+                    // These are sensitive values that should only be modified by the server 
+                    // (e.g., via purchase verification or initial trial grant).
                     const { data, error } = await supabase
                         .from('ag_user_usage')
                         .upsert(
                             [{
-                                device_id: deviceId,
-                                tier: usage.tier,
+                                device_id: device_id_to_sync,
                                 operations_today: usage.operationsToday,
                                 ai_docs_weekly: usage.aiDocsThisWeek,
                                 ai_docs_monthly: usage.aiDocsThisMonth,
-                                ai_pack_credits: usage.aiPackCredits,
                                 last_reset_daily: usage.lastOperationReset,
                                 last_reset_weekly: usage.lastAiWeeklyReset,
                                 last_reset_monthly: usage.lastAiMonthlyReset,
-                                trial_start_date: usage.trialStartDate,
                                 has_received_bonus: usage.hasReceivedBonus,
                             }],
                             { onConflict: 'device_id' }
@@ -287,9 +320,7 @@ export default async function handler(req, res) {
                             status: error.status,
                             details: error.details,
                             hint: error.hint,
-                            deviceId,
-                            tier: usage.tier,
-                            aiPackCredits: usage.aiPackCredits,
+                            deviceId: maskDeviceId(deviceId),
                             timestamp: new Date().toISOString()
                         });
                         return res.status(400).json({
@@ -310,7 +341,7 @@ export default async function handler(req, res) {
                     console.error('Anti-Gravity API: usage_sync sync error:', {
                         error: syncError.message,
                         stack: syncError.stack,
-                        deviceId,
+                        deviceId: maskDeviceId(deviceId),
                         timestamp: new Date().toISOString()
                     });
                     return res.status(500).json({
@@ -486,17 +517,70 @@ ${extractionInstruction}
 DOCUMENT TO ANALYZE:
 ${documentText || "No text content - analyzing image only."}`;
                 } else if (type === 'scrape') {
-                    // Fetch inside the loop to allow model retries
-                    const scrapeResponse = await fetch(prompt.trim());
-                    const html = await scrapeResponse.text();
-                    const textContent = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
-                        .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
-                        .replace(/<[^>]+>/g, ' ')
-                        .replace(/\s+/g, ' ')
-                        .trim()
-                        .substring(0, 10000);
+                    // SSRF Prevention: Validate and sanitize URL
+                    const urlStr = prompt.trim();
+                    let parsedUrl;
+                    try {
+                        parsedUrl = new URL(urlStr);
+                    } catch {
+                        return res.status(400).json({ error: "Invalid URL format" });
+                    }
 
-                    promptPayload = `${SYSTEM_INSTRUCTION}\n\nClean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
+                    // Whitelist allowed protocols
+                    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+                        return res.status(400).json({ error: "Only HTTP(S) URLs allowed" });
+                    }
+
+                    // Block private IP ranges (SSRF prevention)
+                    const hostname = parsedUrl.hostname.toLowerCase();
+                    const privatePatterns = [
+                        /^localhost$/i,
+                        /^127\./,
+                        /^10\./,
+                        /^192\.168\./,
+                        /^172\.(1[6-9]|2[0-9]|3[01])\./,
+                        /^169\.254\./,  // EC2 metadata endpoint
+                        /^::1$/,        // IPv6 loopback
+                        /^fc00:/,       // IPv6 private
+                        /^fe80:/,       // IPv6 link-local
+                        /^\.local$/,    // mDNS
+                    ];
+
+                    for (const pattern of privatePatterns) {
+                        if (pattern.test(hostname)) {
+                            return res.status(400).json({ error: "Access to private networks blocked" });
+                        }
+                    }
+
+                    // Fetch with timeout and security headers
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                    try {
+                        const scrapeResponse = await fetch(urlStr, {
+                            signal: controller.signal,
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Compatible; Anti-Gravity/1.0)'
+                            }
+                        });
+                        const html = await scrapeResponse.text();
+                        const textContent = html.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
+                            .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
+                            .replace(/<[^>]+>/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                            .substring(0, 10000);
+
+                        promptPayload = `${SYSTEM_INSTRUCTION}\n\nClean and structure this web text into a professional document format. INPUT: ${textContent}\nFORMAT: Title then paragraphs. NO MARKDOWN.`;
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        if (error.name === 'AbortError') {
+                            return res.status(408).json({ error: "Scrape request timeout (10 seconds)" });
+                        }
+                        return res.status(400).json({ error: "Failed to fetch URL content" });
+                    } finally {
+                        clearTimeout(timeout);
+                    }
                 } else if (type === 'visual') {
                     // NEURAL VISUAL (Nano Banana) SAFETY PROTOCOL
                     const BANNED_KEYWORDS = ['18+', 'nude', 'nsfw', 'porn', 'sex', 'violence', 'blood', 'gore', 'kill', 'attack', 'weapon', 'drug', 'abuse', 'illegal'];
