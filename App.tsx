@@ -54,15 +54,52 @@ const App: React.FC = () => {
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
+  const [isDataReady, setIsDataReady] = React.useState(false);
+  const [bootAnimFinished, setBootAnimFinished] = React.useState(false);
+
   // Sync with Supabase and fetch server time on mount
   React.useEffect(() => {
-    initializePersistentLogging(); // Start capturing logs to localStorage
-    initSubscription();
-    initServerTime();  // Fetch server time to prevent clock manipulation
+    const init = async () => {
+      try {
+        initializePersistentLogging(); // Start capturing logs to localStorage
+        initServerTime();  // Fetch server time immediately (non-blocking)
+
+        // CRITICAL: Await subscription data BEFORE allowing app entry
+        // This prevents the "Race Condition" where user uses default 100 credits
+        // while Supabase is still loading the actual 3 credits.
+        await initSubscription();
+        console.log('🚀 App: Critical initialization complete');
+      } catch (e) {
+        console.error('🚀 App: Initialization error:', e);
+      } finally {
+        setIsDataReady(true);
+      }
+    };
+
+    init();
   }, []);
+
+  // Coordinated Boot Sequence: Wait for BOTH Data + Animation
+  React.useEffect(() => {
+    if (isDataReady && (bootAnimFinished || !isBooting)) {
+      // Only run this logic once when everything is ready
+      if (isBooting) {
+        setIsBooting(false);
+        sessionStorage.setItem('boot_complete', 'true');
+
+        // Trigger post-boot actions
+        console.log('🚀 App: Boot sequence finished - triggering purchase restore...');
+        BillingService.syncPurchasesWithState().catch(error => {
+          console.error('🚀 App: Deferred purchase restore error:', error);
+        });
+      }
+    }
+  }, [isDataReady, bootAnimFinished, isBooting]);
 
   // Global AI Notification Listener
   React.useEffect(() => {
+    if (!isDataReady) return; // Don't check notifications until data is ready
+
     // Check on mount and on location change
     const checkNotification = () => {
       const notification = getAiPackNotification();
@@ -76,7 +113,7 @@ const App: React.FC = () => {
     // Also poll occasionally or listen for storage events if needed
     const interval = setInterval(checkNotification, 2000);
     return () => clearInterval(interval);
-  }, [location.pathname]);
+  }, [location.pathname, isDataReady]);
 
   React.useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
@@ -158,6 +195,12 @@ const App: React.FC = () => {
 
   const isLandingPage = location.pathname === '/';
 
+  // SAFETY: If data is not ready and not booting (e.g. refresh), show empty or loader
+  // This prevents the "flash of free tier" on refresh
+  if (!isDataReady && !isBooting) {
+    return <div className="min-h-screen bg-black" />; // Or a spinner
+  }
+
   return (
     <div className="min-h-screen bg-transparent flex flex-col relative overflow-hidden">
       {!isLandingPage && <Header />}
@@ -214,16 +257,9 @@ const App: React.FC = () => {
         {isBooting && (
           <SystemBoot
             onComplete={() => {
-              setIsBooting(false);
-              sessionStorage.setItem('boot_complete', 'true');
-
-              // CRITICAL: Defer purchase restore until AFTER boot screen completes
-              // This ensures Capacitor bridge and Google Play are fully initialized
-              // Call it async without awaiting to avoid delaying the boot completion
-              console.log('🚀 App: Boot screen complete - triggering purchase restore...');
-              BillingService.syncPurchasesWithState().catch(error => {
-                console.error('🚀 App: Deferred purchase restore error:', error);
-              });
+              // Mark animation as done, but let the useEffect above handle the actual dismissal
+              // based on isDataReady
+              setBootAnimFinished(true);
             }}
           />
         )}
