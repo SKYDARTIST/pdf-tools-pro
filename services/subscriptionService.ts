@@ -1,5 +1,6 @@
 import { fetchUserUsage, syncUsageToServer } from './usageService';
 import TaskLimitManager from '../utils/TaskLimitManager';
+import { SecurityLogger } from '../utils/securityUtils';
 
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
@@ -40,6 +41,7 @@ export interface UserSubscription {
 }
 
 const STORAGE_KEY = 'pdf_tools_subscription';
+let isHydrated = false; // Memory flag to track if we've synced with server this session
 
 // Free tier limits
 const FREE_LIMITS = {
@@ -61,12 +63,13 @@ const PREMIUM_LIMITS = {
 };
 
 // Initialize subscription from Supabase or localStorage
-export const initSubscription = async (): Promise<UserSubscription> => {
+export const initSubscription = async (user?: any): Promise<UserSubscription> => {
     try {
         const supabaseUsage = await fetchUserUsage();
         if (supabaseUsage) {
-            console.log('Anti-Gravity Subscription: ✅ Restored state from Supabase:', supabaseUsage);
+            SecurityLogger.log('Anti-Gravity Subscription: ✅ Restored state from Supabase');
             saveSubscription(supabaseUsage);
+            isHydrated = true;
 
             // Sync TaskLimitManager if needed
             if (supabaseUsage.tier === SubscriptionTier.PRO) {
@@ -95,11 +98,9 @@ export const getSubscription = (): UserSubscription => {
                 saveSubscription(subscription);
             }
 
-            // CROSS-SYNC: If TaskLimitManager says they are Pro, but subscription says Free, fix it.
-            if (TaskLimitManager.isPro() && subscription.tier === SubscriptionTier.FREE) {
-                subscription.tier = SubscriptionTier.PRO;
-                saveSubscription(subscription);
-            }
+            // SECURITY: Restore tier from TaskLimitManager (trusted source)
+            // Never trust tier from localStorage - it must come from Supabase
+            subscription.tier = TaskLimitManager.isPro() ? SubscriptionTier.PRO : SubscriptionTier.FREE;
 
             return subscription;
         } catch (e) {
@@ -130,7 +131,15 @@ export const getSubscription = (): UserSubscription => {
 
 // Save subscription to localStorage
 export const saveSubscription = (subscription: UserSubscription): void => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
+    // SECURITY: Do not cache sensitive fields in localStorage to prevent manipulation.
+    // - aiPackCredits: Real value is restored from Supabase
+    // - tier: Must come from Supabase only, not from localStorage
+    // Only operational counters are persisted locally.
+    const toStore = { ...subscription };
+    toStore.aiPackCredits = 0;
+    delete toStore.tier; // Remove tier - always derive from Supabase or TaskLimitManager
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
 };
 
 // Check if user is within the 20-day trial period
@@ -341,6 +350,14 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     if (operationType === AiOperationType.GUIDANCE) {
         console.log('AI Usage: GUIDANCE operation - no credits consumed');
         return;
+    }
+
+    // AUTH SAFETY: If user is logged in but we haven't hydrated from server yet, 
+    // fetch server data first to avoid overwriting with stale local data
+    const googleUid = localStorage.getItem('google_uid');
+    if (googleUid && !isHydrated) {
+        console.log('AI Usage: 🛡️ Forced hydration triggered before operation');
+        await initSubscription();
     }
 
     const subscription = getSubscription();
