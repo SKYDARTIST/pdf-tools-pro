@@ -5,6 +5,8 @@ import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
@@ -18,6 +20,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 const ExtractImagesScreen: React.FC = () => {
     const navigate = useNavigate();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedAssets, setExtractedAssets] = useState<{ uri: string; displayUrl: string }[]>([]);
@@ -53,86 +56,88 @@ const ExtractImagesScreen: React.FC = () => {
     const handleExtractImages = async () => {
         if (!file) return;
 
-        if (!TaskLimitManager.canUseTask()) {
-            setShowUpgradeModal(true);
-            return;
-        }
-
-        setIsProcessing(true);
-
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const assets: { uri: string; displayUrl: string }[] = [];
-            console.log("🛠️ Starting visual scan of carrier:", pdf.numPages, "pages identified.");
-
-            for (let i = 1; i <= pdf.numPages; i++) {
-                console.log(`📸 Processing layer ${i}/${pdf.numPages}...`);
-                const page = await pdf.getPage(i);
-
-                // HIGH QUALITY: Use scale 1.5 for a perfect balance of crispness and stability
-                const viewport = page.getViewport({ scale: 1.5 });
-
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                if (context) {
-                    await page.render({ canvasContext: context, viewport, canvasFactory: undefined } as any).promise;
-
-                    // HIGH QUALITY: Use JPEG at 85% quality (Industry standard for mobile docs)
-                    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-
-                    // Force browser garbage collection by clearing canvas
-                    canvas.width = 0;
-                    canvas.height = 0;
-
-                    // Atomic Save to Disk (Frees up RAM immediately)
-                    const fileName = `page_${i}.jpg`;
-                    const uri = await saveBase64ToCache(base64, fileName);
-
-                    assets.push({
-                        uri,
-                        displayUrl: Capacitor.convertFileSrc(uri)
-                    });
-
-                    console.log(`✅ Layer ${i} saved to disk. Memory cleared.`);
-                }
+        requireAuth(async () => {
+            if (!TaskLimitManager.canUseTask()) {
+                setShowUpgradeModal(true);
+                return;
             }
 
-            setExtractedAssets(assets);
+            setIsProcessing(true);
 
-            // Add to history
-            FileHistoryManager.addEntry({
-                fileName: `extracted_images_${file.name}`,
-                operation: 'split',
-                originalSize: file.size,
-                finalSize: assets.length * 100000, // Approximate
-                status: 'success'
-            });
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const assets: { uri: string; displayUrl: string }[] = [];
+                console.log("🛠️ Starting visual scan of carrier:", pdf.numPages, "pages identified.");
 
-            // Increment task count
-            TaskLimitManager.incrementTask();
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    console.log(`📸 Processing layer ${i}/${pdf.numPages}...`);
+                    const page = await pdf.getPage(i);
 
-            // Show success modal
-            setSuccessData({
-                isOpen: true,
-                fileName: `extracted_images_${file.name}`,
-                originalSize: file.size,
-                finalSize: assets.length * 102400 // Estimate 100kb per image for UI
-            });
-        } catch (err) {
-            alert('Error extracting images: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                    // HIGH QUALITY: Use scale 1.5 for a perfect balance of crispness and stability
+                    const viewport = page.getViewport({ scale: 1.5 });
 
-            FileHistoryManager.addEntry({
-                fileName: `extract_images_failed_${file.name}`,
-                operation: 'split',
-                status: 'error'
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    if (context) {
+                        await page.render({ canvasContext: context, viewport, canvasFactory: undefined } as any).promise;
+
+                        // HIGH QUALITY: Use JPEG at 85% quality (Industry standard for mobile docs)
+                        const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+                        // Force browser garbage collection by clearing canvas
+                        canvas.width = 0;
+                        canvas.height = 0;
+
+                        // Atomic Save to Disk (Frees up RAM immediately)
+                        const fileName = `page_${i}.jpg`;
+                        const uri = await saveBase64ToCache(base64, fileName);
+
+                        assets.push({
+                            uri,
+                            displayUrl: Capacitor.convertFileSrc(uri)
+                        });
+
+                        console.log(`✅ Layer ${i} saved to disk. Memory cleared.`);
+                    }
+                }
+
+                setExtractedAssets(assets);
+
+                // Add to history
+                FileHistoryManager.addEntry({
+                    fileName: `extracted_images_${file.name}`,
+                    operation: 'split',
+                    originalSize: file.size,
+                    finalSize: assets.length * 100000, // Approximate
+                    status: 'success'
+                });
+
+                // Increment task count
+                TaskLimitManager.incrementTask();
+
+                // Show success modal
+                setSuccessData({
+                    isOpen: true,
+                    fileName: `extracted_images_${file.name}`,
+                    originalSize: file.size,
+                    finalSize: assets.length * 102400 // Estimate 100kb per image for UI
+                });
+            } catch (err) {
+                alert('Error extracting images: ' + (err instanceof Error ? err.message : 'Unknown error'));
+
+                FileHistoryManager.addEntry({
+                    fileName: `extract_images_failed_${file.name}`,
+                    operation: 'split',
+                    status: 'error'
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+        });
     };
 
     const downloadImage = async (uri: string, index: number) => {
@@ -333,6 +338,12 @@ const ExtractImagesScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 reason="limit_reached"
+            />
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

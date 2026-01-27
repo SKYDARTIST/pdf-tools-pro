@@ -3,8 +3,11 @@ import { motion } from 'framer-motion';
 import { FileUp, Hash, Share2, Loader2, FileText, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
+import { FileItem } from '../types';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 import { useNavigate } from 'react-router-dom';
 import ShareModal from '../components/ShareModal';
 import ToolGuide from '../components/ToolGuide';
@@ -13,7 +16,8 @@ import UpgradeModal from '../components/UpgradeModal';
 
 const PageNumbersScreen: React.FC = () => {
     const navigate = useNavigate();
-    const [file, setFile] = useState<File | null>(null);
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
+    const [file, setFile] = useState<FileItem | null>(null);
     const [pageCount, setPageCount] = useState(0);
     const [position, setPosition] = useState<'bottom-center' | 'bottom-left' | 'bottom-right'>('bottom-center');
     const [format, setFormat] = useState<'number' | 'page-of-total'>('page-of-total');
@@ -47,83 +51,85 @@ const PageNumbersScreen: React.FC = () => {
         }
     };
 
-    const handleAddPageNumbers = async () => {
+    const handleApply = async () => {
         if (!file) return;
 
-        if (!TaskLimitManager.canUseTask()) {
-            setShowUpgradeModal(true);
-            return;
-        }
+        requireAuth(async () => {
+            if (!TaskLimitManager.canUseTask()) {
+                setShowUpgradeModal(true);
+                return;
+            }
 
-        setIsProcessing(true);
+            setIsProcessing(true);
 
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFDocument.load(arrayBuffer);
-            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-            const pages = pdfDoc.getPages();
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                const pages = pdfDoc.getPages();
 
-            pages.forEach((page, index) => {
-                const { width, height } = page.getSize();
-                const pageNumber = index + 1;
-                const text = format === 'number'
-                    ? `${pageNumber}`
-                    : `Page ${pageNumber} of ${pages.length}`;
+                pages.forEach((page, index) => {
+                    const { width, height } = page.getSize();
+                    const pageNumber = index + 1;
+                    const text = format === 'number'
+                        ? `${pageNumber}`
+                        : `Page ${pageNumber} of ${pages.length}`;
 
-                const textWidth = font.widthOfTextAtSize(text, 10);
+                    const textWidth = font.widthOfTextAtSize(text, 10);
 
-                let x = 0;
-                if (position === 'bottom-center') {
-                    x = (width - textWidth) / 2;
-                } else if (position === 'bottom-left') {
-                    x = 30;
-                } else {
-                    x = width - textWidth - 30;
-                }
+                    let x = 0;
+                    if (position === 'bottom-center') {
+                        x = (width - textWidth) / 2;
+                    } else if (position === 'bottom-left') {
+                        x = 30;
+                    } else {
+                        x = width - textWidth - 30;
+                    }
 
-                page.drawText(text, {
-                    x,
-                    y: 20,
-                    size: 10,
-                    font,
-                    color: rgb(0.5, 0.5, 0.5),
+                    page.drawText(text, {
+                        x,
+                        y: 20,
+                        size: 10,
+                        font,
+                        color: rgb(0.5, 0.5, 0.5),
+                    });
                 });
-            });
 
-            const pdfBytes = await pdfDoc.save();
-            const fileName = `numbered_${file.name}`;
+                const pdfBytes = await pdfDoc.save();
+                const fileName = `numbered_${file.name}`;
 
-            setProcessedFile({
-                data: pdfBytes,
-                name: fileName,
-                size: pdfBytes.length
-            });
+                setProcessedFile({
+                    data: pdfBytes,
+                    name: fileName,
+                    size: pdfBytes.length
+                });
 
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            await downloadFile(blob, fileName);
+                const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+                await downloadFile(blob, fileName);
 
-            FileHistoryManager.addEntry({
-                fileName,
-                operation: 'watermark',
-                originalSize: file.size,
-                finalSize: pdfBytes.length,
-                status: 'success'
-            });
+                FileHistoryManager.addEntry({
+                    fileName,
+                    operation: 'watermark',
+                    originalSize: file.size,
+                    finalSize: pdfBytes.length,
+                    status: 'success'
+                });
 
-            setShowSuccessModal(true);
-            TaskLimitManager.incrementTask();
-            // Reset deferred
-        } catch (err) {
-            alert('Error adding page numbers: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                setShowSuccessModal(true);
+                TaskLimitManager.incrementTask();
+                // Reset deferred
+            } catch (err) {
+                alert('Error adding page numbers: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
-            FileHistoryManager.addEntry({
-                fileName: `page_numbers_failed_${file.name}`,
-                operation: 'watermark',
-                status: 'error'
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+                FileHistoryManager.addEntry({
+                    fileName: `page_numbers_failed_${file.name}`,
+                    operation: 'watermark',
+                    status: 'error'
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+        });
     };
 
     return (
@@ -258,7 +264,7 @@ const PageNumbersScreen: React.FC = () => {
 
                         {/* Add Button */}
                         <button
-                            onClick={handleAddPageNumbers}
+                            onClick={handleApply}
                             disabled={isProcessing}
                             className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${isProcessing
                                 ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
@@ -323,6 +329,12 @@ const PageNumbersScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 reason="limit_reached"
+            />
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

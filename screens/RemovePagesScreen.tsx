@@ -11,9 +11,12 @@ import { PDFDocument } from 'pdf-lib';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 
 const RemovePagesScreen: React.FC = () => {
     const navigate = useNavigate();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [file, setFile] = useState<FileItem | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [pageCount, setPageCount] = useState(0);
@@ -77,56 +80,58 @@ const RemovePagesScreen: React.FC = () => {
     const handleRemovePages = async () => {
         if (!file || selectedPages.size === 0) return;
 
-        // Don't allow removing all pages
-        if (selectedPages.size >= pageCount) {
-            alert('You must keep at least one page in the PDF.');
-            return;
-        }
+        requireAuth(async () => {
+            // Don't allow removing all pages
+            if (selectedPages.size >= pageCount) {
+                alert('You must keep at least one page in the PDF.');
+                return;
+            }
 
-        if (!TaskLimitManager.canUseTask()) {
-            setShowUpgradeModal(true);
-            return;
-        }
+            if (!TaskLimitManager.canUseTask()) {
+                setShowUpgradeModal(true);
+                return;
+            }
 
-        setIsProcessing(true);
+            setIsProcessing(true);
 
-        try {
-            const result = await removePagesFromPdf(file.file, Array.from(selectedPages));
-            const fileName = `edited_${file.name}`;
-            const blob = new Blob([result as any], { type: 'application/pdf' });
-            await downloadFile(blob, fileName);
+            try {
+                const result = await removePagesFromPdf(file.file, Array.from(selectedPages));
+                const fileName = `edited_${file.name}`;
+                const blob = new Blob([result as any], { type: 'application/pdf' });
+                await downloadFile(blob, fileName);
 
-            // Add to file history
-            FileHistoryManager.addEntry({
-                fileName,
-                operation: 'split',
-                originalSize: file.size,
-                finalSize: result.length,
-                status: 'success'
-            });
+                // Add to file history
+                FileHistoryManager.addEntry({
+                    fileName,
+                    operation: 'split',
+                    originalSize: file.size,
+                    finalSize: result.length,
+                    status: 'success'
+                });
 
-            // Increment task counter
-            TaskLimitManager.incrementTask();
+                // Increment task counter
+                TaskLimitManager.incrementTask();
 
-            // Show success modal
-            setSuccessData({
-                fileName,
-                originalSize: file.size,
-                finalSize: result.length,
-                pagesRemoved: selectedPages.size
-            });
-            setShowSuccessModal(true);
-        } catch (err) {
-            alert('Error removing pages: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                // Show success modal
+                setSuccessData({
+                    fileName,
+                    originalSize: file.size,
+                    finalSize: result.length,
+                    pagesRemoved: selectedPages.size
+                });
+                setShowSuccessModal(true);
+            } catch (err) {
+                alert('Error removing pages: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
-            FileHistoryManager.addEntry({
-                fileName: `remove_pages_failed_${file.name}`,
-                operation: 'split',
-                status: 'error'
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+                FileHistoryManager.addEntry({
+                    fileName: `remove_pages_failed_${file.name}`,
+                    operation: 'split',
+                    status: 'error'
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+        });
     };
 
     return (
@@ -305,6 +310,12 @@ const RemovePagesScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 reason="limit_reached"
+            />
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

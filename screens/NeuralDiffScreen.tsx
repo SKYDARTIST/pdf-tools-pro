@@ -12,7 +12,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag, Share2 } from 'lucide-react';
 import { createPdfFromText } from '../services/pdfService';
-import { useAIAuth } from '../hooks/useAIAuth';
+import { useAuthGate } from '../hooks/useAuthGate';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -33,7 +33,7 @@ const NeuralDiffScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
@@ -57,56 +57,49 @@ const NeuralDiffScreen: React.FC = () => {
     const runNeuralDiff = async () => {
         if (!file1 || !file2) return;
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            return;
-        }
-
-        if (!hasConsent) {
-            setShowConsent(true);
-            return;
-        }
-
-        // HEAVY AI Operation - Neural Diff consumes credits
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const subscription = getSubscription();
-            setAiLimitInfo({
-                blockMode: aiCheck.blockMode,
-                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-            });
-            setShowAiLimit(true);
-            return;
-        }
-
-
-
-        setIsAnalyzing(true);
-        setError('');
-
-        try {
-            // Extract text from both
-            // Extract text from both Version 1 and Version 2
-            const buf1 = await file1.arrayBuffer();
-            const buf2 = await file2.arrayBuffer();
-            let text1 = await extractTextFromPdf(buf1.slice(0));
-            let text2 = await extractTextFromPdf(buf2.slice(0));
-
-            let images: string[] = [];
-
-            // Fallback: If either document has no text, render images for visual comparison
-            if (!text1 || !text1.trim() || !text2 || !text2.trim()) {
-                const { renderPageToImage } = await import('../utils/pdfExtractor');
-                const img1 = await renderPageToImage(buf1.slice(0), 1);
-                const img2 = await renderPageToImage(buf2.slice(0), 2);
-                images = [img1, img2];
-                text1 = text1 || "[SCANNED DOCUMENT 1]";
-                text2 = text2 || "[SCANNED DOCUMENT 2]";
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
 
-            // Analyze with Gemini
-            const prompt = `Perform a semantic comparison between these two document versions. 
+            // HEAVY AI Operation - Neural Diff consumes credits
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const subscription = getSubscription();
+                setAiLimitInfo({
+                    blockMode: aiCheck.blockMode,
+                    used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                    limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+                });
+                setShowAiLimit(true);
+                return;
+            }
+
+            setIsAnalyzing(true);
+            setError('');
+
+            try {
+                // Extract text from both
+                const buf1 = await file1.arrayBuffer();
+                const buf2 = await file2.arrayBuffer();
+                let text1 = await extractTextFromPdf(buf1.slice(0));
+                let text2 = await extractTextFromPdf(buf2.slice(0));
+
+                let images: string[] = [];
+
+                // Fallback: If either document has no text, render images for visual comparison
+                if (!text1 || !text1.trim() || !text2 || !text2.trim()) {
+                    const { renderPageToImage } = await import('../utils/pdfExtractor');
+                    const img1 = await renderPageToImage(buf1.slice(0), 1);
+                    const img2 = await renderPageToImage(buf2.slice(0), 1); // Fixed page number to 1
+                    images = [img1, img2];
+                    text1 = text1 || "[SCANNED DOCUMENT 1]";
+                    text2 = text2 || "[SCANNED DOCUMENT 2]";
+                }
+
+                // Analyze with Gemini
+                const prompt = `Perform a semantic comparison between these two document versions. 
             VERSION 1: ${text1.substring(0, 5000)}
             VERSION 2: ${text2.substring(0, 5000)}
             
@@ -122,44 +115,48 @@ const NeuralDiffScreen: React.FC = () => {
             If the text layer is missing or mismatched, use your vision to compare the visual appearance.
             DO NOT REFUSE. Identify differences directly from visual data.`;
 
-            const response = await askGemini(prompt, "Comparing two document versions.", "diff", images.length > 0 ? images : undefined);
-            if (response.startsWith('AI_RATE_LIMIT')) {
-                setIsCooling(true);
-                return;
-            }
-            setDiffResult(response);
-            const stats = await recordAIUsage(AiOperationType.HEAVY);
-            if (stats?.message) alert(stats.message);
+                const response = await askGemini(prompt, "Comparing two document versions.", "diff", images.length > 0 ? images : undefined);
+                if (response.startsWith('AI_RATE_LIMIT')) {
+                    setIsCooling(true);
+                    return;
+                }
+                setDiffResult(response);
+                const stats = await recordAIUsage(AiOperationType.HEAVY);
+                if (stats?.message) alert(stats.message);
 
-        } catch (err) {
-            setError("Analysis failed. Ensure both files are readable PDFs.");
-            console.error(err);
-        } finally {
-            setIsAnalyzing(false);
-        }
+            } catch (err) {
+                setError("Analysis failed. Ensure both files are readable PDFs.");
+                console.error(err);
+            } finally {
+                setIsAnalyzing(false);
+            }
+        });
     };
 
     const handleExport = async () => {
         if (!diffResult) return;
-        setIsAnalyzing(true);
-        try {
-            const pdfBytes = await createPdfFromText("PDF Comparison Report", diffResult);
-            const fileName = `PDF_Comparison_${Date.now()}.pdf`;
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            await downloadFile(blob, fileName);
 
-            setSuccessData({
-                isOpen: true,
-                fileName,
-                originalSize: diffResult.length,
-                finalSize: pdfBytes.length
-            });
-        } catch (err) {
-            console.error("Export failed:", err);
-            setError("PDF export failed. Request too complex.");
-        } finally {
-            setIsAnalyzing(false);
-        }
+        requireAuth(async () => {
+            setIsAnalyzing(true);
+            try {
+                const pdfBytes = await createPdfFromText("PDF Comparison Report", diffResult);
+                const fileName = `PDF_Comparison_${Date.now()}.pdf`;
+                const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+                await downloadFile(blob, fileName);
+
+                setSuccessData({
+                    isOpen: true,
+                    fileName,
+                    originalSize: diffResult.length,
+                    finalSize: pdfBytes.length
+                });
+            } catch (err) {
+                console.error("Export failed:", err);
+                setError("PDF export failed. Request too complex.");
+            } finally {
+                setIsAnalyzing(false);
+            }
+        });
     };
 
     return (
@@ -345,11 +342,7 @@ const NeuralDiffScreen: React.FC = () => {
             <AuthModal
                 isOpen={authModalOpen}
                 onClose={() => setAuthModalOpen(false)}
-                onSuccess={async () => {
-                    const user = await getCurrentUser();
-                    if (user) await initSubscription(user);
-                    runNeuralDiff();
-                }}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div >
     );

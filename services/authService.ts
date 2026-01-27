@@ -15,14 +15,14 @@ class AuthService {
     /**
      * initializes the secure session by exchanging integrity proofs (and optionally identity) for a session token
      */
-    async initializeSession(credential?: string): Promise<string | null> {
+    async initializeSession(credential?: string): Promise<{ token: string | null; profile?: any }> {
         // If we have a valid token AND no new identity is being bound, return it
         const isExpired = !this.sessionToken || Date.now() >= this.tokenExpiry;
         const needsRefresh = !isExpired && (this.tokenExpiry - Date.now() < 5 * 60 * 1000); // 5 min buffer
 
         // If it's valid and NOT a forced login (credential provided), return existing
         if (!isExpired && !needsRefresh && !credential) {
-            return this.sessionToken;
+            return { token: this.sessionToken };
         }
 
         try {
@@ -47,7 +47,7 @@ class AuthService {
 
             if (!response.ok) {
                 console.error('Anti-Gravity Auth: Session handshake failed:', response.status);
-                return null;
+                return { token: null };
             }
 
             const data = await response.json();
@@ -61,12 +61,12 @@ class AuthService {
                 }
 
                 console.log('Anti-Gravity Auth: ✅ Secure session synchronized');
-                return this.sessionToken;
+                return { token: this.sessionToken, profile: data.profile };
             }
         } catch (error) {
             console.error('Anti-Gravity Auth: Network error during handshake:', error);
         }
-        return null;
+        return { token: null };
     }
 
     /**
@@ -74,7 +74,7 @@ class AuthService {
      * Automatically triggers silent refresh if nearing expiry
      */
     async getAuthHeader(): Promise<string> {
-        const token = await this.initializeSession();
+        const { token } = await this.initializeSession();
         return token ? `Bearer ${token}` : '';
     }
 

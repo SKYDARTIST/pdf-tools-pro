@@ -9,6 +9,18 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
 
+    // Auto-redirect authenticated users to workspace
+    React.useEffect(() => {
+        const checkAuth = () => {
+            const uid = localStorage.getItem('google_uid');
+            if (uid) {
+                console.log('🛡️ Landing: Authenticated user detected, auto-launching workspace');
+                navigate('/workspace', { replace: true });
+            }
+        };
+        checkAuth();
+    }, [navigate]);
+
     const handleMouseMove = (e: React.MouseEvent) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 20;
         const y = (e.clientY / window.innerHeight - 0.5) * 20;

@@ -26,55 +26,42 @@ let cachedUser: GoogleUser | null = null;
  */
 export const signInWithGoogle = async (credential: string): Promise<GoogleUser | null> => {
     try {
-        // SECURITY: Removed manual client-side Base64 decoding (Severity 7.4/10 Fix)
-        // Verification now happens SERVER-SIDE during the session handshake.
+        // SECURITY: Verification now happens SERVER-SIDE during the session handshake.
 
         // 1. Establish/Upgrade secure session with the Google credential
-        console.log('🔑 Establishing secure session with verified identity...');
-        const sessionToken = await AuthService.initializeSession(credential);
+        // The backend will also sync the user to the DB using the Service Role
+        console.log('🔑 Establishing secure session and syncing profile...');
+        const { token, profile } = await AuthService.initializeSession(credential);
 
-        if (!sessionToken) {
+        if (!token) {
             SecurityLogger.error('Google Auth: Failed to establish verified session');
             return null;
         }
 
-        // 2. Fetch profile info securely from DB (Server-Side verification has already happened)
-        // Temporarily using a decoded sub ONLY for the local fetch (not for auth decisions)
-        const tempDecoded = JSON.parse(atob(credential.split('.')[1]));
-        const googleUid = tempDecoded.sub;
+        // 2. Decode profile info for IMMEDIATE UI update (Self-Hydration)
+        // We favor the profile returned by the backend if available
+        let userProfile: GoogleUser;
 
-        SecurityLogger.log('Google Auth: Processing login for', { email: maskEmail(tempDecoded.email) });
-
-        // 3. Sync with user_accounts table
-        const { data: user, error } = await supabase
-            .from('user_accounts')
-            .upsert([{
-                google_uid: googleUid,
+        if (profile) {
+            userProfile = profile;
+        } else {
+            const tempDecoded = JSON.parse(atob(credential.split('.')[1]));
+            userProfile = {
+                google_uid: tempDecoded.sub,
                 email: tempDecoded.email,
                 name: tempDecoded.name,
-                picture: tempDecoded.picture,
-                last_login: new Date().toISOString(),
-            }], {
-                onConflict: 'google_uid'
-            })
-            .select()
-            .single();
-
-        if (error) {
-            SecurityLogger.error('Google Auth: DB Sync failed', { message: error.message });
-            return null;
+                picture: tempDecoded.picture
+            };
         }
 
-        // Store ONLY the UID locally (No PII in localStorage for security/GDPR)
-        localStorage.setItem('google_uid', googleUid);
+        SecurityLogger.log('Google Auth: Session established for', { email: maskEmail(userProfile.email) });
+
+        // Store identity locally for instant Header hydration
+        localStorage.setItem('google_uid', userProfile.google_uid);
+        localStorage.setItem('user_profile', JSON.stringify(userProfile));
 
         // Update memory cache
-        cachedUser = {
-            google_uid: googleUid,
-            email: tempDecoded.email,
-            name: tempDecoded.name,
-            picture: tempDecoded.picture
-        };
+        cachedUser = userProfile;
 
         return cachedUser;
     } catch (error) {
@@ -96,22 +83,22 @@ export const getCurrentUser = async (): Promise<GoogleUser | null> => {
         return cachedUser;
     }
 
-    // 2. Fetch from DB if not in memory (On-demand PII retrieval)
-    try {
-        const { data, error } = await supabase
-            .from('user_accounts')
-            .select('google_uid, email, name, picture')
-            .eq('google_uid', googleUid)
-            .single();
-
-        if (data && !error) {
-            cachedUser = data as GoogleUser;
-            return cachedUser;
-        }
-    } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : 'Unknown error';
-        SecurityLogger.error('Google Auth: Failed to fetch user profile', { message: errorMsg });
+    // 2. Check local storage cache (Self-Hydration)
+    const stored = localStorage.getItem('user_profile');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (parsed.google_uid === googleUid) {
+                cachedUser = parsed;
+                return cachedUser;
+            }
+        } catch (e) { }
     }
+
+    // SECURITY: CRITICAL VULNERABILITY FIX (v3.1)
+    // REMOVED: Fallback to client-side Supabase fetch.
+    // Client-side fetching of profiles in RLS-less mode is a data leak.
+    // All profile sync must happen via the backend handshake.
 
     return null;
 };
@@ -122,6 +109,7 @@ export const getCurrentUser = async (): Promise<GoogleUser | null> => {
 export const logout = (): void => {
     // 1. Clear Auth Keys
     localStorage.removeItem('google_uid');
+    localStorage.removeItem('user_profile');
 
     // Clear Memory Cache
     cachedUser = null;

@@ -6,10 +6,13 @@ import {
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
   useEffect(() => {
     setRecentFiles(FileHistoryManager.getRecent(10));
@@ -121,7 +124,7 @@ const HomeScreen: React.FC = () => {
           <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Recent Files</div>
           <motion.button
             whileHover={{ scale: 1.05 }}
-            onClick={() => navigate('/my-files')}
+            onClick={() => requireAuth(() => navigate('/my-files'))}
             className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 hover:opacity-100 transition-opacity"
           >
             View All Files
@@ -138,7 +141,7 @@ const HomeScreen: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                   whileHover={{ x: 4 }}
-                  onClick={() => navigate('/reader?protocol=read')}
+                  onClick={() => requireAuth(() => navigate('/reader?protocol=read'))}
                   className="monolith-card p-5 flex items-center gap-4 cursor-pointer relative overflow-hidden"
                 >
                   <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
@@ -176,6 +179,11 @@ const HomeScreen: React.FC = () => {
       </div>
 
 
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </motion.div>
   );
 };

@@ -10,6 +10,8 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 
 const STAMPS = [
   { id: 'approved', label: 'APPROVED', color: '#10b981' },
@@ -20,6 +22,7 @@ const STAMPS = [
 
 const SignScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
@@ -92,128 +95,130 @@ const SignScreen: React.FC = () => {
   const handleFinish = async () => {
     if (!file || !canvasRef.current) return;
 
-    if (!TaskLimitManager.canUseTask()) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      // Get signature as image with white background
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      // Create a new canvas with white background
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = canvas.height;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (!tempCtx) return;
-
-      // Fill with white background
-      tempCtx.fillStyle = 'white';
-      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-      // Draw the signature on top
-      tempCtx.drawImage(canvas, 0, 0);
-
-      // Convert to PNG
-      const signatureDataUrl = tempCanvas.toDataURL('image/png');
-
-      // Convert signature to blob
-      const signatureBlob = await (await fetch(signatureDataUrl)).blob();
-
-      // Load PDF and add signature
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-
-      // Embed signature image
-      const signatureImage = await pdfDoc.embedPng(await signatureBlob.arrayBuffer());
-      const pages = pdfDoc.getPages();
-      const firstPage = pages[0];
-
-      // Add signature to bottom right of first page (larger and more visible)
-      const { width, height } = firstPage.getSize();
-      const signatureWidth = 150; // Increased from 100 for better visibility
-      const signatureHeight = (signatureImage.height / signatureImage.width) * signatureWidth;
-
-      firstPage.drawImage(signatureImage, {
-        x: width - signatureWidth - 30,
-        y: 30,
-        width: signatureWidth,
-        height: signatureHeight,
-        opacity: 1.0, // Fully opaque
-      });
-
-      // Add Stamp if selected
-      if (selectedStamp) {
-        const stamp = STAMPS.find(s => s.id === selectedStamp);
-        if (stamp) {
-          const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-          const fontSize = 40;
-          const text = stamp.label;
-          const textWidth = font.widthOfTextAtSize(text, fontSize);
-
-          // Convert hex to rgb
-          const r = parseInt(stamp.color.slice(1, 3), 16) / 255;
-          const g = parseInt(stamp.color.slice(3, 5), 16) / 255;
-          const b = parseInt(stamp.color.slice(5, 7), 16) / 255;
-
-          firstPage.drawRectangle({
-            x: 50,
-            y: height - 100,
-            width: textWidth + 40,
-            height: 60,
-            borderColor: rgb(r, g, b),
-            borderWidth: 4,
-            rotate: degrees(15),
-          });
-
-          firstPage.drawText(text, {
-            x: 70,
-            y: height - 85,
-            size: fontSize,
-            font: font,
-            color: rgb(r, g, b),
-            rotate: degrees(15),
-          });
-        }
+    requireAuth(async () => {
+      if (!TaskLimitManager.canUseTask()) {
+        setShowUpgradeModal(true);
+        return;
       }
 
-      // Save and download
-      const pdfBytes = await pdfDoc.save();
-      const fileName = `signed_${file.name}`;
-      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-      await downloadFile(blob, fileName);
+      setIsProcessing(true);
+      try {
+        // Get signature as image with white background
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-      // Increment task counter
-      TaskLimitManager.incrementTask();
+        // Create a new canvas with white background
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        if (!tempCtx) return;
 
-      // Add to history
-      FileHistoryManager.addEntry({
-        fileName,
-        operation: 'sign',
-        originalSize: file.size,
-        finalSize: pdfBytes.length,
-        status: 'success'
-      });
+        // Fill with white background
+        tempCtx.fillStyle = 'white';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-      // Reset and navigate
-      // Show success modal
-      setSuccessData({
-        isOpen: true,
-        fileName,
-        originalSize: file.size,
-        finalSize: pdfBytes.length
-      });
+        // Draw the signature on top
+        tempCtx.drawImage(canvas, 0, 0);
 
-      setIsProcessing(false);
-    } catch (error) {
-      console.error('Error signing PDF:', error);
-      alert('Error applying signature: ' + (error instanceof Error ? error.message : 'Unknown error'));
-      setIsProcessing(false);
-    }
+        // Convert to PNG
+        const signatureDataUrl = tempCanvas.toDataURL('image/png');
+
+        // Convert signature to blob
+        const signatureBlob = await (await fetch(signatureDataUrl)).blob();
+
+        // Load PDF and add signature
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+        // Embed signature image
+        const signatureImage = await pdfDoc.embedPng(await signatureBlob.arrayBuffer());
+        const pages = pdfDoc.getPages();
+        const firstPage = pages[0];
+
+        // Add signature to bottom right of first page (larger and more visible)
+        const { width, height } = firstPage.getSize();
+        const signatureWidth = 150; // Increased from 100 for better visibility
+        const signatureHeight = (signatureImage.height / signatureImage.width) * signatureWidth;
+
+        firstPage.drawImage(signatureImage, {
+          x: width - signatureWidth - 30,
+          y: 30,
+          width: signatureWidth,
+          height: signatureHeight,
+          opacity: 1.0, // Fully opaque
+        });
+
+        // Add Stamp if selected
+        if (selectedStamp) {
+          const stamp = STAMPS.find(s => s.id === selectedStamp);
+          if (stamp) {
+            const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+            const fontSize = 40;
+            const text = stamp.label;
+            const textWidth = font.widthOfTextAtSize(text, fontSize);
+
+            // Convert hex to rgb
+            const r = parseInt(stamp.color.slice(1, 3), 16) / 255;
+            const g = parseInt(stamp.color.slice(3, 5), 16) / 255;
+            const b = parseInt(stamp.color.slice(5, 7), 16) / 255;
+
+            firstPage.drawRectangle({
+              x: 50,
+              y: height - 100,
+              width: textWidth + 40,
+              height: 60,
+              borderColor: rgb(r, g, b),
+              borderWidth: 4,
+              rotate: degrees(15),
+            });
+
+            firstPage.drawText(text, {
+              x: 70,
+              y: height - 85,
+              size: fontSize,
+              font: font,
+              color: rgb(r, g, b),
+              rotate: degrees(15),
+            });
+          }
+        }
+
+        // Save and download
+        const pdfBytes = await pdfDoc.save();
+        const fileName = `signed_${file.name}`;
+        const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+        await downloadFile(blob, fileName);
+
+        // Increment task counter
+        TaskLimitManager.incrementTask();
+
+        // Add to history
+        FileHistoryManager.addEntry({
+          fileName,
+          operation: 'sign',
+          originalSize: file.size,
+          finalSize: pdfBytes.length,
+          status: 'success'
+        });
+
+        // Reset and navigate
+        // Show success modal
+        setSuccessData({
+          isOpen: true,
+          fileName,
+          originalSize: file.size,
+          finalSize: pdfBytes.length
+        });
+
+        setIsProcessing(false);
+      } catch (error) {
+        console.error('Error signing PDF:', error);
+        alert('Error applying signature: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        setIsProcessing(false);
+      }
+    });
   };
 
   return (
@@ -367,6 +372,12 @@ const SignScreen: React.FC = () => {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
         reason="limit_reached"
+      />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
       />
 
       {successData && (

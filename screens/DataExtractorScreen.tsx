@@ -11,7 +11,7 @@ import AIReportModal from '../components/AIReportModal';
 import AiLimitModal from '../components/AiLimitModal';
 import { downloadFile } from '../services/downloadService';
 import ToolGuide from '../components/ToolGuide';
-import { useAIAuth } from '../hooks/useAIAuth';
+import { useAuthGate } from '../hooks/useAuthGate';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -32,7 +32,7 @@ const DataExtractorScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const showToast = (message: string) => {
         setError(message);
@@ -60,63 +60,58 @@ const DataExtractorScreen: React.FC = () => {
     const runExtraction = async () => {
         if (!file) return;
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            return;
-        }
-
-        if (!hasConsent) {
-            setShowConsent(true);
-            return;
-        }
-
-
-        // HEAVY AI Operation - Data Extractor consumes credits
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const subscription = getSubscription();
-            setAiLimitInfo({
-                blockMode: aiCheck.blockMode,
-                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-            });
-            setShowAiLimit(true);
-            return;
-        }
-
-        setIsExtracting(true);
-        setError('');
-
-        try {
-            let text = "";
-            let imageBase64 = "";
-            let fileMime = file.type || 'image/jpeg';
-
-            if (file.type === "application/pdf") {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer.slice(0));
-
-                if (!text || text.trim() === '') {
-                    // Fallback for scanned documents
-                    const { renderPageToImage } = await import('../utils/pdfExtractor');
-                    const imageRaw = await renderPageToImage(buffer.slice(0), 1);
-                    imageBase64 = imageRaw;
-                    fileMime = 'image/jpeg';
-                    text = "[SCANNED DOCUMENT DETECTED] This document has no text layer. Please analyze the visual content provided in the image attachment.";
-                }
-            } else {
-                // Handle Image (Vision Mode)
-                const rawBase64 = await new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.readAsDataURL(file);
-                });
-                imageBase64 = await compressImage(rawBase64);
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
 
-            let prompt = "";
-            if (format === 'markdown') {
-                prompt = `Extract ALL content from this document into Markdown format.
+            // HEAVY AI Operation - Data Extractor consumes credits
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const subscription = getSubscription();
+                setAiLimitInfo({
+                    blockMode: aiCheck.blockMode,
+                    used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                    limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+                });
+                setShowAiLimit(true);
+                return;
+            }
+
+            setIsExtracting(true);
+            setError('');
+
+            try {
+                let text = "";
+                let imageBase64 = "";
+                let fileMime = file.type || 'image/jpeg';
+
+                if (file.type === "application/pdf") {
+                    const buffer = await file.arrayBuffer();
+                    text = await extractTextFromPdf(buffer.slice(0));
+
+                    if (!text || text.trim() === '') {
+                        // Fallback for scanned documents
+                        const { renderPageToImage } = await import('../utils/pdfExtractor');
+                        const imageRaw = await renderPageToImage(buffer.slice(0), 1);
+                        imageBase64 = imageRaw;
+                        fileMime = 'image/jpeg';
+                        text = "[SCANNED DOCUMENT DETECTED] This document has no text layer. Please analyze the visual content provided in the image attachment.";
+                    }
+                } else {
+                    // Handle Image (Vision Mode)
+                    const rawBase64 = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.readAsDataURL(file);
+                    });
+                    imageBase64 = await compressImage(rawBase64);
+                }
+
+                let prompt = "";
+                if (format === 'markdown') {
+                    prompt = `Extract ALL content from this document into Markdown format.
 
 CRITICAL RULES:
 1. If you see a TABLE, extract EVERY SINGLE ROW - do not skip any rows
@@ -134,8 +129,8 @@ CRITICAL: MANDATORY VISION OVERRIDE
 You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGE.
 The text layer is missing; read the visual document.
 DO NOT REFUSE. Extract the content directly from visual data.`;
-            } else if (format === 'json') {
-                prompt = `Extract ALL content from this document into JSON format.
+                } else if (format === 'json') {
+                    prompt = `Extract ALL content from this document into JSON format.
 
 For INVOICES/TABLES:
 {
@@ -162,8 +157,8 @@ You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGE.
 The text layer is missing; read the visual document.
 DO NOT REFUSE. Extract the content directly from visual data.
 Output ONLY valid JSON.`;
-            } else {
-                prompt = `Extract ALL content from this document into CSV format.
+                } else {
+                    prompt = `Extract ALL content from this document into CSV format.
 
 For TABLES/INVOICES:
 - First row: Extract the exact column headers
@@ -177,36 +172,37 @@ For TEXT/NOTES:
 
 CRITICAL: Extract the COMPLETE table. Count the rows and make sure you include ALL of them.
 Output ONLY raw CSV data.`;
+                }
+
+                // @ts-ignore - passing extra mimeType for backend precision
+                // For images, pass empty string - the image itself contains the data
+                const response = await askGemini(prompt, text, "table", imageBase64 || undefined, fileMime);
+
+                if (response.startsWith('AI_RATE_LIMIT')) {
+                    setIsCooling(true);
+                    return;
+                }
+
+                // v1.8 Response Cleaning: Remove AI markdown wrappers (```json, ```markdown, etc.)
+                const cleanedResponse = response
+                    .replace(/^```[a-z]*\n/i, '')
+                    .replace(/\n```$/i, '')
+                    .trim();
+
+                if (!cleanedResponse || cleanedResponse === '[]' || cleanedResponse === '{}') {
+                    throw new Error("AI could not find clear data. The handwriting might be too faint or obscured.");
+                }
+
+                setExtractedData(cleanedResponse);
+                const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+                if (stats?.message) alert(stats.message);
+            } catch (err: any) {
+                setError(err.message || "Extraction failed. Visual data may be too obscured or file corrupted.");
+                console.error(err);
+            } finally {
+                setIsExtracting(false);
             }
-
-            // @ts-ignore - passing extra mimeType for backend precision
-            // For images, pass empty string - the image itself contains the data
-            const response = await askGemini(prompt, text, "table", imageBase64 || undefined, fileMime);
-
-            if (response.startsWith('AI_RATE_LIMIT')) {
-                setIsCooling(true);
-                return;
-            }
-
-            // v1.8 Response Cleaning: Remove AI markdown wrappers (```json, ```markdown, etc.)
-            const cleanedResponse = response
-                .replace(/^```[a-z]*\n/i, '')
-                .replace(/\n```$/i, '')
-                .trim();
-
-            if (!cleanedResponse || cleanedResponse === '[]' || cleanedResponse === '{}') {
-                throw new Error("AI could not find clear data. The handwriting might be too faint or obscured.");
-            }
-
-            setExtractedData(cleanedResponse);
-            const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
-            if (stats?.message) alert(stats.message);
-        } catch (err: any) {
-            setError(err.message || "Extraction failed. Visual data may be too obscured or file corrupted.");
-            console.error(err);
-        } finally {
-            setIsExtracting(false);
-        }
+        });
     };
 
     const downloadData = async () => {
@@ -479,11 +475,7 @@ Output ONLY raw CSV data.`;
             <AuthModal
                 isOpen={authModalOpen}
                 onClose={() => setAuthModalOpen(false)}
-                onSuccess={async () => {
-                    const user = await getCurrentUser();
-                    if (user) await initSubscription(user);
-                    runExtraction();
-                }}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div >
     );

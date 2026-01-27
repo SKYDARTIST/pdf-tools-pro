@@ -50,6 +50,7 @@ import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
 import { AuthModal } from './components/AuthModal';
+import ProtectedRoute from './components/ProtectedRoute';
 import { getCurrentUser } from './services/googleAuthService';
 import { App as CapApp } from '@capacitor/app';
 
@@ -340,10 +341,10 @@ const App: React.FC = () => {
                   <Route path="/page-numbers" element={<PageNumbersScreen />} />
                   <Route path="/extract-images" element={<ExtractImagesScreen />} />
 
-                  <Route path="/ai-settings" element={<AISettingsScreen />} />
+                  <Route path="/ai-settings" element={<ProtectedRoute><AISettingsScreen /></ProtectedRoute>} />
                   <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
                   <Route path="/table-extractor" element={<TableExtractorScreen />} />
-                  <Route path="/my-files" element={<MyFilesScreen />} />
+                  <Route path="/my-files" element={<ProtectedRoute><MyFilesScreen /></ProtectedRoute>} />
                   <Route path="/smart-redact" element={<SmartRedactScreen />} />
                   <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
                   <Route path="/neural-diff" element={<NeuralDiffScreen />} />

@@ -13,9 +13,12 @@ import { Flag } from 'lucide-react';
 import ToolGuide from '../components/ToolGuide';
 import NeuralPulse from '../components/NeuralPulse';
 import { compressImage } from '../utils/imageProcessor';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
@@ -499,7 +502,7 @@ const ScannerScreen: React.FC = () => {
 
             {!appliedFilters ? (
               <button
-                onClick={handleNeuralEnhance}
+                onClick={() => requireAuth(handleNeuralEnhance)}
                 disabled={isPolishing}
                 className="h-14 px-5 bg-violet-600 rounded-full flex items-center gap-3 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all group overflow-hidden relative"
               >
@@ -555,6 +558,12 @@ const ScannerScreen: React.FC = () => {
       <AIReportModal
         isOpen={showReport}
         onClose={() => setShowReport(false)}
+      />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
       />
     </motion.div>
   );

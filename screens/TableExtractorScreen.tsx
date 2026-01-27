@@ -13,7 +13,7 @@ import AIReportModal from '../components/AIReportModal';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { Flag } from 'lucide-react';
 import { compressImage } from '../utils/imageProcessor';
-import { useAIAuth } from '../hooks/useAIAuth';
+import { useAuthGate } from '../hooks/useAuthGate';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -32,82 +32,79 @@ const TableExtractorScreen: React.FC = () => {
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            const selected = e.target.files[0];
-
-            if (!hasConsent) {
-                setPendingFile(selected);
-                setShowConsent(true);
-                return;
-            }
-
-            processFile(selected);
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            setTables([]);
+            setStatus('idle');
         }
     };
 
 
-    const processFile = async (selected: File) => {
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            setPendingFile(selected);
-            return;
-        }
+    const processFile = async () => {
+        if (!file) return;
 
-        // HEAVY AI Operation - Table Extractor consumes credits
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const subscription = getSubscription();
-            setAiLimitInfo({
-                blockMode: aiCheck.blockMode,
-                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-            });
-            setShowAiLimit(true);
-            return;
-        }
-
-        setFile(selected);
-        setIsProcessing(true);
-        setStatus('analyzing');
-
-        try {
-            let extractedTables: ExtractedTable[] = [];
-
-            if (selected.type === 'application/pdf') {
-                const arrayBuffer = await selected.arrayBuffer();
-                const text = await extractTextFromPdf(arrayBuffer.slice(0));
-
-                if (!text || text.trim() === '') {
-                    // Fallback for scanned documents
-                    const { renderPageToImage } = await import('../utils/pdfExtractor');
-                    const imageBase64 = await renderPageToImage(arrayBuffer.slice(0), 1);
-                    extractedTables = await extractTablesFromDocument(undefined, imageBase64);
-                } else {
-                    extractedTables = await extractTablesFromDocument(text);
-                }
-            } else if (selected.type.startsWith('image/')) {
-                const reader = new FileReader();
-                const rawBase64 = await new Promise<string>((resolve) => {
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.readAsDataURL(selected);
-                });
-                const imageBase64 = await compressImage(rawBase64);
-                extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
 
-            setTables(extractedTables);
-            const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
-            if (stats?.message) alert(stats.message);
-            setStatus('done');
-        } catch (err) {
-            console.error("Extraction Failed:", err);
-            setStatus('idle');
-        } finally {
-            setIsProcessing(false);
-        }
+            // HEAVY AI Operation - Table Extractor consumes credits
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const subscription = getSubscription();
+                setAiLimitInfo({
+                    blockMode: aiCheck.blockMode,
+                    used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                    limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+                });
+                setShowAiLimit(true);
+                return;
+            }
+
+            setIsProcessing(true);
+            setStatus('analyzing');
+
+            try {
+                let extractedTables: ExtractedTable[] = [];
+
+                if (file.type === 'application/pdf') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const text = await extractTextFromPdf(arrayBuffer.slice(0));
+
+                    if (!text || text.trim() === '') {
+                        // Fallback for scanned documents
+                        const { renderPageToImage } = await import('../utils/pdfExtractor');
+                        const imageBase64 = await renderPageToImage(arrayBuffer.slice(0), 1);
+                        extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                    } else {
+                        extractedTables = await extractTablesFromDocument(text);
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    const rawBase64 = await new Promise<string>((resolve) => {
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.readAsDataURL(file);
+                    });
+                    const imageBase64 = await compressImage(rawBase64);
+                    extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                }
+
+                setTables(extractedTables);
+                const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+                if (stats?.message) alert(stats.message);
+                setStatus('done');
+            } catch (err) {
+                console.error("Extraction Failed:", err);
+                setStatus('idle');
+            } finally {
+                setIsProcessing(false);
+            }
+        });
     };
 
     const downloadCSV = async (table: ExtractedTable) => {
@@ -173,7 +170,7 @@ const TableExtractorScreen: React.FC = () => {
             />
 
             <AnimatePresence mode="wait">
-                {status === 'idle' && (
+                {status === 'idle' && !file && (
                     <motion.label
                         key="idle"
                         initial={{ opacity: 0, scale: 0.98 }}
@@ -188,6 +185,40 @@ const TableExtractorScreen: React.FC = () => {
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mt-2">Choose a PDF or Image to find tables</p>
                         <input type="file" accept=".pdf,image/*" className="hidden" onChange={handleFileSelect} />
                     </motion.label>
+                )}
+
+                {status === 'idle' && file && (
+                    <motion.div
+                        key="file-selected"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="space-y-8"
+                    >
+                        <div className="monolith-card p-8 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-500">
+                                    <TableIcon size={24} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target File</span>
+                                    <span className="text-sm font-black uppercase tracking-tighter">{file.name}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => setFile(null)} className="p-3 hover:bg-rose-500/10 text-rose-500 rounded-full transition-all">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => processFile()}
+                            className="w-full bg-black dark:bg-white text-white dark:text-black py-6 rounded-3xl text-xs font-black uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl"
+                        >
+                            <Zap size={18} />
+                            Start AI Extraction
+                        </motion.button>
+                    </motion.div>
                 )}
 
                 {status === 'analyzing' && (
@@ -313,10 +344,7 @@ const TableExtractorScreen: React.FC = () => {
                     localStorage.setItem('ai_neural_consent', 'true');
                     setHasConsent(true);
                     setShowConsent(false);
-                    if (pendingFile) {
-                        processFile(pendingFile);
-                        setPendingFile(null);
-                    }
+                    processFile();
                 }}
             />
 
@@ -357,14 +385,7 @@ const TableExtractorScreen: React.FC = () => {
             <AuthModal
                 isOpen={authModalOpen}
                 onClose={() => setAuthModalOpen(false)}
-                onSuccess={async () => {
-                    const user = await getCurrentUser();
-                    if (user) await initSubscription(user);
-                    if (pendingFile) {
-                        processFile(pendingFile);
-                        setPendingFile(null);
-                    }
-                }}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

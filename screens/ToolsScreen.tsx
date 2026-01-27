@@ -9,8 +9,12 @@ import {
 
 import TaskCounter from '../components/TaskCounter';
 
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
+
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
@@ -200,6 +204,11 @@ const ToolsScreen: React.FC = () => {
                 )}
 
             </div>
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
+            />
         </div>
     );
 };

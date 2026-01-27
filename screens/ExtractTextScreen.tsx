@@ -10,6 +10,8 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import { downloadFile } from '../services/downloadService';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 
 // Configure PDF.js worker - using local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -30,11 +32,30 @@ const ExtractTextScreen: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
   const navigate = useNavigate();
+  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
+      try {
+        // Read file data immediately to prevent Android permission expiration
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: selectedFile.type });
+        const freshFile = new File([blob], selectedFile.name, { type: selectedFile.type });
+        setFile(freshFile);
+        setOriginalBuffer(arrayBuffer);
+        setText(null); // Clear previous text
+      } catch (err) {
+        console.error('Failed to read file:', selectedFile.name, err);
+        alert('Error reading file: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      }
+    }
+  };
 
+  const handleExtract = async () => {
+    if (!file || !originalBuffer) return;
+
+    requireAuth(async () => {
       if (!TaskLimitManager.canUseTask()) {
         setShowUpgradeModal(true);
         return;
@@ -43,14 +64,7 @@ const ExtractTextScreen: React.FC = () => {
       setIsProcessing(true);
 
       try {
-        // Read file data immediately to prevent Android permission expiration
-        const arrayBuffer = await selectedFile.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: selectedFile.type });
-        const freshFile = new File([blob], selectedFile.name, { type: selectedFile.type });
-        setFile(freshFile);
-        setOriginalBuffer(arrayBuffer);
-
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
         const numPages = pdf.numPages;
 
         let fullText = '';
@@ -79,51 +93,53 @@ const ExtractTextScreen: React.FC = () => {
 
         // Record in history
         FileHistoryManager.addEntry({
-          fileName: selectedFile.name,
+          fileName: file.name,
           operation: 'extract-text',
-          originalSize: selectedFile.size,
+          originalSize: file.size,
           status: 'success'
         });
       } catch (err) {
-        console.error('Failed to read file:', selectedFile.name, err);
+        console.error('Extraction failed:', file.name, err);
         alert('Error extracting text: ' + (err instanceof Error ? err.message : 'Unknown error'));
         setText('Failed to extract text from PDF.');
       } finally {
         setIsProcessing(false);
       }
-    }
+    });
   };
 
   const handleApplyEdit = async () => {
     if (!originalBuffer || !findText || !replaceText || !file) return;
 
-    if (!TaskLimitManager.canUseTask()) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    setIsApplyingEdit(true);
-    try {
-      // Universal Replace: now handles all pages and all occurrences
-      const modifiedBytes = await replaceTextInPdf(originalBuffer, findText, replaceText);
-      if (modifiedBytes) {
-        const blob = new Blob([modifiedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-        // Show success modal
-        setSuccessData({
-          isOpen: true,
-          fileName: `edited_${file.name}`,
-          originalSize: file.size,
-          finalSize: modifiedBytes.length
-        });
-      } else {
-        alert(`No occurrences of "${findText}" found in the document.`);
+    requireAuth(async () => {
+      if (!TaskLimitManager.canUseTask()) {
+        setShowUpgradeModal(true);
+        return;
       }
-    } catch (error) {
-      console.error(error);
-      alert('Edit failed. Please try again.');
-    } finally {
-      setIsApplyingEdit(false);
-    }
+
+      setIsApplyingEdit(true);
+      try {
+        // Universal Replace: now handles all pages and all occurrences
+        const modifiedBytes = await replaceTextInPdf(originalBuffer, findText, replaceText);
+        if (modifiedBytes) {
+          const blob = new Blob([modifiedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+          // Show success modal
+          setSuccessData({
+            isOpen: true,
+            fileName: `edited_${file.name}`,
+            originalSize: file.size,
+            finalSize: modifiedBytes.length
+          });
+        } else {
+          alert(`No occurrences of "${findText}" found in the document.`);
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Edit failed. Please try again.');
+      } finally {
+        setIsApplyingEdit(false);
+      }
+    });
   };
 
   return (
@@ -155,7 +171,7 @@ const ExtractTextScreen: React.FC = () => {
           ]}
         />
 
-        {!text && !isProcessing ? (
+        {!file && !isProcessing ? (
           <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
             <motion.div
               whileHover={{ scale: 1.1, y: -5 }}
@@ -170,6 +186,34 @@ const ExtractTextScreen: React.FC = () => {
           <div className="h-80 flex flex-col items-center justify-center gap-6 monolith-card bg-black/5 dark:bg-white/5 border-none shadow-xl">
             <Loader2 className="animate-spin text-black dark:text-white" size={48} strokeWidth={3} />
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] animate-pulse">Extracting text...</p>
+          </div>
+        ) : !text ? (
+          <div className="space-y-8">
+            <div className="monolith-card p-6 flex items-center gap-5 border-none shadow-xl">
+              <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shrink-0">
+                <FileSearch size={28} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file?.name}</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">AWAITING EXTRACTION</p>
+              </div>
+              <button onClick={() => { setFile(null); setOriginalBuffer(null); }} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
+                Change
+              </button>
+            </div>
+
+            <button
+              onClick={handleExtract}
+              className="w-full py-6 rounded-[28px] bg-black dark:bg-white text-white dark:text-black font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl"
+            >
+              <motion.div
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear", repeatDelay: 1 }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
+              />
+              <FileSearch size={18} strokeWidth={3} />
+              <span>Extract Text & Analyze</span>
+            </button>
           </div>
         ) : (
           <div className="space-y-8">
@@ -275,30 +319,11 @@ const ExtractTextScreen: React.FC = () => {
         reason="limit_reached"
       />
 
-      {successData && (
-        <SuccessModal
-          isOpen={successData.isOpen}
-          onClose={() => {
-            setSuccessData(null);
-            setText(null);
-            setStats(null);
-            setFile(null);
-            setShowEdit(false);
-          }}
-          operation="Text Modification"
-          fileName={successData.fileName}
-          originalSize={successData.originalSize}
-          finalSize={successData.finalSize}
-          onViewFiles={() => {
-            setSuccessData(null);
-            setText(null);
-            setStats(null);
-            setFile(null);
-            setShowEdit(false);
-            navigate('/my-files');
-          }}
-        />
-      )}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </motion.div>
   );
 };

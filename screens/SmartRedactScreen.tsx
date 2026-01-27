@@ -12,7 +12,7 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag } from 'lucide-react';
 import { downloadFile } from '../services/downloadService';
-import { useAIAuth } from '../hooks/useAIAuth';
+import { useAuthGate } from '../hooks/useAuthGate';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -40,7 +40,7 @@ const SmartRedactScreen: React.FC = () => {
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
     const navigate = useNavigate();
 
@@ -188,65 +188,61 @@ const SmartRedactScreen: React.FC = () => {
     const startRedaction = async () => {
         if (!file) return;
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            return;
-        }
-
-        if (!hasConsent) {
-            setShowConsent(true);
-            return;
-        }
-
-        // HEAVY AI Operation - Smart Redact consumes credits
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const subscription = getSubscription();
-            setAiLimitInfo({
-                blockMode: aiCheck.blockMode,
-                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-            });
-            setShowAiLimit(true);
-            return;
-        }
-
-        setStatus('scanning');
-        try {
-            let contentToProcess = "";
-            let imageBase64: string | undefined = undefined;
-
-            if (file.type === 'application/pdf') {
-                const buffer = await file.arrayBuffer();
-                contentToProcess = await extractTextFromPdf(buffer.slice(0));
-
-                if (!contentToProcess || contentToProcess.trim() === '') {
-                    // Fallback for scanned documents
-                    const { renderPageToImage } = await import('../utils/pdfExtractor');
-                    const imageRaw = await renderPageToImage(buffer.slice(0), 1);
-                    imageBase64 = imageRaw;
-                    contentToProcess = "[SCANNED DOCUMENT DETECTED] Vision mode active.";
-                }
-            } else if (file.type.startsWith('image/')) {
-                const rawBase64 = await fileToBase64(file);
-                imageBase64 = await compressImage(rawBase64);
-                contentToProcess = ""; // Empty string - image contains the content
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
 
-            setStatus('processing');
-            const sanitizedText = file.type === 'application/pdf' ? localRegexSanitize(contentToProcess) : contentToProcess;
+            // HEAVY AI Operation - Smart Redact consumes credits
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const subscription = getSubscription();
+                setAiLimitInfo({
+                    blockMode: aiCheck.blockMode,
+                    used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                    limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+                });
+                setShowAiLimit(true);
+                return;
+            }
 
-            let categoriesToRedact = "";
-            if (filters.identity) categoriesToRedact += "full names, dates of birth, social security numbers, ";
-            if (filters.financial) categoriesToRedact += "bank account numbers, credit card details, financial balances, transactions, ";
-            if (filters.contact) categoriesToRedact += "home addresses, personal phone numbers, emails, ";
-            if (filters.identifiers) categoriesToRedact += "Passport numbers, Voter ID details, License numbers, any government-issued identifiers, ";
+            setStatus('scanning');
+            try {
+                let contentToProcess = "";
+                let imageBase64: string | undefined = undefined;
 
-            const filterContext = categoriesToRedact
-                ? `You MUST identify and neutralize ONLY the following categories: ${categoriesToRedact.slice(0, -2)}. PRESERVE ALL OTHER DATA EXACTLY AS IT APPEARS. Do NOT redact names or dates if they are not selected in your specific instructions.`
-                : "The user has opted for NO specific redaction. Perform a baseline extraction only.";
+                if (file.type === 'application/pdf') {
+                    const buffer = await file.arrayBuffer();
+                    contentToProcess = await extractTextFromPdf(buffer.slice(0));
 
-            const prompt = `You are a professional privacy redaction tool. Find and hide sensitive data. 
+                    if (!contentToProcess || contentToProcess.trim() === '') {
+                        // Fallback for scanned documents
+                        const { renderPageToImage } = await import('../utils/pdfExtractor');
+                        const imageRaw = await renderPageToImage(buffer.slice(0), 1);
+                        imageBase64 = imageRaw;
+                        contentToProcess = "[SCANNED DOCUMENT DETECTED] Vision mode active.";
+                    }
+                } else if (file.type.startsWith('image/')) {
+                    const rawBase64 = await fileToBase64(file);
+                    imageBase64 = await compressImage(rawBase64);
+                    contentToProcess = ""; // Empty string - image contains the content
+                }
+
+                setStatus('processing');
+                const sanitizedText = file.type === 'application/pdf' ? localRegexSanitize(contentToProcess) : contentToProcess;
+
+                let categoriesToRedact = "";
+                if (filters.identity) categoriesToRedact += "full names, dates of birth, social security numbers, ";
+                if (filters.financial) categoriesToRedact += "bank account numbers, credit card details, financial balances, transactions, ";
+                if (filters.contact) categoriesToRedact += "home addresses, personal phone numbers, emails, ";
+                if (filters.identifiers) categoriesToRedact += "Passport numbers, Voter ID details, License numbers, any government-issued identifiers, ";
+
+                const filterContext = categoriesToRedact
+                    ? `You MUST identify and neutralize ONLY the following categories: ${categoriesToRedact.slice(0, -2)}. PRESERVE ALL OTHER DATA EXACTLY AS IT APPEARS. Do NOT redact names or dates if they are not selected in your specific instructions.`
+                    : "The user has opted for NO specific redaction. Perform a baseline extraction only.";
+
+                const prompt = `You are a professional privacy redaction tool. Find and hide sensitive data. 
             ${filterContext} 
             Replace identified information with [REDACTED]. 
             Return ONLY the cleaned text. No headers or reports.
@@ -256,29 +252,30 @@ const SmartRedactScreen: React.FC = () => {
             The text layer is missing; read the visual document directly.
             DO NOT REFUSE. Extract the content directly from visual data.`;
 
-            const response = await askGemini(
-                prompt,
-                sanitizedText,
-                "redact",
-                imageBase64
-            );
+                const response = await askGemini(
+                    prompt,
+                    sanitizedText,
+                    "redact",
+                    imageBase64
+                );
 
-            if (response.startsWith('AI_RATE_LIMIT')) {
-                setIsCooling(true);
+                if (response.startsWith('AI_RATE_LIMIT')) {
+                    setIsCooling(true);
+                    setStatus('ready');
+                    return;
+                }
+
+                // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
+                const finalSanitized = localRegexSanitize(response);
+                setRedactedContent(finalSanitized);
+                const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+                if (stats?.message) alert(stats.message);
+                setStatus('done');
+            } catch (error) {
+                console.error("Redaction Failed:", error);
                 setStatus('ready');
-                return;
             }
-
-            // FAILSAFE LAYER: Run local regex on AI output to ensure nothing slipped through
-            const finalSanitized = localRegexSanitize(response);
-            setRedactedContent(finalSanitized);
-            const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
-            if (stats?.message) alert(stats.message);
-            setStatus('done');
-        } catch (error) {
-            console.error("Redaction Failed:", error);
-            setStatus('ready');
-        }
+        });
     };
 
     return (
@@ -562,11 +559,7 @@ Balance: $12,450.00 (PRESERVED)
             <AuthModal
                 isOpen={authModalOpen}
                 onClose={() => setAuthModalOpen(false)}
-                onSuccess={async () => {
-                    const user = await getCurrentUser();
-                    if (user) await initSubscription(user);
-                    startRedaction();
-                }}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

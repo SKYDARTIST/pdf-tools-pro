@@ -20,7 +20,7 @@ import ToolGuide from '../components/ToolGuide';
 import MindMapSettingsModal from '../components/MindMapSettingsModal';
 import NeuralProtocolBrief from '../components/NeuralProtocolBrief';
 import BriefingSettingsModal from '../components/BriefingSettingsModal';
-import { useAIAuth } from '../hooks/useAIAuth';
+import { useAuthGate } from '../hooks/useAuthGate';
 import { AuthModal } from '../components/AuthModal';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
@@ -56,14 +56,13 @@ const ReaderScreen: React.FC = () => {
     const [isCooling, setIsCooling] = useState<boolean>(false);
     const [audioScript, setAudioScript] = useState<string>('');
     const [isGeneratingAudio, setIsGeneratingAudio] = useState<boolean>(false);
+    const [showAiLimit, setShowAiLimit] = useState(false);
     const [showConsent, setShowConsent] = useState(false);
     const [showReport, setShowReport] = useState(false);
     const [showMindMapSettings, setShowMindMapSettings] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-    const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
-    const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
     const [isAuditing, setIsAuditing] = useState(false);
@@ -178,65 +177,64 @@ const ReaderScreen: React.FC = () => {
     const generateMindMap = async (settings?: { range: string; focus: string }) => {
         if (!file || isGeneratingMindMap) return;
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            setPendingAction(() => () => generateMindMap(settings));
-            return;
-        }
-
-        if (!hasConsent) { setPendingAction(() => () => generateMindMap(settings)); setShowConsent(true); return; }
-        if (isMindMapMode && !settings) { setIsMindMapMode(false); return; }
-        if (!settings && !mindMapData) { setShowMindMapSettings(true); return; }
-
-        setIsMindMapMode(true);
-        setIsFluidMode(false);
-        setIsOutlineMode(false);
-        setAuditData(null);
-
-        if (mindMapData && !settings) return;
-        setShowMindMapSettings(false);
-        setIsGeneratingMindMap(true);
-        try {
-            let text = "";
-            let imageBase64 = "";
-            let fileMime = file.type || 'image/jpeg';
-            let startPage = 1;
-            let endPage = numPages;
-
-            if (file.type === "application/pdf") {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer.slice(0), startPage, endPage);
-                if (!text || text.trim() === '') {
-                    imageBase64 = await renderPageToImage(buffer.slice(0), startPage);
-                    fileMime = 'image/jpeg';
-                    text = "[SCANNED] Vision mode active.";
-                }
-            } else {
-                const rawBase64 = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.onerror = (error) => reject(error);
-                    reader.readAsDataURL(file);
-                });
-                imageBase64 = await compressImage(rawBase64);
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
+            if (isMindMapMode && !settings) { setIsMindMapMode(false); return; }
+            if (!settings && !mindMapData) { setShowMindMapSettings(true); return; }
 
-            const prompt = `Generate a high-fidelity Mind Map of this document. 
+            setIsMindMapMode(true);
+            setIsFluidMode(false);
+            setIsOutlineMode(false);
+            setAuditData(null);
+
+            if (mindMapData && !settings) return;
+            setShowMindMapSettings(false);
+            setIsGeneratingMindMap(true);
+            try {
+                let text = "";
+                let imageBase64 = "";
+                let fileMime = file.type || 'image/jpeg';
+                let startPage = 1;
+                let endPage = numPages;
+
+                if (file.type === "application/pdf") {
+                    const buffer = await file.arrayBuffer();
+                    text = await extractTextFromPdf(buffer.slice(0), startPage, endPage);
+                    if (!text || text.trim() === '') {
+                        imageBase64 = await renderPageToImage(buffer.slice(0), startPage);
+                        fileMime = 'image/jpeg';
+                        text = "[SCANNED] Vision mode active.";
+                    }
+                } else {
+                    const rawBase64 = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = (error) => reject(error);
+                        reader.readAsDataURL(file);
+                    });
+                    imageBase64 = await compressImage(rawBase64);
+                }
+
+                const prompt = `Generate a high-fidelity Mind Map of this document. 
             RULES:
             1. TOPIC: Identify the main subject in exactly TWO WORDS for the center. 
             2. BRANCHES: Maximum 12 secondary branches total. 
             3. CONTENT: Each branch must be exactly 1-2 words. 
             4. FORMAT: Indented list with dashes (-). No preamble.`;
 
-            const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
-            if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); setMindMapData(''); return; }
-            setMindMapData(response);
-            await recordAIUsage(AiOperationType.GUIDANCE);
-        } catch (error) {
-            console.error("MindMap Failed:", error);
-        } finally {
-            setIsGeneratingMindMap(false);
-        }
+                const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
+                if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); setMindMapData(''); return; }
+                setMindMapData(response);
+                await recordAIUsage(AiOperationType.GUIDANCE);
+            } catch (error) {
+                console.error("MindMap Failed:", error);
+            } finally {
+                setIsGeneratingMindMap(false);
+            }
+        });
     };
 
     async function startSpeaking(text: string) {
@@ -271,173 +269,169 @@ const ReaderScreen: React.FC = () => {
     const toggleAudioNarrator = async (settings?: { range: string; focus: string }) => {
         if (isAudioPlaying) { resetAllStates(); return; }
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            setPendingAction(() => () => toggleAudioNarrator(settings));
-            return;
-        }
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
+            }
+            if (audioScript && !settings) { startSpeaking(audioScript); return; }
+            if (!settings && numPages > 1) { setShowBriefingSettings(true); return; }
 
-        if (!hasConsent) { setPendingAction(() => () => toggleAudioNarrator(settings)); setShowConsent(true); return; }
-        if (audioScript && !settings) { startSpeaking(audioScript); return; }
-        if (!settings && numPages > 1) { setShowBriefingSettings(true); return; }
-
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const sub = getSubscription();
-            setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
-            setShowAiLimit(true);
-            return;
-        }
-
-        setShowBriefingSettings(false);
-        setIsGeneratingAudio(true);
-        try {
-            let text = "";
-            let imageBase64 = "";
-            let fileMime = file?.type || 'image/jpeg';
-            if (file?.type === "application/pdf") {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer.slice(0));
-                if (!text || text.trim() === '') {
-                    imageBase64 = await renderPageToImage(buffer.slice(0), 1);
-                    fileMime = 'image/jpeg';
-                    text = "[SCANNED] Vision mode active.";
-                }
-            } else if (file) {
-                const rawBase64 = await new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.readAsDataURL(file);
-                });
-                imageBase64 = await compressImage(rawBase64);
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const sub = getSubscription();
+                setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
+                setShowAiLimit(true);
+                return;
             }
 
-            const prompt = `Synthesize this document into a professional, engaging audio briefing script. Start with 'Welcome to Anti-Gravity.' Focus on the core message. No markdown or meta-commentary.`;
-            const response = await askGemini(prompt, text, "audio_script", imageBase64 || undefined, fileMime);
-            if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
-            setAudioScript(response);
-            const stats = await recordAIUsage(AiOperationType.HEAVY);
-            if (stats?.message) alert(stats.message);
-            startSpeaking(response);
-        } catch (error) {
-            console.error("Audio Failed:", error);
-        } finally {
-            setIsGeneratingAudio(false);
-        }
+            setShowBriefingSettings(false);
+            setIsGeneratingAudio(true);
+            try {
+                let text = "";
+                let imageBase64 = "";
+                let fileMime = file?.type || 'image/jpeg';
+                if (file?.type === "application/pdf") {
+                    const buffer = await file.arrayBuffer();
+                    text = await extractTextFromPdf(buffer.slice(0));
+                    if (!text || text.trim() === '') {
+                        imageBase64 = await renderPageToImage(buffer.slice(0), 1);
+                        fileMime = 'image/jpeg';
+                        text = "[SCANNED] Vision mode active.";
+                    }
+                } else if (file) {
+                    const rawBase64 = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.readAsDataURL(file);
+                    });
+                    imageBase64 = await compressImage(rawBase64);
+                }
+
+                const prompt = `Synthesize this document into a professional, engaging audio briefing script. Start with 'Welcome to Anti-Gravity.' Focus on the core message. No markdown or meta-commentary.`;
+                const response = await askGemini(prompt, text, "audio_script", imageBase64 || undefined, fileMime);
+                if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
+                setAudioScript(response);
+                const stats = await recordAIUsage(AiOperationType.HEAVY);
+                if (stats?.message) alert(stats.message);
+                startSpeaking(response);
+            } catch (error) {
+                console.error("Audio Failed:", error);
+            } finally {
+                setIsGeneratingAudio(false);
+            }
+        });
     };
 
     const generateOutline = async () => {
         if (!file || isGeneratingOutline) return;
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            setPendingAction(() => generateOutline);
-            return;
-        }
-
-        if (isOutlineMode) { setIsOutlineMode(false); return; }
-        if (!hasConsent) { setPendingAction(() => generateOutline); setShowConsent(true); return; }
-
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const sub = getSubscription();
-            setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
-            setShowAiLimit(true);
-            return;
-        }
-
-        setIsOutlineMode(true);
-        setIsMindMapMode(false);
-        setIsFluidMode(false);
-        setAuditData(null);
-
-        if (outlineData) return;
-        setIsGeneratingOutline(true);
-        try {
-            let text = fluidContent;
-            let imageBase64 = "";
-            let fileMime = file.type || 'image/jpeg';
-            if (!text) {
-                if (file.type === "application/pdf") {
-                    const buffer = await file.arrayBuffer();
-                    text = await extractTextFromPdf(buffer.slice(0));
-                    setFluidContent(text);
-                    if (!text || text.trim() === '') {
-                        text = "[SCANNED] Vision fallback.";
-                        imageBase64 = await renderPageToImage(buffer.slice(0), 1);
-                        fileMime = 'image/jpeg';
-                    }
-                } else {
-                    const rawBase64 = await new Promise<string>((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.readAsDataURL(file);
-                    });
-                    imageBase64 = await compressImage(rawBase64);
-                }
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
-            const prompt = `Generate a high-fidelity summary and outline of this document. Focus on the main architectural points and key takeaways.`;
-            const response = await askGemini(prompt, text, "outline", imageBase64 || undefined, fileMime);
-            if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
-            setOutlineData(response);
-            const stats = await recordAIUsage(AiOperationType.HEAVY);
-            if (stats?.message) alert(stats.message);
-        } catch (error) {
-            console.error("Outline Failed:", error);
-        } finally {
-            setIsGeneratingOutline(false);
-        }
+
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const sub = getSubscription();
+                setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
+                setShowAiLimit(true);
+                return;
+            }
+
+            setIsOutlineMode(true);
+            setIsMindMapMode(false);
+            setIsFluidMode(false);
+            setAuditData(null);
+
+            if (outlineData) return;
+            setIsGeneratingOutline(true);
+            try {
+                let text = fluidContent;
+                let imageBase64 = "";
+                let fileMime = file.type || 'image/jpeg';
+                if (!text) {
+                    if (file.type === "application/pdf") {
+                        const buffer = await file.arrayBuffer();
+                        text = await extractTextFromPdf(buffer.slice(0));
+                        setFluidContent(text);
+                        if (!text || text.trim() === '') {
+                            text = "[SCANNED] Vision fallback.";
+                            imageBase64 = await renderPageToImage(buffer.slice(0), 1);
+                            fileMime = 'image/jpeg';
+                        }
+                    } else {
+                        const rawBase64 = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.readAsDataURL(file);
+                        });
+                        imageBase64 = await compressImage(rawBase64);
+                    }
+                }
+                const prompt = `Generate a high-fidelity summary and outline of this document. Focus on the main architectural points and key takeaways.`;
+                const response = await askGemini(prompt, text, "outline", imageBase64 || undefined, fileMime);
+                if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
+                setOutlineData(response);
+                const stats = await recordAIUsage(AiOperationType.HEAVY);
+                if (stats?.message) alert(stats.message);
+            } catch (error) {
+                console.error("Outline Failed:", error);
+            } finally {
+                setIsGeneratingOutline(false);
+            }
+        });
     };
 
     const runNeuralAudit = async () => {
         if (!file || isAuditing) return;
 
-        // 1. Auth & Subscription Check
-        if (!await checkAndPrepareAI()) {
-            setPendingAction(() => runNeuralAudit);
-            return;
-        }
-
-        if (!hasConsent) { setPendingAction(() => runNeuralAudit); setShowConsent(true); return; }
-
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
-        if (!aiCheck.allowed) {
-            const sub = getSubscription();
-            setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
-            setShowAiLimit(true);
-            return;
-        }
-
-        setIsAuditing(true);
-        setIsOutlineMode(false);
-        setIsMindMapMode(false);
-        setIsFluidMode(false);
-
-        try {
-            let text = fluidContent;
-            let imageBase64 = "";
-            let fileMime = file.type || 'image/jpeg';
-            if (!text) {
-                if (file.type === "application/pdf") {
-                    const buffer = await file.arrayBuffer();
-                    text = await extractTextFromPdf(buffer.slice(0));
-                    if (!text || text.trim() === '') { text = "[SCANNED] Vision fallback."; imageBase64 = await renderPageToImage(buffer.slice(0), 1); fileMime = 'image/jpeg'; }
-                } else {
-                    const rawBase64 = await new Promise<string>((resolve) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.readAsDataURL(file);
-                    });
-                    imageBase64 = await compressImage(rawBase64);
-                }
+        requireAuth(async () => {
+            if (!hasConsent) {
+                setShowConsent(true);
+                return;
             }
-            const prompt = `Perform a Neural Security Audit on this document. Identify sensitive information, risks, and PII that should be redacted. Be precise.`;
-            const response = await askGemini(prompt, text, "redact", imageBase64 || undefined, fileMime);
-            if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
-            setAuditData(response);
-            const stats = await recordAIUsage(AiOperationType.HEAVY);
-            if (stats?.message) alert(stats.message);
-        } catch (error) { console.error("Audit Failed:", error); } finally { setIsAuditing(false); }
+
+            const aiCheck = canUseAI(AiOperationType.HEAVY);
+            if (!aiCheck.allowed) {
+                const sub = getSubscription();
+                setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
+                setShowAiLimit(true);
+                return;
+            }
+
+            setIsAuditing(true);
+            setIsOutlineMode(false);
+            setIsMindMapMode(false);
+            setIsFluidMode(false);
+
+            try {
+                let text = fluidContent;
+                let imageBase64 = "";
+                let fileMime = file.type || 'image/jpeg';
+                if (!text) {
+                    if (file.type === "application/pdf") {
+                        const buffer = await file.arrayBuffer();
+                        text = await extractTextFromPdf(buffer.slice(0));
+                        if (!text || text.trim() === '') { text = "[SCANNED] Vision fallback."; imageBase64 = await renderPageToImage(buffer.slice(0), 1); fileMime = 'image/jpeg'; }
+                    } else {
+                        const rawBase64 = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.readAsDataURL(file);
+                        });
+                        imageBase64 = await compressImage(rawBase64);
+                    }
+                }
+                const prompt = `Perform a Neural Security Audit on this document. Identify sensitive information, risks, and PII that should be redacted. Be precise.`;
+                const response = await askGemini(prompt, text, "redact", imageBase64 || undefined, fileMime);
+                if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
+                setAuditData(response);
+                const stats = await recordAIUsage(AiOperationType.HEAVY);
+                if (stats?.message) alert(stats.message);
+            } catch (error) { console.error("Audit Failed:", error); } finally { setIsAuditing(false); }
+        });
     };
 
     const handleShareSummary = async (content: string, type: string) => {
@@ -725,7 +719,7 @@ const ReaderScreen: React.FC = () => {
                 </div>
             </div>
             <NeuralCoolingUI isVisible={isCooling} onComplete={() => setIsCooling(false)} />
-            <AIOptInModal isOpen={showConsent} onClose={() => setShowConsent(false)} onAccept={() => { localStorage.setItem('ai_neural_consent', 'true'); setHasConsent(true); setShowConsent(false); pendingAction?.(); setPendingAction(null); }} />
+            <AIOptInModal isOpen={showConsent} onClose={() => setShowConsent(false)} onAccept={() => { localStorage.setItem('ai_neural_consent', 'true'); setHasConsent(true); setShowConsent(false); }} />
             <AIReportModal isOpen={showReport} onClose={() => setShowReport(false)} />
             <AiLimitModal isOpen={showAiLimit} onClose={() => setShowAiLimit(false)} blockMode={aiLimitInfo.blockMode} used={aiLimitInfo.used} limit={aiLimitInfo.limit} />
             <MindMapSettingsModal isOpen={showMindMapSettings} numPages={numPages} onClose={() => setShowMindMapSettings(false)} onConfirm={(s: any) => generateMindMap(s)} />
@@ -735,15 +729,7 @@ const ReaderScreen: React.FC = () => {
             <AuthModal
                 isOpen={authModalOpen}
                 onClose={() => setAuthModalOpen(false)}
-                onSuccess={async () => {
-                    const user = await getCurrentUser();
-                    if (user) await initSubscription(user);
-
-                    if (pendingAction) {
-                        pendingAction();
-                        setPendingAction(null);
-                    }
-                }}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div >
     );

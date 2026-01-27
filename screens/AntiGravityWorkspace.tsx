@@ -14,14 +14,14 @@ import ToolGuide from '../components/ToolGuide';
 import { PDFDocument } from 'pdf-lib';
 import { extractTextFromPdf, renderMultiplePagesToImages } from '../utils/pdfExtractor';
 import { AuthModal } from '../components/AuthModal';
-import { useAIAuth } from '../hooks/useAIAuth';
+import { useAuthGate } from '../hooks/useAuthGate';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
 import { getFriendlyErrorMessage } from '../utils/errorMapping';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
-  const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
+  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'lifting' | 'analyzed'>('idle');
@@ -49,96 +49,83 @@ const AntiGravityWorkspace: React.FC = () => {
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
+      processFile(selected);
+    }
+  };
 
-      // 1. Auth & Subscription Check
-      if (!await checkAndPrepareAI()) {
-        setPendingAction(() => () => processFile(selected));
-        return;
-      }
-
-      // 2. Consent Check
+  const processFile = async (selected: File) => {
+    requireAuth(async () => {
+      // Check for consent (re-check in case it was called from pending action)
       if (!hasConsent) {
         setPendingAction(() => () => processFile(selected));
         setShowConsent(true);
         return;
       }
 
-      processFile(selected);
-    }
-  };
-
-  const processFile = async (selected: File) => {
-    // Check for consent (re-check in case it was called from pending action)
-    if (!hasConsent) {
-      setPendingAction(() => () => processFile(selected));
-      setShowConsent(true);
-      return;
-    }
-
-    // HEAVY AI Operation - Workspace consumes credits
-    const check = canUseAI(AiOperationType.HEAVY);
-    if (!check.allowed) {
-      // Show AI Limit Modal instead of alert
-      const subscription = getSubscription();
-      setAiLimitInfo({
-        blockMode: check.blockMode,
-        used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-        limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-      });
-      setShowAiLimit(true);
-      return;
-    }
-
-    setFile(selected);
-    setIsImporting(true);
-    setStatus('lifting');
-    setSuggestedName(null);
-    setImageContext(null);
-    setProgress(0); // Reset progress on start
-
-    try {
-      const isImage = selected.type.startsWith('image/');
-      let context = '';
-      let extractedText = '';
-      let base64Images: string | string[] = '';
-
-      if (isImage) {
-        // CONVERT IMAGE TO BASE64 FOR NEURAL VISION
-        setProgress(30); // Instant progress for images
-        const reader = new FileReader();
-        base64Images = await new Promise((resolve) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(selected);
+      // HEAVY AI Operation - Workspace consumes credits
+      const check = canUseAI(AiOperationType.HEAVY);
+      if (!check.allowed) {
+        // Show AI Limit Modal instead of alert
+        const subscription = getSubscription();
+        setAiLimitInfo({
+          blockMode: check.blockMode,
+          used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+          limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
         });
-        setProgress(100);
-        setImageContext(base64Images);
-        context = `IMAGE_PAYLOAD: ${selected.name} | TYPE: ${selected.type} | SIZE: ${(selected.size / 1024).toFixed(2)} KB`;
-      } else {
-        // 1. EXTRACT RAW METADATA
-        const arrayBuffer = await selected.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
-        const pageCount = pdfDoc.getPageCount();
+        setShowAiLimit(true);
+        return;
+      }
 
-        // 2. EXTRACT NEURAL PAYLOAD (Full Text) with Progress
-        extractedText = await extractTextFromPdf(
-          arrayBuffer.slice(0),
-          undefined,
-          undefined,
-          (p) => setProgress(p) // Live progress update
-        );
-        console.log(`Extracted Text Length: ${extractedText.length}`);
+      setFile(selected);
+      setIsImporting(true);
+      setStatus('lifting');
+      setSuggestedName(null);
+      setImageContext(null);
+      setProgress(0); // Reset progress on start
 
-        if (!extractedText) {
-          console.log("⚠️ No text found. Triggering Triple-Vision Fallback...");
-          // NEURAL SIGHT FALLBACK: Render first 3 pages if no text layer exists
-          base64Images = await renderMultiplePagesToImages(arrayBuffer.slice(0), 3);
-          console.log(`Fallback Images Generated: ${(base64Images as string[]).length}`);
-          if ((base64Images as string[]).length > 0) {
-            setImageContext(base64Images);
+      try {
+        const isImage = selected.type.startsWith('image/');
+        let context = '';
+        let extractedText = '';
+        let base64Images: string | string[] = '';
+
+        if (isImage) {
+          // CONVERT IMAGE TO BASE64 FOR NEURAL VISION
+          setProgress(30); // Instant progress for images
+          const reader = new FileReader();
+          base64Images = await new Promise((resolve) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(selected);
+          });
+          setProgress(100);
+          setImageContext(base64Images);
+          context = `IMAGE_PAYLOAD: ${selected.name} | TYPE: ${selected.type} | SIZE: ${(selected.size / 1024).toFixed(2)} KB`;
+        } else {
+          // 1. EXTRACT RAW METADATA
+          const arrayBuffer = await selected.arrayBuffer();
+          const pdfDoc = await PDFDocument.load(arrayBuffer);
+          const pageCount = pdfDoc.getPageCount();
+
+          // 2. EXTRACT NEURAL PAYLOAD (Full Text) with Progress
+          extractedText = await extractTextFromPdf(
+            arrayBuffer.slice(0),
+            undefined,
+            undefined,
+            (p) => setProgress(p) // Live progress update
+          );
+          console.log(`Extracted Text Length: ${extractedText.length}`);
+
+          if (!extractedText) {
+            console.log("⚠️ No text found. Triggering Triple-Vision Fallback...");
+            // NEURAL SIGHT FALLBACK: Render first 3 pages if no text layer exists
+            base64Images = await renderMultiplePagesToImages(arrayBuffer.slice(0), 3);
+            console.log(`Fallback Images Generated: ${(base64Images as string[]).length}`);
+            if ((base64Images as string[]).length > 0) {
+              setImageContext(base64Images);
+            }
           }
-        }
 
-        context = `
+          context = `
           SYSTEM_PAYLOAD_ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}
           FILENAME: ${selected.name}
           TOTAL_PAGES: ${pageCount}
@@ -147,79 +134,80 @@ const AntiGravityWorkspace: React.FC = () => {
           DOCUMENT_CONTENT:
           ${extractedText || "The document is image-based. Analyzing the visual content now."}
           `.trim();
+        }
+
+        const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
+          ? `Analyze this document. Inspect the images "${selected.name}". Identify the document type, extract key information, and summarize what it is about. Respond with a helpful, professional tone.`
+          : extractedText
+            ? `Analyze this document. Perform a detailed review of the content provided. Focus on identifying the purpose and key points. Tone: Helpful, Professional. Document Context: ${context}`
+            : `Analyze the document. Let the user know the document appears to be an image or scan with no searchable text. Explain that for a deeper analysis, a text-based PDF works best. Suggest trying the "Scanner" or "Image to PDF" tool to re-process the file and try again. Tone: Helpful, Professional.`;
+
+        // Run analysis and naming suggestion in parallel
+        const { suggestDocumentName } = await import('../services/namingService');
+
+        const [initialAnalysis, smartName] = await Promise.all([
+          askGemini(analysisPrompt, context, 'chat', base64Images || undefined),
+          extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
+        ]);
+
+        setAnalysis(initialAnalysis);
+        if (smartName && smartName !== 'unnamed_document') {
+          setSuggestedName(smartName);
+        }
+        setDocumentContext(context);
+        setChatHistory([{ role: 'bot', text: initialAnalysis }]);
+        setStatus('analyzed');
+
+        // Phase 5: Knowledge Base Indexing
+        const signaturePrompt = `Write a 1-sentence summary of this document for search. Focus on key topics, dates, and purpose. NO markdown. Document: ${initialAnalysis.substring(0, 500)}`;
+        const neuralSignature = await askGemini(signaturePrompt, context, 'chat');
+
+        FileHistoryManager.addEntry({
+          fileName: selected.name,
+          operation: 'extract-text', // Categorized as text extraction/analysis
+          status: 'success',
+          neuralSignature: neuralSignature.replace(/\n|"/g, '')
+        });
+
+        const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation - consumes credits
+        if (stats?.message) alert(stats.message);
+      } catch (error) {
+        console.error('Error processing PDF:', error);
+        const friendlyError = getFriendlyErrorMessage(error);
+
+        showToast(friendlyError); // Show toast instead of setting analysis text
+        setStatus('idle'); // Reset to idle so user can try again
+      } finally {
+        setIsImporting(false);
       }
-
-      const analysisPrompt = (isImage || (!extractedText && base64Images.length > 0))
-        ? `Analyze this document. Inspect the images "${selected.name}". Identify the document type, extract key information, and summarize what it is about. Respond with a helpful, professional tone.`
-        : extractedText
-          ? `Analyze this document. Perform a detailed review of the content provided. Focus on identifying the purpose and key points. Tone: Helpful, Professional. Document Context: ${context}`
-          : `Analyze the document. Let the user know the document appears to be an image or scan with no searchable text. Explain that for a deeper analysis, a text-based PDF works best. Suggest trying the "Scanner" or "Image to PDF" tool to re-process the file and try again. Tone: Helpful, Professional.`;
-
-      // Run analysis and naming suggestion in parallel
-      const { suggestDocumentName } = await import('../services/namingService');
-
-      const [initialAnalysis, smartName] = await Promise.all([
-        askGemini(analysisPrompt, context, 'chat', base64Images || undefined),
-        extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
-      ]);
-
-      setAnalysis(initialAnalysis);
-      if (smartName && smartName !== 'unnamed_document') {
-        setSuggestedName(smartName);
-      }
-      setDocumentContext(context);
-      setChatHistory([{ role: 'bot', text: initialAnalysis }]);
-      setStatus('analyzed');
-
-      // Phase 5: Knowledge Base Indexing
-      const signaturePrompt = `Write a 1-sentence summary of this document for search. Focus on key topics, dates, and purpose. NO markdown. Document: ${initialAnalysis.substring(0, 500)}`;
-      const neuralSignature = await askGemini(signaturePrompt, context, 'chat');
-
-      FileHistoryManager.addEntry({
-        fileName: selected.name,
-        operation: 'extract-text', // Categorized as text extraction/analysis
-        status: 'success',
-        neuralSignature: neuralSignature.replace(/\n|"/g, '')
-      });
-
-      const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation - consumes credits
-      if (stats?.message) alert(stats.message);
-    } catch (error) {
-      console.error('Error processing PDF:', error);
-      const friendlyError = getFriendlyErrorMessage(error);
-
-      showToast(friendlyError); // Show toast instead of setting analysis text
-      setStatus('idle'); // Reset to idle so user can try again
-    } finally {
-      setIsImporting(false);
-    }
+    });
   }
 
   const handleAsk = async () => {
     if (!query.trim() || isAsking) return;
 
-    if (!hasConsent) {
-      setPendingAction(() => handleAsk);
-      setShowConsent(true);
-      return;
-    }
+    requireAuth(async () => {
+      if (!hasConsent) {
+        setPendingAction(() => handleAsk);
+        setShowConsent(true);
+        return;
+      }
 
-    const currentQuery = query;
-    setQuery('');
-    setChatHistory(prev => [...prev, { role: 'user', text: currentQuery }]);
-    setIsAsking(true);
+      const currentQuery = query;
+      setQuery('');
+      setChatHistory(prev => [...prev, { role: 'user', text: currentQuery }]);
+      setIsAsking(true);
 
-    try {
-      const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
-      setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
-    } catch (err) {
-      console.error('AI Chat Error:', err);
-      showToast('Processing failed. Try again.');
-      // Remove the user's last message or add an error message to chat? 
-      // Requirement says "Show toast". I'll stick to that.
-    } finally {
-      setIsAsking(false);
-    }
+      try {
+        const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
+        setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
+      } catch (err) {
+        console.error('AI Chat Error:', err);
+        showToast('Processing failed. Try again.');
+      } finally {
+        setIsAsking(false);
+      }
+    });
   };
 
   return (
@@ -570,7 +558,7 @@ const AntiGravityWorkspace: React.FC = () => {
               key={i}
               whileHover={{ scale: 1.02, y: -4 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigate(tool.path)}
+              onClick={() => requireAuth(() => navigate(tool.path))}
               className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4 hover:border-emerald-500/30 transition-all group relative overflow-hidden"
             >
               <div className="absolute top-4 right-4 text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 opacity-80 uppercase tracking-widest bg-emerald-500/5 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
@@ -634,17 +622,7 @@ const AntiGravityWorkspace: React.FC = () => {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        onSuccess={async () => {
-          // Refresh subscription to get latest credits
-          const user = await getCurrentUser();
-          if (user) await initSubscription(user);
-
-          // Resume pending action if any
-          if (pendingAction) {
-            pendingAction();
-            setPendingAction(null);
-          }
-        }}
+        onSuccess={handleAuthSuccess}
       />
     </motion.div>
   );

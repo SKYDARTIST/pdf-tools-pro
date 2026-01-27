@@ -5,6 +5,8 @@ import { PDFDocument, degrees } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
@@ -13,6 +15,7 @@ import UpgradeModal from '../components/UpgradeModal';
 
 const RotateScreen: React.FC = () => {
     const navigate = useNavigate();
+    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [file, setFile] = useState<File | null>(null);
     const [pageCount, setPageCount] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -49,64 +52,66 @@ const RotateScreen: React.FC = () => {
     const handleRotate = async (angle: number) => {
         if (!file) return;
 
-        if (!TaskLimitManager.canUseTask()) {
-            setShowUpgradeModal(true);
-            return;
-        }
+        requireAuth(async () => {
+            if (!TaskLimitManager.canUseTask()) {
+                setShowUpgradeModal(true);
+                return;
+            }
 
-        setIsProcessing(true);
+            setIsProcessing(true);
 
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await PDFDocument.load(arrayBuffer);
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
 
-            // Rotate all pages
-            const pages = pdfDoc.getPages();
-            pages.forEach(page => {
-                page.setRotation(degrees(angle));
-            });
+                // Rotate all pages
+                const pages = pdfDoc.getPages();
+                pages.forEach(page => {
+                    page.setRotation(degrees(angle));
+                });
 
-            const pdfBytes = await pdfDoc.save();
-            const fileName = `rotated_${file.name}`;
+                const pdfBytes = await pdfDoc.save();
+                const fileName = `rotated_${file.name}`;
 
-            // Store for sharing
-            setProcessedFile({
-                data: pdfBytes,
-                name: fileName,
-                size: pdfBytes.length
-            });
+                // Store for sharing
+                setProcessedFile({
+                    data: pdfBytes,
+                    name: fileName,
+                    size: pdfBytes.length
+                });
 
-            // Download
-            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-            await downloadFile(blob, fileName);
+                // Download
+                const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+                await downloadFile(blob, fileName);
 
-            // Add to history
-            FileHistoryManager.addEntry({
-                fileName,
-                operation: 'split',
-                originalSize: file.size,
-                finalSize: pdfBytes.length,
-                status: 'success'
-            });
+                // Add to history
+                FileHistoryManager.addEntry({
+                    fileName,
+                    operation: 'split',
+                    originalSize: file.size,
+                    finalSize: pdfBytes.length,
+                    status: 'success'
+                });
 
-            // Increment task count
-            TaskLimitManager.incrementTask();
+                // Increment task count
+                TaskLimitManager.incrementTask();
 
-            // Show success modal
-            setShowSuccessModal(true);
+                // Show success modal
+                setShowSuccessModal(true);
 
-            // Reset deferred
-        } catch (err) {
-            alert('Error rotating PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                // Reset deferred
+            } catch (err) {
+                alert('Error rotating PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
-            FileHistoryManager.addEntry({
-                fileName: `rotate_failed_${file.name}`,
-                operation: 'split',
-                status: 'error'
-            });
-        } finally {
-            setIsProcessing(false);
-        }
+                FileHistoryManager.addEntry({
+                    fileName: `rotate_failed_${file.name}`,
+                    operation: 'split',
+                    status: 'error'
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+        });
     };
 
     return (
@@ -282,6 +287,12 @@ const RotateScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 reason="limit_reached"
+            />
+
+            <AuthModal
+                isOpen={authModalOpen}
+                onClose={() => setAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

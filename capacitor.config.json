@@ -1,0 +1,11 @@
+{
+    "appId": "com.cryptobulla.antigravity",
+    "appName": "Anti-Gravity",
+    "webDir": "dist",
+    "bundledWebRuntime": false,
+    "server": {
+        "androidScheme": "http",
+        "hostname": "localhost",
+        "cleartext": true
+    }
+}

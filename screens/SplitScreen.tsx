@@ -13,13 +13,16 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
+import { useAuthGate } from '../hooks/useAuthGate';
+import { AuthModal } from '../components/AuthModal';
 
 const SplitScreen: React.FC = () => {
+  const navigate = useNavigate();
+  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [file, setFile] = useState<FileItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-  const navigate = useNavigate();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -47,88 +50,90 @@ const SplitScreen: React.FC = () => {
   const handleSplit = async () => {
     if (!file) return;
 
-    if (!TaskLimitManager.canUseTask()) {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      console.log('✂️ Neural Split: Initializing streaming document fragmentation...');
-
-      const arrayBuffer = await file.file.arrayBuffer();
-      // Load with robust options to prevent crashes on complex documents
-      const pdfDoc = await PDFDocument.load(arrayBuffer, {
-        ignoreEncryption: true,
-        throwOnInvalidObject: false
-      });
-      const pageCount = pdfDoc.getPageCount();
-      const baseName = file.name.replace('.pdf', '');
-
-      // Bundle all pages into a single ZIP file
-      const zip = new JSZip();
-
-      const CONCURRENCY = 8; // Render 8 pages in parallel for hyper-speed splitting
-      for (let i = 0; i < pageCount; i += CONCURRENCY) {
-        const batch = [];
-        for (let j = i; j < Math.min(i + CONCURRENCY, pageCount); j++) {
-          batch.push(
-            renderPageToImage(arrayBuffer, j + 1).then(imageData => ({
-              index: j,
-              data: imageData.split(',')[1]
-            }))
-          );
-        }
-        const results = await Promise.all(batch);
-        results.forEach(({ index, data }) => {
-          zip.file(`page_${index + 1}_${baseName}.jpg`, data, { base64: true });
-        });
-
-        if (i % 25 === 0 || i + CONCURRENCY >= pageCount) {
-          console.log(`🧬 Fragmenting (Image Mode): ${Math.min(i + CONCURRENCY, pageCount)}/${pageCount}`);
-        }
+    requireAuth(async () => {
+      if (!TaskLimitManager.canUseTask()) {
+        setShowUpgradeModal(true);
+        return;
       }
 
-      console.log('📦 Finalizing Neural ZIP container (Export Path)...');
-      // Generate ZIP and download as single file
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 }
-      });
+      setIsProcessing(true);
+      try {
+        console.log('✂️ Neural Split: Initializing streaming document fragmentation...');
 
-      console.log(`📡 Dispatching ${Math.round(zipBlob.size / 1024 / 1024)}MB ZIP to Neural Share...`);
-      await downloadFile(zipBlob, `${baseName}_split_pages.zip`);
+        const arrayBuffer = await file.file.arrayBuffer();
+        // Load with robust options to prevent crashes on complex documents
+        const pdfDoc = await PDFDocument.load(arrayBuffer, {
+          ignoreEncryption: true,
+          throwOnInvalidObject: false
+        });
+        const pageCount = pdfDoc.getPageCount();
+        const baseName = file.name.replace('.pdf', '');
 
-      // Increment task counter
-      TaskLimitManager.incrementTask();
+        // Bundle all pages into a single ZIP file
+        const zip = new JSZip();
 
-      // Add to history
-      FileHistoryManager.addEntry({
-        fileName: file.name,
-        operation: 'split',
-        originalSize: file.size,
-        status: 'success'
-      });
+        const CONCURRENCY = 8; // Render 8 pages in parallel for hyper-speed splitting
+        for (let i = 0; i < pageCount; i += CONCURRENCY) {
+          const batch = [];
+          for (let j = i; j < Math.min(i + CONCURRENCY, pageCount); j++) {
+            batch.push(
+              renderPageToImage(arrayBuffer, j + 1).then(imageData => ({
+                index: j,
+                data: imageData.split(',')[1]
+              }))
+            );
+          }
+          const results = await Promise.all(batch);
+          results.forEach(({ index, data }) => {
+            zip.file(`page_${index + 1}_${baseName}.jpg`, data, { base64: true });
+          });
 
-      setSuccessData({
-        isOpen: true,
-        fileName: `${baseName}_split_pages.zip`,
-        originalSize: file.size,
-        finalSize: zipBlob.size
-      });
-    } catch (err) {
-      console.error('Split/Zip Failure:', err);
-      alert('Error splitting PDF: ' + (err instanceof Error ? err.message : 'Resource exhaustion'));
+          if (i % 25 === 0 || i + CONCURRENCY >= pageCount) {
+            console.log(`🧬 Fragmenting (Image Mode): ${Math.min(i + CONCURRENCY, pageCount)}/${pageCount}`);
+          }
+        }
 
-      FileHistoryManager.addEntry({
-        fileName: `split_failed_${file.name}`,
-        operation: 'split',
-        status: 'error'
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+        console.log('📦 Finalizing Neural ZIP container (Export Path)...');
+        // Generate ZIP and download as single file
+        const zipBlob = await zip.generateAsync({
+          type: 'blob',
+          compression: 'DEFLATE',
+          compressionOptions: { level: 6 }
+        });
+
+        console.log(`📡 Dispatching ${Math.round(zipBlob.size / 1024 / 1024)}MB ZIP to Neural Share...`);
+        await downloadFile(zipBlob, `${baseName}_split_pages.zip`);
+
+        // Increment task counter
+        TaskLimitManager.incrementTask();
+
+        // Add to history
+        FileHistoryManager.addEntry({
+          fileName: file.name,
+          operation: 'split',
+          originalSize: file.size,
+          status: 'success'
+        });
+
+        setSuccessData({
+          isOpen: true,
+          fileName: `${baseName}_split_pages.zip`,
+          originalSize: file.size,
+          finalSize: zipBlob.size
+        });
+      } catch (err) {
+        console.error('Split/Zip Failure:', err);
+        alert('Error splitting PDF: ' + (err instanceof Error ? err.message : 'Resource exhaustion'));
+
+        FileHistoryManager.addEntry({
+          fileName: `split_failed_${file.name}`,
+          operation: 'split',
+          status: 'error'
+        });
+      } finally {
+        setIsProcessing(false);
+      }
+    });
   };
 
   return (
@@ -246,6 +251,12 @@ const SplitScreen: React.FC = () => {
           }}
         />
       )}
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </motion.div>
   );
 };
