@@ -5,6 +5,7 @@
 
 const LOG_STORAGE_KEY = 'ag_persistent_logs';
 const MAX_LOGS = 200; // Keep last 200 log entries
+const LOG_RETENTION_MS = 24 * 60 * 60 * 1000; // Logs expire after 24 hours
 
 export interface LogEntry {
     timestamp: string;
@@ -16,6 +17,7 @@ export interface LogEntry {
 export const addLog = (level: 'log' | 'error' | 'warn' | 'info', message: string, data?: any): void => {
     try {
         const logs: LogEntry[] = JSON.parse(localStorage.getItem(LOG_STORAGE_KEY) || '[]');
+        const now = Date.now();
 
         logs.push({
             timestamp: new Date().toISOString(),
@@ -29,7 +31,14 @@ export const addLog = (level: 'log' | 'error' | 'warn' | 'info', message: string
             logs.splice(0, logs.length - MAX_LOGS);
         }
 
-        localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs));
+        // SECURITY: Remove logs older than 24 hours to prevent accumulation
+        const cutoffTime = now - LOG_RETENTION_MS;
+        const filteredLogs = logs.filter(log => {
+            const logTime = new Date(log.timestamp).getTime();
+            return logTime > cutoffTime;
+        });
+
+        localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(filteredLogs));
     } catch (error) {
         console.error('Failed to persist log:', error);
     }

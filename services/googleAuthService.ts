@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Config from './configService';
 import { SecurityLogger, maskEmail } from '../utils/securityUtils';
+import { clearLogs } from './persistentLogService';
 
 // Initialize Supabase Client
 const supabaseUrl = Config.VITE_SUPABASE_URL;
@@ -136,6 +137,9 @@ export const logout = (): void => {
 
     // 3. Optional: Clear cached Integrity tokens
     localStorage.removeItem('integrity_token');
+
+    // 4. SECURITY: Clear persistent debug logs on logout
+    clearLogs();
 
     SecurityLogger.log('Google Auth: Session purged. Hard reloading...');
 
