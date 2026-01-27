@@ -62,13 +62,23 @@ const PREMIUM_LIMITS = {
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (): Promise<UserSubscription> => {
-    /* DISABLED for IAP verification
-    const supabaseUsage = await fetchUserUsage();
-    if (supabaseUsage) {
-        saveSubscription(supabaseUsage);
-        return supabaseUsage;
+    try {
+        const supabaseUsage = await fetchUserUsage();
+        if (supabaseUsage) {
+            console.log('Anti-Gravity Subscription: ✅ Restored state from Supabase:', supabaseUsage);
+            saveSubscription(supabaseUsage);
+
+            // Sync TaskLimitManager if needed
+            if (supabaseUsage.tier === SubscriptionTier.PRO) {
+                TaskLimitManager.upgradeToPro();
+            }
+
+            return supabaseUsage;
+        }
+    } catch (e) {
+        console.warn('Anti-Gravity Subscription: Failed to restore from Supabase, falling back to local:', e);
     }
-    */
+
     return getSubscription();
 };
 
@@ -405,7 +415,7 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string, skip
     // TESTING PERIOD: Also grant 100 Neural Pack credits with Pro upgrade
     // BUT only if they haven't received it before (prevents reset on reinstall)
     // AND if skipBonus is false (restored users don't get new bonus)
-    const TESTING_PERIOD_END = new Date('2026-01-28T23:59:59Z');
+    const TESTING_PERIOD_END = new Date('2026-01-01T23:59:59Z');
     const isTestingPeriod = new Date() < TESTING_PERIOD_END;
     if (!skipBonus && isTestingPeriod && tier === SubscriptionTier.PRO && !subscription.hasReceivedBonus) {
         if (!subscription.aiPackCredits || subscription.aiPackCredits === 0) {
