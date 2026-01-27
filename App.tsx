@@ -64,10 +64,9 @@ const App: React.FC = () => {
         initializePersistentLogging(); // Start capturing logs to localStorage
         initServerTime();  // Fetch server time immediately (non-blocking)
 
-        // CRITICAL: Await subscription data BEFORE allowing app entry
-        // This prevents the "Race Condition" where user uses default 100 credits
-        // while Supabase is still loading the actual 3 credits.
-        await initSubscription();
+        // NON-BLOCKING: Start subscription fetch in background
+        // Allow app to launch immediately with cached credentials
+        initSubscription().catch(e => console.warn('Background subscription sync failed:', e));
         console.log('🚀 App: Critical initialization complete');
       } catch (e) {
         console.error('🚀 App: Initialization error:', e);

@@ -86,22 +86,27 @@ export const initSubscription = async (): Promise<UserSubscription> => {
 export const getSubscription = (): UserSubscription => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-        const subscription = JSON.parse(stored);
+        try {
+            const subscription = JSON.parse(stored);
 
-        // RETROACTIVE TRIAL: Add trial start date to existing users who don't have it
-        if (!subscription.trialStartDate) {
-            subscription.trialStartDate = new Date().toISOString();
-            saveSubscription(subscription);
+            // RETROACTIVE TRIAL: Add trial start date to existing users who don't have it
+            if (!subscription.trialStartDate) {
+                subscription.trialStartDate = new Date().toISOString();
+                saveSubscription(subscription);
+            }
+
+            // CROSS-SYNC: If TaskLimitManager says they are Pro, but subscription says Free, fix it.
+            if (TaskLimitManager.isPro() && subscription.tier === SubscriptionTier.FREE) {
+                subscription.tier = SubscriptionTier.PRO;
+                saveSubscription(subscription);
+            }
+
+            return subscription;
+        } catch (e) {
+            console.error('Anti-Gravity Subscription: Malformed localStorage data, resetting.', e);
+            localStorage.removeItem(STORAGE_KEY); // Clear corrupted data
+            // Fall through to default behavior below
         }
-
-        // CROSS-SYNC: If TaskLimitManager says they are Pro, but subscription says Free, fix it.
-        // This handles state desync from legacy testing reset scripts.
-        if (TaskLimitManager.isPro() && subscription.tier === SubscriptionTier.FREE) {
-            subscription.tier = SubscriptionTier.PRO;
-            saveSubscription(subscription);
-        }
-
-        return subscription;
     }
 
     // Default: Free tier with no credits (until purchased)

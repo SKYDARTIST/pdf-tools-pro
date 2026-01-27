@@ -1,10 +1,10 @@
-
 /**
  * Play Integrity API Service
  * In 2026, this is used to verify that requests come from a legitimate, 
  * unmodified version of the app installed via the Google Play Store.
  */
 import { PlayIntegrity } from '@capacitor-community/play-integrity';
+import { Capacitor } from '@capacitor/core';
 import { getDeviceId } from './usageService';
 
 export const getIntegrityToken = async (): Promise<string> => {
@@ -25,32 +25,49 @@ export const getIntegrityToken = async (): Promise<string> => {
         return btoa(JSON.stringify(payload));
     }
 
+
     try {
+        // SAFETY CHECK: Ensure we are really on a device before calling native code
+        if (!Capacitor.isNativePlatform()) {
+            console.warn('Anti-Gravity Integrity: Not native platform, returning web fallback');
+            const deviceId = await getDeviceId();
+            return btoa(JSON.stringify({ deviceId, platform: 'web-fallback' }));
+        }
+
         // PROD MODE: Real Google Play Integrity API
-        // Generate a cryptographic nonce (server should validate this, but client-side random is better than static)
         const array = new Uint8Array(16);
         crypto.getRandomValues(array);
         const nonce = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 
-        // Request the integrity token from Google Play
-        // standardRequest() is the modern API call
-        const result = await PlayIntegrity.requestIntegrityToken({
-            nonce: nonce, // Google requires a nonce to prevent replay attacks
-            cloudProjectNumber: 577377406590 // Source: User Screenshot
+        // Google Cloud Project Number for "Pdf Toola Pro"
+        const CLOUD_PROJECT_NUMBER = 577377406590;
+
+        console.log('Anti-Gravity Integrity: Requesting token...');
+
+        // TIMEOUT GUARD: If Google Play Services is hung, don't crash the app. Return fallback after 10s.
+        const integrityPromise = PlayIntegrity.requestIntegrityToken({
+            nonce: nonce,
+            googleCloudProjectNumber: CLOUD_PROJECT_NUMBER
         });
+
+        const timeoutPromise = new Promise<any>((_, reject) =>
+            setTimeout(() => reject(new Error('Integrity API Timeout')), 10000)
+        );
+
+        const result: any = await Promise.race([integrityPromise, timeoutPromise]);
 
         console.log('Anti-Gravity Integrity: ✅ Real Token Generated');
         return result.token;
-    } catch (error) {
-        console.error('Anti-Gravity Integrity: ❌ API Failure:', error);
 
-        // FAIL-SAFE: If Google Play Services is unavailable (e.g. Huawei device, emulator without Play Store)
-        // We return a "limited" token that the backend can choose to accept with lower trust score
+    } catch (error) {
+        console.error('Anti-Gravity Integrity: ❌ API Failure (Handled):', error);
+
+        // FAIL-SAFE: Return a usable fallback so the app DOES NOT CRASH
         const deviceId = await getDeviceId();
         const fallbackPayload = {
             deviceId,
             timestamp: Date.now(),
-            error: (error as Error).message,
+            error: (error as Error).message || 'Unknown Native Error',
             platform: 'android-fallback',
             isFallback: true
         };

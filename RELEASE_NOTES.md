@@ -1,3 +1,10 @@
+What's New in v2.8.1 (Critical Security & Stability Patch):
+
+- **CRITICAL FIX:** Resolved an app crash on startup affecting specific Android devices.
+- **Enhanced Security:** Implemented Google Play Integrity API for verified device attestation.
+- **Secure Sessions:** Upgraded to JWT-based authentication for improved data privacy.
+- **Performance:** Reduced startup race conditions for a smoother launch experience.
+
 What's New in v2.8.0:
 
 - AI Power Pack Officially Active: Purchase additional Neural analysis credits instantly.

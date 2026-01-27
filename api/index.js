@@ -52,6 +52,12 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-signature, x-ag-device-id, x-ag-integrity-token');
 
+    // SECURITY HEADERS: Harden API against web-based attacks
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload'); // Force HTTPS
+    res.setHeader('X-Content-Type-Options', 'nosniff'); // Prevent MIME sniffing
+    res.setHeader('X-Frame-Options', 'DENY'); // Prevent clickjacking (API should not be framed)
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none';"); // Lockdown content sources
+
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
