@@ -10,11 +10,11 @@ const LEGAL_CONTENT = {
         icon: Shield,
         subtitle: 'Privacy',
         content: [
-            "Anti-Gravity operates on a strict Privacy-First model. We do not store your documents or PDF content.",
-            "AI ASSISTANT: When you use the Workspace or AI tools, your document data is sent via secure connection to the Google Gemini AI for analysis. This data is processed temporarily and is not used to train AI models. By using these features, you agree to this.",
-            "LOCAL STORAGE: We use your phone's storage only to save your subscription status and simple app settings. This data stays on your device and is never sent to the cloud.",
-            "REPORTING: You can flag any AI-generated answer for review. This helps us improve the safety and accuracy of our AI helper.",
-            "SECURITY: All data is protected by professional-grade encryption and never leaves your device unless analyzed by AI."
+            "DATA WE COLLECT: We collect your Device ID (UUID) for basic limits and anonymized usage. If you sign in with Google, we also store your email to sync your credits across devices.",
+            "DATA WE DON'T COLLECT: We do NOT track your behavior, collect analytics, or share your data with third parties. Your document content is never stored.",
+            "STORAGE: Data is stored in Supabase with encryption at rest. Session tokens are cleared on logout, and debug logs auto-expire after 24 hours.",
+            "GDPR RIGHTS: You have the right to download your data or delete your account permanently. These options are available in your data & privacy settings.",
+            "UNSUBSCRIBE: You can manage your subscription and turn off auto-renewal at any time through the Google Play Store or App Store."
         ]
     },
     terms: {
@@ -22,10 +22,11 @@ const LEGAL_CONTENT = {
         icon: FileText,
         subtitle: 'Agreement',
         content: [
-            "By using Anti-Gravity, you agree to use our tools for lawful purposes only.",
-            "SERVICE STATUS: Anti-Gravity is provided 'as-is'. We do not guarantee 100% uptime or that everything will work perfectly at all times.",
-            "ABUSE PREVENTION: We reserve the right to limit or stop access for users who try to hack the app, spam our AI, or use the tools for harmful activities.",
-            "OWNERSHIP: You own 100% of any files or data processed through our tools. We own the design and code of the app."
+            "CONTENT UPLOAD: You agree not to upload illegal, harmful, or copyrighted content that you do not have permission to process.",
+            "WARRANTY: We provide the Anti-Gravity service 'as-is' with no guarantees of 100% uptime or absolute accuracy of AI-generated output.",
+            "SERVICE SUSPENSION: We reserve the right to suspend or terminate access for users who abuse the platform, spam the AI, or attempt unauthorized access.",
+            "REFUND POLICY: If you are unsatisfied with a premium purchase, please contact us within 30 days of purchase for a full refund.",
+            "API ACCESS: No unauthorized API access, scrapers, or bots are allowed. Any attempt to bypass our security protocols will result in a permanent ban."
         ]
     },
     disclaimer: {

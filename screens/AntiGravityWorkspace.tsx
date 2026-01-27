@@ -17,6 +17,7 @@ import { AuthModal } from '../components/AuthModal';
 import { useAIAuth } from '../hooks/useAIAuth';
 import { getCurrentUser } from '../services/googleAuthService';
 import { initSubscription } from '../services/subscriptionService';
+import { getFriendlyErrorMessage } from '../utils/errorMapping';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,13 @@ const AntiGravityWorkspace: React.FC = () => {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [showAiLimit, setShowAiLimit] = useState(false);
   const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setError(message);
+    setTimeout(() => setError(null), 3000);
+  };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -86,6 +94,7 @@ const AntiGravityWorkspace: React.FC = () => {
     setStatus('lifting');
     setSuggestedName(null);
     setImageContext(null);
+    setProgress(0); // Reset progress on start
 
     try {
       const isImage = selected.type.startsWith('image/');
@@ -95,11 +104,13 @@ const AntiGravityWorkspace: React.FC = () => {
 
       if (isImage) {
         // CONVERT IMAGE TO BASE64 FOR NEURAL VISION
+        setProgress(30); // Instant progress for images
         const reader = new FileReader();
         base64Images = await new Promise((resolve) => {
           reader.onload = () => resolve(reader.result as string);
           reader.readAsDataURL(selected);
         });
+        setProgress(100);
         setImageContext(base64Images);
         context = `IMAGE_PAYLOAD: ${selected.name} | TYPE: ${selected.type} | SIZE: ${(selected.size / 1024).toFixed(2)} KB`;
       } else {
@@ -108,8 +119,13 @@ const AntiGravityWorkspace: React.FC = () => {
         const pdfDoc = await PDFDocument.load(arrayBuffer);
         const pageCount = pdfDoc.getPageCount();
 
-        // 2. EXTRACT NEURAL PAYLOAD (Full Text)
-        extractedText = await extractTextFromPdf(arrayBuffer.slice(0));
+        // 2. EXTRACT NEURAL PAYLOAD (Full Text) with Progress
+        extractedText = await extractTextFromPdf(
+          arrayBuffer.slice(0),
+          undefined,
+          undefined,
+          (p) => setProgress(p) // Live progress update
+        );
         console.log(`Extracted Text Length: ${extractedText.length}`);
 
         if (!extractedText) {
@@ -166,12 +182,14 @@ const AntiGravityWorkspace: React.FC = () => {
         neuralSignature: neuralSignature.replace(/\n|"/g, '')
       });
 
-      await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation - consumes credits
+      const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation - consumes credits
+      if (stats?.message) alert(stats.message);
     } catch (error) {
       console.error('Error processing PDF:', error);
-      setAnalysis(`Document "${selected.name}" processed. AI is ready for your questions.`);
-      setDocumentContext(`Metadata: ${selected.name}`);
-      setStatus('analyzed');
+      const friendlyError = getFriendlyErrorMessage(error);
+
+      showToast(friendlyError); // Show toast instead of setting analysis text
+      setStatus('idle'); // Reset to idle so user can try again
     } finally {
       setIsImporting(false);
     }
@@ -190,9 +208,18 @@ const AntiGravityWorkspace: React.FC = () => {
     setQuery('');
     setChatHistory(prev => [...prev, { role: 'user', text: currentQuery }]);
     setIsAsking(true);
-    const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
-    setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
-    setIsAsking(false);
+
+    try {
+      const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
+      setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
+    } catch (err) {
+      console.error('AI Chat Error:', err);
+      showToast('Processing failed. Try again.');
+      // Remove the user's last message or add an error message to chat? 
+      // Requirement says "Show toast". I'll stick to that.
+    } finally {
+      setIsAsking(false);
+    }
   };
 
   return (
@@ -200,8 +227,21 @@ const AntiGravityWorkspace: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="px-6 pb-32 pt-32 max-w-2xl mx-auto flex flex-col min-h-screen space-y-12 overflow-x-hidden"
+      className="px-6 pb-32 pt-32 max-w-2xl mx-auto flex flex-col min-h-screen space-y-12 overflow-x-hidden relative"
     >
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-rose-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 text-xs font-black uppercase tracking-widest border border-rose-400"
+          >
+            <div className="bg-white/20 p-1 rounded-full"><span className="text-lg">⚠️</span></div>
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
         <div className="space-y-3 min-w-0 w-full">
@@ -274,10 +314,19 @@ const AntiGravityWorkspace: React.FC = () => {
             </div>
             <div className="text-center space-y-6">
               <h3 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Analyzing...</h3>
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-technical text-emerald-500 animate-pulse">Analyzing document content...</div>
-                <div className="text-[8px] font-mono text-gray-400 uppercase tracking-widest opacity-40">
-                  SHA-256 CHECK: {Math.random().toString(36).substring(7).toUpperCase()}...
+              <div className="flex flex-col items-center gap-4 w-64">
+                {/* Progress Bar */}
+                <div className="w-full h-1 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.1 }}
+                    className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                  />
+                </div>
+                <div className="flex justify-between w-full text-[9px] font-black uppercase tracking-widest text-emerald-500">
+                  <span>Processing Content</span>
+                  <span>{progress}%</span>
                 </div>
               </div>
             </div>

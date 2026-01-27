@@ -316,7 +316,8 @@ const ReaderScreen: React.FC = () => {
             const response = await askGemini(prompt, text, "audio_script", imageBase64 || undefined, fileMime);
             if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
             setAudioScript(response);
-            await recordAIUsage(AiOperationType.HEAVY);
+            const stats = await recordAIUsage(AiOperationType.HEAVY);
+            if (stats?.message) alert(stats.message);
             startSpeaking(response);
         } catch (error) {
             console.error("Audio Failed:", error);
@@ -379,7 +380,8 @@ const ReaderScreen: React.FC = () => {
             const response = await askGemini(prompt, text, "outline", imageBase64 || undefined, fileMime);
             if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
             setOutlineData(response);
-            await recordAIUsage(AiOperationType.HEAVY);
+            const stats = await recordAIUsage(AiOperationType.HEAVY);
+            if (stats?.message) alert(stats.message);
         } catch (error) {
             console.error("Outline Failed:", error);
         } finally {
@@ -433,7 +435,8 @@ const ReaderScreen: React.FC = () => {
             const response = await askGemini(prompt, text, "redact", imageBase64 || undefined, fileMime);
             if (response.startsWith('AI_RATE_LIMIT')) { setIsCooling(true); return; }
             setAuditData(response);
-            await recordAIUsage(AiOperationType.HEAVY);
+            const stats = await recordAIUsage(AiOperationType.HEAVY);
+            if (stats?.message) alert(stats.message);
         } catch (error) { console.error("Audit Failed:", error); } finally { setIsAuditing(false); }
     };
 

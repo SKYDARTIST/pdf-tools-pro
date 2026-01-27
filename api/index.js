@@ -33,11 +33,7 @@ export default async function handler(req, res) {
 
     // CORS: Strict Whitelist (No trailing slashes)
     const ALLOWED_ORIGINS = [
-        'capacitor://localhost',
-        'http://localhost',
-        'https://localhost',
-        'http://localhost:3000',
-        'http://localhost:5173',
+        'capacitor://localhost', // Keep for mobile app
         'https://pdf-tools-pro.vercel.app',
         'https://pdf-tools-pro-indol.vercel.app'
     ];
@@ -108,8 +104,10 @@ export default async function handler(req, res) {
             }
 
             if (count > MAX_REQUESTS) {
+                const ttl = await kv.ttl(key);
                 console.warn(`Anti-Gravity Security: Global Rate limit exceeded for ${maskDeviceId(rateLimitKey)}`);
-                return res.status(429).json({ error: "Rate limit exceeded. Try again later." });
+                res.setHeader('Retry-After', ttl);
+                return res.status(429).json({ error: `Rate limit exceeded. Please wait ${ttl} seconds.` });
             }
         } catch (kvError) {
             // Fail-Open: Allow request if KV is down or unconfigured
@@ -119,7 +117,7 @@ export default async function handler(req, res) {
 
     // STAGE 0: Session Authentication & Integrity
     // --------------------------------------------------------------------------------
-    const { createHmac } = await import('node:crypto');
+    const { createHmac, randomBytes } = await import('node:crypto');
 
     // SECURE SIGNING KEY: Use dedicated session secret, fallback to service key for safety
     const sessionSecret = process.env.SESSION_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -137,7 +135,7 @@ export default async function handler(req, res) {
             is_auth: isAuth,
             iat: now,
             exp: now + (60 * 60 * 1000), // 1 hour
-            jti: Buffer.from(`${uid}-${now}-${Math.random()}`).toString('base64')
+            jti: Buffer.from(`${uid}-${now}-${randomBytes(8).toString('hex')}`).toString('base64')
         });
         const signature = createHmac('sha256', sessionSecret).update(payload).digest('hex');
         return Buffer.from(payload).toString('base64') + '.' + signature;

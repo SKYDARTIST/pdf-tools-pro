@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut } from 'lucide-react';
+import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut, FileText, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, GoogleUser } from '../services/googleAuthService';
 
@@ -159,16 +159,40 @@ const AISettingsScreen: React.FC = () => {
           ))}
         </div>
 
-        {/* Platform Protocol Transparency */}
-        <div className="monolith-card p-8 space-y-6 border-dashed border-2 border-black/10 dark:border-white/10 bg-transparent shadow-none">
-          <div className="flex items-center gap-3 text-gray-500">
-            <Globe size={14} />
-            <h5 className="text-[10px] font-black uppercase tracking-[0.3em]">How we handle files</h5>
-          </div>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 leading-relaxed uppercase tracking-widest">
-            Basic tools (Merge, Split, Compress, Sign, etc.) run <span className="text-black dark:text-white underline decoration-black/20 dark:decoration-white/20">100% locally</span> on your phone.
-            Your files never leave your device unless you use the AI assistant to summarize or analyze them.
-          </p>
+        {/* Legal Links Section */}
+        <div className="monolith-card p-6 divide-y divide-black/5 dark:divide-white/5 border-none">
+          <button
+            onClick={() => navigate('/legal/privacy')}
+            className="w-full flex items-center justify-between py-4 group text-left"
+          >
+            <div className="flex items-center gap-4">
+              <Shield size={18} className="text-emerald-500" />
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">Privacy Policy</span>
+            </div>
+            <ExternalLink size={14} className="text-gray-300 group-hover:text-black dark:group-hover:text-white transition-colors" />
+          </button>
+
+          <button
+            onClick={() => navigate('/legal/terms')}
+            className="w-full flex items-center justify-between py-4 group text-left"
+          >
+            <div className="flex items-center gap-4">
+              <FileText size={18} className="text-blue-500" />
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">Terms of Service</span>
+            </div>
+            <ExternalLink size={14} className="text-gray-300 group-hover:text-black dark:group-hover:text-white transition-colors" />
+          </button>
+
+          <button
+            onClick={() => navigate('/legal/disclaimer')}
+            className="w-full flex items-center justify-between py-4 group text-left"
+          >
+            <div className="flex items-center gap-4">
+              <Bot size={18} className="text-purple-500" />
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">AI Disclaimer</span>
+            </div>
+            <ExternalLink size={14} className="text-gray-300 group-hover:text-black dark:group-hover:text-white transition-colors" />
+          </button>
         </div>
 
         <motion.div

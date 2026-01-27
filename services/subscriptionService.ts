@@ -2,6 +2,8 @@ import { fetchUserUsage, syncUsageToServer } from './usageService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import { SecurityLogger } from '../utils/securityUtils';
 
+import { STORAGE_KEYS, SUBSCRIPTION_TIERS, AI_OPERATION_TYPES, HEADERS, DEFAULTS } from '../utils/constants';
+
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
     FREE = 'free',
@@ -40,19 +42,19 @@ export interface UserSubscription {
     hasReceivedBonus: boolean;
 }
 
-const STORAGE_KEY = 'pdf_tools_subscription';
+const STORAGE_KEY = STORAGE_KEYS.SUBSCRIPTION;
 let isHydrated = false; // Memory flag to track if we've synced with server this session
 
 // Free tier limits
 const FREE_LIMITS = {
-    operationsPerDay: 3,
-    aiDocsPerWeek: 1,
+    operationsPerDay: DEFAULTS.FREE_DAILY_LIMIT,
+    aiDocsPerMonth: DEFAULTS.FREE_MONTHLY_AI_DOCS,
     maxFileSize: 5 * 1024 * 1024, // 5MB
 };
 
 const PRO_LIMITS = {
     operationsPerDay: Infinity,
-    aiDocsPerMonth: 10,
+    aiDocsPerMonth: DEFAULTS.PRO_MONTHLY_AI_DOCS,
     maxFileSize: 50 * 1024 * 1024, // 50MB
 };
 
@@ -144,10 +146,10 @@ export const saveSubscription = (subscription: UserSubscription): void => {
 
 // Check if user is within the 20-day trial period
 export const isInTrialPeriod = (): boolean => {
-    /* DISABLED for IAP verification
+    /* DISABLED as requested
     const subscription = getSubscription();
 
-    // If no trial start date, they're an old user - no trial
+    // If no trial start date, they're an old user or it was cleared - no trial
     if (!subscription.trialStartDate) {
         return false;
     }
@@ -156,7 +158,8 @@ export const isInTrialPeriod = (): boolean => {
     const now = new Date();
     const daysSinceTrialStart = Math.floor((now.getTime() - trialStart.getTime()) / (24 * 60 * 60 * 1000));
 
-    return daysSinceTrialStart < 20;
+    // Trial lasts 20 days
+    return daysSinceTrialStart < 20 && daysSinceTrialStart >= 0;
     */
     return false;
 };
@@ -204,7 +207,7 @@ export const isNearAiLimit = (): boolean => {
 
     // 2. Tier Specific Limits
     if (subscription.tier === SubscriptionTier.FREE) {
-        return subscription.aiDocsThisWeek >= FREE_LIMITS.aiDocsPerWeek;
+        return subscription.aiDocsThisMonth >= FREE_LIMITS.aiDocsPerMonth;
     }
 
     if (subscription.tier === SubscriptionTier.PRO) {
@@ -305,21 +308,21 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
 
     // 4. Check limits based on tier
     if (subscription.tier === SubscriptionTier.FREE) {
-        if (subscription.aiDocsThisWeek >= FREE_LIMITS.aiDocsPerWeek) {
+        if (subscription.aiDocsThisMonth >= FREE_LIMITS.aiDocsPerMonth) {
             return {
                 allowed: false,
-                reason: `You've used your 1 free AI document this week. Upgrade to Pro for 10 AI documents per month or buy an AI Pack!`,
+                reason: `You've used your ${FREE_LIMITS.aiDocsPerMonth} free AI documents this month. Upgrade to Pro for 50 AI documents per month!`,
                 blockMode: AiBlockMode.BUY_PRO
             };
         }
-        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerWeek - subscription.aiDocsThisWeek, warning, blockMode: AiBlockMode.NONE };
+        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning, blockMode: AiBlockMode.NONE };
     }
 
     if (subscription.tier === SubscriptionTier.PRO) {
         if (subscription.aiDocsThisMonth >= PRO_LIMITS.aiDocsPerMonth) {
             return {
                 allowed: false,
-                reason: `You've used all 10 AI documents this month. Buy an AI Pack for 100 more credits!`,
+                reason: `You've used all ${PRO_LIMITS.aiDocsPerMonth} AI documents this month. Buy an AI Pack for 100 more credits!`,
                 blockMode: AiBlockMode.BUY_CREDITS
             };
         }
@@ -345,77 +348,88 @@ export const recordOperation = (): void => {
 };
 
 // Record an AI usage
-export const recordAIUsage = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<void> => {
+export const recordAIUsage = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<{
+    tier: SubscriptionTier;
+    used: number;
+    limit: number;
+    remaining: number;
+    message?: string;
+} | null> => {
     // Skip recording for guidance - it's free!
     if (operationType === AiOperationType.GUIDANCE) {
         console.log('AI Usage: GUIDANCE operation - no credits consumed');
-        return;
+        return null; // No notification needed
     }
 
     // AUTH SAFETY: If user is logged in but we haven't hydrated from server yet, 
     // fetch server data first to avoid overwriting with stale local data
-    const googleUid = localStorage.getItem('google_uid');
+    const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
     if (googleUid && !isHydrated) {
         console.log('AI Usage: 🛡️ Forced hydration triggered before operation');
         await initSubscription();
     }
 
     const subscription = getSubscription();
+    let stats = null;
 
-    // Only consume credits for HEAVY operations
-    if (subscription.aiPackCredits > 0) {
-        subscription.aiPackCredits -= 1;
-        console.log(`AI Usage: HEAVY operation - AI Pack credits: ${subscription.aiPackCredits} remaining`);
+    // 20-DAY TRIAL: Unlimited AI usage
+    if (isInTrialPeriod()) {
+        return {
+            tier: SubscriptionTier.PRO,
+            used: 0,
+            limit: Infinity,
+            remaining: Infinity,
+            message: "Trial Period: Unlimited AI Access"
+        };
+    }
 
-        // CRITICAL: If credits reached zero, acknowledge the purchase to Google Play
-        // This marks it as "consumed" so it won't be restored again
-        if (subscription.aiPackCredits === 0) {
-            console.log('AI Usage: ⚠️ AI Pack fully consumed - marking as consumed on Google Play');
-            markAiPackConsumed();
-        }
-    } else if (subscription.tier === SubscriptionTier.FREE) {
-        subscription.aiDocsThisWeek += 1;
-        console.log(`AI Usage: HEAVY operation - Free tier: ${subscription.aiDocsThisWeek}/${FREE_LIMITS.aiDocsPerWeek} used this week`);
+    // Logic for tracking usage
+    if (subscription.tier === SubscriptionTier.FREE) {
+        subscription.aiDocsThisMonth += 1;
+        const used = subscription.aiDocsThisMonth;
+        const limit = FREE_LIMITS.aiDocsPerMonth;
+        const remaining = Math.max(0, limit - used);
+        console.log(`AI Usage: HEAVY operation - Free tier: ${used}/${limit} used this month`);
+
+        stats = {
+            tier: SubscriptionTier.FREE,
+            used,
+            limit,
+            remaining,
+            message: `Free Tier: ${used}/${limit} AI docs used`
+        };
     } else if (subscription.tier === SubscriptionTier.PRO) {
         subscription.aiDocsThisMonth += 1;
-        console.log(`AI Usage: HEAVY operation - Pro tier: ${subscription.aiDocsThisMonth}/${PRO_LIMITS.aiDocsPerMonth} used this month`);
+        const used = subscription.aiDocsThisMonth;
+        const limit = PRO_LIMITS.aiDocsPerMonth;
+        const remaining = Math.max(0, limit - used);
+        console.log(`AI Usage: HEAVY operation - Pro tier: ${used}/${limit} used this month`);
+
+        stats = {
+            tier: SubscriptionTier.PRO,
+            used,
+            limit,
+            remaining,
+            message: `Pro Plan: ${used}/${limit} AI docs used`
+        };
+    } else {
+        // Lifetime / Premium
+        console.log('AI Usage: HEAVY operation - Lifetime/Premium (Unlimited)');
+        stats = {
+            tier: subscription.tier,
+            used: 0,
+            limit: Infinity,
+            remaining: Infinity,
+            message: "Lifetime Access: Unlimited AI"
+        };
     }
 
     saveSubscription(subscription);
     await syncUsageToServer(subscription);
+
+    return stats;
 };
 
-// Mark AI Pack as consumed to prevent re-restoration after uninstall
-const markAiPackConsumed = (): void => {
-    try {
-        // Store a flag that we've consumed the AI Pack
-        // This prevents granting credits for the same purchase multiple times
-        const consumedPurchases = JSON.parse(localStorage.getItem('consumed_purchases') || '[]');
-
-        // Only add if not already marked as consumed
-        if (!consumedPurchases.some((p: any) => p.productId === 'ai_pack_100')) {
-            consumedPurchases.push({
-                productId: 'ai_pack_100',
-                consumedAt: new Date().toISOString()
-            });
-            localStorage.setItem('consumed_purchases', JSON.stringify(consumedPurchases));
-        }
-
-        console.log('AI Usage: AI Pack fully consumed - will not be restored again on reinstall');
-    } catch (error) {
-        console.error('AI Usage: Failed to mark AI Pack as consumed:', error);
-    }
-};
-
-// Check if a purchase has already been consumed (granted credits)
-export const isAiPackAlreadyConsumed = (): boolean => {
-    try {
-        const consumedPurchases = JSON.parse(localStorage.getItem('consumed_purchases') || '[]');
-        return consumedPurchases.some((p: any) => p.productId === 'ai_pack_100');
-    } catch {
-        return false;
-    }
-};
 
 // Upgrade user to a tier
 export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string, skipBonus: boolean = false): void => {
@@ -434,31 +448,7 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string, skip
         console.warn("TaskLimitManager sync failed");
     }
 
-    // TESTING PERIOD: Also grant 100 Neural Pack credits with Pro upgrade
-    // BUT only if they haven't received it before (prevents reset on reinstall)
-    // AND if skipBonus is false (restored users don't get new bonus)
-    const TESTING_PERIOD_END = new Date('2026-01-01T23:59:59Z');
-    const isTestingPeriod = new Date() < TESTING_PERIOD_END;
-    if (!skipBonus && isTestingPeriod && tier === SubscriptionTier.PRO && !subscription.hasReceivedBonus) {
-        if (!subscription.aiPackCredits || subscription.aiPackCredits === 0) {
-            subscription.aiPackCredits = 100;
-        }
-        subscription.hasReceivedBonus = true;
-        saveSubscription(subscription); // Ensure we save the bonus update
-    }
-
     // Persist to Supabase so it's not overwritten on next reload
-    syncUsageToServer(subscription);
-};
-
-// Add AI Pack Credits
-export const addAiPackCredits = (amount: number = 100): void => {
-    const subscription = getSubscription();
-
-    // Simple production behavior: add to existing credits
-    subscription.aiPackCredits = (subscription.aiPackCredits || 0) + amount;
-
-    saveSubscription(subscription);
     syncUsageToServer(subscription);
 };
 

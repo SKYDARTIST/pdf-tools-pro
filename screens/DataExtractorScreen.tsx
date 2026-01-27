@@ -34,6 +34,11 @@ const DataExtractorScreen: React.FC = () => {
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
     const { authModalOpen, setAuthModalOpen, checkAndPrepareAI } = useAIAuth();
 
+    const showToast = (message: string) => {
+        setError(message);
+        setTimeout(() => setError(''), 3000);
+    };
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const f = e.target.files[0];
@@ -47,7 +52,7 @@ const DataExtractorScreen: React.FC = () => {
                 setError('');
             } catch (err) {
                 console.error('Failed to read file:', f.name, err);
-                alert('Failed to read file. Please try again.');
+                showToast('Upload failed. Check file format.');
             }
         }
     };
@@ -194,7 +199,8 @@ Output ONLY raw CSV data.`;
             }
 
             setExtractedData(cleanedResponse);
-            await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+            const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+            if (stats?.message) alert(stats.message);
         } catch (err: any) {
             setError(err.message || "Extraction failed. Visual data may be too obscured or file corrupted.");
             console.error(err);
@@ -357,9 +363,17 @@ Output ONLY raw CSV data.`;
                 )}
 
                 {error && (
-                    <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center gap-4 text-rose-500">
-                        <AlertCircle size={20} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{error}</span>
+                    <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center justify-between gap-4 text-rose-500">
+                        <div className="flex items-center gap-4">
+                            <AlertCircle size={20} />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{error}</span>
+                        </div>
+                        <button
+                            onClick={() => { setError(''); setFile(null); }}
+                            className="px-4 py-2 bg-rose-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 transition-colors"
+                        >
+                            Retry
+                        </button>
                     </div>
                 )}
 

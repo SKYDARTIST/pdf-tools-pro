@@ -79,15 +79,17 @@ const App: React.FC = () => {
         initializePersistentLogging(); // Start capturing logs to localStorage
         initServerTime();  // Fetch server time immediately (non-blocking)
 
-        // BLOCKING: Start subscription fetch and wait for it
-        // This ensures the app doesn't show "Free" tier if user is actually "Pro"
-        console.log('🚀 App: Syncing subscription state...');
-        await initSubscription().catch(e => console.warn('Critical subscription sync failed:', e));
+        // NON-BLOCKING: Start subscription fetch in background
+        // The app will load with cached state (from localStorage) immediately,
+        // and update if the server state is different.
+        console.log('🚀 App: Starting background subscription sync...');
+        initSubscription().catch(e => console.warn('Non-critical subscription sync failed:', e));
 
-        console.log('🚀 App: Critical initialization complete');
+        console.log('🚀 App: Initialization complete (Optimized)');
       } catch (e) {
         console.error('🚀 App: Initialization error:', e);
       } finally {
+        // Render UI immediately
         setIsDataReady(true);
       }
     };

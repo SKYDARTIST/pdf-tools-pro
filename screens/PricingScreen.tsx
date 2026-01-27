@@ -6,15 +6,15 @@ import {
   Cpu, ZapOff, CreditCard, ChevronRight, Info,
   Star, ArrowRight, Activity
 } from 'lucide-react';
-import { getSubscription, upgradeTier, addAiPackCredits, SubscriptionTier } from '../services/subscriptionService';
-import BillingService, { PRO_PRODUCT_ID, AI_PACK_100_ID } from '../services/billingService';
+import { getSubscription, upgradeTier, SubscriptionTier } from '../services/subscriptionService';
+import BillingService from '../services/billingService';
 
 const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
   const [currentTier, setCurrentTier] = React.useState(getSubscription().tier);
   const [isLoading, setIsLoading] = React.useState(false);
   const [proPrice, setProPrice] = React.useState('$2.99');
-  const [aiPackPrice, setAiPackPrice] = React.useState('$4.99');
+
 
   React.useEffect(() => {
     // Re-read subscription state on mount in case it changed during boot
@@ -33,66 +33,78 @@ const PricingScreen: React.FC = () => {
   const handleProPurchase = async () => {
     setIsLoading(true);
     try {
+      // Implement Monthly Subscription ID
       const success = await BillingService.purchasePro();
-      if (success) {
-        // Small delay to ensure localStorage is fully updated
-        await new Promise(resolve => setTimeout(resolve, 100));
-        setCurrentTier(getSubscription().tier);
-        // Full reload to sync all components
-        setTimeout(() => window.location.reload(), 200);
-      }
+      if (success) handleSuccess();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleAiPurchase = async () => {
+  const handleLifetimePurchase = async () => {
     setIsLoading(true);
     try {
-      const success = await BillingService.purchaseAiPack();
-      if (success) {
-        // Small delay to ensure localStorage is fully updated
-        await new Promise(resolve => setTimeout(resolve, 100));
-        setCurrentTier(getSubscription().tier);
-        // Full reload to sync all components
-        setTimeout(() => window.location.reload(), 200);
-      }
+      // Implement Lifetime Product ID
+      const success = await BillingService.purchaseLifetime();
+      if (success) handleSuccess();
     } finally {
       setIsLoading(false);
     }
+  };
+
+
+
+  const handleSuccess = async () => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    setCurrentTier(getSubscription().tier);
+    setTimeout(() => window.location.reload(), 200);
   };
 
   const tiers = [
     {
       id: SubscriptionTier.FREE,
-      name: 'Lite Protocol',
+      name: 'Lite (Free)',
       price: '$0',
       period: 'FOREVER',
       features: [
-        { text: '3 Daily Tool Tasks', icon: Zap },
-        { text: '1 AI Document / Week', icon: Cpu },
-        { text: 'Zero Watermarks', icon: Shield }
+        { text: '5 Daily PDF Tasks', icon: Zap },
+        { text: '3 AI Docs / Month', icon: Cpu },
+        { text: 'Basic Secure Storage', icon: Shield }
       ],
-      cta: currentTier === SubscriptionTier.FREE ? 'PROTOCOL ACTIVE' : 'DEPLOY LITE',
+      cta: currentTier === SubscriptionTier.FREE ? 'CURRENT PLAN' : 'DOWNGRADE',
       disabled: currentTier === SubscriptionTier.FREE,
       recommended: false
     },
     {
       id: SubscriptionTier.PRO,
-      name: 'Neural Pro',
-      price: proPrice,
-      period: 'LIFETIME',
-      badge: 'MOST POPULAR',
-      discount: '70% OFF',
+      name: 'Pro Pass',
+      price: '$7.99',
+      period: 'PER MONTH',
+      badge: 'FLEXIBLE',
       features: [
         { text: 'UNLIMITED PDF Tasks', icon: Zap },
-        { text: '10 AI Docs / Month', icon: Cpu },
-        { text: 'Zero Watermarks Ever', icon: Shield },
-        { text: 'Lifetime Access/Updates', icon: Star },
-        { text: 'All 14 Core Tools', icon: Globe }
+        { text: '50 AI Docs / Month', icon: Cpu },
+        { text: 'Priority Processing', icon: Star },
+        { text: 'Cancel Anytime', icon: Check }
       ],
-      cta: currentTier === SubscriptionTier.PRO ? 'PLAN ACTIVE' : 'GET PRO ACCESS',
+      cta: currentTier === SubscriptionTier.PRO ? 'PLAN ACTIVE' : 'START MONTHLY',
       disabled: currentTier === SubscriptionTier.PRO || isLoading,
+      recommended: false
+    },
+    {
+      id: SubscriptionTier.LIFETIME,
+      name: 'Lifetime',
+      price: '$99',
+      period: 'ONE-TIME',
+      badge: 'BEST VALUE',
+      features: [
+        { text: 'UNLIMITED EVERYTHING', icon: Zap },
+        { text: 'UNLIMITED AI Docs', icon: Sparkles },
+        { text: 'Own It Forever', icon: Shield },
+        { text: 'No Monthly Bill', icon: Star }
+      ],
+      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'BUY ONCE',
+      disabled: currentTier === SubscriptionTier.LIFETIME || isLoading,
       recommended: true
     }
   ];
@@ -126,7 +138,7 @@ const PricingScreen: React.FC = () => {
             Scale Your Intelligence
           </h1>
           <p className="text-[10px] sm:text-[11px] font-bold text-[#909090] dark:text-[#909090] uppercase tracking-[0.4em]">
-            One-time payment • Infinite utility • Zero Subscriptions
+            Flexible Access • Infinite Utility • Local Privacy
           </p>
         </motion.div>
 
@@ -269,7 +281,7 @@ const PricingScreen: React.FC = () => {
               <tbody className="text-[10px] font-black uppercase">
                 {[
                   { f: "Data Privacy", c: "Cloud (Risk)", l: "Isolated Disk" },
-                  { f: "Pricing", c: "$240/Year", l: proPrice + " Life" },
+                  { f: "Pricing", c: "$240/Year", l: "$99 One-Time" },
                   { f: "Watermarks", c: "Paid Only", l: "Never" },
                 ].map((row, i) => (
                   <tr key={i} className="border-b border-black/5 dark:border-white/5 last:border-0">
@@ -283,7 +295,7 @@ const PricingScreen: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* AI Pack Add-on Card */}
+        {/* AI Tools Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -295,17 +307,17 @@ const PricingScreen: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Sparkles size={20} className="text-[#00C896]" />
-                  <h3 className="text-3xl font-black uppercase tracking-tighter text-black dark:text-white">AI POWER PACK</h3>
+                  <h3 className="text-3xl font-black uppercase tracking-tighter text-black dark:text-white">PURE INTELLIGENCE</h3>
                 </div>
-                <p className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Pure Intelligence Add-on</p>
+                <p className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">On-Device Neural Engine</p>
               </div>
 
               <div className="space-y-4">
                 {[
-                  '100 Neural Analysis Credits',
                   'Advanced OCR & Data Extraction',
-                  'No Expiry • Use when needed',
-                  'Stacks with Lifetime Pro'
+                  'Smart Context Awareness',
+                  'Privacy-First Local Processing',
+                  'Zero Cloud Latency'
                 ].map((bullet, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-[#00C896]" />
@@ -315,20 +327,11 @@ const PricingScreen: React.FC = () => {
               </div>
             </div>
 
-            <div className="w-full md:w-64 space-y-8 text-center md:text-right">
-              <div className="flex flex-col items-center md:items-end">
-                <span className="text-6xl font-black tabular-nums tracking-tighter text-black dark:text-white">
-                  {aiPackPrice}
-                </span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1">One-Time Pack</span>
+            <div className="w-full md:w-64 space-y-6 text-center md:text-right">
+              <div className="flex flex-col items-center md:items-end gap-2">
+                <Cpu size={48} className="text-[#00C896] opacity-80" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">Powered by<br />Anti-Gravity Neural Core</span>
               </div>
-              <motion.button
-                disabled={isLoading}
-                onClick={handleAiPurchase}
-                className="w-full py-5 bg-[#00C896] text-white rounded-[32px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:brightness-110 disabled:opacity-50"
-              >
-                {isLoading ? 'DEPLOYING...' : 'BUY AI PACK'}
-              </motion.button>
             </div>
           </div>
         </motion.div>
@@ -348,7 +351,7 @@ const PricingScreen: React.FC = () => {
           </div>
           <p className="text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
             Anti-Gravity processes all neural computations locally on your hardware.
-            We don't trap you in subscriptions because our maintenance costs are near-zero.
+            We offer total flexibility: Choose a low monthly pass or secure permanent access with our Lifetime Protocol.
           </p>
         </motion.div>
 
@@ -362,12 +365,15 @@ const PricingScreen: React.FC = () => {
               onClick={async () => {
                 setIsLoading(true);
                 try {
-                  await BillingService.syncPurchasesWithState();
+                  const restored = await BillingService.restorePurchases();
+                  const updatedSub = getSubscription(); // Refresh
 
-                  // Check if Pro was activated
-                  const updatedSub = getSubscription();
-                  if (updatedSub.tier === SubscriptionTier.PRO) {
-                    alert('✅ Success! Pro status restored from Google Play.');
+                  if (restored) {
+                    if (updatedSub.tier === SubscriptionTier.LIFETIME) {
+                      alert('✅ Success! Lifetime status restored from Google Play.');
+                    } else if (updatedSub.tier === SubscriptionTier.PRO) {
+                      alert('✅ Success! Pro status restored from Google Play.');
+                    }
                     window.location.reload();
                   } else {
                     alert('⚠️ No purchases found in Google Play.\n\nIf you already purchased, your payment might not have been acknowledged by Google Play.\n\nUse the manual activation button below.');
@@ -383,38 +389,7 @@ const PricingScreen: React.FC = () => {
               {isLoading ? 'SYNCING...' : 'RESTORE PURCHASES'}
             </button>
 
-            {/* Manual Pro Activation - For purchases that weren't acknowledged */}
-            <button
-              onClick={() => {
-                const confirm = window.confirm('⚠️ MANUAL PRO ACTIVATION\n\nThis will activate Pro features in your app.\n\n⚠️ IMPORTANT: Only use this if you have ACTUALLY PURCHASED Pro on Google Play.\n\nYour purchase receipt: If Google Play shows you already own "Neural Pro", then it\'s safe to activate.\n\nContinue?');
-                if (confirm) {
-                  try {
-                    // Manually activate Pro in both storage systems
-                    localStorage.setItem('pdf_tools_task_limit', JSON.stringify({
-                      count: 0,
-                      date: new Date().toISOString().split('T')[0],
-                      isPro: true
-                    }));
 
-                    const sub = getSubscription();
-                    sub.tier = SubscriptionTier.PRO;
-                    sub.aiPackCredits = (sub.aiPackCredits || 0) + 100; // Add 100 credits
-                    localStorage.setItem('pdf_tools_subscription', JSON.stringify(sub));
-
-                    alert('✅ Pro features activated!\n\n🎉 You now have:\n• Unlimited PDF tasks\n• 10 AI docs per month\n• ' + ((sub.aiPackCredits || 0) + 100) + ' AI credits\n\nReloading app...');
-                    window.location.reload();
-                  } catch (error) {
-                    alert(`Error: ${error}`);
-                  }
-                }
-              }}
-              className="px-8 py-3 rounded-full border-2 border-[#00C896]/50 text-[10px] font-black uppercase tracking-[0.3em] text-[#00C896] hover:bg-[#00C896]/10 transition-all"
-            >
-              ⚡ MANUAL PRO ACTIVATION
-            </button>
-            <p className="text-[8px] font-mono text-gray-400 text-center px-8 max-w-md">
-              Use manual activation if Google Play shows you already own Pro but the app doesn't detect it. Future purchases will sync automatically.
-            </p>
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@
 - [x] PII masking in logs
 - [x] Session token management
 - [x] Rate limiting (10 req/min)
-- [ ] **Run security checklist**:
+- [x] **Run security checklist**:
   ```bash
   # Check that no API keys are in client code
   grep -r "GEMINI_API_KEY\|api.key\|secret" src/ --exclude-dir=node_modules

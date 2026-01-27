@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { signInWithGoogle } from '../services/googleAuthService';
+import { getFriendlyErrorMessage } from '../utils/errorMapping';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateCodeVerifier, generateCodeChallenge } from '../services/pkce';
 import { Browser } from '@capacitor/browser';
@@ -82,8 +83,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             } else {
                 window.location.href = googleAuthUrl;
             }
+            setIsLoading(false);
         } catch (error) {
-            setError(error instanceof Error ? error.message : 'Sign in failed');
+            setError(getFriendlyErrorMessage(error));
             setIsLoading(false);
         }
     };

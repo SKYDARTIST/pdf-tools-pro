@@ -3,7 +3,7 @@ import * as pdfjs from 'pdfjs-dist';
 // Configure PDF.js worker - using local bundle for Capacitor stability
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
-export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: number, endPage?: number): Promise<string> => {
+export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: number, endPage?: number, onProgress?: (percent: number) => void): Promise<string> => {
     try {
         const data = new Uint8Array(arrayBuffer.slice(0));
         const loadingTask = pdfjs.getDocument({ data });
@@ -12,8 +12,15 @@ export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: n
 
         const start = startPage || 1;
         const end = Math.min(endPage || pdf.numPages, pdf.numPages);
+        const totalToProcess = end - start + 1;
 
         for (let i = start; i <= end; i++) {
+            if (onProgress) {
+                // Calculate percentage (0-100)
+                const percent = Math.round(((i - start) / totalToProcess) * 100);
+                onProgress(percent);
+            }
+
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
 
@@ -41,6 +48,7 @@ export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: n
             }
         }
 
+        if (onProgress) onProgress(100);
         return fullText.trim();
     } catch (error) {
         console.error("Neural Extraction Failure:", error);

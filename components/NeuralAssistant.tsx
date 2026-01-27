@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Bot, User, Sparkles, Zap, ChevronDown, ListChecks, Rocket, ShieldAlert } from 'lucide-react';
 import { askGemini } from '../services/aiService';
-import { canUseAI, recordAIUsage } from '../services/subscriptionService';
+import { canUseAI, recordAIUsage, AiOperationType } from '../services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
 
 const TOOL_MAPPING: Record<string, { name: string; path: string }> = {
@@ -60,7 +60,7 @@ const NeuralAssistant: React.FC = () => {
         if (!query.trim() || isLoading) return;
 
         // ALL ASSISTANT INTERACTIONS ARE FREE (Protocol Transparency)
-        const type = 'guidance';
+        const type = AiOperationType.GUIDANCE;
         const check = canUseAI(type);
         if (!check.allowed) {
             setMessages(prev => [...prev, { role: 'bot', text: `Authorization Failed: ${check.reason}` }]);
@@ -110,7 +110,8 @@ const NeuralAssistant: React.FC = () => {
             }
 
             setMessages(prev => [...prev, { role: 'bot', text: cleanText, action }]);
-            await recordAIUsage(type);
+            const stats = await recordAIUsage(type);
+            if (stats?.message) alert(stats.message);
         } catch (error) {
             setMessages(prev => [...prev, { role: 'bot', text: "Sorry, I had trouble processing that request. Please try again." }]);
         } finally {

@@ -1,13 +1,13 @@
-import { UserSubscription, SubscriptionTier } from './subscriptionService';
+import { UserSubscription } from './subscriptionService';
 import { getIntegrityToken } from './integrityService';
 import AuthService from './authService';
 import Config from './configService';
 import { SecurityLogger, maskString } from '../utils/securityUtils';
 import { getCsrfToken } from './csrfService';
+import { STORAGE_KEYS, HEADERS, API_ENDPOINTS } from '../utils/constants';
+import { Logger } from '../utils/logger';
 
 import { Device } from '@capacitor/device';
-
-const DEVICE_ID_KEY = 'ag_device_id';
 
 const generateUUID = () => {
     try {
@@ -30,7 +30,7 @@ const generateUUID = () => {
     } catch (e) { }
 
     // Extreme fallback (only if crypto API is completely missing)
-    console.warn('Crypto API missing, using insecure fallback');
+    Logger.warn('Security', 'Crypto API missing, using insecure fallback');
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
         const r = (Math.random() * 16) | 0;
         const v = c === 'x' ? r : (r & 0x3) | 0x8;
@@ -51,10 +51,10 @@ export const getDeviceId = async (): Promise<string> => {
     }
 
     // Fallback: localStorage
-    let id = localStorage.getItem(DEVICE_ID_KEY);
+    let id = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
     if (!id) {
         id = generateUUID();
-        localStorage.setItem(DEVICE_ID_KEY, id);
+        localStorage.setItem(STORAGE_KEYS.DEVICE_ID, id);
     }
     return id;
 };
@@ -64,26 +64,23 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
     const integrityToken = await getIntegrityToken();
 
     try {
-        const isCapacitor = !!(window as any).Capacitor;
-        const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
-
         const { getCurrentUser } = await import('./googleAuthService');
         const googleUser = await getCurrentUser();
 
         // AUTH STRATEGY: Prefer Google Auth, fallback to Device ID
         const authHeader = await AuthService.getAuthHeader();
         const headers: any = {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-            'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
-            'x-ag-integrity-token': integrityToken
+            [HEADERS.CONTENT_TYPE]: 'application/json',
+            [HEADERS.AUTHORIZATION]: authHeader,
+            [HEADERS.SIGNATURE]: Config.VITE_AG_PROTOCOL_SIGNATURE,
+            [HEADERS.INTEGRITY_TOKEN]: integrityToken
         };
 
         if (!googleUser) {
-            headers['x-ag-device-id'] = deviceId;
+            headers[HEADERS.DEVICE_ID] = deviceId;
         }
 
-        const apiEndpoint = googleUser ? '/api/user/subscription' : '/api/index';
+        const apiEndpoint = googleUser ? API_ENDPOINTS.SUBSCRIPTION : API_ENDPOINTS.INDEX;
         const backendUrl = `${Config.VITE_AG_API_URL}${apiEndpoint}`;
 
         const response = await fetch(backendUrl, {
@@ -93,7 +90,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
         });
 
         if (!response.ok) {
-            console.error('Anti-Gravity Billing: fetchUserUsage response not OK:', {
+            Logger.error('Billing', 'fetchUserUsage response not OK', {
                 status: response.status,
                 statusText: response.statusText
             });
@@ -119,7 +116,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
 
         return subscription;
     } catch (error) {
-        console.error('Anti-Gravity Billing: fetchUserUsage failed:', {
+        Logger.error('Billing', 'fetchUserUsage failed', {
             error: error instanceof Error ? error.message : String(error),
             timestamp: new Date().toISOString()
         });
@@ -132,14 +129,11 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
     const integrityToken = await getIntegrityToken();
 
     try {
-        const isCapacitor = !!(window as any).Capacitor;
-        const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
-
         const { getCurrentUser } = await import('./googleAuthService');
         const googleUser = await getCurrentUser();
 
         // Use the new Unified API endpoint if possible, or fallback to index
-        const apiEndpoint = googleUser ? '/api/user/subscription' : '/api/index';
+        const apiEndpoint = googleUser ? API_ENDPOINTS.SUBSCRIPTION : API_ENDPOINTS.INDEX;
 
         const backendUrl = `${Config.VITE_AG_API_URL}${apiEndpoint}`;
 
@@ -147,18 +141,18 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
 
         // AUTH STRATEGY
         const headers: any = {
-            'Content-Type': 'application/json',
-            'Authorization': await AuthService.getAuthHeader(),
-            'x-ag-signature': signature,
-            'x-ag-integrity-token': integrityToken
+            [HEADERS.CONTENT_TYPE]: 'application/json',
+            [HEADERS.AUTHORIZATION]: await AuthService.getAuthHeader(),
+            [HEADERS.SIGNATURE]: signature,
+            [HEADERS.INTEGRITY_TOKEN]: integrityToken
         };
 
         if (!googleUser) {
-            headers['x-ag-device-id'] = deviceId;
+            headers[HEADERS.DEVICE_ID] = deviceId;
             // SECURITY: Add CSRF token for state-changing requests (usage_sync)
             const csrfToken = getCsrfToken();
             if (csrfToken) {
-                headers['x-csrf-token'] = csrfToken;
+                headers[HEADERS.CSRF_TOKEN] = csrfToken;
             }
         }
 
@@ -188,26 +182,23 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
                 errorDetails = { rawResponse: responseBody };
             }
 
-            console.error('Anti-Gravity Billing: syncUsageToServer failed:', {
+            Logger.error('Billing', 'syncUsageToServer failed', {
                 status: response.status,
                 statusText: response.statusText,
                 errorDetails,
                 aiPackCredits: usage.aiPackCredits,
                 tier: usage.tier,
-                timestamp: new Date().toISOString()
             });
             return;
         }
 
-        console.log('Anti-Gravity Billing: ✅ Usage synced successfully', {
+        Logger.info('Billing', '✅ Usage synced successfully', {
             aiPackCredits: usage.aiPackCredits,
             tier: usage.tier,
-            timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error('Anti-Gravity Billing: syncUsageToServer network error:', {
+        Logger.error('Billing', 'syncUsageToServer network error', {
             error: error instanceof Error ? error.message : String(error),
-            timestamp: new Date().toISOString()
         });
     }
 };

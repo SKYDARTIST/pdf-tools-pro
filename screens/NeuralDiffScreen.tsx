@@ -128,6 +128,8 @@ const NeuralDiffScreen: React.FC = () => {
                 return;
             }
             setDiffResult(response);
+            const stats = await recordAIUsage(AiOperationType.HEAVY);
+            if (stats?.message) alert(stats.message);
 
         } catch (err) {
             setError("Analysis failed. Ensure both files are readable PDFs.");

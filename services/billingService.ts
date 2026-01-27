@@ -1,9 +1,10 @@
 import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
-import { upgradeTier, SubscriptionTier, addAiPackCredits, isAiPackAlreadyConsumed } from './subscriptionService';
+import { upgradeTier, SubscriptionTier } from './subscriptionService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 
-export const PRO_PRODUCT_ID = 'pro_access_lifetime';
-export const AI_PACK_100_ID = 'ai_pack_100';
+export const LIFETIME_PRODUCT_ID = 'pro_access_lifetime';
+export const PRO_MONTHLY_ID = 'pro_subscription_monthly';
+
 
 export interface ProductInfo {
     identifier: string;
@@ -91,7 +92,7 @@ class BillingService {
 
             console.log('Anti-Gravity Billing: Fetching all products');
             const result = await NativePurchases.getProducts({
-                productIdentifiers: [PRO_PRODUCT_ID, AI_PACK_100_ID],
+                productIdentifiers: [LIFETIME_PRODUCT_ID, PRO_MONTHLY_ID],
                 productType: PURCHASE_TYPE.INAPP
             });
             console.log('Anti-Gravity Billing: Fetch Result:', result);
@@ -121,7 +122,7 @@ class BillingService {
 
             console.log('Anti-Gravity Billing: Starting Pro purchase');
             const result = await NativePurchases.purchaseProduct({
-                productIdentifier: PRO_PRODUCT_ID,
+                productIdentifier: PRO_MONTHLY_ID,
                 productType: PURCHASE_TYPE.INAPP
             });
 
@@ -150,7 +151,7 @@ class BillingService {
 
                     // Let's implement verifyPurchase directly here to avoid circular dependency hell or massive refactors
                     const purchaseToken = (result as any).purchaseToken || result.transactionId;
-                    const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_PRODUCT_ID, result.transactionId);
+                    const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_MONTHLY_ID, result.transactionId);
 
                     if (verifyResult) {
                         console.log('Anti-Gravity Billing: ✅ Server verified and granted Pro status');
@@ -250,7 +251,7 @@ class BillingService {
         }
     }
 
-    async purchaseAiPack(): Promise<boolean> {
+    async purchaseLifetime(): Promise<boolean> {
         try {
             if (!this.isInitialized) {
                 const ok = await this.initialize();
@@ -260,74 +261,55 @@ class BillingService {
                 }
             }
 
-            console.log('Anti-Gravity Billing: Starting AI Pack purchase');
-            console.log('Anti-Gravity Billing: AI Pack product ID:', AI_PACK_100_ID);
-
+            console.log('Anti-Gravity Billing: Starting Lifetime purchase');
             const result = await NativePurchases.purchaseProduct({
-                productIdentifier: AI_PACK_100_ID,
+                productIdentifier: LIFETIME_PRODUCT_ID,
                 productType: PURCHASE_TYPE.INAPP
             });
 
-            console.log('Anti-Gravity Billing: Purchase result:', {
-                hasTransactionId: !!result.transactionId,
-                transactionId: result.transactionId,
-                resultKeys: Object.keys(result)
-            });
-
             if (result.transactionId) {
-                console.log('Anti-Gravity Billing: ✅ AI Pack purchase successful, acknowledging...');
+                console.log('Anti-Gravity Billing: ✅ Lifetime purchase successful, acknowledging...');
 
-                // CRITICAL: Acknowledge the purchase on Google Play
                 try {
                     const purchaseToken = (result as any).purchaseToken || result.transactionId;
                     await NativePurchases.acknowledgePurchase({
                         purchaseToken: purchaseToken
                     });
-                    console.log('Anti-Gravity Billing: ✅ Purchase acknowledged on Google Play');
                 } catch (ackError) {
                     console.error('Anti-Gravity Billing: Acknowledgment error (non-fatal):', ackError);
                 }
 
-                // SECURITY: Verify and Grant on SERVER SIDE (v2.9.0)
+                // SECURITY: Verify on SERVER SIDE
                 try {
                     const purchaseToken = (result as any).purchaseToken || result.transactionId;
-                    await this.verifyPurchaseOnServer(purchaseToken, AI_PACK_100_ID, result.transactionId);
+                    const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
+
+                    if (verifyResult) {
+                        console.log('Anti-Gravity Billing: ✅ Server verified status');
+                    }
                 } catch (verifyError) {
-                    console.error('Anti-Gravity Billing: AI Pack Server verification failed:', verifyError);
+                    console.error('Server verification failed:', verifyError);
                 }
 
-                addAiPackCredits(100);
-
-                // Verify credits were added
-                const subscription = TaskLimitManager.getSubscriptionSync();
-                console.log('Anti-Gravity Billing: Post-purchase verification:', {
-                    aiPackCredits: subscription?.aiPackCredits
-                });
-
-                alert('100 AI Credits Deployed Successfully!');
+                TaskLimitManager.upgradeToPro();
+                upgradeTier(SubscriptionTier.LIFETIME, result.transactionId);
+                alert('Lifetime Access Unlocked!');
                 return true;
             }
             return false;
         } catch (error: any) {
-            console.error('Anti-Gravity Billing: AI Pack Purchase Error:', error);
-
-            // Distinguish between different error types
-            const errorMessage = error?.message || error?.toString?.() || String(error);
-            const isPurchaseNotCompleted =
-                errorMessage.toLowerCase().includes('purchase is not purchased') ||
-                errorMessage.toLowerCase().includes('not purchased') ||
-                errorMessage.toLowerCase().includes('user cancelled');
-
-            if (isPurchaseNotCompleted) {
-                console.log('Anti-Gravity Billing: ⚠️ AI Pack purchase incomplete or cancelled');
-                alert('⚠️ Purchase was not completed. Please try again or check your Google Play account.');
-                return false;
+            const errorMessage = error?.message || String(error);
+            if (errorMessage.toLowerCase().includes('already own')) {
+                upgradeTier(SubscriptionTier.LIFETIME, undefined, true);
+                alert('✅ Lifetime status activated! You already own this.');
+                return true;
             }
-
-            alert('Purchase failed: ' + (error.message || 'Check your Google Play account.'));
+            alert('Purchase failed: ' + errorMessage);
             return false;
         }
     }
+
+
 
 
     async syncPurchasesWithState(): Promise<void> {
@@ -394,13 +376,11 @@ class BillingService {
             console.log('Anti-Gravity Billing: Manual restore triggered by user...');
 
             // CRITICAL: First, check Supabase for existing data (source of truth for remaining credits)
-            let existingCredits = 0;
             try {
                 const { fetchUserUsage } = await import('./usageService');
                 const existingUsage = await fetchUserUsage();
                 if (existingUsage) {
-                    existingCredits = existingUsage.aiPackCredits || 0;
-                    console.log('Anti-Gravity Billing: ℹ️ Found existing Supabase data with', existingCredits, 'AI Pack credits');
+
                     // Restore existing data immediately - this includes any remaining credits from before
                     const { saveSubscription } = await import('./subscriptionService');
                     saveSubscription(existingUsage);
@@ -409,23 +389,7 @@ class BillingService {
                 console.warn('Anti-Gravity Billing: Could not fetch Supabase data:', supabaseError);
             }
 
-            // Check if AI Pack was already fully consumed (and had 0 credits)
-            const aiPackConsumed = isAiPackAlreadyConsumed();
-            console.log('Anti-Gravity Billing: AI Pack consumed previously?', aiPackConsumed);
 
-            // If they have existing credits from Supabase (even if just 1), they can keep it
-            if (existingCredits > 0) {
-                console.log('Anti-Gravity Billing: ✅ Restored', existingCredits, 'remaining AI Pack credits from Supabase');
-                alert(`✅ Your account has ${existingCredits} remaining AI Pack credits!`);
-                return true;
-            }
-
-            // If AI Pack was already fully consumed and used up, don't grant more
-            if (aiPackConsumed) {
-                console.warn('Anti-Gravity Billing: ⚠️ AI Pack was already consumed - cannot grant additional credits');
-                alert('⚠️ Your AI Pack was already fully used. That purchase cannot be restored again.');
-                return false;
-            }
 
             // Now call native restore for new purchases (not already used)
             this.restoredPurchases = [];
@@ -441,16 +405,27 @@ class BillingService {
 
             // Process each captured purchase
             let hasProRestore = false;
-            let hasAiPackRestore = false;
+
 
             for (const purchase of capturedPurchases) {
                 const productId = purchase.productIdentifier || purchase.productId || purchase.sku;
 
-                if (productId === PRO_PRODUCT_ID) {
+                if (productId === PRO_MONTHLY_ID || productId === LIFETIME_PRODUCT_ID) {
                     hasProRestore = true;
-                    console.log('Anti-Gravity Billing: ✅ Restoring Pro status from manual restore...');
+
+                    // PRIORITY CHECK: If we already found Lifetime in this loop or have it, don't downgrade to Pro
+                    const currentTierWait = TaskLimitManager.getSubscriptionSync()?.tier;
+                    if (currentTierWait === SubscriptionTier.LIFETIME && productId === PRO_MONTHLY_ID) {
+                        console.log('Anti-Gravity Billing: 🛡️ Skipping Pro restore because Lifetime is already active');
+                        continue;
+                    }
+
+                    console.log('Anti-Gravity Billing: ✅ Restoring Status from manual restore...', { productId });
+
+                    const tier = productId === LIFETIME_PRODUCT_ID ? SubscriptionTier.LIFETIME : SubscriptionTier.PRO;
+
                     TaskLimitManager.upgradeToPro();
-                    upgradeTier(SubscriptionTier.PRO, purchase.transactionId, true);
+                    upgradeTier(tier, purchase.transactionId, true);
 
                     // STRICT VERIFICATION: Ensure both storage systems agreed
                     const isProInLimit = TaskLimitManager.isPro();
@@ -465,35 +440,24 @@ class BillingService {
 
                         // RETRY: Try one more forceful sync
                         if (isProInLimit && !isProInSub) {
-                            upgradeTier(SubscriptionTier.PRO, purchase.transactionId, true);
+                            upgradeTier(tier, purchase.transactionId, true);
                         } else if (!isProInLimit) {
                             TaskLimitManager.upgradeToPro();
                         }
                     }
-                    alert('✅ Pro status restored!');
+                    alert(`✅ ${tier === SubscriptionTier.LIFETIME ? 'Lifetime' : 'Pro'} status restored!`);
                 }
 
-                if (productId === AI_PACK_100_ID) {
-                    // CRITICAL: Only grant if NOT already consumed
-                    if (!isAiPackAlreadyConsumed()) {
-                        hasAiPackRestore = true;
-                        console.log('Anti-Gravity Billing: ✅ Restoring 100 AI Pack credits from manual restore...');
-                        addAiPackCredits(100);
-                        alert('✅ 100 AI Pack credits restored!');
-                    } else {
-                        console.warn('Anti-Gravity Billing: AI Pack already marked as consumed - skipping new grant');
-                        alert('⚠️ This AI Pack was already used up. That purchase cannot be restored again.');
-                    }
-                }
+
             }
 
-            if (!hasProRestore && !hasAiPackRestore && capturedPurchases.length === 0) {
+            if (!hasProRestore && capturedPurchases.length === 0) {
                 console.log('Anti-Gravity Billing: ℹ️ No new purchases found to restore (no active purchases on Google Play)');
                 alert('ℹ️ No active purchases found on Google Play.');
                 return false;
             }
 
-            return hasProRestore || hasAiPackRestore;
+            return hasProRestore;
         } catch (error) {
             console.error('Anti-Gravity Billing: Restore Error:', error);
             alert('❌ Restore failed. Please try again.');

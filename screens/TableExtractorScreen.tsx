@@ -99,7 +99,8 @@ const TableExtractorScreen: React.FC = () => {
             }
 
             setTables(extractedTables);
-            await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+            const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
+            if (stats?.message) alert(stats.message);
             setStatus('done');
         } catch (err) {
             console.error("Extraction Failed:", err);
