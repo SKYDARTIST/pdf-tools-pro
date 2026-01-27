@@ -100,7 +100,30 @@ export default async function handler(req, res) {
         timestamp: new Date().toISOString()
     });
 
-    // STAGE 0: Session Authentication & Integrity (moved before rate limiting)
+    // STAGE -1: Rate Limiting (early, before session validation)
+    // Rate limit all requests to prevent abuse
+    const rateLimitKey = deviceId || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const rateNow = Date.now();
+
+    if (rateLimitKey) {
+        const usageData = ipRequestCounts.get(rateLimitKey) || { count: 0, startTime: rateNow };
+
+        // Reset window if expired
+        if (rateNow - usageData.startTime > RATE_LIMIT_WINDOW) {
+            usageData.count = 0;
+            usageData.startTime = rateNow;
+        }
+
+        usageData.count++;
+        ipRequestCounts.set(rateLimitKey, usageData);
+
+        if (usageData.count > MAX_REQUESTS) {
+            console.warn(`Anti-Gravity Security: Rate limit exceeded for ${maskDeviceId(rateLimitKey)}`);
+            return res.status(429).json({ error: "Rate limit exceeded. Please try again in a minute." });
+        }
+    }
+
+    // STAGE 0: Session Authentication & Integrity
     // --------------------------------------------------------------------------------
     const { createHmac } = await import('node:crypto');
     const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -191,29 +214,6 @@ export default async function handler(req, res) {
             // NO. User requested "Fix ASAP". Strict enforcement.
             console.warn(`Anti-Gravity Security: Blocked unauthenticated request from ${maskDeviceId(deviceId)}`);
             return res.status(401).json({ error: 'INVALID_SESSION', details: 'Session expired or invalid. Please restart app.' });
-        }
-    }
-
-    // STAGE -0.5: Rate Limiting (after session validation)
-    // Apply rate limiting using verified device ID to prevent token hijacking attacks
-    const rateLimitKey = deviceId || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const now = Date.now();
-
-    if (rateLimitKey) {
-        const usageData = ipRequestCounts.get(rateLimitKey) || { count: 0, startTime: now };
-
-        // Reset window if expired
-        if (now - usageData.startTime > RATE_LIMIT_WINDOW) {
-            usageData.count = 0;
-            usageData.startTime = now;
-        }
-
-        usageData.count++;
-        ipRequestCounts.set(rateLimitKey, usageData);
-
-        if (usageData.count > MAX_REQUESTS) {
-            console.warn(`Anti-Gravity Security: Rate limit exceeded for ${maskDeviceId(rateLimitKey)}`);
-            return res.status(429).json({ error: "Rate limit exceeded. Please try again in a minute." });
         }
     }
 
