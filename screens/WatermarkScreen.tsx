@@ -11,12 +11,9 @@ import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 
 const WatermarkScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [file, setFile] = useState<FileItem | null>(null);
   const [text, setText] = useState('CONFIDENTIAL');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -43,50 +40,48 @@ const WatermarkScreen: React.FC = () => {
   const handleApply = async () => {
     if (!file || !text.trim()) return;
 
-    requireAuth(async () => {
-      if (!TaskLimitManager.canUseTask()) {
-        setShowUpgradeModal(true);
-        return;
-      }
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
-      setIsProcessing(true);
-      try {
-        const result = await addWatermark(file.file, text);
-        const blob = new Blob([result as any], { type: 'application/pdf' });
-        await downloadFile(blob, `stamped_${file.name}`);
+    setIsProcessing(true);
+    try {
+      const result = await addWatermark(file.file, text);
+      const blob = new Blob([result as any], { type: 'application/pdf' });
+      await downloadFile(blob, `stamped_${file.name}`);
 
-        // Increment task counter
-        TaskLimitManager.incrementTask();
+      // Increment task counter
+      TaskLimitManager.incrementTask();
 
-        // Add to history
-        FileHistoryManager.addEntry({
-          fileName: file.name,
-          operation: 'watermark',
-          originalSize: file.size,
-          status: 'success'
-        });
+      // Add to history
+      FileHistoryManager.addEntry({
+        fileName: file.name,
+        operation: 'watermark',
+        originalSize: file.size,
+        status: 'success'
+      });
 
-        // Show success modal
-        setSuccessData({
-          isOpen: true,
-          fileName: `stamped_${file.name}`,
-          originalSize: file.size,
-          finalSize: result.length
-        });
+      // Show success modal
+      setSuccessData({
+        isOpen: true,
+        fileName: `stamped_${file.name}`,
+        originalSize: file.size,
+        finalSize: result.length
+      });
 
-        // Clear file deferred
-      } catch (err) {
-        alert('Error applying watermark');
+      // Clear file deferred
+    } catch (err) {
+      alert('Error applying watermark');
 
-        FileHistoryManager.addEntry({
-          fileName: `watermark_failed_${file.name}`,
-          operation: 'watermark',
-          status: 'error'
-        });
-      } finally {
-        setIsProcessing(false);
-      }
-    });
+      FileHistoryManager.addEntry({
+        fileName: `watermark_failed_${file.name}`,
+        operation: 'watermark',
+        status: 'error'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -145,7 +140,7 @@ const WatermarkScreen: React.FC = () => {
                 <Settings2 size={28} />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-black uppercase tracking-tighter truncate">{file.name}</h3>
+                <h3 className="text-sm font-black uppercase tracking-tighter truncate">Active Document</h3>
                 <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Awaiting Marker Input</p>
               </div>
               <button onClick={() => setFile(null)} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">Clear</button>
@@ -217,11 +212,6 @@ const WatermarkScreen: React.FC = () => {
         reason="limit_reached"
       />
 
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-      />
       {successData && (
         <SuccessModal
           isOpen={successData.isOpen}

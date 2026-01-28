@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileUp, RotateCw, Share2, Loader2, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RotateCw, FileText, Loader2 } from 'lucide-react';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { downloadFile } from '../services/downloadService';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 import ShareModal from '../components/ShareModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
@@ -15,7 +13,6 @@ import UpgradeModal from '../components/UpgradeModal';
 
 const RotateScreen: React.FC = () => {
     const navigate = useNavigate();
-    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [file, setFile] = useState<File | null>(null);
     const [pageCount, setPageCount] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -31,15 +28,11 @@ const RotateScreen: React.FC = () => {
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const f = e.target.files[0];
-
             try {
-                // Read file data immediately to prevent Android permission expiration
                 const arrayBuffer = await f.arrayBuffer();
                 const blob = new Blob([arrayBuffer], { type: f.type });
                 const freshFile = new File([blob], f.name, { type: f.type });
                 setFile(freshFile);
-
-                // Load PDF to get page count
                 const pdfDoc = await PDFDocument.load(arrayBuffer);
                 setPageCount(pdfDoc.getPageCount());
             } catch (err) {
@@ -52,66 +45,53 @@ const RotateScreen: React.FC = () => {
     const handleRotate = async (angle: number) => {
         if (!file) return;
 
-        requireAuth(async () => {
-            if (!TaskLimitManager.canUseTask()) {
-                setShowUpgradeModal(true);
-                return;
-            }
+        if (!TaskLimitManager.canUseTask()) {
+            setShowUpgradeModal(true);
+            return;
+        }
 
-            setIsProcessing(true);
+        setIsProcessing(true);
 
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdfDoc = await PDFDocument.load(arrayBuffer);
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(arrayBuffer);
+            const pages = pdfDoc.getPages();
+            pages.forEach(page => {
+                page.setRotation(degrees(angle));
+            });
 
-                // Rotate all pages
-                const pages = pdfDoc.getPages();
-                pages.forEach(page => {
-                    page.setRotation(degrees(angle));
-                });
+            const pdfBytes = await pdfDoc.save();
+            const fileName = `rotated_${file.name}`;
 
-                const pdfBytes = await pdfDoc.save();
-                const fileName = `rotated_${file.name}`;
+            setProcessedFile({
+                data: pdfBytes,
+                name: fileName,
+                size: pdfBytes.length
+            });
 
-                // Store for sharing
-                setProcessedFile({
-                    data: pdfBytes,
-                    name: fileName,
-                    size: pdfBytes.length
-                });
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
-                // Download
-                const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-                await downloadFile(blob, fileName);
+            FileHistoryManager.addEntry({
+                fileName,
+                operation: 'split',
+                originalSize: file.size,
+                finalSize: pdfBytes.length,
+                status: 'success'
+            });
 
-                // Add to history
-                FileHistoryManager.addEntry({
-                    fileName,
-                    operation: 'split',
-                    originalSize: file.size,
-                    finalSize: pdfBytes.length,
-                    status: 'success'
-                });
-
-                // Increment task count
-                TaskLimitManager.incrementTask();
-
-                // Show success modal
-                setShowSuccessModal(true);
-
-                // Reset deferred
-            } catch (err) {
-                alert('Error rotating PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
-
-                FileHistoryManager.addEntry({
-                    fileName: `rotate_failed_${file.name}`,
-                    operation: 'split',
-                    status: 'error'
-                });
-            } finally {
-                setIsProcessing(false);
-            }
-        });
+            TaskLimitManager.incrementTask();
+            setShowSuccessModal(true);
+        } catch (err) {
+            alert('Error rotating PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            FileHistoryManager.addEntry({
+                fileName: `rotate_failed_${file.name}`,
+                operation: 'split',
+                status: 'error'
+            });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -122,7 +102,6 @@ const RotateScreen: React.FC = () => {
             className="min-h-screen pb-32 pt-32 max-w-2xl mx-auto px-6"
         >
             <div className="space-y-12">
-                {/* Header Section */}
                 <div className="space-y-3">
                     <div className="text-technical">Available Tools / Rotate PDF</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Rotate</h1>
@@ -157,13 +136,12 @@ const RotateScreen: React.FC = () => {
                     </label>
                 ) : (
                     <div className="space-y-6">
-                        {/* File Info */}
                         <div className="monolith-card p-6 flex items-center gap-5 border-none shadow-xl">
                             <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shrink-0">
                                 <FileText size={28} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
+                                <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">Active Document</h3>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES FOUND</p>
                             </div>
                             <button
@@ -247,7 +225,6 @@ const RotateScreen: React.FC = () => {
                 )}
             </div>
 
-            {/* Success Modal */}
             {processedFile && (
                 <>
                     <SuccessModal
@@ -257,19 +234,10 @@ const RotateScreen: React.FC = () => {
                             setFile(null);
                             setPageCount(0);
                         }}
-                        operation="Rotate Pages"
-                        fileName={processedFile.name}
-                        originalSize={file?.size}
-                        finalSize={processedFile.size}
-                        onViewFiles={() => {
-                            setShowSuccessModal(false);
-                            setFile(null);
-                            setPageCount(0);
-                            navigate('/my-files');
-                        }}
-                        onDownload={() => {
-                            setShowSuccessModal(false);
-                            setShowShareModal(true);
+                        data={{
+                            fileName: processedFile.name,
+                            originalSize: file?.size || 0,
+                            finalSize: processedFile.size
                         }}
                     />
 
@@ -287,12 +255,6 @@ const RotateScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 reason="limit_reached"
-            />
-
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

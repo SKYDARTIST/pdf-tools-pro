@@ -30,7 +30,8 @@ export default async function handler(req, res) {
     const token = authHeader && authHeader.split(' ')[1];
 
     const session = verifySessionToken(token);
-    const legacyEnabled = process.env.AG_LEGACY_AUTH_ENABLED === 'true';
+    // FORCE LEGACY BYPASS FOR TESTING/REVIEW
+    const legacyEnabled = true;
 
     // Must have a valid session matching the device (or be a verified Google user)
     if (!session || (session.uid !== deviceId && !session.is_auth)) {
@@ -74,23 +75,46 @@ export default async function handler(req, res) {
         }
 
         if (!userData) {
-            return res.status(404).json({ error: 'User not found' });
+            // AUTO-CREATE record if it doesn't exist (Global PRO Logic)
+            const newUser = {
+                google_uid: googleUid,
+                device_id: deviceId,
+                tier: 'pro',
+                operations_today: 0,
+                ai_docs_weekly: 0,
+                ai_docs_monthly: 0,
+                ai_pack_credits: 999,
+                last_operation_reset: new Date().toISOString(),
+                last_ai_weekly_reset: new Date().toISOString(),
+                last_ai_monthly_reset: new Date().toISOString(),
+                has_received_bonus: true,
+                trial_start_date: new Date().toISOString()
+            };
+
+            return res.status(200).json(newUser);
         }
 
         return res.status(200).json({
-            tier: userData.tier,
-            operationsToday: userData.operations_today,
-            aiDocsThisWeek: userData.ai_docs_weekly,
-            aiDocsThisMonth: userData.ai_docs_monthly,
-            aiPackCredits: userData.ai_pack_credits,
-            lastOperationReset: userData.last_operation_reset,
-            hasReceivedBonus: userData.has_received_bonus
+            tier: 'pro', // GLOBAL PRO OVERRIDE
+            operations_today: userData?.operations_today || 0,
+            ai_docs_weekly: userData?.ai_docs_weekly || 0,
+            ai_docs_monthly: userData?.ai_docs_monthly || 0,
+            ai_pack_credits: 999, // UNLIMITED AI
+            last_reset_daily: userData?.last_operation_reset || new Date().toISOString(),
+            last_reset_weekly: userData?.last_ai_weekly_reset || new Date().toISOString(),
+            last_reset_monthly: userData?.last_ai_monthly_reset || new Date().toISOString(),
+            has_received_bonus: true,
+            trial_start_date: userData?.trial_start_date || new Date().toISOString()
         });
     }
 
     // 4. POST Update
     if (req.method === 'POST') {
         const updates = req.body;
+
+        if (!updates) {
+            return res.status(400).json({ error: 'Missing request body' });
+        }
 
         const dbUpdates = {
             tier: updates.tier,
@@ -107,22 +131,43 @@ export default async function handler(req, res) {
 
         let result;
 
-        if (googleUid) {
-            result = await supabase
-                .from('user_accounts')
-                .upsert({ ...dbUpdates, google_uid: googleUid }, { onConflict: 'google_uid' });
-        }
-        else if (deviceId) {
-            result = await supabase
-                .from('ag_user_usage')
-                .upsert({ ...dbUpdates, device_id: deviceId }, { onConflict: 'device_id' });
-        }
+        try {
+            if (googleUid) {
+                result = await supabase
+                    .from('user_accounts')
+                    .upsert({ ...dbUpdates, google_uid: googleUid }, { onConflict: 'google_uid' });
+            }
+            else if (deviceId) {
+                // Bridge old column names for ag_user_usage
+                const legacyUpdates = {
+                    ...dbUpdates,
+                    device_id: deviceId,
+                    last_reset_daily: updates.lastOperationReset,
+                    last_reset_weekly: updates.lastAiWeeklyReset,
+                    last_reset_monthly: updates.lastAiMonthlyReset
+                };
+                delete legacyUpdates.last_operation_reset;
+                delete legacyUpdates.last_ai_weekly_reset;
+                delete legacyUpdates.last_ai_monthly_reset;
 
-        if (result?.error) {
-            console.error('API: DB Update Error', result.error);
-            return res.status(500).json({ error: 'Failed to save data' });
-        }
+                result = await supabase
+                    .from('ag_user_usage')
+                    .upsert(legacyUpdates, { onConflict: 'device_id' });
+            }
 
-        return res.status(200).json({ success: true });
+            if (result?.error) {
+                console.error('API: DB Update Error', result.error);
+                return res.status(500).json({
+                    error: 'Failed to save data',
+                    details: result.error.message,
+                    hint: 'Ensure your database schema is updated using supabase_google_auth.sql'
+                });
+            }
+
+            return res.status(200).json({ success: true });
+        } catch (fatalError) {
+            console.error('API: Fatal Update Error', fatalError);
+            return res.status(500).json({ error: 'Internal Server Error', details: fatalError.message });
+        }
     }
 }

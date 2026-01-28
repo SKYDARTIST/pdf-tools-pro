@@ -11,12 +11,9 @@ import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 
 const ImageToPdfScreen: React.FC = () => {
   const location = useLocation();
-  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [items, setItems] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -96,52 +93,51 @@ const ImageToPdfScreen: React.FC = () => {
   const handleConvert = async () => {
     if (items.length === 0) return;
 
-    requireAuth(async () => {
-      if (!TaskLimitManager.canUseTask()) {
-        setShowUpgradeModal(true);
-        return;
-      }
+    // Check task limit
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
-      setIsProcessing(true);
-      try {
-        console.log('🔄 Starting PDF conversion for', items.length, 'items');
-        const result = await imageToPdf(items.map(f => f.file));
-        const fileName = `scanned_doc_${Date.now()}.pdf`;
-        const blob = new Blob([result as any], { type: 'application/pdf' });
+    setIsProcessing(true);
+    try {
+      console.log('🔄 Starting PDF conversion for', items.length, 'items');
+      const result = await imageToPdf(items.map(f => f.file));
+      const fileName = `scanned_doc_${Date.now()}.pdf`;
+      const blob = new Blob([result as any], { type: 'application/pdf' });
 
-        const originalSize = items.reduce((acc, item) => acc + item.size, 0);
-        const finalSize = result.length;
+      const originalSize = items.reduce((acc, item) => acc + item.size, 0);
+      const finalSize = result.length;
 
-        console.log('📶 Triggering download for', fileName, 'size:', finalSize);
-        await downloadFile(blob, fileName, () => {
-          setSuccessData({
-            isOpen: true,
-            fileName,
-            originalSize,
-            finalSize
-          });
-        });
-
-        // Increment task count
-        TaskLimitManager.incrementTask();
-
-        // Record in history
-        FileHistoryManager.addEntry({
+      console.log('📶 Triggering download for', fileName, 'size:', finalSize);
+      await downloadFile(blob, fileName, () => {
+        setSuccessData({
+          isOpen: true,
           fileName,
-          operation: 'image-to-pdf',
           originalSize,
-          finalSize,
-          status: 'success'
+          finalSize
         });
+      });
 
-        // Clear deferred
-      } catch (err) {
-        console.error('❌ Conversion error:', err);
-        alert(err instanceof Error ? `ERROR: ${err.message}` : 'Error converting images to PDF. Your device might be out of memory.');
-      } finally {
-        setIsProcessing(false);
-      }
-    });
+      // Increment task count
+      TaskLimitManager.incrementTask();
+
+      // Record in history
+      FileHistoryManager.addEntry({
+        fileName,
+        operation: 'image-to-pdf',
+        originalSize,
+        finalSize,
+        status: 'success'
+      });
+
+      // Clear deferred
+    } catch (err) {
+      console.error('❌ Conversion error:', err);
+      alert(err instanceof Error ? `ERROR: ${err.message}` : 'Error converting images to PDF. Your device might be out of memory.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -205,7 +201,7 @@ const ImageToPdfScreen: React.FC = () => {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-700 truncate">{item.name}</p>
+                <p className="text-xs font-bold text-slate-700 truncate">Captured Asset</p>
                 <p className="text-[10px] text-slate-400 font-medium">{(item.size / 1024).toFixed(0)} KB</p>
               </div>
 
@@ -262,12 +258,6 @@ const ImageToPdfScreen: React.FC = () => {
           }}
         />
       )}
-
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-      />
     </motion.div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileSearch, FileUp, Copy, Check, Loader2, Edit3, Share2, RefreshCcw } from 'lucide-react';
+import { FileSearch, Copy, Check, Loader2, Edit3, Share2, RefreshCcw } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { replaceTextInPdf } from '../utils/pdfEditor';
 import ToolGuide from '../components/ToolGuide';
@@ -10,8 +10,6 @@ import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import { downloadFile } from '../services/downloadService';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 
 // Configure PDF.js worker - using local file
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
@@ -32,19 +30,17 @@ const ExtractTextScreen: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
   const navigate = useNavigate();
-  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       try {
-        // Read file data immediately to prevent Android permission expiration
         const arrayBuffer = await selectedFile.arrayBuffer();
         const blob = new Blob([arrayBuffer], { type: selectedFile.type });
         const freshFile = new File([blob], selectedFile.name, { type: selectedFile.type });
         setFile(freshFile);
         setOriginalBuffer(arrayBuffer);
-        setText(null); // Clear previous text
+        setText(null);
       } catch (err) {
         console.error('Failed to read file:', selectedFile.name, err);
         alert('Error reading file: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -55,91 +51,83 @@ const ExtractTextScreen: React.FC = () => {
   const handleExtract = async () => {
     if (!file || !originalBuffer) return;
 
-    requireAuth(async () => {
-      if (!TaskLimitManager.canUseTask()) {
-        setShowUpgradeModal(true);
-        return;
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
+      const numPages = pdf.numPages;
+
+      let fullText = '';
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n\n';
       }
 
-      setIsProcessing(true);
+      const cleanedText = fullText
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n\n')
+        .trim();
 
-      try {
-        const pdf = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
-        const numPages = pdf.numPages;
+      setText(cleanedText);
+      setStats({
+        chars: cleanedText.length,
+        pages: numPages
+      });
 
-        let fullText = '';
-        for (let i = 1; i <= numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-          fullText += pageText + '\n\n';
-        }
+      TaskLimitManager.incrementTask();
 
-        const cleanedText = fullText
-          .replace(/\s+/g, ' ')
-          .replace(/\n\s*\n/g, '\n\n')
-          .trim();
-
-        setText(cleanedText);
-        setStats({
-          chars: cleanedText.length,
-          pages: numPages
-        });
-
-        // Increment task count
-        TaskLimitManager.incrementTask();
-
-        // Record in history
-        FileHistoryManager.addEntry({
-          fileName: file.name,
-          operation: 'extract-text',
-          originalSize: file.size,
-          status: 'success'
-        });
-      } catch (err) {
-        console.error('Extraction failed:', file.name, err);
-        alert('Error extracting text: ' + (err instanceof Error ? err.message : 'Unknown error'));
-        setText('Failed to extract text from PDF.');
-      } finally {
-        setIsProcessing(false);
-      }
-    });
+      FileHistoryManager.addEntry({
+        fileName: file.name,
+        operation: 'extract-text',
+        originalSize: file.size,
+        status: 'success'
+      });
+    } catch (err) {
+      console.error('Extraction failed:', file.name, err);
+      alert('Error extracting text: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      setText('Failed to extract text from PDF.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleApplyEdit = async () => {
     if (!originalBuffer || !findText || !replaceText || !file) return;
 
-    requireAuth(async () => {
-      if (!TaskLimitManager.canUseTask()) {
-        setShowUpgradeModal(true);
-        return;
-      }
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
-      setIsApplyingEdit(true);
-      try {
-        // Universal Replace: now handles all pages and all occurrences
-        const modifiedBytes = await replaceTextInPdf(originalBuffer, findText, replaceText);
-        if (modifiedBytes) {
-          const blob = new Blob([modifiedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-          // Show success modal
-          setSuccessData({
-            isOpen: true,
-            fileName: `edited_${file.name}`,
-            originalSize: file.size,
-            finalSize: modifiedBytes.length
-          });
-        } else {
-          alert(`No occurrences of "${findText}" found in the document.`);
-        }
-      } catch (error) {
-        console.error(error);
-        alert('Edit failed. Please try again.');
-      } finally {
-        setIsApplyingEdit(false);
+    setIsApplyingEdit(true);
+    try {
+      const modifiedBytes = await replaceTextInPdf(originalBuffer, findText, replaceText);
+      if (modifiedBytes) {
+        const blob = new Blob([modifiedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+        setSuccessData({
+          isOpen: true,
+          fileName: `edited_${file.name}`,
+          originalSize: file.size,
+          finalSize: modifiedBytes.length
+        });
+      } else {
+        alert(`No occurrences of "${findText}" found in the document.`);
       }
-    });
+    } catch (error) {
+      console.error(error);
+      alert('Edit failed. Please try again.');
+    } finally {
+      setIsApplyingEdit(false);
+    }
   };
 
   return (
@@ -150,7 +138,6 @@ const ExtractTextScreen: React.FC = () => {
       className="min-h-screen pb-32 pt-32 max-w-2xl mx-auto px-6"
     >
       <div className="space-y-12">
-        {/* Header Section */}
         <div className="space-y-3">
           <div className="text-technical">Available Tools / Extract & Edit</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Extract & Edit</h1>
@@ -194,7 +181,7 @@ const ExtractTextScreen: React.FC = () => {
                 <FileSearch size={28} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file?.name}</h3>
+                <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">Active Document</h3>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">AWAITING EXTRACTION</p>
               </div>
               <button onClick={() => { setFile(null); setOriginalBuffer(null); }} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
@@ -217,7 +204,6 @@ const ExtractTextScreen: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Stats & Actions */}
             <div className="flex justify-between items-end px-2">
               <div className="space-y-1">
                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Extracted Text</h4>
@@ -249,7 +235,6 @@ const ExtractTextScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Editor Panel */}
             <AnimatePresence>
               {showEdit && (
                 <motion.div
@@ -296,7 +281,6 @@ const ExtractTextScreen: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* Buffer Display */}
             <div className="monolith-card p-8 bg-black/5 dark:bg-white/5 border-none shadow-xl min-h-[400px] max-h-[500px] overflow-y-auto custom-scrollbar">
               <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
                 {text}
@@ -319,10 +303,10 @@ const ExtractTextScreen: React.FC = () => {
         reason="limit_reached"
       />
 
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
+      <SuccessModal
+        isOpen={!!successData?.isOpen}
+        onClose={() => setSuccessData(null)}
+        data={successData ? { fileName: successData.fileName, originalSize: successData.originalSize, finalSize: successData.finalSize } : null}
       />
     </motion.div>
   );

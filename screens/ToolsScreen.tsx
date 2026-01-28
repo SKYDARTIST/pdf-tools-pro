@@ -2,19 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search, Combine, Scissors, Lock, PenTool, Image, FileText, Droplet, Zap,
-    RotateCw, FileImage, Wrench, Trash2, Hash, Globe, FileSpreadsheet, BookOpen, Shield,
-    GitMerge, Database, Sparkles
+    Search, Combine, Scissors, PenTool, Image, FileText, Droplet, Zap,
+    RotateCw, FileImage, Trash2, Hash, BookOpen, GitMerge, Sparkles
 } from 'lucide-react';
 
 import TaskCounter from '../components/TaskCounter';
 
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
-
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
-    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
@@ -27,10 +22,7 @@ const ToolsScreen: React.FC = () => {
 
     const tools = [
         { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular', isPro: true },
-
-        { title: 'Read', desc: 'Secure PDF Reader', icon: BookOpen, path: '/reader?protocol=read', cat: 'popular' },
         { title: 'Merge', desc: 'Merge PDF Documents', icon: Combine, path: '/merge', cat: 'popular' },
-        { title: 'Compare', desc: 'Compare PDF Versions', icon: GitMerge, path: '/neural-diff', cat: 'popular' },
         { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular' },
         { title: 'Sign', desc: 'Sign PDF High-Security', icon: PenTool, path: '/sign', cat: 'security', isPro: true },
         { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
@@ -62,7 +54,6 @@ const ToolsScreen: React.FC = () => {
                     onClick={() => navigate(tool.path)}
                     className="monolith-card rounded-[40px] cursor-pointer p-6 flex flex-col items-center text-center gap-3 border border-[#E2E8F0] dark:border-white/5 shadow-sm hover:shadow-2xl hover:border-[#00C896]/30 transition-all group relative overflow-hidden"
                 >
-                    {/* Neural Decoration */}
                     <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#00C896]/5 rounded-full blur-2xl group-hover:bg-[#00C896]/10 transition-colors" />
 
                     <div className="w-14 h-14 bg-[#E6FAF5] dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
@@ -110,7 +101,6 @@ const ToolsScreen: React.FC = () => {
     return (
         <div className="min-h-screen bg-transparent pb-32 pt-40 max-w-md mx-auto px-6">
             <div className="space-y-16">
-                {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -123,7 +113,6 @@ const ToolsScreen: React.FC = () => {
 
                 <TaskCounter variant="inline" />
 
-                {/* Search Interaction */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -140,7 +129,6 @@ const ToolsScreen: React.FC = () => {
                     />
                 </motion.div>
 
-                {/* Filter Categories */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -202,13 +190,7 @@ const ToolsScreen: React.FC = () => {
                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">No tools found</p>
                     </motion.div>
                 )}
-
             </div>
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
-            />
         </div>
     );
 };

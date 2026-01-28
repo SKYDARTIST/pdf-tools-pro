@@ -17,9 +17,23 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 2000,
+      minify: 'esbuild',
       rollupOptions: {
         output: {
-          manualChunks: undefined
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              if (id.includes('lucide-react') || id.includes('framer-motion')) {
+                return 'ui-vendors';
+              }
+              if (id.includes('pdf-lib') || id.includes('pdfjs-dist') || id.includes('jszip')) {
+                return 'pdf-engine';
+              }
+              if (id.includes('@supabase') || id.includes('@google')) {
+                return 'backend-vendors';
+              }
+              // Default to standard chunking for other vendors to avoid circles
+            }
+          }
         }
       }
     }

@@ -49,6 +49,7 @@ const MindMapSettingsModal: React.FC<MindMapSettingsModalProps> = ({ isOpen, onC
                                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500">Projection Configuration</span>
                                 </div>
                                 <h2 className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Mind Map Focus</h2>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">AI will generate exactly 12 branches with max 2 words per node.</p>
                             </div>
                             <button onClick={onClose} className="p-3 bg-black/5 dark:bg-white/5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-all">
                                 <X size={20} />

@@ -45,11 +45,11 @@ const ProtocolGuideScreen: React.FC = () => {
                     isElite: true
                 },
                 {
-                    title: 'AI Audit',
-                    desc: 'Expose hidden risks and financial gaps in fine print.',
-                    icon: Shield,
-                    path: '/reader?protocol=audit',
-                    useCases: ['Risk Assessment', 'Legal Review', 'Cost Auditing'],
+                    title: 'Smart Reader',
+                    desc: 'Immersive reading environment with neural augmentation.',
+                    icon: BookOpen,
+                    path: '/reader?protocol=read',
+                    useCases: ['Academic Research', 'Technical Analysis', 'Mobile Reading'],
                     isElite: true
                 },
                 {

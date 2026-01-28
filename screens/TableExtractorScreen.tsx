@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileSpreadsheet, FileUp, Loader2, Bot, Share2, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
+import { FileSpreadsheet, FileUp, Bot, Share2, Table as TableIcon, X, CheckCircle2, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { extractTablesFromDocument, tableToCSV, ExtractedTable } from '../services/tableService';
 import { downloadFile } from '../services/downloadService';
@@ -13,10 +12,6 @@ import AIReportModal from '../components/AIReportModal';
 import { extractTextFromPdf } from '../utils/pdfExtractor';
 import { Flag } from 'lucide-react';
 import { compressImage } from '../utils/imageProcessor';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
-import { getCurrentUser } from '../services/googleAuthService';
-import { initSubscription } from '../services/subscriptionService';
 import SuccessModal from '../components/SuccessModal';
 
 const TableExtractorScreen: React.FC = () => {
@@ -30,9 +25,7 @@ const TableExtractorScreen: React.FC = () => {
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
-    const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -43,68 +36,62 @@ const TableExtractorScreen: React.FC = () => {
         }
     };
 
-
     const processFile = async () => {
         if (!file) return;
 
-        requireAuth(async () => {
-            if (!hasConsent) {
-                setShowConsent(true);
-                return;
-            }
+        if (!hasConsent) {
+            setShowConsent(true);
+            return;
+        }
 
-            // HEAVY AI Operation - Table Extractor consumes credits
-            const aiCheck = canUseAI(AiOperationType.HEAVY);
-            if (!aiCheck.allowed) {
-                const subscription = getSubscription();
-                setAiLimitInfo({
-                    blockMode: aiCheck.blockMode,
-                    used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                    limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-                });
-                setShowAiLimit(true);
-                return;
-            }
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        if (!aiCheck.allowed) {
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
+            return;
+        }
 
-            setIsProcessing(true);
-            setStatus('analyzing');
+        setIsProcessing(true);
+        setStatus('analyzing');
 
-            try {
-                let extractedTables: ExtractedTable[] = [];
+        try {
+            let extractedTables: ExtractedTable[] = [];
 
-                if (file.type === 'application/pdf') {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const text = await extractTextFromPdf(arrayBuffer.slice(0));
+            if (file.type === 'application/pdf') {
+                const arrayBuffer = await file.arrayBuffer();
+                const text = await extractTextFromPdf(arrayBuffer.slice(0));
 
-                    if (!text || text.trim() === '') {
-                        // Fallback for scanned documents
-                        const { renderPageToImage } = await import('../utils/pdfExtractor');
-                        const imageBase64 = await renderPageToImage(arrayBuffer.slice(0), 1);
-                        extractedTables = await extractTablesFromDocument(undefined, imageBase64);
-                    } else {
-                        extractedTables = await extractTablesFromDocument(text);
-                    }
-                } else if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    const rawBase64 = await new Promise<string>((resolve) => {
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.readAsDataURL(file);
-                    });
-                    const imageBase64 = await compressImage(rawBase64);
+                if (!text || text.trim() === '') {
+                    const { renderPageToImage } = await import('../utils/pdfExtractor');
+                    const imageBase64 = await renderPageToImage(arrayBuffer.slice(0), 1);
                     extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                } else {
+                    extractedTables = await extractTablesFromDocument(text);
                 }
-
-                setTables(extractedTables);
-                const stats = await recordAIUsage(AiOperationType.HEAVY); // Record HEAVY AI operation
-                if (stats?.message) alert(stats.message);
-                setStatus('done');
-            } catch (err) {
-                console.error("Extraction Failed:", err);
-                setStatus('idle');
-            } finally {
-                setIsProcessing(false);
+            } else if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                const rawBase64 = await new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.readAsDataURL(file);
+                });
+                const imageBase64 = await compressImage(rawBase64);
+                extractedTables = await extractTablesFromDocument(undefined, imageBase64);
             }
-        });
+
+            setTables(extractedTables);
+            await recordAIUsage(AiOperationType.HEAVY);
+            setStatus('done');
+        } catch (err) {
+            console.error("Extraction Failed:", err);
+            setStatus('idle');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const downloadCSV = async (table: ExtractedTable) => {
@@ -140,7 +127,7 @@ const TableExtractorScreen: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="min-h-screen bg-transparent pb-32 pt-20 px-6 max-w-2xl mx-auto"
+            className="min-h-screen pb-32 pt-20 px-6 max-w-2xl mx-auto"
         >
             <div className="flex justify-between items-center mb-12">
                 <div className="space-y-1">
@@ -175,7 +162,6 @@ const TableExtractorScreen: React.FC = () => {
                         key="idle"
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
                         className="monolith-card flex flex-col items-center justify-center py-24 cursor-pointer group border-dashed border-2"
                     >
                         <div className="w-20 h-20 bg-black/5 dark:bg-white/5 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-all duration-500">
@@ -188,12 +174,7 @@ const TableExtractorScreen: React.FC = () => {
                 )}
 
                 {status === 'idle' && file && (
-                    <motion.div
-                        key="file-selected"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="space-y-8"
-                    >
+                    <motion.div key="file-selected" className="space-y-8">
                         <div className="monolith-card p-8 flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-500">
@@ -201,14 +182,13 @@ const TableExtractorScreen: React.FC = () => {
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target File</span>
-                                    <span className="text-sm font-black uppercase tracking-tighter">{file.name}</span>
+                                    <span className="text-sm font-black uppercase tracking-tighter">Target File</span>
                                 </div>
                             </div>
                             <button onClick={() => setFile(null)} className="p-3 hover:bg-rose-500/10 text-rose-500 rounded-full transition-all">
                                 <X size={20} />
                             </button>
                         </div>
-
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -222,117 +202,51 @@ const TableExtractorScreen: React.FC = () => {
                 )}
 
                 {status === 'analyzing' && (
-                    <motion.div
-                        key="analyzing"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="monolith-card py-24 flex flex-col items-center space-y-8"
-                    >
-                        <div className="relative">
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                                className="w-32 h-32 border-t-2 border-l-2 border-violet-500 rounded-full"
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <FileSpreadsheet size={40} className="text-violet-500 animate-pulse" />
-                            </div>
-                        </div>
-                        <div className="text-center">
-                            <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Scanning for Tables...</h3>
-                            <p className="text-technical animate-pulse mt-2">AI is analyzing your document</p>
-                        </div>
+                    <motion.div key="analyzing" className="monolith-card py-24 flex flex-col items-center space-y-8">
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }} className="w-32 h-32 border-t-2 border-l-2 border-violet-500 rounded-full flex items-center justify-center">
+                            <FileSpreadsheet size={40} className="text-violet-500 animate-pulse" />
+                        </motion.div>
+                        <h3 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Scanning for Tables...</h3>
                     </motion.div>
                 )}
 
                 {status === 'done' && (
-                    <motion.div
-                        key="done"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="space-y-6"
-                    >
-                        <div className="monolith-card p-8 bg-emerald-500 text-white dark:bg-emerald-400 dark:text-black border-none shadow-2xl overflow-hidden relative">
-                            <div className="absolute top-0 right-0 p-8 opacity-10">
-                                <Bot size={80} />
-                            </div>
-                            <div className="relative z-10 space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <CheckCircle2 size={24} />
-                                    <span className="text-xs font-black uppercase tracking-[0.2em] opacity-80">Extraction Complete</span>
-                                </div>
-                                <h3 className="text-3xl font-black uppercase tracking-tighter leading-none">
-                                    {tables.length} {tables.length === 1 ? 'Table' : 'Tables'} Found
-                                </h3>
-                                <div className="pt-4 flex gap-4">
-                                    <motion.button
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={downloadJSON}
-                                        className="px-6 py-3 bg-white/20 dark:bg-black/20 rounded-full flex items-center gap-2 border border-white/20 dark:border-black/20 hover:bg-white/30 dark:hover:bg-black/30 transition-all shadow-xl backdrop-blur-md"
-                                    >
-                                        <Share2 size={14} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Download JSON</span>
-                                    </motion.button>
-                                    <button
-                                        onClick={() => setShowReport(true)}
-                                        className="px-6 py-3 bg-rose-500/20 rounded-full flex items-center gap-2 border border-rose-500/20 hover:bg-rose-500/30 transition-all backdrop-blur-md"
-                                        title="Report AI Content"
-                                    >
-                                        <Flag size={14} className="text-white dark:text-rose-500" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white dark:text-rose-500">Flag AI</span>
-                                    </button>
-                                </div>
+                    <motion.div key="done" className="space-y-6">
+                        <div className="monolith-card p-8 bg-emerald-500 text-white dark:bg-emerald-400 dark:text-black border-none shadow-2xl relative">
+                            <h3 className="text-3xl font-black uppercase tracking-tighter leading-none relative z-10">
+                                {tables.length} {tables.length === 1 ? 'Table' : 'Tables'} Found
+                            </h3>
+                            <div className="pt-4 flex gap-4 relative z-10">
+                                <button onClick={downloadJSON} className="px-6 py-3 bg-white/20 dark:bg-black/20 rounded-full flex items-center gap-2 border border-white/20 dark:border-black/20 hover:bg-white/30 dark:hover:bg-black/30 transition-all shadow-xl backdrop-blur-md">
+                                    <Share2 size={14} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Download JSON</span>
+                                </button>
+                                <button onClick={() => setShowReport(true)} className="px-6 py-3 bg-rose-500/20 rounded-full flex items-center gap-2 border border-rose-500/20 hover:bg-rose-500/30 transition-all backdrop-blur-md">
+                                    <Flag size={14} className="text-white dark:text-rose-500" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-white dark:text-rose-500">Flag AI</span>
+                                </button>
                             </div>
                         </div>
 
                         {tables.length > 0 ? (
                             <div className="space-y-4">
                                 {tables.map((table, i) => (
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        key={i}
-                                        className="monolith-card p-6 flex items-center justify-between group hover:shadow-2xl transition-all"
-                                    >
+                                    <div key={i} className="monolith-card p-6 flex items-center justify-between group hover:shadow-2xl transition-all">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center">
-                                                <TableIcon size={20} />
-                                            </div>
+                                            <div className="w-12 h-12 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center"><TableIcon size={20} /></div>
                                             <div>
-                                                <h4 className="text-xs font-black uppercase tracking-widest text-gray-900 dark:text-white">
-                                                    {table.tableName || `Table ${i + 1}`}
-                                                </h4>
-                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                                                    {table.headers.length} Columns • {table.rows.length} Rows
-                                                </p>
+                                                <h4 className="text-xs font-black uppercase tracking-widest">{table.tableName || `Table ${i + 1}`}</h4>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{table.headers.length} Columns • {table.rows.length} Rows</p>
                                             </div>
                                         </div>
-                                        <motion.button
-                                            whileHover={{ scale: 1.1, x: -5 }}
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={() => downloadCSV(table)}
-                                            className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-sm"
-                                        >
-                                            <Share2 size={20} />
-                                        </motion.button>
-                                    </motion.div>
+                                        <button onClick={() => downloadCSV(table)} className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500 hover:text-white transition-all"><Share2 size={20} /></button>
+                                    </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="py-20 text-center opacity-30">
-                                <TableIcon size={48} className="mx-auto mb-4" />
-                                <p className="text-xs font-black uppercase tracking-widest">No tables found</p>
-                            </div>
+                            <div className="py-20 text-center opacity-30"><TableIcon size={48} className="mx-auto mb-4" /><p className="text-xs font-black uppercase tracking-widest">No tables found</p></div>
                         )}
-
-                        <button
-                            onClick={() => { setStatus('idle'); setTables([]); setFile(null); }}
-                            className="w-full py-6 monolith-card bg-black/5 dark:bg-white/5 border-dashed border-2 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-[0.4em] text-gray-400"
-                        >
-                            Start Over
-                        </button>
+                        <button onClick={() => { setStatus('idle'); setTables([]); setFile(null); }} className="w-full py-6 monolith-card bg-black/5 dark:bg-white/5 border-dashed border-2 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-[0.4em] text-gray-400">Start Over</button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -347,46 +261,15 @@ const TableExtractorScreen: React.FC = () => {
                     processFile();
                 }}
             />
-
-            <AIReportModal
-                isOpen={showReport}
-                onClose={() => setShowReport(false)}
-            />
-            <AiLimitModal
-                isOpen={showAiLimit}
-                onClose={() => setShowAiLimit(false)}
-                blockMode={aiLimitInfo.blockMode}
-                used={aiLimitInfo.used}
-                limit={aiLimitInfo.limit}
-            />
-
+            <AIReportModal isOpen={showReport} onClose={() => setShowReport(false)} />
+            <AiLimitModal isOpen={showAiLimit} onClose={() => setShowAiLimit(false)} blockMode={aiLimitInfo.blockMode} used={aiLimitInfo.used} limit={aiLimitInfo.limit} />
             {successData && (
                 <SuccessModal
                     isOpen={successData.isOpen}
-                    onClose={() => {
-                        setSuccessData(null);
-                        setStatus('idle');
-                        setTables([]);
-                        setFile(null);
-                    }}
-                    operation="Table Extraction"
-                    fileName={successData.fileName}
-                    originalSize={successData.originalSize}
-                    finalSize={successData.finalSize}
-                    onViewFiles={() => {
-                        setSuccessData(null);
-                        setStatus('idle');
-                        setTables([]);
-                        navigate('/my-files');
-                    }}
+                    onClose={() => setSuccessData(null)}
+                    data={{ fileName: successData.fileName, originalSize: successData.originalSize, finalSize: successData.finalSize }}
                 />
             )}
-
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
-            />
         </motion.div>
     );
 };

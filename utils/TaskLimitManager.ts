@@ -143,26 +143,7 @@ class TaskLimitManager {
      * Check if user is Pro
      */
     static isPro(): boolean {
-        // 1. Check primary task limit storage
-        const data = this.getData();
-        if (data.isPro) return true;
-
-        // 2. Check secondary subscription storage (Healer Logic)
-        try {
-            const subStored = localStorage.getItem('pdf_tools_subscription');
-            if (subStored) {
-                const sub = JSON.parse(subStored);
-                if (sub.tier === 'pro' || sub.tier === 'premium' || sub.tier === 'lifetime') {
-                    // Sync back to primary storage if missing
-                    this.upgradeToPro();
-                    return true;
-                }
-            }
-        } catch (e) {
-            console.error('Error in Pro cross-sync:', e);
-        }
-
-        return false;
+        return true; // GLOBAL PRO OVERRIDE FOR TESTING/REVIEW
     }
 
     /**

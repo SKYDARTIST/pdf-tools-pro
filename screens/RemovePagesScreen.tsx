@@ -11,12 +11,9 @@ import { PDFDocument } from 'pdf-lib';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 
 const RemovePagesScreen: React.FC = () => {
     const navigate = useNavigate();
-    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [file, setFile] = useState<FileItem | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [pageCount, setPageCount] = useState(0);
@@ -38,24 +35,30 @@ const RemovePagesScreen: React.FC = () => {
             // Load PDF to get page count
             setIsLoadingPages(true);
             try {
-                // Read file data immediately to prevent Android permission expiration
                 const arrayBuffer = await f.arrayBuffer();
-                const blob = new Blob([arrayBuffer], { type: f.type });
-                const freshFile = new File([blob], f.name, { type: f.type });
-                setFile({ id: 'main', file: freshFile, name: f.name, size: f.size, type: f.type });
-
                 const pdfDoc = await PDFDocument.load(arrayBuffer);
                 setPageCount(pdfDoc.getPageCount());
+
+                const blob = new Blob([arrayBuffer], { type: f.type });
+                const freshFile = new File([blob], f.name, { type: f.type });
+
+                setFile({
+                    id: 'main',
+                    file: freshFile,
+                    name: f.name,
+                    size: f.size,
+                    type: f.type
+                });
             } catch (err) {
-                console.error('Failed to read file:', f.name, err);
-                alert('Error loading PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
+                console.error('Error loading PDF:', err);
+                alert('Could not load PDF. Please ensure it is not password protected.');
             } finally {
                 setIsLoadingPages(false);
             }
         }
     };
 
-    const togglePage = (pageIndex: number) => {
+    const togglePageSelection = (pageIndex: number) => {
         const newSelected = new Set(selectedPages);
         if (newSelected.has(pageIndex)) {
             newSelected.delete(pageIndex);
@@ -80,58 +83,56 @@ const RemovePagesScreen: React.FC = () => {
     const handleRemovePages = async () => {
         if (!file || selectedPages.size === 0) return;
 
-        requireAuth(async () => {
-            // Don't allow removing all pages
-            if (selectedPages.size >= pageCount) {
-                alert('You must keep at least one page in the PDF.');
-                return;
-            }
+        // Don't allow removing all pages
+        if (selectedPages.size >= pageCount) {
+            alert('You must keep at least one page in the PDF.');
+            return;
+        }
 
-            if (!TaskLimitManager.canUseTask()) {
-                setShowUpgradeModal(true);
-                return;
-            }
+        if (!TaskLimitManager.canUseTask()) {
+            setShowUpgradeModal(true);
+            return;
+        }
 
-            setIsProcessing(true);
+        setIsProcessing(true);
 
-            try {
-                const result = await removePagesFromPdf(file.file, Array.from(selectedPages));
-                const fileName = `edited_${file.name}`;
-                const blob = new Blob([result as any], { type: 'application/pdf' });
-                await downloadFile(blob, fileName);
+        try {
+            const result = await removePagesFromPdf(file.file, Array.from(selectedPages));
+            const fileName = `edited_${file.name}`;
+            const blob = new Blob([result as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
-                // Add to file history
-                FileHistoryManager.addEntry({
-                    fileName,
-                    operation: 'split',
-                    originalSize: file.size,
-                    finalSize: result.length,
-                    status: 'success'
-                });
+            // Add to file history
+            FileHistoryManager.addEntry({
+                fileName,
+                operation: 'split',
+                originalSize: file.size,
+                finalSize: result.length,
+                status: 'success'
+            });
 
-                // Increment task counter
-                TaskLimitManager.incrementTask();
+            // Increment task counter
+            TaskLimitManager.incrementTask();
 
-                // Show success modal
-                setSuccessData({
-                    fileName,
-                    originalSize: file.size,
-                    finalSize: result.length,
-                    pagesRemoved: selectedPages.size
-                });
-                setShowSuccessModal(true);
-            } catch (err) {
-                alert('Error removing pages: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            // Show success modal
+            setSuccessData({
+                fileName,
+                originalSize: file.size,
+                finalSize: result.length,
+                pagesRemoved: selectedPages.size
+            });
+            setShowSuccessModal(true);
+        } catch (err) {
+            alert('Error removing pages: ' + (err instanceof Error ? err.message : 'Unknown error'));
 
-                FileHistoryManager.addEntry({
-                    fileName: `remove_pages_failed_${file.name}`,
-                    operation: 'split',
-                    status: 'error'
-                });
-            } finally {
-                setIsProcessing(false);
-            }
-        });
+            FileHistoryManager.addEntry({
+                fileName: `remove_pages_failed_${file.name}`,
+                operation: 'split',
+                status: 'error'
+            });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -144,179 +145,147 @@ const RemovePagesScreen: React.FC = () => {
             <div className="space-y-12">
                 {/* Header Section */}
                 <div className="space-y-3">
-                    <div className="text-technical">Available Tools / Remove Pages</div>
-                    <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Remove</h1>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Select and remove unnecessary pages from your PDF document</p>
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-red-500/10 rounded-2xl text-red-500">
+                            <Trash2 size={24} />
+                        </div>
+                        <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Remove Pages</h1>
+                    </div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em] max-w-sm">
+                        Select pages to delete from your document.
+                    </p>
                 </div>
 
-                <ToolGuide
-                    title="How to remove pages"
-                    description="Delete unwanted pages from your document. Simply select the pages you want to remove and we'll create a new, cleaned-up PDF for you."
-                    steps={[
-                        "Upload the PDF you want to edit.",
-                        "View the pages of your document below.",
-                        "Select the pages you want to remove.",
-                        "Tap 'Remove Pages' to save your new PDF."
-                    ]}
-                    useCases={[
-                        "Removing Mistakes", "Document Resizing", "Deleting Blank Pages", "Classification Control"
-                    ]}
-                />
-            </div>
-
-            {!file ? (
-                <label className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-black/10 dark:border-white/10 rounded-[40px] bg-black/5 dark:bg-white/5 cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group">
-                    <motion.div
-                        whileHover={{ scale: 1.1, rotate: 15 }}
-                        className="w-20 h-20 bg-black dark:bg-white text-white dark:text-black rounded-3xl flex items-center justify-center shadow-2xl mb-6"
-                    >
-                        <Trash2 size={32} />
-                    </motion.div>
-                    <span className="text-sm font-black uppercase tracking-widest text-gray-900 dark:text-white">Tap to upload PDF</span>
-                    <span className="text-[10px] uppercase font-bold text-gray-400 mt-2">Maximum 50MB PDF</span>
-                    <input type="file" accept=".pdf" className="hidden" onChange={handleFileChange} />
-                </label>
-            ) : (
-                <div className="space-y-8 flex-1 flex flex-col">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="monolith-card p-6 flex items-center gap-5 border-none shadow-xl"
-                    >
-                        <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shrink-0">
-                            <FileText size={28} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pageCount} PAGES FOUND</p>
-                        </div>
-                        <button onClick={() => { setFile(null); setSelectedPages(new Set()); setPageCount(0); }} className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-600 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl">
-                            Change
-                        </button>
-                    </motion.div>
-
-                    {isLoadingPages ? (
-                        <div className="flex items-center justify-center py-12">
-                            <Loader2 className="animate-spin text-rose-500" size={32} />
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-bold text-slate-700 dark:text-white">
-                                    {selectedPages.size} of {pageCount} pages selected
-                                </p>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={selectAll}
-                                        className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
-                                    >
-                                        Select All
-                                    </button>
-                                    <button
-                                        onClick={deselectAll}
-                                        className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:underline"
-                                    >
-                                        Clear
-                                    </button>
+                {!file ? (
+                    <div className="space-y-6">
+                        <label className="block p-12 border-2 border-dashed border-white/10 rounded-[40px] hover:border-red-500/30 transition-all cursor-pointer group relative overflow-hidden">
+                            <input type="file" onChange={handleFileChange} className="hidden" accept=".pdf" />
+                            <div className="flex flex-col items-center gap-6 text-center relative z-10">
+                                <div className="w-16 h-16 bg-white/5 rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <FileText size={32} className="text-red-500" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Upload PDF Document</div>
+                                    <div className="text-[8px] font-bold text-gray-500 uppercase tracking-widest text-center">Max size: 50MB</div>
                                 </div>
                             </div>
+                        </label>
+                        <ToolGuide
+                            title="How to remove pages"
+                            steps={[
+                                "Tap to upload your PDF document",
+                                "Select the pages you want to delete",
+                                "Click 'Confirm Changes' to finalize",
+                                "Download your trimmed document instantly"
+                            ]}
+                        />
+                    </div>
+                ) : (
+                    <div className="space-y-8">
+                        {/* File Card */}
+                        <div className="p-6 monolith-glass border-red-500/20 rounded-[32px] flex items-center justify-between group shadow-2xl relative overflow-hidden">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center">
+                                    <FileText size={24} className="text-red-500" />
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="text-[11px] font-black text-white uppercase truncate max-w-[180px] tracking-wide">Active Document</div>
+                                    <div className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">{(file.size / 1024 / 1024).toFixed(2)} MB • {pageCount} Pages</div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setFile(null)}
+                                className="p-3 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-all"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
 
-                            <div className="flex-1 overflow-y-auto grid grid-cols-3 gap-4 pb-4 px-1">
-                                <AnimatePresence>
-                                    {Array.from({ length: pageCount }, (_, i) => (
-                                        <motion.button
+                        {/* Page Grid */}
+                        {isLoadingPages ? (
+                            <div className="py-20 flex flex-col items-center gap-4">
+                                <Loader2 className="animate-spin text-red-500" size={32} />
+                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Indexing Neuro-Map...</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center px-2">
+                                    <div className="text-[10px] font-black text-white uppercase tracking-widest">
+                                        Selected: <span className="text-red-500">{selectedPages.size}</span>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button onClick={selectAll} className="text-[8px] font-black text-gray-500 hover:text-white uppercase tracking-widest">Select All</button>
+                                        <button onClick={deselectAll} className="text-[8px] font-black text-gray-500 hover:text-white uppercase tracking-widest">Deselect All</button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                    {Array.from({ length: pageCount }).map((_, i) => (
+                                        <motion.div
                                             key={i}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: i * 0.01 }}
-                                            onClick={() => togglePage(i)}
-                                            className={`relative aspect-[3/4] rounded-2xl border transition-all ${selectedPages.has(i)
-                                                ? 'border-rose-500 bg-rose-500/5 shadow-inner'
-                                                : 'border-black/5 dark:border-white/5 bg-white dark:bg-black hover:border-black/20 dark:hover:border-white/20'
+                                            whileHover={{ y: -4 }}
+                                            onClick={() => togglePageSelection(i)}
+                                            className={`aspect-[3/4] rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 relative group overflow-hidden ${selectedPages.has(i)
+                                                ? 'bg-red-500/20 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
+                                                : 'bg-white/5 border-white/5 hover:border-white/20'
                                                 }`}
                                         >
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <FileText size={24} className={selectedPages.has(i) ? 'text-rose-500' : 'text-gray-200 dark:text-gray-800'} />
-                                            </div>
-                                            <div className="absolute bottom-2 left-0 right-0 text-center">
-                                                <span className={`text-[8px] font-black uppercase tracking-widest ${selectedPages.has(i) ? 'text-rose-600' : 'text-gray-400 dark:text-gray-500'}`}>
-                                                    PAGE {i + 1}
-                                                </span>
-                                            </div>
+                                            <span className={`text-xl font-black ${selectedPages.has(i) ? 'text-white' : 'text-gray-600'}`}>
+                                                {i + 1}
+                                            </span>
                                             {selectedPages.has(i) && (
-                                                <div className="absolute top-2 right-2 flex items-center justify-center">
-                                                    <div className="w-4 h-4 bg-rose-500 rounded-full flex items-center justify-center">
-                                                        <Trash2 size={10} className="text-white" />
-                                                    </div>
+                                                <div className="absolute top-2 right-2">
+                                                    <CheckCircle size={14} className="text-red-500" />
                                                 </div>
                                             )}
-                                        </motion.button>
+                                        </motion.div>
                                     ))}
-                                </AnimatePresence>
+                                </div>
                             </div>
-                        </>
-                    )}
-                </div>
-            )}
+                        )}
 
-            <button
-                disabled={!file || selectedPages.size === 0 || isProcessing || selectedPages.size >= pageCount}
-                onClick={handleRemovePages}
-                className={`w-full py-6 rounded-[28px] font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 relative overflow-hidden group shadow-2xl ${!file || selectedPages.size === 0 || isProcessing || selectedPages.size >= pageCount
-                    ? 'bg-black/5 dark:bg-white/5 text-gray-300 dark:text-gray-700 cursor-not-allowed shadow-none'
-                    : 'bg-black dark:bg-white text-white dark:text-black hover:brightness-110 active:scale-95'
-                    }`}
-            >
-                <motion.div
-                    animate={{ x: ['-100%', '200%'] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "linear", repeatDelay: 1 }}
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 dark:via-black/10 to-transparent skew-x-12"
-                />
-                {isProcessing ? (
-                    <Loader2 className="animate-spin" size={20} />
-                ) : (
-                    <>
-                        <Share2 size={18} strokeWidth={3} />
-                        <span>Remove Pages & Share</span>
-                    </>
+                        {/* Action Bar */}
+                        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-2xl px-6 pointer-events-none">
+                            <motion.button
+                                initial={{ y: 100 }}
+                                animate={{ y: 0 }}
+                                onClick={handleRemovePages}
+                                disabled={isProcessing || selectedPages.size === 0}
+                                className="w-full h-16 bg-red-500 text-white rounded-[40px] shadow-2xl flex items-center justify-center gap-4 group hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale pointer-events-auto overflow-hidden relative"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                                {isProcessing ? (
+                                    <Loader2 className="animate-spin" size={20} />
+                                ) : (
+                                    <Trash2 size={20} />
+                                )}
+                                <span className="font-black text-xs uppercase tracking-[0.3em]">
+                                    {isProcessing ? 'Processing...' : `Remove ${selectedPages.size} ${selectedPages.size === 1 ? 'Page' : 'Pages'}`}
+                                </span>
+                            </motion.button>
+                        </div>
+                    </div>
                 )}
-            </button>
 
-            {successData && (
-                <SuccessModal
-                    isOpen={showSuccessModal}
-                    onClose={() => {
-                        setShowSuccessModal(false);
-                        setFile(null);
-                        setSelectedPages(new Set());
-                        setPageCount(0);
-                    }}
-                    operation="Remove Pages"
-                    fileName={successData.fileName}
-                    originalSize={successData.originalSize}
-                    finalSize={successData.finalSize}
-                    metadata={{ pagesRemoved: successData.pagesRemoved }}
-                    onViewFiles={() => {
-                        setShowSuccessModal(false);
-                        setFile(null);
-                        setSelectedPages(new Set());
-                        setPageCount(0);
-                        navigate('/my-files');
-                    }}
+                {showSuccessModal && (
+                    <SuccessModal
+                        isOpen={showSuccessModal}
+                        onClose={() => setShowSuccessModal(false)}
+                        data={successData ? {
+                            fileName: successData.fileName,
+                            originalSize: successData.originalSize,
+                            finalSize: successData.finalSize,
+                            pagesRemoved: successData.pagesRemoved
+                        } : null}
+                    />
+                )}
+
+                <UpgradeModal
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    reason="limit_reached"
                 />
-            )}
-
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
-                reason="limit_reached"
-            />
-
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
-            />
+            </div>
         </motion.div>
     );
 };

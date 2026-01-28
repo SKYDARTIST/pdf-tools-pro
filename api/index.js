@@ -267,8 +267,8 @@ export default async function handler(req, res) {
     const token = authHeader && authHeader.split(' ')[1];
     const session = verifySessionToken(token);
 
-    // FEATURE FLAG (Switchable via Env Var)
-    const legacyEnabled = process.env.AG_LEGACY_AUTH_ENABLED === 'true';
+    // FEATURE FLAG: FORCED TRUE FOR TESTING/REVIEW
+    const legacyEnabled = true;
 
     // MANDATORY LOGIN ENFORCEMENT (v2.9.2)
     // All requests except handshake must be backed by a verified Google Identity
@@ -381,10 +381,10 @@ export default async function handler(req, res) {
                     // New user: Create default record
                     const newUser = {
                         device_id: deviceId,
-                        tier: 'free',
-                        ai_pack_credits: 0,
+                        tier: 'pro', // FORCE PRO FOR NEW USERS
+                        ai_pack_credits: 999,
                         created_at: new Date().toISOString(),
-                        trial_start_date: new Date().toISOString() // Start trial immediately
+                        trial_start_date: new Date().toISOString()
                     };
                     const { error: createError } = await supabase
                         .from('ag_user_usage')
@@ -403,6 +403,10 @@ export default async function handler(req, res) {
                         .eq('device_id', deviceId);
                     data.trial_start_date = trialStartDate;
                 }
+
+                // FORCE PRO FOR EXISTING USERS
+                data.tier = 'pro';
+                data.ai_pack_credits = 999;
 
                 return res.status(200).json(data);
             } catch (dbError) {
@@ -515,9 +519,7 @@ export default async function handler(req, res) {
                     if (daysDiff < 20) isTrial = true;
                 }
 
-                const canUse = isTrial || usage.ai_pack_credits > 0 ||
-                    (usage.tier === 'free' && usage.ai_docs_weekly < 1) ||
-                    (usage.tier === 'pro' && usage.ai_docs_monthly < 10);
+                const canUse = true; // GLOBAL PRO OVERRIDE FOR TESTING/REVIEW
 
                 if (!canUse) {
                     return res.status(403).json({ error: "NEURAL_LINK_EXHAUSTED", details: "You have reached your AI operation quota for this period." });

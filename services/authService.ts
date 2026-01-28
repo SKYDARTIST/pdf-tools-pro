@@ -1,4 +1,5 @@
-import { getDeviceId } from './usageService';
+import { supabase } from './supabaseClient';
+import { getDeviceId } from './deviceService';
 import { getIntegrityToken } from './integrityService';
 import Config from './configService';
 import { setCsrfToken, clearCsrfToken } from './csrfService';
@@ -11,6 +12,40 @@ const getBackendUrl = () => {
 class AuthService {
     private sessionToken: string | null = null;
     private tokenExpiry: number = 0;
+
+    constructor() {
+        this.loadSession();
+    }
+
+    /**
+     * Load persisted session from storage
+     */
+    private loadSession() {
+        try {
+            const stored = localStorage.getItem('ag_session_token');
+            const expiry = localStorage.getItem('ag_session_expiry');
+            if (stored && expiry) {
+                const expiryTime = parseInt(expiry);
+                if (Date.now() < expiryTime) {
+                    this.sessionToken = stored;
+                    this.tokenExpiry = expiryTime;
+                    console.log('Anti-Gravity Auth: ⚡ Restored persisted session');
+                } else {
+                    this.clearSession(); // Cleanup expired
+                }
+            }
+        } catch (e) {
+            console.error('Auth Restore Error', e);
+        }
+    }
+
+    /**
+     * Save session to storage
+     */
+    private persistSession(token: string, expiry: number) {
+        localStorage.setItem('ag_session_token', token);
+        localStorage.setItem('ag_session_expiry', expiry.toString());
+    }
 
     /**
      * initializes the secure session by exchanging integrity proofs (and optionally identity) for a session token
@@ -25,8 +60,23 @@ class AuthService {
             return { token: this.sessionToken };
         }
 
+        // AUTO-AUTH: If no credential provided, check if we have a persisted Supabase session
+        let activeCredential = credential;
+        if (!activeCredential) {
+            try {
+                // Check standard Supabase storage keys via helper
+                const { data } = await supabase.auth.getSession();
+                if (data.session?.access_token) {
+                    activeCredential = data.session.access_token; // Use existing token for handshake
+                    console.log('Anti-Gravity Auth: Restored active session from storage');
+                }
+            } catch (e) {
+                console.warn('Anti-Gravity Auth: Failed to restore session from storage', e);
+            }
+        }
+
         try {
-            console.log(credential ? 'Anti-Gravity Auth: UPGRADING session identity...' : 'Anti-Gravity Auth: Handshaking...');
+            console.log(activeCredential ? 'Anti-Gravity Auth: UPGRADING session identity...' : 'Anti-Gravity Auth: Handshaking...');
             const deviceId = await getDeviceId();
             const integrityToken = await getIntegrityToken();
             const signature = Config.VITE_AG_PROTOCOL_SIGNATURE;
@@ -41,7 +91,7 @@ class AuthService {
                 },
                 body: JSON.stringify({
                     type: 'session_init',
-                    credential // PASS verified ID token to backend
+                    credential: activeCredential // PASS verified ID token to backend
                 })
             });
 
@@ -55,6 +105,9 @@ class AuthService {
                 this.sessionToken = data.sessionToken;
                 // Expiry buffer: 55 mins (server issues 1h)
                 this.tokenExpiry = Date.now() + (55 * 60 * 1000);
+
+                // PERSIST SESSION
+                this.persistSession(this.sessionToken, this.tokenExpiry);
 
                 if (data.csrfToken) {
                     setCsrfToken(data.csrfToken);
@@ -84,6 +137,8 @@ class AuthService {
     clearSession() {
         this.sessionToken = null;
         this.tokenExpiry = 0;
+        localStorage.removeItem('ag_session_token');
+        localStorage.removeItem('ag_session_expiry');
         // SECURITY: Clear CSRF token on logout
         clearCsrfToken();
     }

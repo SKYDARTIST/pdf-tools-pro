@@ -12,12 +12,9 @@ import { useNavigate } from 'react-router-dom';
 import { FileItem } from '../types';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import ToolGuide from '../components/ToolGuide';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 
 const MergeScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -76,79 +73,77 @@ const MergeScreen: React.FC = () => {
   const handleMerge = async () => {
     if (files.length < 2) return;
 
-    requireAuth(async () => {
-      // Check task limit
-      if (!TaskLimitManager.canUseTask()) {
-        setShowUpgradeModal(true);
-        return;
-      }
+    // Check task limit
+    if (!TaskLimitManager.canUseTask()) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
-      setIsProcessing(true);
-      setProgress(0);
-      setCurrentStep('Preparing files...');
+    setIsProcessing(true);
+    setProgress(0);
+    setCurrentStep('Preparing files...');
 
-      try {
-        // Simulate progress steps
-        setProgress(20);
-        setCurrentStep('Loading PDFs...');
+    try {
+      // Simulate progress steps
+      setProgress(20);
+      setCurrentStep('Loading PDFs...');
 
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setProgress(40);
-        setCurrentStep('Merging pages...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setProgress(40);
+      setCurrentStep('Merging pages...');
 
-        const result = await mergePdfs(files.map(f => f.file));
+      const result = await mergePdfs(files.map(f => f.file));
 
-        setProgress(80);
-        setCurrentStep('Finalizing document...');
+      setProgress(80);
+      setCurrentStep('Finalizing document...');
 
-        const fileName = `merged_${Date.now()}.pdf`;
+      const fileName = `merged_${Date.now()}.pdf`;
 
-        // Calculate total size of input files
-        const originalSize = files.reduce((acc, f) => acc + f.size, 0);
+      // Calculate total size of input files
+      const originalSize = files.reduce((acc, f) => acc + f.size, 0);
 
-        setProgress(100);
-        setCurrentStep('Complete!');
+      setProgress(100);
+      setCurrentStep('Complete!');
 
-        // Download the file (works on web and mobile)
-        const blob = new Blob([new Uint8Array(result)], { type: 'application/pdf' });
-        await downloadFile(blob, fileName, () => {
-          // Show success modal after download completes
-          setSuccessData({
-            fileName,
-            originalSize,
-            finalSize: result.length
-          });
-          setShowSuccessModal(true);
-        });
-
-        // Add to file history
-        FileHistoryManager.addEntry({
+      // Download the file (works on web and mobile)
+      const blob = new Blob([new Uint8Array(result)], { type: 'application/pdf' });
+      await downloadFile(blob, fileName, () => {
+        // Show success modal after download completes
+        setSuccessData({
           fileName,
-          operation: 'merge',
           originalSize,
-          finalSize: result.length,
-          status: 'success'
+          finalSize: result.length
         });
+        setShowSuccessModal(true);
+      });
 
-        // Increment task counter
-        TaskLimitManager.incrementTask();
+      // Add to file history
+      FileHistoryManager.addEntry({
+        fileName,
+        operation: 'merge',
+        originalSize,
+        finalSize: result.length,
+        status: 'success'
+      });
 
-        // Clear files deferred
-      } catch (err) {
-        alert('Error merging PDFs: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      // Increment task counter
+      TaskLimitManager.incrementTask();
 
-        // Add error to history
-        FileHistoryManager.addEntry({
-          fileName: `merge_failed_${Date.now()}.pdf`,
-          operation: 'merge',
-          status: 'error'
-        });
-      } finally {
-        setIsProcessing(false);
-        setProgress(0);
-        setCurrentStep('');
-      }
-    });
+      // Clear files deferred
+    } catch (err) {
+      alert('Error merging PDFs: ' + (err instanceof Error ? err.message : 'Unknown error'));
+
+      // Add error to history
+      FileHistoryManager.addEntry({
+        fileName: `merge_failed_${Date.now()}.pdf`,
+        operation: 'merge',
+        status: 'error'
+      });
+    } finally {
+      setIsProcessing(false);
+      setProgress(0);
+      setCurrentStep('');
+    }
   };
 
   return (
@@ -229,7 +224,7 @@ const MergeScreen: React.FC = () => {
                 </div>
 
                 <div className="flex-1 min-w-0 z-10">
-                  <p className="text-[11px] font-black uppercase tracking-tight truncate text-gray-900 dark:text-white">{item.name}</p>
+                  <p className="text-[11px] font-black uppercase tracking-tight truncate text-gray-900 dark:text-white">Document {index + 1}</p>
                   <p className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{(item.size / 1024 / 1024).toFixed(2)} MB ARCHIVE</p>
                 </div>
 
@@ -305,12 +300,6 @@ const MergeScreen: React.FC = () => {
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
           reason="limit_reached"
-        />
-
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-          onSuccess={handleAuthSuccess}
         />
       </div>
     </motion.div>

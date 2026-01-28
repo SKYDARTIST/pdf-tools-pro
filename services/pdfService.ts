@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib';
+// DEFERRED LOADING: pdf-lib is now imported dynamically within each function to optimize initial load
 
 /**
  * Downsize a File or Blob image if it exceeds max dimensions.
@@ -81,6 +81,7 @@ const sanitizeForWinAnsi = (text: string): string => {
 
 export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
   return safeExecute(async () => {
+    const { PDFDocument } = await import('pdf-lib');
     const mergedPdf = await PDFDocument.create();
     for (const file of files) {
       const arrayBuffer = await file.arrayBuffer();
@@ -94,6 +95,7 @@ export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
 
 export const addWatermark = async (file: File, text: string): Promise<Uint8Array> => {
   return safeExecute(async () => {
+    const { PDFDocument, StandardFonts, rgb, degrees } = await import('pdf-lib');
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -118,6 +120,7 @@ export const addWatermark = async (file: File, text: string): Promise<Uint8Array
 
 export const createPdfFromText = async (title: string, content: string): Promise<Uint8Array> => {
   return safeExecute(async () => {
+    const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib');
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -195,6 +198,7 @@ export const createPdfFromText = async (title: string, content: string): Promise
 
 export const imageToPdf = async (images: File[]): Promise<Uint8Array> => {
   return safeExecute(async () => {
+    const { PDFDocument } = await import('pdf-lib');
     const pdfDoc = await PDFDocument.create();
     for (const image of images) {
       console.log(`Processing image: ${image.name}, type: ${image.type}, size: ${Math.round(image.size / 1024)} KB`);
@@ -242,6 +246,7 @@ export const imageToPdf = async (images: File[]): Promise<Uint8Array> => {
 
 export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number[]): Promise<Uint8Array> => {
   return safeExecute(async () => {
+    const { PDFDocument } = await import('pdf-lib');
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
@@ -262,6 +267,7 @@ export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number
 
 export const repairPdf = async (file: File): Promise<Uint8Array> => {
   return safeExecute(async () => {
+    const { PDFDocument } = await import('pdf-lib');
     const arrayBuffer = await file.arrayBuffer();
     // Loading and re-saving reconstructs the XREF table and internal structure
     const pdfDoc = await PDFDocument.load(arrayBuffer, {

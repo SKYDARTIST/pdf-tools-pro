@@ -5,7 +5,10 @@
  */
 import { PlayIntegrity } from '@capacitor-community/play-integrity';
 import { Capacitor } from '@capacitor/core';
-import { getDeviceId } from './usageService';
+import { getDeviceId } from './deviceService';
+
+// Module-level cache to prevent API throttling (-8 error)
+const cache: { token: string | null; timestamp: number } = { token: null, timestamp: 0 };
 
 export const getIntegrityToken = async (): Promise<string> => {
     // DEV MODE: Capacitor on localhost uses mock
@@ -13,6 +16,7 @@ export const getIntegrityToken = async (): Promise<string> => {
     const isDevelopment = window.location.hostname === 'localhost' && !isCapacitor;
 
     if (isDevelopment) {
+        // ... (dev mode logic logic skipped for brevity in diff) ...
         console.warn('Anti-Gravity Integrity: Using MOCK token (Dev Mode)');
         const deviceId = await getDeviceId();
 
@@ -32,7 +36,16 @@ export const getIntegrityToken = async (): Promise<string> => {
     }
 
 
+    // CACHE LOGIC: Return cached token if fresh (avoid -8 rate limit errors)
+    // Google tokens are generally valid for at least 5 minutes.
+    // We compromise slightly on nonce freshness to prevent app crash due to throttling.
+    if (cache.token && (Date.now() - cache.timestamp < 5 * 60 * 1000)) {
+        console.log('Anti-Gravity Integrity: ⚡ Returning CACHED token');
+        return cache.token;
+    }
+
     try {
+        // ... (platform check) ...
         // SAFETY CHECK: Ensure we are really on a device before calling native code
         if (!Capacitor.isNativePlatform()) {
             console.warn('Anti-Gravity Integrity: Not native platform, returning web fallback');
@@ -63,6 +76,11 @@ export const getIntegrityToken = async (): Promise<string> => {
         const result: any = await Promise.race([integrityPromise, timeoutPromise]);
 
         console.log('Anti-Gravity Integrity: ✅ Real Token Generated');
+
+        // Update Cache
+        cache.token = result.token;
+        cache.timestamp = Date.now();
+
         return result.token;
 
     } catch (error) {

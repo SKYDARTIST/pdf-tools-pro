@@ -1,15 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './supabaseClient';
 import Config from './configService';
 import { SecurityLogger, maskEmail } from '../utils/securityUtils';
 import { clearLogs } from './persistentLogService';
 import AuthService from './authService';
-import { getDeviceId } from './usageService';
-
-// Initialize Supabase Client
-const supabaseUrl = Config.VITE_SUPABASE_URL;
-const supabaseKey = Config.VITE_SUPABASE_ANON_KEY; // Use Anon Key for client-side
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getDeviceId } from './deviceService';
 
 export interface GoogleUser {
     google_uid: string;

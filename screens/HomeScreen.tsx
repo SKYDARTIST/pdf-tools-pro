@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, Info, Shield, CheckCircle, HelpCircle
+  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, CheckCircle, HelpCircle
 } from 'lucide-react';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import UsageStats from '../components/UsageStats.tsx';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
+
   useEffect(() => {
     setRecentFiles(FileHistoryManager.getRecent(10));
   }, []);
@@ -100,7 +98,7 @@ const HomeScreen: React.FC = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 + (i * 0.1) }}
-                whileHover={{ y: -4, borderSecondary: 'rgba(0,200,150,0.2)' }}
+                whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(action.path)}
                 className="monolith-card p-6 cursor-pointer flex items-center gap-5 group"
@@ -124,7 +122,7 @@ const HomeScreen: React.FC = () => {
           <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Recent Files</div>
           <motion.button
             whileHover={{ scale: 1.05 }}
-            onClick={() => requireAuth(() => navigate('/my-files'))}
+            onClick={() => navigate('/my-files')}
             className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 hover:opacity-100 transition-opacity"
           >
             View All Files
@@ -141,7 +139,7 @@ const HomeScreen: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
                   whileHover={{ x: 4 }}
-                  onClick={() => requireAuth(() => navigate('/reader?protocol=read'))}
+                  onClick={() => navigate('/reader?protocol=read')}
                   className="monolith-card p-5 flex items-center gap-4 cursor-pointer relative overflow-hidden"
                 >
                   <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center shrink-0">
@@ -177,13 +175,6 @@ const HomeScreen: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
-
-
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
-      />
     </motion.div>
   );
 };

@@ -9,17 +9,16 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
 
-    // Auto-redirect authenticated users to workspace
-    React.useEffect(() => {
-        const checkAuth = () => {
-            const uid = localStorage.getItem('google_uid');
-            if (uid) {
-                console.log('🛡️ Landing: Authenticated user detected, auto-launching workspace');
-                navigate('/workspace', { replace: true });
-            }
-        };
-        checkAuth();
-    }, [navigate]);
+
+    const handleLaunch = () => {
+        const uid = localStorage.getItem('google_uid');
+        if (uid) {
+            navigate('/workspace');
+        } else {
+            console.log('🛡️ Landing: User not authenticated, showing Login Screen');
+            navigate('/login');
+        }
+    };
 
     const handleMouseMove = (e: React.MouseEvent) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 20;
@@ -134,7 +133,7 @@ const LandingPage: React.FC = () => {
                                 boxShadow: "0 30px 60px -15px rgba(16, 185, 129, 0.3)"
                             }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => navigate('/workspace')}
+                            onClick={handleLaunch}
                             className="w-full bg-black dark:bg-white text-white dark:text-black py-8 rounded-[40px] flex items-center justify-center group shadow-2xl relative overflow-hidden"
                         >
                             <span className="text-xs font-black uppercase tracking-[0.5em] relative z-10">Launch Workspace</span>

@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FileUp, Image as ImageIcon, Share2, Loader2, FileText, Package } from 'lucide-react';
-import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import SuccessModal from '../components/SuccessModal';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '../components/ToolGuide';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import UpgradeModal from '../components/UpgradeModal';
-import { downloadFile, downloadMultipleFiles, saveBase64ToCache } from '../services/downloadService';
+import { saveBase64ToCache } from '../services/downloadService';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
@@ -20,31 +17,20 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 const ExtractImagesScreen: React.FC = () => {
     const navigate = useNavigate();
-    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
     const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedAssets, setExtractedAssets] = useState<{ uri: string; displayUrl: string }[]>([]);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
-    // NO OP: Filesystem assets are permanent until app is closed or cleared
-    React.useEffect(() => {
-        return () => {
-            // Cleanup if needed
-        };
-    }, []);
-
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const f = e.target.files[0];
             try {
-                // Read file data immediately to prevent Android permission expiration
                 const arrayBuffer = await f.arrayBuffer();
                 const blob = new Blob([arrayBuffer], { type: f.type });
                 const freshFile = new File([blob], f.name, { type: f.type });
                 setFile(freshFile);
-                // Cleanup old ObjectURLs
-                extractedAssets.forEach(asset => URL.revokeObjectURL((asset as any).url));
                 setExtractedAssets([]);
             } catch (err) {
                 console.error('Failed to read file:', f.name, err);
@@ -56,91 +42,71 @@ const ExtractImagesScreen: React.FC = () => {
     const handleExtractImages = async () => {
         if (!file) return;
 
-        requireAuth(async () => {
-            if (!TaskLimitManager.canUseTask()) {
-                setShowUpgradeModal(true);
-                return;
-            }
+        if (!TaskLimitManager.canUseTask()) {
+            setShowUpgradeModal(true);
+            return;
+        }
 
-            setIsProcessing(true);
+        setIsProcessing(true);
 
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                const assets: { uri: string; displayUrl: string }[] = [];
-                console.log("🛠️ Starting visual scan of carrier:", pdf.numPages, "pages identified.");
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const assets: { uri: string; displayUrl: string }[] = [];
 
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    console.log(`📸 Processing layer ${i}/${pdf.numPages}...`);
-                    const page = await pdf.getPage(i);
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 1.5 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
 
-                    // HIGH QUALITY: Use scale 1.5 for a perfect balance of crispness and stability
-                    const viewport = page.getViewport({ scale: 1.5 });
-
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    if (context) {
-                        await page.render({ canvasContext: context, viewport, canvasFactory: undefined } as any).promise;
-
-                        // HIGH QUALITY: Use JPEG at 85% quality (Industry standard for mobile docs)
-                        const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-
-                        // Force browser garbage collection by clearing canvas
-                        canvas.width = 0;
-                        canvas.height = 0;
-
-                        // Atomic Save to Disk (Frees up RAM immediately)
-                        const fileName = `page_${i}.jpg`;
-                        const uri = await saveBase64ToCache(base64, fileName);
-
-                        assets.push({
-                            uri,
-                            displayUrl: Capacitor.convertFileSrc(uri)
-                        });
-
-                        console.log(`✅ Layer ${i} saved to disk. Memory cleared.`);
-                    }
+                if (context) {
+                    await page.render({ canvasContext: context, viewport, canvasFactory: undefined } as any).promise;
+                    const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+                    canvas.width = 0;
+                    canvas.height = 0;
+                    const fileName = `page_${i}.jpg`;
+                    const uri = await saveBase64ToCache(base64, fileName);
+                    assets.push({
+                        uri,
+                        displayUrl: Capacitor.convertFileSrc(uri)
+                    });
                 }
-
-                setExtractedAssets(assets);
-
-                // Add to history
-                FileHistoryManager.addEntry({
-                    fileName: `extracted_images_${file.name}`,
-                    operation: 'split',
-                    originalSize: file.size,
-                    finalSize: assets.length * 100000, // Approximate
-                    status: 'success'
-                });
-
-                // Increment task count
-                TaskLimitManager.incrementTask();
-
-                // Show success modal
-                setSuccessData({
-                    isOpen: true,
-                    fileName: `extracted_images_${file.name}`,
-                    originalSize: file.size,
-                    finalSize: assets.length * 102400 // Estimate 100kb per image for UI
-                });
-            } catch (err) {
-                alert('Error extracting images: ' + (err instanceof Error ? err.message : 'Unknown error'));
-
-                FileHistoryManager.addEntry({
-                    fileName: `extract_images_failed_${file.name}`,
-                    operation: 'split',
-                    status: 'error'
-                });
-            } finally {
-                setIsProcessing(false);
             }
-        });
+
+            setExtractedAssets(assets);
+
+            FileHistoryManager.addEntry({
+                fileName: `extracted_images_${file.name}`,
+                operation: 'split',
+                originalSize: file.size,
+                finalSize: assets.length * 102400,
+                status: 'success'
+            });
+
+            TaskLimitManager.incrementTask();
+
+            setSuccessData({
+                isOpen: true,
+                fileName: `extracted_images_${file.name}`,
+                originalSize: file.size,
+                finalSize: assets.length * 102400
+            });
+        } catch (err) {
+            alert('Error extracting images: ' + (err instanceof Error ? err.message : 'Unknown error'));
+            FileHistoryManager.addEntry({
+                fileName: `extract_images_failed_${file.name}`,
+                operation: 'split',
+                status: 'error'
+            });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
-    const downloadImage = async (uri: string, index: number) => {
+    const downloadImage = async (uri: string) => {
         try {
             await Share.share({
                 title: 'Anti-Gravity Asset',
@@ -156,17 +122,12 @@ const ExtractImagesScreen: React.FC = () => {
         if (extractedAssets.length === 0) return;
         setIsProcessing(true);
         try {
-            console.log("📂 Sending images to system share...");
-
-            // On Mobile, we use the Native Share sheet for the whole collection
             const uris = extractedAssets.map(a => a.uri);
-
             await Share.share({
                 title: `${uris.length} Extracted Images`,
                 files: uris,
                 dialogTitle: 'Save All Assets'
             });
-
             setSuccessData(null);
         } catch (err) {
             console.error("❌ Multi-download failed:", err);
@@ -184,7 +145,6 @@ const ExtractImagesScreen: React.FC = () => {
             className="min-h-screen pb-32 pt-32 max-w-2xl mx-auto px-6"
         >
             <div className="space-y-12">
-                {/* Header Section */}
                 <div className="space-y-3">
                     <div className="text-technical">Available Tools / Extract Images</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Images</h1>
@@ -220,7 +180,6 @@ const ExtractImagesScreen: React.FC = () => {
                 </label>
             ) : (
                 <div className="space-y-8">
-                    {/* File Info */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -230,7 +189,7 @@ const ExtractImagesScreen: React.FC = () => {
                             <FileText size={28} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">{file.name}</h3>
+                            <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">Active Document</h3>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                                 {extractedAssets.length > 0 ? `${extractedAssets.length} IMAGES FOUND` : 'AWAITING SCAN'}
                             </p>
@@ -243,7 +202,6 @@ const ExtractImagesScreen: React.FC = () => {
                         </button>
                     </motion.div>
 
-                    {/* Extract Button */}
                     {extractedAssets.length === 0 && (
                         <button
                             onClick={handleExtractImages}
@@ -269,7 +227,6 @@ const ExtractImagesScreen: React.FC = () => {
                         </button>
                     )}
 
-                    {/* Extracted Images Grid */}
                     {extractedAssets.length > 0 && (
                         <>
                             <div className="flex items-center justify-between">
@@ -297,7 +254,7 @@ const ExtractImagesScreen: React.FC = () => {
                                             className="w-full h-auto"
                                         />
                                         <button
-                                            onClick={() => downloadImage(asset.uri, index)}
+                                            onClick={() => downloadImage(asset.uri)}
                                             className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                                         >
                                             <Share2 size={24} className="text-white" />
@@ -314,22 +271,14 @@ const ExtractImagesScreen: React.FC = () => {
             )
             }
 
-            {/* Success Modal */}
             {successData && (
                 <SuccessModal
                     isOpen={successData.isOpen}
-                    operation="Extract Images"
-                    fileName={successData.fileName}
-                    originalSize={successData.originalSize}
-                    finalSize={successData.finalSize}
-                    metadata={{ imagesConverted: extractedAssets.length }}
-                    onViewFiles={() => {
-                        setSuccessData(null);
-                        navigate('/my-files');
-                    }}
-                    onDownload={downloadAllImages}
-                    onClose={() => {
-                        setSuccessData(null);
+                    onClose={() => setSuccessData(null)}
+                    data={{
+                        fileName: successData.fileName,
+                        originalSize: successData.originalSize,
+                        finalSize: successData.finalSize
                     }}
                 />
             )}
@@ -338,12 +287,6 @@ const ExtractImagesScreen: React.FC = () => {
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
                 reason="limit_reached"
-            />
-
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
             />
         </motion.div>
     );

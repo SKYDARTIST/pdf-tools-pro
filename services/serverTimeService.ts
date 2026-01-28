@@ -1,9 +1,10 @@
 /**
  * Server Time Service - Fetches real time from backend for clock validation
  */
-import { getDeviceId } from './usageService';
+import { getDeviceId } from './deviceService';
 import Config from './configService';
 import AuthService from './authService';
+import { getCsrfToken } from './csrfService';
 
 let lastFetchTime = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // Cache for 5 minutes
@@ -18,6 +19,7 @@ export const fetchServerTime = async (): Promise<string | null> => {
     try {
         const backendUrl = `${Config.VITE_AG_API_URL}/api/index`;
         const deviceId = await getDeviceId();
+        const csrfToken = getCsrfToken();
 
         // SECURITY: Require authenticated session token for server_time endpoint
         const authHeader = await AuthService.getAuthHeader();
@@ -28,7 +30,8 @@ export const fetchServerTime = async (): Promise<string | null> => {
                 'Content-Type': 'application/json',
                 'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
                 'x-ag-device-id': deviceId,
-                'Authorization': authHeader
+                'Authorization': authHeader,
+                'x-csrf-token': csrfToken || ''
             },
             body: JSON.stringify({ type: 'server_time' }),
         });

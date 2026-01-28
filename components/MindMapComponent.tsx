@@ -33,21 +33,29 @@ const MindMapComponent: React.FC<MindMapProps> = ({ data }) => {
         const result: MindMapNode[] = [];
         const stack: { id: string, indent: number }[] = [];
 
-        // Root node
-        const firstLine = lines[0]?.replace(/^#+\s*/, '').trim() || 'Central Concept';
-        // Enforce 2 word limit for root
+        // Parser: Detect root and branches
+        // Filter out common AI conversational markers if they exist
+        const contentLines = lines.filter(l => !l.toLowerCase().includes('here is a') && !l.toLowerCase().includes('mind map summary'));
+
+        // Root node: Use the first non-bullet line, or the very first line
+        const firstLine = contentLines[0]?.replace(/^#+\s*/, '').trim() || 'Central Concept';
         const rootText = firstLine.split(' ').slice(0, 2).join(' ');
         result.push({ id: 'root', text: rootText, x: 0, y: 0, children: [] });
         stack.push({ id: 'root', indent: -1 });
 
         let childCount = 0;
-        lines.slice(1).forEach((line, index) => {
+        const remainingLines = contentLines.slice(1);
+
+        remainingLines.forEach((line, index) => {
             if (childCount >= 12) return; // Enforce 12 branch limit
 
             const indent = line.search(/\S/);
             let text = line.trim().replace(/^[-*+]\s*/, '');
+            if (!text) return;
+
             // Enforce 2 word limit for branches
-            text = text.split(' ').slice(0, 2).join(' ');
+            const wordArr = text.split(/\s+/).filter(w => w.length > 0);
+            text = wordArr.slice(0, 2).join(' ');
 
             const id = `node-${index}`;
 

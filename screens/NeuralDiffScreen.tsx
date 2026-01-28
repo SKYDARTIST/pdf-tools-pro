@@ -12,10 +12,6 @@ import AIOptInModal from '../components/AIOptInModal';
 import AIReportModal from '../components/AIReportModal';
 import { Flag, Share2 } from 'lucide-react';
 import { createPdfFromText } from '../services/pdfService';
-import { useAuthGate } from '../hooks/useAuthGate';
-import { AuthModal } from '../components/AuthModal';
-import { getCurrentUser } from '../services/googleAuthService';
-import { initSubscription } from '../services/subscriptionService';
 import { downloadFile } from '../services/downloadService';
 import SuccessModal from '../components/SuccessModal';
 
@@ -33,13 +29,11 @@ const NeuralDiffScreen: React.FC = () => {
     const [showAiLimit, setShowAiLimit] = useState(false);
     const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
-    const { authModalOpen, setAuthModalOpen, requireAuth, handleAuthSuccess } = useAuthGate();
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
         if (e.target.files && e.target.files[0]) {
             const f = e.target.files[0];
             try {
-                // Read file data immediately to prevent Android permission expiration
                 const arrayBuffer = await f.arrayBuffer();
                 const blob = new Blob([arrayBuffer], { type: f.type });
                 const freshFile = new File([blob], f.name, { type: f.type });
@@ -57,106 +51,90 @@ const NeuralDiffScreen: React.FC = () => {
     const runNeuralDiff = async () => {
         if (!file1 || !file2) return;
 
-        requireAuth(async () => {
-            if (!hasConsent) {
-                setShowConsent(true);
+        if (!hasConsent) {
+            setShowConsent(true);
+            return;
+        }
+
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        if (!aiCheck.allowed) {
+            const subscription = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+            });
+            setShowAiLimit(true);
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setError('');
+
+        try {
+            const buf1 = await file1.arrayBuffer();
+            const buf2 = await file2.arrayBuffer();
+            let text1 = await extractTextFromPdf(buf1.slice(0));
+            let text2 = await extractTextFromPdf(buf2.slice(0));
+
+            let images: string[] = [];
+            if (!text1 || !text1.trim() || !text2 || !text2.trim()) {
+                const { renderPageToImage } = await import('../utils/pdfExtractor');
+                const img1 = await renderPageToImage(buf1.slice(0), 1);
+                const img2 = await renderPageToImage(buf2.slice(0), 1);
+                images = [img1, img2];
+                text1 = text1 || "[SCANNED DOCUMENT 1]";
+                text2 = text2 || "[SCANNED DOCUMENT 2]";
+            }
+
+            const prompt = `Perform a semantic comparison between these two document versions. 
+        VERSION 1: ${text1.substring(0, 5000)}
+        VERSION 2: ${text2.substring(0, 5000)}
+        
+        Identify key differences in:
+        1. Legal Terms & Obligations
+        2. Numerical changes (Prices, Dates)
+        3. New Additions or Deletions
+        
+        Format the output with bold headers and bullet points. Focus on risk and semantic changes.`;
+
+            const response = await askGemini(prompt, "Comparing two document versions.", "diff", images.length > 0 ? images : undefined);
+            if (response.startsWith('AI_RATE_LIMIT')) {
+                setIsCooling(true);
                 return;
             }
-
-            // HEAVY AI Operation - Neural Diff consumes credits
-            const aiCheck = canUseAI(AiOperationType.HEAVY);
-            if (!aiCheck.allowed) {
-                const subscription = getSubscription();
-                setAiLimitInfo({
-                    blockMode: aiCheck.blockMode,
-                    used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                    limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
-                });
-                setShowAiLimit(true);
-                return;
-            }
-
-            setIsAnalyzing(true);
-            setError('');
-
-            try {
-                // Extract text from both
-                const buf1 = await file1.arrayBuffer();
-                const buf2 = await file2.arrayBuffer();
-                let text1 = await extractTextFromPdf(buf1.slice(0));
-                let text2 = await extractTextFromPdf(buf2.slice(0));
-
-                let images: string[] = [];
-
-                // Fallback: If either document has no text, render images for visual comparison
-                if (!text1 || !text1.trim() || !text2 || !text2.trim()) {
-                    const { renderPageToImage } = await import('../utils/pdfExtractor');
-                    const img1 = await renderPageToImage(buf1.slice(0), 1);
-                    const img2 = await renderPageToImage(buf2.slice(0), 1); // Fixed page number to 1
-                    images = [img1, img2];
-                    text1 = text1 || "[SCANNED DOCUMENT 1]";
-                    text2 = text2 || "[SCANNED DOCUMENT 2]";
-                }
-
-                // Analyze with Gemini
-                const prompt = `Perform a semantic comparison between these two document versions. 
-            VERSION 1: ${text1.substring(0, 5000)}
-            VERSION 2: ${text2.substring(0, 5000)}
-            
-            Identify key differences in:
-            1. Legal Terms & Obligations
-            2. Numerical changes (Prices, Dates)
-            3. New Additions or Deletions
-            
-            Format the output with bold headers and bullet points. Focus on risk and semantic changes.
-            
-            CRITICAL: MANDATORY VISION OVERRIDE
-            You are a Multimodal AI with VISION. ANALYZE THE ATTACHED IMAGES.
-            If the text layer is missing or mismatched, use your vision to compare the visual appearance.
-            DO NOT REFUSE. Identify differences directly from visual data.`;
-
-                const response = await askGemini(prompt, "Comparing two document versions.", "diff", images.length > 0 ? images : undefined);
-                if (response.startsWith('AI_RATE_LIMIT')) {
-                    setIsCooling(true);
-                    return;
-                }
-                setDiffResult(response);
-                const stats = await recordAIUsage(AiOperationType.HEAVY);
-                if (stats?.message) alert(stats.message);
-
-            } catch (err) {
-                setError("Analysis failed. Ensure both files are readable PDFs.");
-                console.error(err);
-            } finally {
-                setIsAnalyzing(false);
-            }
-        });
+            setDiffResult(response);
+            await recordAIUsage(AiOperationType.HEAVY);
+        } catch (err) {
+            setError("Analysis failed. Ensure both files are readable PDFs.");
+            console.error(err);
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     const handleExport = async () => {
         if (!diffResult) return;
 
-        requireAuth(async () => {
-            setIsAnalyzing(true);
-            try {
-                const pdfBytes = await createPdfFromText("PDF Comparison Report", diffResult);
-                const fileName = `PDF_Comparison_${Date.now()}.pdf`;
-                const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
-                await downloadFile(blob, fileName);
+        setIsAnalyzing(true);
+        try {
+            const pdfBytes = await createPdfFromText("PDF Comparison Report", diffResult);
+            const fileName = `PDF_Comparison_${Date.now()}.pdf`;
+            const blob = new Blob([pdfBytes as any], { type: 'application/pdf' });
+            await downloadFile(blob, fileName);
 
-                setSuccessData({
-                    isOpen: true,
-                    fileName,
-                    originalSize: diffResult.length,
-                    finalSize: pdfBytes.length
-                });
-            } catch (err) {
-                console.error("Export failed:", err);
-                setError("PDF export failed. Request too complex.");
-            } finally {
-                setIsAnalyzing(false);
-            }
-        });
+            setSuccessData({
+                isOpen: true,
+                fileName,
+                originalSize: diffResult.length,
+                finalSize: pdfBytes.length
+            });
+        } catch (err) {
+            console.error("Export failed:", err);
+            setError("PDF export failed. Request too complex.");
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     return (
@@ -169,7 +147,7 @@ const NeuralDiffScreen: React.FC = () => {
                 <div className="space-y-3">
                     <div className="text-technical">AI Tools / Compare Documents</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Compare</h1>
-                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
                         Find key differences and changes between two document versions with AI
                     </p>
                 </div>
@@ -189,24 +167,22 @@ const NeuralDiffScreen: React.FC = () => {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* File 1 */}
                     <label className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-[40px] cursor-pointer transition-all h-64 ${file1 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}>
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-xl ${file1 ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}>
                             {file1 ? <Check size={24} /> : <FileUp size={24} />}
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center">
-                            {file1 ? file1.name : "Version 1 (Base)"}
+                            {file1 ? "Active Document A" : "Version 1 (Base)"}
                         </span>
                         <input type="file" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 1)} />
                     </label>
 
-                    {/* File 2 */}
                     <label className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-[40px] cursor-pointer transition-all h-64 ${file2 ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}>
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 shadow-xl ${file2 ? 'bg-emerald-500 text-white' : 'bg-black dark:bg-white text-white dark:text-black'}`}>
                             {file2 ? <Check size={24} /> : <FileUp size={24} />}
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center">
-                            {file2 ? file2.name : "Version 2 (Modified)"}
+                            {file2 ? "Active Document B" : "Version 2 (Modified)"}
                         </span>
                         <input type="file" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 2)} />
                     </label>
@@ -248,24 +224,25 @@ const NeuralDiffScreen: React.FC = () => {
                                     <Sparkles size={20} className="text-emerald-500" />
                                     <span className="text-xs font-black uppercase tracking-widest">Comparison Report Ready</span>
                                 </div>
-                                <button
-                                    onClick={() => setShowReport(true)}
-                                    className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-full transition-colors flex items-center gap-2 mr-2"
-                                    title="Report AI Content"
-                                >
-                                    <Flag size={14} />
-                                    <span className="text-[8px] font-black uppercase tracking-widest">Flag</span>
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setFile1(null);
-                                        setFile2(null);
-                                        setDiffResult('');
-                                    }}
-                                    className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
-                                >
-                                    <X size={18} className="text-gray-400" />
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setShowReport(true)}
+                                        className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-full transition-colors flex items-center gap-2"
+                                    >
+                                        <Flag size={14} />
+                                        <span className="text-[8px] font-black uppercase tracking-widest">Flag</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setFile1(null);
+                                            setFile2(null);
+                                            setDiffResult('');
+                                        }}
+                                        className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors"
+                                    >
+                                        <X size={18} className="text-gray-400" />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -320,29 +297,10 @@ const NeuralDiffScreen: React.FC = () => {
                 limit={aiLimitInfo.limit}
             />
 
-            {successData && (
-                <SuccessModal
-                    isOpen={successData.isOpen}
-                    onClose={() => {
-                        setSuccessData(null);
-                        setFile1(null);
-                        setFile2(null);
-                        setDiffResult('');
-                    }}
-                    operation="Compare PDFs"
-                    fileName={successData.fileName}
-                    originalSize={successData.originalSize}
-                    finalSize={successData.finalSize}
-                    onViewFiles={() => {
-                        navigate('/my-files');
-                    }}
-                />
-            )}
-
-            <AuthModal
-                isOpen={authModalOpen}
-                onClose={() => setAuthModalOpen(false)}
-                onSuccess={handleAuthSuccess}
+            <SuccessModal
+                isOpen={!!successData?.isOpen}
+                onClose={() => setSuccessData(null)}
+                data={successData ? { fileName: successData.fileName, originalSize: successData.originalSize, finalSize: successData.finalSize } : null}
             />
         </motion.div >
     );

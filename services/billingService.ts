@@ -1,5 +1,10 @@
 import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
-import { upgradeTier, SubscriptionTier } from './subscriptionService';
+import { upgradeTier, SubscriptionTier, saveSubscription } from './subscriptionService';
+import { syncUsageToServer, fetchUserUsage } from './usageService';
+import { getDeviceId } from './deviceService';
+import { getCsrfToken } from './csrfService';
+import AuthService from './authService';
+import Config from './configService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 
 export const LIFETIME_PRODUCT_ID = 'pro_access_lifetime';
@@ -141,26 +146,14 @@ class BillingService {
                 }
 
                 // SECURITY: Verify and Grant on SERVER SIDE (v2.9.0)
-                // We no longer trust client-side tier updates implicitly.
-                try {
-                    const { syncUsageToServer } = await import('./usageService');
-                    // We use a SPECIAL verification payload here, handled by usageService internally or we construct it manually
-                    // Actually, usageService.ts needs an update or we can fetch directly here securely.
-                    // Ideally, we import a new method from usageService.
-                    // For now, let's keep it clean and do it via a direct secure call helper if possible, or update usageService.
+                const purchaseToken = (result as any).purchaseToken || result.transactionId;
+                const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_MONTHLY_ID, result.transactionId);
 
-                    // Let's implement verifyPurchase directly here to avoid circular dependency hell or massive refactors
-                    const purchaseToken = (result as any).purchaseToken || result.transactionId;
-                    const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_MONTHLY_ID, result.transactionId);
-
-                    if (verifyResult) {
-                        console.log('Anti-Gravity Billing: ✅ Server verified and granted Pro status');
-                    } else {
-                        console.warn('Anti-Gravity Billing: ⚠️ Server verification failed - Pro status might not stick on other devices');
-                        // We still allow local upgrade for UX (Optimistic UI), but server is source of truth
-                    }
-                } catch (verifyError) {
-                    console.error('Anti-Gravity Billing: Server verification failed:', verifyError);
+                if (verifyResult) {
+                    console.log('Anti-Gravity Billing: ✅ Server verified and granted Pro status');
+                } else {
+                    console.warn('Anti-Gravity Billing: ⚠️ Server verification failed - Pro status might not stick on other devices');
+                    // We still allow local upgrade for UX (Optimistic UI), but server is source of truth
                 }
 
                 // Sync in correct order - TaskLimitManager first, then SubscriptionService
@@ -319,7 +312,6 @@ class BillingService {
             // CRITICAL: Fetch existing usage from Supabase BEFORE syncing purchases
             // This ensures we restore the user's actual remaining credits, not reset them
             try {
-                const { fetchUserUsage } = await import('./usageService');
                 const existingUsage = await fetchUserUsage();
                 if (existingUsage) {
                     console.log('Anti-Gravity Billing: ✅ Existing usage found in Supabase:', {
@@ -329,7 +321,6 @@ class BillingService {
                         aiDocsMonth: existingUsage.aiDocsThisMonth
                     });
                     // Restore the ACTUAL usage data from Supabase
-                    const { saveSubscription } = await import('./subscriptionService');
                     saveSubscription(existingUsage);
                     console.log('Anti-Gravity Billing: ✅ Usage restored from Supabase');
                 } else {
@@ -377,12 +368,9 @@ class BillingService {
 
             // CRITICAL: First, check Supabase for existing data (source of truth for remaining credits)
             try {
-                const { fetchUserUsage } = await import('./usageService');
                 const existingUsage = await fetchUserUsage();
                 if (existingUsage) {
-
                     // Restore existing data immediately - this includes any remaining credits from before
-                    const { saveSubscription } = await import('./subscriptionService');
                     saveSubscription(existingUsage);
                 }
             } catch (supabaseError) {
@@ -468,11 +456,6 @@ class BillingService {
     // SECURITY: Server-Side Verification Helper
     private async verifyPurchaseOnServer(purchaseToken: string, productId: string, transactionId: string): Promise<boolean> {
         try {
-            const { getDeviceId } = await import('./usageService');
-            const { getCsrfToken } = await import('./csrfService');
-            const AuthService = (await import('./authService')).default;
-            const Config = (await import('./configService')).default;
-
             const deviceId = await getDeviceId();
             const csrfToken = getCsrfToken();
             const authHeader = await AuthService.getAuthHeader();

@@ -1,0 +1,245 @@
+:root {
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    --accent-glow: rgba(16, 185, 129, 0.05);
+    --grid-light: rgba(0, 0, 0, 0.03);
+    --grid-dark: rgba(255, 255, 255, 0.03);
+    --glow-light: rgba(16, 185, 129, 0.03);
+    --glow-dark: rgba(16, 185, 129, 0.01);
+    --glow-radius: 50%;
+}
+
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #F8F8F8;
+    color: #000000;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.dark body {
+    background-color: #000000;
+    color: #FFFFFF;
+}
+
+/* Hardware Accelerated Background Layers */
+.neural-background {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    will-change: opacity;
+    transition: opacity 0.1s ease;
+}
+
+#bg-light {
+    background-image:
+        radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--glow-light) 0%, transparent 50%),
+        radial-gradient(var(--grid-light) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px;
+    opacity: 1;
+}
+
+#bg-dark {
+    background-image:
+        radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--glow-dark) 0%, transparent 50%),
+        radial-gradient(var(--grid-dark) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px;
+    opacity: 0;
+}
+
+.dark #bg-light {
+    opacity: 0;
+}
+
+.dark #bg-dark {
+    opacity: 1;
+}
+
+/* Android WebView Optimizations - Instant Transitions */
+.is-android body,
+.is-android .neural-background,
+.is-android .monolith-card,
+.is-android .monolith-glass {
+    transition-duration: 0s !important;
+}
+
+/* Hide scrollbars for app-like behavior */
+::-webkit-scrollbar {
+    display: none;
+}
+
+/* Scanline Overlay */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.02) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.1;
+}
+
+.dark body::before {
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(255, 255, 255, 0.01) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+    background-size: 100% 3px, 3px 100%;
+    opacity: 0.15;
+}
+
+/* Subtle Noise Texture */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3%3Ffilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+    z-index: 10000;
+}
+
+/* Monolith Card Foundations */
+.monolith-card {
+    background: #FFFFFF;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid #E2E8F0;
+    border-radius: 40px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    position: relative;
+}
+
+.dark .monolith-card {
+    background: rgba(5, 5, 5, 0.6);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.5);
+}
+
+.monolith-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(16, 185, 129, 0.15) 0%, transparent 40%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.monolith-card:hover::after {
+    opacity: 1;
+}
+
+.monolith-card:hover {
+    transform: translateY(-4px);
+    border-color: #E2E8F0;
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+}
+
+.dark .monolith-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 40px 100px -25px rgba(0, 0, 0, 0.8);
+}
+
+/* Neural Glow Pulse */
+@keyframes neural-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+    }
+}
+
+.neural-glow {
+    animation: neural-glow 4s infinite ease-in-out;
+}
+
+/* Technical Typography */
+.text-technical {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.text-technical::before {
+    content: "";
+    height: 1px;
+    width: 20px;
+    background: currentColor;
+    opacity: 0.3;
+}
+
+/* Premium Buttons */
+.btn-neural {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-neural::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(16, 185, 129, 0.3), transparent 30%);
+    animation: rotate 4s linear infinite;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.btn-neural:hover::before {
+    opacity: 1;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Glass Floating Overlay */
+.monolith-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 40px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.1s ease, border-color 0.1s ease;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+.dark .monolith-glass {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.7);
+}

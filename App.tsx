@@ -35,6 +35,7 @@ const NeuralDiffScreen = lazy(() => import('./screens/NeuralDiffScreen'));
 const DataExtractorScreen = lazy(() => import('./screens/DataExtractorScreen'));
 const ProtocolGuideScreen = lazy(() => import('./screens/ProtocolGuideScreen'));
 const GoogleAuthCallback = lazy(() => import('./screens/GoogleAuthCallback'));
+const LoginScreen = lazy(() => import('./screens/LoginScreen'));
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import SystemBoot from './components/SystemBoot';
@@ -49,7 +50,6 @@ import DebugLogPanel from './components/DebugLogPanel';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
-import { AuthModal } from './components/AuthModal';
 import ProtectedRoute from './components/ProtectedRoute';
 import { getCurrentUser } from './services/googleAuthService';
 import { App as CapApp } from '@capacitor/app';
@@ -60,7 +60,6 @@ const App: React.FC = () => {
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
   const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
-  const [authModalOpen, setAuthModalOpen] = React.useState(false);
 
   // Catch Google OAuth redirect from the root
   React.useEffect(() => {
@@ -119,9 +118,6 @@ const App: React.FC = () => {
   React.useEffect(() => {
     const handleUrl = (url: string) => {
       if (url.includes('com.cryptobulla.antigravity')) {
-        // Close modal immediately if it was open
-        setAuthModalOpen(false);
-
         // WHITELIST VALIDATION: Prevent unauthorized navigation via deep links
         const WHITELIST_ROUTES = [
           'workspace', 'tools', 'merge', 'split', 'remove-pages',
@@ -175,16 +171,7 @@ const App: React.FC = () => {
     };
   }, [navigate]);
 
-  // Auth Success Listener: Definitive fix for UI hangs
-  React.useEffect(() => {
-    const handleAuthSuccess = () => {
-      console.log('🔑 App: Auth Success event received, force-closing modal');
-      setAuthModalOpen(false);
-    };
 
-    window.addEventListener('neural-auth-success', handleAuthSuccess);
-    return () => window.removeEventListener('neural-auth-success', handleAuthSuccess);
-  }, []);
 
   // Global AI Notification Listener
   React.useEffect(() => {
@@ -203,22 +190,10 @@ const App: React.FC = () => {
     // Also poll occasionally or listen for storage events if needed
     const interval = setInterval(checkNotification, 2000);
 
-    // Watch for Auth Success and close modal
-    const checkAuthStatus = async () => {
-      const user = localStorage.getItem('google_uid');
-      if (user && authModalOpen) {
-        console.log('🛡️ App: Authenticated user detected, closing modal');
-        setAuthModalOpen(false);
-      }
-    };
-    checkAuthStatus();
-    const authInterval = setInterval(checkAuthStatus, 1000);
-
     return () => {
       clearInterval(interval);
-      clearInterval(authInterval);
     };
-  }, [location.pathname, isDataReady, authModalOpen]);
+  }, [location.pathname, isDataReady]);
 
   React.useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
@@ -324,31 +299,32 @@ const App: React.FC = () => {
               <Suspense fallback={null}>
                 <Routes location={location}>
                   <Route path="/" element={<LandingPage />} />
-                  <Route path="/workspace" element={<HomeScreen />} />
-                  <Route path="/tools" element={<ToolsScreen />} />
-                  <Route path="/merge" element={<MergeScreen />} />
-                  <Route path="/split" element={<SplitScreen />} />
-                  <Route path="/remove-pages" element={<RemovePagesScreen />} />
-                  <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
-                  <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
-                  <Route path="/scanner" element={<ScannerScreen />} />
-                  <Route path="/watermark" element={<WatermarkScreen />} />
-                  <Route path="/sign" element={<SignScreen />} />
-                  <Route path="/view" element={<ViewScreen />} />
-                  <Route path="/extract-text" element={<ExtractTextScreen />} />
-                  <Route path="/reader" element={<ReaderScreen />} />
-                  <Route path="/rotate" element={<RotateScreen />} />
-                  <Route path="/page-numbers" element={<PageNumbersScreen />} />
-                  <Route path="/extract-images" element={<ExtractImagesScreen />} />
+                  <Route path="/login" element={<LoginScreen />} />
+                  <Route path="/workspace" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
+                  <Route path="/tools" element={<ProtectedRoute><ToolsScreen /></ProtectedRoute>} />
+                  <Route path="/merge" element={<ProtectedRoute><MergeScreen /></ProtectedRoute>} />
+                  <Route path="/split" element={<ProtectedRoute><SplitScreen /></ProtectedRoute>} />
+                  <Route path="/remove-pages" element={<ProtectedRoute><RemovePagesScreen /></ProtectedRoute>} />
+                  <Route path="/image-to-pdf" element={<ProtectedRoute><ImageToPdfScreen /></ProtectedRoute>} />
+                  <Route path="/text-to-pdf" element={<ProtectedRoute><TextToPdfScreen /></ProtectedRoute>} />
+                  <Route path="/scanner" element={<ProtectedRoute><ScannerScreen /></ProtectedRoute>} />
+                  <Route path="/watermark" element={<ProtectedRoute><WatermarkScreen /></ProtectedRoute>} />
+                  <Route path="/sign" element={<ProtectedRoute><SignScreen /></ProtectedRoute>} />
+                  <Route path="/view" element={<ProtectedRoute><ViewScreen /></ProtectedRoute>} />
+                  <Route path="/extract-text" element={<ProtectedRoute><ExtractTextScreen /></ProtectedRoute>} />
+                  <Route path="/reader" element={<ProtectedRoute><ReaderScreen /></ProtectedRoute>} />
+                  <Route path="/rotate" element={<ProtectedRoute><RotateScreen /></ProtectedRoute>} />
+                  <Route path="/page-numbers" element={<ProtectedRoute><PageNumbersScreen /></ProtectedRoute>} />
+                  <Route path="/extract-images" element={<ProtectedRoute><ExtractImagesScreen /></ProtectedRoute>} />
 
                   <Route path="/ai-settings" element={<ProtectedRoute><AISettingsScreen /></ProtectedRoute>} />
-                  <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
-                  <Route path="/table-extractor" element={<TableExtractorScreen />} />
+                  <Route path="/ag-workspace" element={<ProtectedRoute><AntiGravityWorkspace /></ProtectedRoute>} />
+                  <Route path="/table-extractor" element={<ProtectedRoute><TableExtractorScreen /></ProtectedRoute>} />
                   <Route path="/my-files" element={<ProtectedRoute><MyFilesScreen /></ProtectedRoute>} />
-                  <Route path="/smart-redact" element={<SmartRedactScreen />} />
+                  <Route path="/smart-redact" element={<ProtectedRoute><SmartRedactScreen /></ProtectedRoute>} />
                   <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
-                  <Route path="/neural-diff" element={<NeuralDiffScreen />} />
-                  <Route path="/data-extractor" element={<DataExtractorScreen />} />
+                  <Route path="/neural-diff" element={<ProtectedRoute><NeuralDiffScreen /></ProtectedRoute>} />
+                  <Route path="/data-extractor" element={<ProtectedRoute><DataExtractorScreen /></ProtectedRoute>} />
                   <Route path="/pricing" element={<PricingScreen />} />
                   <Route path="/legal/:type" element={<LegalScreen />} />
                   <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
@@ -382,20 +358,6 @@ const App: React.FC = () => {
       />
       {!isLandingPage && <NeuralAssistant />}
       <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
-
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={async () => {
-          // Reload app data after login
-          const user = await getCurrentUser();
-          if (user) {
-            await initSubscription(user as any);
-            // Force re-render with new data
-            window.location.reload();
-          }
-        }}
-      />
     </div>
 
   );
