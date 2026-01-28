@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 // Shared signing secret from environment
 const sessionSecret = process.env.SESSION_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -16,13 +16,11 @@ export const verifySessionToken = (token) => {
         const payloadStr = Buffer.from(b64Payload, 'base64').toString();
         const expectedSignature = createHmac('sha256', sessionSecret).update(payloadStr).digest('hex');
 
-        // Timing-safe comparison
-        if (signature.length !== expectedSignature.length) return null;
-        let match = true;
-        for (let i = 0; i < signature.length; i++) {
-            if (signature[i] !== expectedSignature[i]) match = false;
-        }
-        if (!match) return null;
+        const signatureBuf = Buffer.from(signature, 'hex');
+        const expectedSignatureBuf = Buffer.from(expectedSignature, 'hex');
+
+        if (signatureBuf.length !== expectedSignatureBuf.length) return null;
+        if (!timingSafeEqual(signatureBuf, expectedSignatureBuf)) return null;
 
         const payload = JSON.parse(payloadStr);
         if (Date.now() > payload.exp) return null; // Expiration check

@@ -118,7 +118,7 @@ export default async function handler(req, res) {
 
     // STAGE 0: Session Authentication & Integrity
     // --------------------------------------------------------------------------------
-    const { createHmac, randomBytes } = await import('node:crypto');
+    const { createHmac, randomBytes, timingSafeEqual } = await import('node:crypto');
 
     // SECURE SIGNING KEY: Use dedicated session secret, fallback to service key for safety
     const sessionSecret = process.env.SESSION_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -152,12 +152,11 @@ export default async function handler(req, res) {
             const payloadStr = Buffer.from(b64Payload, 'base64').toString();
             const expectedSignature = createHmac('sha256', sessionSecret).update(payloadStr).digest('hex');
 
-            if (signature.length !== expectedSignature.length) return null;
-            let match = true;
-            for (let i = 0; i < signature.length; i++) {
-                if (signature[i] !== expectedSignature[i]) match = false;
-            }
-            if (!match) return null;
+            const signatureBuf = Buffer.from(signature, 'hex');
+            const expectedSignatureBuf = Buffer.from(expectedSignature, 'hex');
+
+            if (signatureBuf.length !== expectedSignatureBuf.length) return null;
+            if (!timingSafeEqual(signatureBuf, expectedSignatureBuf)) return null;
 
             const payload = JSON.parse(payloadStr);
             if (Date.now() > payload.exp) return null;
@@ -176,12 +175,11 @@ export default async function handler(req, res) {
             const payloadStr = Buffer.from(b64Payload, 'base64').toString();
             const expectedSignature = createHmac('sha256', sessionSecret).update(payloadStr).digest('hex');
 
-            if (signature.length !== expectedSignature.length) return null;
-            let match = true;
-            for (let i = 0; i < signature.length; i++) {
-                if (signature[i] !== expectedSignature[i]) match = false;
-            }
-            if (!match) return null;
+            const signatureBuf = Buffer.from(signature, 'hex');
+            const expectedSignatureBuf = Buffer.from(expectedSignature, 'hex');
+
+            if (signatureBuf.length !== expectedSignatureBuf.length) return null;
+            if (!timingSafeEqual(signatureBuf, expectedSignatureBuf)) return null;
 
             const payload = JSON.parse(payloadStr);
             if (Date.now() > payload.exp) return null;
@@ -294,7 +292,8 @@ export default async function handler(req, res) {
             // SECURITY: CSRF Protection - Verify CSRF token for purchase requests
             const csrfHeader = req.headers['x-csrf-token'];
             const csrfPayload = verifyCsrfToken(csrfHeader);
-            if (!csrfPayload || csrfPayload.uid !== deviceId) {
+            const currentUid = session?.uid || deviceId;
+            if (!csrfPayload || csrfPayload.uid !== currentUid) {
                 return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
             }
 
@@ -420,7 +419,8 @@ export default async function handler(req, res) {
             // SECURITY: CSRF Protection - Verify CSRF token for state-changing requests
             const csrfHeader = req.headers['x-csrf-token'];
             const csrfPayload = verifyCsrfToken(csrfHeader);
-            if (!csrfPayload || csrfPayload.uid !== deviceId) {
+            const currentUid = session?.uid || deviceId;
+            if (!csrfPayload || csrfPayload.uid !== currentUid) {
                 console.warn(`Anti-Gravity Security: CSRF validation failed for ${maskDeviceId(deviceId)}`);
                 return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED', details: 'Invalid or missing CSRF token. Please reinitialize session.' });
             }

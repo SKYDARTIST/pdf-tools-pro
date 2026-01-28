@@ -99,7 +99,7 @@ export default async function handler(req, res) {
             operations_today: userData?.operations_today || 0,
             ai_docs_weekly: userData?.ai_docs_weekly || 0,
             ai_docs_monthly: userData?.ai_docs_monthly || 0,
-            ai_pack_credits: 999, // UNLIMITED AI
+            ai_pack_credits: userData?.ai_pack_credits ?? 999, // Current credits or start at 999
             last_reset_daily: userData?.last_operation_reset || new Date().toISOString(),
             last_reset_weekly: userData?.last_ai_weekly_reset || new Date().toISOString(),
             last_reset_monthly: userData?.last_ai_monthly_reset || new Date().toISOString(),
@@ -116,9 +116,11 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing request body' });
         }
 
+        // SECURITY: CRITICAL VULNERABILITY FIX (P0) - Tier Injection Prevention
+        // trusts NO client-provided state for billing fields.
         const dbUpdates = {
-            tier: updates.tier,
-            ai_pack_credits: updates.aiPackCredits,
+            // tier: updates.tier, // REMOVED: Prevent client-side override
+            // ai_pack_credits: updates.aiPackCredits, // REMOVED: Prevent client-side override
             operations_today: updates.operationsToday,
             ai_docs_weekly: updates.aiDocsThisWeek,
             ai_docs_monthly: updates.aiDocsThisMonth,

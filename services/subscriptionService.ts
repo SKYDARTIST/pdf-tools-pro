@@ -146,21 +146,7 @@ export const saveSubscription = (subscription: UserSubscription): void => {
 
 // Check if user is within the 20-day trial period
 export const isInTrialPeriod = (): boolean => {
-    /* DISABLED as requested
-    const subscription = getSubscription();
-
-    // If no trial start date, they're an old user or it was cleared - no trial
-    if (!subscription.trialStartDate) {
-        return false;
-    }
-
-    const trialStart = new Date(subscription.trialStartDate);
-    const now = new Date();
-    const daysSinceTrialStart = Math.floor((now.getTime() - trialStart.getTime()) / (24 * 60 * 60 * 1000));
-
-    // Trial lasts 20 days
-    return daysSinceTrialStart < 20 && daysSinceTrialStart >= 0;
-    */
+    // DISABLED: Users want to see actual credit usage updates now.
     return false;
 };
 
@@ -220,11 +206,6 @@ export const isNearAiLimit = (): boolean => {
 
 // Get the latest notification message if a milestone is hit
 export const getAiPackNotification = (): { message: string; type: 'milestone' | 'warning' | 'exhausted' } | null => {
-    // TEMPORARILY DISABLED FOR 20-DAY TESTING PERIOD (15-20 testers)
-    // Re-enable after testing is complete
-    return null;
-
-    /* ORIGINAL CODE - UNCOMMENT AFTER TESTING:
     const subscription = getSubscription();
     // Only notify if user actually has/had an AI pack
     if (subscription.aiPackCredits === undefined && (subscription.lastNotifiedCredits === undefined || subscription.lastNotifiedCredits === 0)) {
@@ -251,7 +232,6 @@ export const getAiPackNotification = (): { message: string; type: 'milestone' | 
     }
 
     return null;
-    */
 };
 
 // Acknowledge a notification to prevent re-rendering
@@ -384,7 +364,20 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     }
 
     // Logic for tracking usage
-    if (subscription.tier === SubscriptionTier.FREE) {
+    if (subscription.aiPackCredits > 0) {
+        // Priority 1: Use AI Pack Credits (the 999 balance)
+        subscription.aiPackCredits -= 1;
+        const remaining = subscription.aiPackCredits;
+        console.log(`AI Usage: HEAVY operation - AI Pack Credit consumed. ${remaining} remaining.`);
+
+        stats = {
+            tier: subscription.tier,
+            used: 1, // Current op
+            limit: remaining + 1,
+            remaining,
+            message: `AI Pack: ${remaining} credits remaining`
+        };
+    } else if (subscription.tier === SubscriptionTier.FREE) {
         subscription.aiDocsThisMonth += 1;
         const used = subscription.aiDocsThisMonth;
         const limit = FREE_LIMITS.aiDocsPerMonth;
