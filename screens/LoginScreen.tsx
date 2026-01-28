@@ -70,7 +70,7 @@ const LoginScreen: React.FC = () => {
                 localStorage.setItem('user_profile', JSON.stringify(reviewerProfile));
                 localStorage.setItem('user_tier', 'PRO');
                 localStorage.setItem('global_pro_override', 'true');
-                navigate('/workspace', { replace: true });
+                navigate('/ag-workspace', { replace: true });
                 return 0;
             }
             return next;
