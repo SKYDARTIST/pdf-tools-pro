@@ -63,6 +63,8 @@ const LoginScreen: React.FC = () => {
                 localStorage.setItem('google_uid', 'reviewer_555');
                 localStorage.setItem('google_name', 'Official App Reviewer');
                 localStorage.setItem('google_email', 'reviewer@google.com');
+                localStorage.setItem('user_tier', 'PRO');
+                localStorage.setItem('global_pro_override', 'true');
                 navigate('/workspace', { replace: true });
                 return 0;
             }
