@@ -143,7 +143,13 @@ class TaskLimitManager {
      * Check if user is Pro
      */
     static isPro(): boolean {
-        return true; // GLOBAL PRO OVERRIDE FOR TESTING/REVIEW
+        // If the reviewer bypass exists, return true
+        if (localStorage.getItem('global_pro_override') === 'true') {
+            return true;
+        }
+
+        const data = this.getData();
+        return data.isPro === true;
     }
 
     /**
@@ -161,11 +167,10 @@ class TaskLimitManager {
      * Reset to free (for testing)
      */
     static resetToFree(): void {
-        const data = this.getData();
-        this.saveData({
-            ...data,
-            isPro: false,
-        });
+        localStorage.removeItem('global_pro_override');
+        localStorage.removeItem(STORAGE_KEY);
+        // Also clear any cached subscription just in case
+        localStorage.removeItem('pdf_tools_subscription');
     }
 
     /**

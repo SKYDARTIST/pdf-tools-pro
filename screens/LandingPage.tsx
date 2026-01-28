@@ -20,6 +20,64 @@ const LandingPage: React.FC = () => {
         }
     };
 
+    const [tapCount, setTapCount] = React.useState(0);
+    const [isLoading, setIsLoading] = React.useState(false);
+
+    const handleNameTap = async () => {
+        const next = tapCount + 1;
+        setTapCount(next);
+
+        if (next >= 3) {
+            setTapCount(0);
+            setIsLoading(true);
+            try {
+                const { getDeviceId } = await import('../services/deviceService');
+                const { getCsrfToken } = await import('../services/csrfService');
+                const Config = (await import('../services/configService')).default;
+
+                const deviceId = await getDeviceId();
+                const csrfToken = getCsrfToken();
+                const authHeader = localStorage.getItem('ag_session_token');
+
+                const response = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': authHeader ? `Bearer ${authHeader}` : '',
+                        'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
+                        'x-ag-device-id': deviceId,
+                        'x-csrf-token': csrfToken || ''
+                    },
+                    body: JSON.stringify({
+                        type: 'verify_purchase',
+                        productId: 'reset_to_free',
+                        deviceId: deviceId,
+                        googleUid: localStorage.getItem('google_uid')
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('☢️ Protocols Reset: Wiping local memory...');
+                    localStorage.clear();
+                    // Nuclear clear for TaskLimitManager too
+                    const { default: TaskLimitManager } = await import('../utils/TaskLimitManager');
+                    TaskLimitManager.resetToFree();
+
+                    alert('☢️ NUCLEAR PROTOCOL RESET: All tiers, credits, and identities have been wiped from this device and the cloud. Restart the app for a clean slate.');
+                    window.location.reload();
+                } else {
+                    const data = await response.json();
+                    console.error('Reset Command Failed:', data);
+                    alert('⚠️ Protocol Reset Failed: ' + (data.error || 'Check network connection'));
+                }
+            } catch (e) {
+                console.error('Reset failed:', e);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     const handleMouseMove = (e: React.MouseEvent) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 20;
         const y = (e.clientY / window.innerHeight - 0.5) * 20;
@@ -104,12 +162,13 @@ const LandingPage: React.FC = () => {
                         </div>
 
                         <motion.h1
+                            onClick={handleNameTap}
                             style={{
                                 rotateX: mousePos.y * 0.1,
                                 rotateY: mousePos.x * -0.1,
                                 letterSpacing: '-0.08em'
                             }}
-                            className="text-6xl android-sm:text-5xl sm:text-9xl font-black uppercase leading-[0.8] text-[#000000] dark:text-white drop-shadow-2xl"
+                            className="text-6xl android-sm:text-5xl sm:text-9xl font-black uppercase leading-[0.8] text-[#000000] dark:text-white drop-shadow-2xl cursor-pointer"
                         >
                             ANTI<br />GRAVITY
                         </motion.h1>

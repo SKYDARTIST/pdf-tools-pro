@@ -238,7 +238,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
         const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
             const sub = getSubscription();
-            setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.tier === SubscriptionTier.FREE ? sub.aiDocsThisWeek : sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 1 : 10 });
+            setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 3 : 50 });
             setShowAiLimit(true);
             return;
         }

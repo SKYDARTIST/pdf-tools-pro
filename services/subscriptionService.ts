@@ -45,17 +45,16 @@ export interface UserSubscription {
 const STORAGE_KEY = STORAGE_KEYS.SUBSCRIPTION;
 let isHydrated = false; // Memory flag to track if we've synced with server this session
 
-// Free tier limits
 const FREE_LIMITS = {
     operationsPerDay: DEFAULTS.FREE_DAILY_LIMIT,
-    aiDocsPerMonth: DEFAULTS.FREE_MONTHLY_AI_DOCS,
-    maxFileSize: 5 * 1024 * 1024, // 5MB
+    aiDocsPerMonth: 3, // EXACT REQUESTed: 3 for free version
+    maxFileSize: 10 * 1024 * 1024, // 10MB
 };
 
 const PRO_LIMITS = {
     operationsPerDay: Infinity,
-    aiDocsPerMonth: DEFAULTS.PRO_MONTHLY_AI_DOCS,
-    maxFileSize: 50 * 1024 * 1024, // 50MB
+    aiDocsPerMonth: 50, // EXACT REQUESTED: 50 per month for pro pass
+    maxFileSize: 100 * 1024 * 1024, // 100MB
 };
 
 const PREMIUM_LIMITS = {
@@ -66,22 +65,31 @@ const PREMIUM_LIMITS = {
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (user?: any): Promise<UserSubscription> => {
+    return await forceReconcileFromServer();
+};
+
+// Force fetch from server and update local state
+export const forceReconcileFromServer = async (): Promise<UserSubscription> => {
     try {
+        console.log('Anti-Gravity Subscription: 🔄 Forcing server reconciliation...');
         const supabaseUsage = await fetchUserUsage();
         if (supabaseUsage) {
-            SecurityLogger.log('Anti-Gravity Subscription: ✅ Restored state from Supabase');
+            SecurityLogger.log('Anti-Gravity Subscription: ✅ Synchronized with Supabase');
             saveSubscription(supabaseUsage);
             isHydrated = true;
 
-            // Sync TaskLimitManager if needed
-            if (supabaseUsage.tier === SubscriptionTier.PRO) {
+            // Sync TaskLimitManager
+            if (supabaseUsage.tier === SubscriptionTier.PRO || supabaseUsage.tier === SubscriptionTier.LIFETIME) {
                 TaskLimitManager.upgradeToPro();
+            } else {
+                // EXPLICIT DOWNGRADE: If server says Free, local must be Free (Nuclear Logic)
+                TaskLimitManager.resetToFree();
             }
 
             return supabaseUsage;
         }
     } catch (e) {
-        console.warn('Anti-Gravity Subscription: Failed to restore from Supabase, falling back to local:', e);
+        console.warn('Anti-Gravity Subscription: Reconciliation failed:', e);
     }
 
     return getSubscription();
@@ -100,9 +108,18 @@ export const getSubscription = (): UserSubscription => {
                 saveSubscription(subscription);
             }
 
-            // SECURITY: Restore tier from TaskLimitManager (trusted source)
-            // Never trust tier from localStorage - it must come from Supabase
-            subscription.tier = TaskLimitManager.isPro() ? SubscriptionTier.PRO : SubscriptionTier.FREE;
+            // SECURITY: Restore tier from TaskLimitManager (trusted source) if local state is missing
+            if (!subscription.tier || subscription.tier === SubscriptionTier.FREE) {
+                if (TaskLimitManager.isPro()) {
+                    subscription.tier = SubscriptionTier.PRO;
+                }
+            }
+
+            // SANITY CHECK: Reset trial credits (999+) to 0 to force monthy quota usage
+            if (subscription.aiPackCredits >= 990) {
+                subscription.aiPackCredits = 0;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
+            }
 
             return subscription;
         } catch (e) {
@@ -120,7 +137,7 @@ export const getSubscription = (): UserSubscription => {
         operationsToday: 0,
         aiDocsThisWeek: 0,
         aiDocsThisMonth: 0,
-        aiPackCredits: isProFromLimit ? 100 : 0,
+        aiPackCredits: 0,
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
@@ -133,15 +150,11 @@ export const getSubscription = (): UserSubscription => {
 
 // Save subscription to localStorage
 export const saveSubscription = (subscription: UserSubscription): void => {
-    // SECURITY: Do not cache sensitive fields in localStorage to prevent manipulation.
-    // - aiPackCredits: Real value is restored from Supabase
-    // - tier: Must come from Supabase only, not from localStorage
-    // Only operational counters are persisted locally.
-    const toStore = { ...subscription };
-    toStore.aiPackCredits = 0;
-    delete toStore.tier; // Remove tier - always derive from Supabase or TaskLimitManager
+    // PERSISTENCE: We save the full state (tier, credits) locally for instant hydration.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
+    // NOTIFY UI: Dispatch custom event for reactive components (UsageStats)
+    window.dispatchEvent(new CustomEvent('subscription-updated'));
 };
 
 // Check if user is within the 20-day trial period
@@ -207,17 +220,30 @@ export const isNearAiLimit = (): boolean => {
 // Get the latest notification message if a milestone is hit
 export const getAiPackNotification = (): { message: string; type: 'milestone' | 'warning' | 'exhausted' } | null => {
     const subscription = getSubscription();
-    // Only notify if user actually has/had an AI pack
+
+    // 1. SILENCE for 999 pack (Unlimited Experience)
+    if (subscription.aiPackCredits >= 990) return null;
+
+    // 2. Only notify if user actually has/had an AI pack
     if (subscription.aiPackCredits === undefined && (subscription.lastNotifiedCredits === undefined || subscription.lastNotifiedCredits === 0)) {
         return null;
     }
 
     const credits = subscription.aiPackCredits || 0;
-    const lastNotified = subscription.lastNotifiedCredits ?? 101;
+
+    // 3. INITIALIZATION SAFETY: If lastNotified is not set, set it to current credits to avoid "Empty" flash on mount
+    if (subscription.lastNotifiedCredits === undefined) {
+        subscription.lastNotifiedCredits = credits;
+        saveSubscription(subscription);
+        return null;
+    }
+
+    const lastNotified = subscription.lastNotifiedCredits;
 
     // Don't notify if we haven't consumed anything since last notification
     if (credits === lastNotified) return null;
 
+    // 4. EXHAUSTED: Only if they just dropped to 0 from something higher
     if (credits === 0 && lastNotified > 0) {
         return { message: "AI Credits Empty. Buy more credits to continue using AI tools.", type: 'exhausted' };
     }
@@ -352,17 +378,6 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     const subscription = getSubscription();
     let stats = null;
 
-    // 20-DAY TRIAL: Unlimited AI usage
-    if (isInTrialPeriod()) {
-        return {
-            tier: SubscriptionTier.PRO,
-            used: 0,
-            limit: Infinity,
-            remaining: Infinity,
-            message: "Trial Period: Unlimited AI Access"
-        };
-    }
-
     // Logic for tracking usage
     if (subscription.aiPackCredits > 0) {
         // Priority 1: Use AI Pack Credits (the 999 balance)
@@ -372,8 +387,8 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
 
         stats = {
             tier: subscription.tier,
-            used: 1, // Current op
-            limit: remaining + 1,
+            used: 1,
+            limit: 999, // Total pack
             remaining,
             message: `AI Pack: ${remaining} credits remaining`
         };
@@ -382,45 +397,42 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
         const used = subscription.aiDocsThisMonth;
         const limit = FREE_LIMITS.aiDocsPerMonth;
         const remaining = Math.max(0, limit - used);
-        console.log(`AI Usage: HEAVY operation - Free tier: ${used}/${limit} used this month`);
 
         stats = {
             tier: SubscriptionTier.FREE,
             used,
             limit,
             remaining,
-            message: `Free Tier: ${used}/${limit} AI docs used`
+            message: `Free Tier: ${used}/${limit} docs used this month`
         };
-    } else if (subscription.tier === SubscriptionTier.PRO) {
+    } else {
+        // PRO or above (no pack credits)
         subscription.aiDocsThisMonth += 1;
         const used = subscription.aiDocsThisMonth;
         const limit = PRO_LIMITS.aiDocsPerMonth;
         const remaining = Math.max(0, limit - used);
-        console.log(`AI Usage: HEAVY operation - Pro tier: ${used}/${limit} used this month`);
 
         stats = {
-            tier: SubscriptionTier.PRO,
+            tier: subscription.tier,
             used,
             limit,
             remaining,
-            message: `Pro Plan: ${used}/${limit} AI docs used`
-        };
-    } else {
-        // Lifetime / Premium
-        console.log('AI Usage: HEAVY operation - Lifetime/Premium (Unlimited)');
-        stats = {
-            tier: subscription.tier,
-            used: 0,
-            limit: Infinity,
-            remaining: Infinity,
-            message: "Lifetime Access: Unlimited AI"
+            message: `Pro Plan: ${used}/${limit} docs used this month`
         };
     }
 
     saveSubscription(subscription);
-    await syncUsageToServer(subscription);
+
+    // SILENT SYNC: Sync to server in background
+    syncUsageToServer(subscription).catch(err => console.error('Subscription Sync Failed:', err));
 
     return stats;
+};
+
+// Internal helper for UsageStats to listen for updates
+export const subscribeToSubscription = (callback: () => void) => {
+    window.addEventListener('subscription-updated', callback);
+    return () => window.removeEventListener('subscription-updated', callback);
 };
 
 

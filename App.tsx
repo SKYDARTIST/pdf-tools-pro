@@ -173,27 +173,10 @@ const App: React.FC = () => {
 
 
 
-  // Global AI Notification Listener
+  // Global AI Notification Listener: Clears notification on navigation to keep UI clean
   React.useEffect(() => {
-    if (!isDataReady) return; // Don't check notifications until data is ready
-
-    // Check on mount and on location change
-    const checkNotification = () => {
-      const notification = getAiPackNotification();
-      if (notification) {
-        setActiveNotification(notification);
-      }
-    };
-
-    checkNotification();
-
-    // Also poll occasionally or listen for storage events if needed
-    const interval = setInterval(checkNotification, 2000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [location.pathname, isDataReady]);
+    setActiveNotification(null);
+  }, [location.pathname]);
 
   React.useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {

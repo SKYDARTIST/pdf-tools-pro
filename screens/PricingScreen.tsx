@@ -13,8 +13,25 @@ const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
   const [currentTier, setCurrentTier] = React.useState(getSubscription().tier);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [proPrice, setProPrice] = React.useState('$2.99');
+  const [proPrice, setProPrice] = React.useState('$7.99');
+  const [lifetimePrice, setLifetimePrice] = React.useState('$99');
 
+  React.useEffect(() => {
+    // Fetch localized prices from Google Play
+    const fetchPrices = async () => {
+      try {
+        const products = await BillingService.getProducts();
+        const pro = products.find(p => p.identifier === 'monthly_pro_pass');
+        const life = products.find(p => p.identifier === 'lifetime_pro_access');
+
+        if (pro) setProPrice(pro.price);
+        if (life) setLifetimePrice(life.price);
+      } catch (err) {
+        console.warn('Failed to fetch localized prices:', err);
+      }
+    };
+    fetchPrices();
+  }, []);
 
   React.useEffect(() => {
     // Re-read subscription state on mount in case it changed during boot
@@ -78,7 +95,7 @@ const PricingScreen: React.FC = () => {
     {
       id: SubscriptionTier.PRO,
       name: 'Pro Pass',
-      price: '$7.99',
+      price: proPrice,
       period: 'PER MONTH',
       badge: 'FLEXIBLE',
       features: [
@@ -87,14 +104,14 @@ const PricingScreen: React.FC = () => {
         { text: 'Priority Processing', icon: Star },
         { text: 'Cancel Anytime', icon: Check }
       ],
-      cta: currentTier === SubscriptionTier.PRO ? 'PLAN ACTIVE' : 'START MONTHLY',
-      disabled: currentTier === SubscriptionTier.PRO || isLoading,
+      cta: currentTier === SubscriptionTier.PRO ? 'PLAN ACTIVE' : (currentTier === SubscriptionTier.LIFETIME ? 'OWNED' : 'START MONTHLY'),
+      disabled: currentTier === SubscriptionTier.PRO || currentTier === SubscriptionTier.LIFETIME || isLoading,
       recommended: false
     },
     {
       id: SubscriptionTier.LIFETIME,
       name: 'Lifetime',
-      price: '$99',
+      price: lifetimePrice,
       period: 'ONE-TIME',
       badge: 'BEST VALUE',
       features: [
@@ -103,7 +120,7 @@ const PricingScreen: React.FC = () => {
         { text: 'Own It Forever', icon: Shield },
         { text: 'No Monthly Bill', icon: Star }
       ],
-      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'BUY ONCE',
+      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : (currentTier === SubscriptionTier.PRO ? 'UPGRADE' : 'BUY ONCE'),
       disabled: currentTier === SubscriptionTier.LIFETIME || isLoading,
       recommended: true
     }
@@ -183,10 +200,10 @@ const PricingScreen: React.FC = () => {
                     {isActive ? (
                       <div className="flex flex-col gap-1">
                         <span className="text-4xl font-black text-[#00C896] tracking-tighter">
-                          {tier.id === SubscriptionTier.PRO ? 'LIFETIME' : 'STANDARD'}
+                          {tier.id === SubscriptionTier.LIFETIME ? 'LIFETIME' : 'PRO ACTIVE'}
                         </span>
                         <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                          {tier.id === SubscriptionTier.PRO ? 'UTILITY UNLOCKED' : 'PROTOCOL ACTIVE'}
+                          {tier.id === SubscriptionTier.LIFETIME ? 'UTILITY UNLOCKED' : 'PROTOCOL ACTIVE'}
                         </span>
                       </div>
                     ) : (
@@ -198,8 +215,8 @@ const PricingScreen: React.FC = () => {
                           <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
                             {tier.period}
                           </span>
-                          <span className="text-[7px] font-mono font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">
-                            NON-RECURRING
+                          <span className="text-[7px] font-mono font-bold uppercase tracking-widest text-[#00C896] dark:text-[#00C896]">
+                            RENEWS MONTHLY
                           </span>
                         </div>
                       </>
@@ -222,13 +239,16 @@ const PricingScreen: React.FC = () => {
 
                 <motion.button
                   disabled={tier.disabled}
-                  onClick={() => tier.id === SubscriptionTier.PRO && handleProPurchase()}
+                  onClick={() => {
+                    if (tier.id === SubscriptionTier.PRO) handleProPurchase();
+                    if (tier.id === SubscriptionTier.LIFETIME) handleLifetimePurchase();
+                  }}
                   className={`w-full py-5 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all relative overflow-hidden ${tier.disabled
                     ? `bg-transparent border border-[#00C896]/30 ${isActive ? 'text-[#00C896]' : 'text-gray-400 cursor-not-allowed'}`
                     : 'bg-[#00C896] text-white shadow-xl hover:brightness-110 active:scale-95'
                     }`}
                 >
-                  {isLoading && tier.id === SubscriptionTier.PRO ? 'PROCESSING...' : tier.cta}
+                  {isLoading && (tier.id === SubscriptionTier.PRO || tier.id === SubscriptionTier.LIFETIME) ? 'PROCESSING...' : tier.cta}
                 </motion.button>
               </motion.div>
             );
@@ -365,31 +385,45 @@ const PricingScreen: React.FC = () => {
               onClick={async () => {
                 setIsLoading(true);
                 try {
+                  const { forceReconcileFromServer } = await import('../services/subscriptionService');
+                  await forceReconcileFromServer();
+                  const updatedSub = getSubscription();
+                  alert(`🛰️ RECONCILIATION COMPLETE: Your current tier is now verified as [${updatedSub.tier.toUpperCase()}].`);
+                  setCurrentTier(updatedSub.tier);
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              className="px-8 py-3 rounded-full bg-[#00C896]/10 border border-[#00C896]/30 text-[10px] font-black uppercase tracking-[0.3em] text-[#00C896] hover:bg-[#00C896]/20 transition-all flex items-center justify-center gap-2"
+            >
+              <Activity size={12} className={isLoading ? 'animate-spin' : ''} />
+              {isLoading ? 'SYNCING...' : 'RECONCILE TIERS'}
+            </button>
+
+            <button
+              onClick={async () => {
+                setIsLoading(true);
+                try {
                   const restored = await BillingService.restorePurchases();
-                  const updatedSub = getSubscription(); // Refresh
+                  const { forceReconcileFromServer } = await import('../services/subscriptionService');
+                  const updatedSub = await forceReconcileFromServer();
 
                   if (restored) {
-                    if (updatedSub.tier === SubscriptionTier.LIFETIME) {
-                      alert('✅ Success! Lifetime status restored from Google Play.');
-                    } else if (updatedSub.tier === SubscriptionTier.PRO) {
-                      alert('✅ Success! Pro status restored from Google Play.');
-                    }
-                    window.location.reload();
+                    alert(`✅ Success! Purchase restored. Your status is now [${updatedSub.tier.toUpperCase()}].`);
+                    setCurrentTier(updatedSub.tier);
                   } else {
-                    alert('⚠️ No purchases found in Google Play.\n\nIf you already purchased, your payment might not have been acknowledged by Google Play.\n\nUse the manual activation button below.');
+                    alert('⚠️ No active purchases found in Google Play metadata.\n\nIf you already purchased, ensure you are signed in to the correct Google Play account.');
                   }
                 } finally {
                   setIsLoading(false);
                 }
               }}
               disabled={isLoading}
-              className="px-8 py-3 rounded-full border border-gray-200 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-[#00C896] hover:border-[#00C896]/30 transition-all flex items-center gap-2"
+              className="px-8 py-3 rounded-full border border-gray-200 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-[#00C896] hover:border-[#00C896]/30 transition-all flex items-center justify-center gap-2"
             >
               <Activity size={12} className={isLoading ? 'animate-spin' : ''} />
-              {isLoading ? 'SYNCING...' : 'RESTORE PURCHASES'}
+              {isLoading ? 'HANDSHAKE STORE' : 'RESTORE PURCHASES'}
             </button>
-
-
           </div>
         </div>
       </div>

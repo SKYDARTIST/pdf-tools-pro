@@ -18,33 +18,27 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
     const subscription = TaskLimitManager.getSubscriptionSync();
     const aiCredits = subscription?.aiPackCredits || 0;
 
-    if (isPro) {
+    const isLifetime = subscription?.tier === 'lifetime';
+
+    if (isPro || isLifetime) {
         if (variant === 'header') {
             return (
                 <div className="flex items-center gap-1.5 shrink-0 overflow-hidden">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={async () => {
+                            const { forceReconcileFromServer } = await import('../services/subscriptionService');
+                            await forceReconcileFromServer();
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0 cursor-pointer hover:bg-emerald-500/20 transition-all"
                     >
                         <Crown size={12} fill="currentColor" className="text-emerald-500" />
                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 whitespace-nowrap">
-                            PRO ACTIVE
+                            {isLifetime ? 'LIFETIME' : 'PRO ACTIVE'}
                         </span>
                     </motion.div>
-
-                    {aiCredits > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00C896]/10 border border-[#00C896]/20 rounded-full shrink-0 shadow-[0_0_15px_rgba(0,200,150,0.1)]"
-                        >
-                            <Sparkles size={11} className="text-[#00C896]" fill="currentColor" />
-                            <span className="text-[9px] font-black uppercase tracking-tighter text-[#00C896] whitespace-nowrap">
-                                {aiCredits}
-                            </span>
-                        </motion.div>
-                    )}
                 </div>
             );
         }
@@ -61,11 +55,15 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent skew-x-12"
                 />
                 <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-500 shrink-0 shadow-lg border border-emerald-500/20">
-                    <Crown size={20} fill="currentColor" />
+                    {isLifetime ? <Sparkles size={20} className="text-emerald-500" /> : <Crown size={20} fill="currentColor" />}
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-[11px] font-mono font-black uppercase tracking-widest text-emerald-400">PRO AUTHORIZATION</span>
-                    <span className="text-[8px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5 whitespace-nowrap truncate">UNLIMITED ACCESS</span>
+                    <span className="text-[11px] font-mono font-black uppercase tracking-widest text-emerald-400">
+                        {isLifetime ? 'LIFETIME AUTHORIZATION' : 'PRO AUTHORIZATION'}
+                    </span>
+                    <span className="text-[8px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5 whitespace-nowrap truncate">
+                        {isLifetime ? 'UNLIMITED LIFETIME ACCESS' : 'UNLIMITED ACCESS'}
+                    </span>
                 </div>
             </motion.div>
         );

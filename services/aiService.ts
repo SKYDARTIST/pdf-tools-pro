@@ -49,6 +49,14 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
     }
 
+    if (response.status === 500) {
+      const errorData = await response.json().catch(() => ({}));
+      if (errorData.error === 'SERVICE_UNAVAILABLE') {
+        return "BACKEND_ERROR: Neural Link Syncing. The system is balancing load, please try again in a moment.";
+      }
+      throw new Error(`Neural system failure (500). ${errorData.details || 'Synapse Overload Detected'}`);
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const msg = errorData.error || 'Proxy Processing Error';

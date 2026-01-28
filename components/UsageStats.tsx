@@ -2,16 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import FileHistoryManager from '../utils/FileHistoryManager';
 import { Zap, Activity, Sparkles } from 'lucide-react';
-import { getSubscription } from '../services/subscriptionService';
+import { getSubscription, subscribeToSubscription } from '../services/subscriptionService';
 
 const UsageStats: React.FC = () => {
     const [stats, setStats] = useState(FileHistoryManager.getStats());
     const [subscription, setSubscription] = useState(getSubscription());
 
     useEffect(() => {
-        setStats(FileHistoryManager.getStats());
-        setSubscription(getSubscription());
+        const update = () => {
+            setStats(FileHistoryManager.getStats());
+            setSubscription(getSubscription());
+        };
+
+        // Initial load
+        update();
+
+        // Listen for subscription updates (from recordAIUsage)
+        return subscribeToSubscription(update);
     }, []);
+
+    // DERIVE DISPLAY: Show "Used" for subscription tiers, "Credits" for balance packs
+    const getAiDisplayValue = () => {
+        if (!subscription) return "0";
+        if (subscription.aiPackCredits > 0) return subscription.aiPackCredits.toString();
+        return (subscription.aiDocsThisMonth || 0).toString();
+    };
+
+    const getAiLabel = () => {
+        if (subscription && subscription.aiPackCredits > 0) return 'AI Credits';
+        return 'AI Used';
+    };
 
     const statCards = [
         {
@@ -28,8 +48,8 @@ const UsageStats: React.FC = () => {
         },
         {
             icon: Sparkles,
-            label: 'AI Credits',
-            value: (subscription?.aiPackCredits || 0).toString(),
+            label: getAiLabel(),
+            value: getAiDisplayValue(),
             delay: 0.3,
             isAi: true
         }

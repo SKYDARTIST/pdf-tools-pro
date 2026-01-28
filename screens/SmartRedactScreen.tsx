@@ -180,8 +180,8 @@ const SmartRedactScreen: React.FC = () => {
             const subscription = getSubscription();
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
-                used: subscription.tier === SubscriptionTier.FREE ? subscription.aiDocsThisWeek : subscription.aiDocsThisMonth,
-                limit: subscription.tier === SubscriptionTier.FREE ? 1 : 10
+                used: subscription.aiDocsThisMonth,
+                limit: subscription.tier === SubscriptionTier.FREE ? 3 : 50
             });
             setShowAiLimit(true);
             return;

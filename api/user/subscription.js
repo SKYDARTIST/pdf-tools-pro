@@ -30,8 +30,8 @@ export default async function handler(req, res) {
     const token = authHeader && authHeader.split(' ')[1];
 
     const session = verifySessionToken(token);
-    // FORCE LEGACY BYPASS FOR TESTING/REVIEW
-    const legacyEnabled = true;
+    // FORCE LEGACY BYPASS OFF FOR PRODUCTION
+    const legacyEnabled = false;
 
     // Must have a valid session matching the device (or be a verified Google user)
     if (!session || (session.uid !== deviceId && !session.is_auth)) {
@@ -75,15 +75,15 @@ export default async function handler(req, res) {
         }
 
         if (!userData) {
-            // AUTO-CREATE record if it doesn't exist (Global PRO Logic)
+            // AUTO-CREATE record if it doesn't exist (Global FREE Logic)
             const newUser = {
                 google_uid: googleUid,
                 device_id: deviceId,
-                tier: 'pro',
+                tier: 'free',
                 operations_today: 0,
                 ai_docs_weekly: 0,
                 ai_docs_monthly: 0,
-                ai_pack_credits: 999,
+                ai_pack_credits: 0,
                 last_operation_reset: new Date().toISOString(),
                 last_ai_weekly_reset: new Date().toISOString(),
                 last_ai_monthly_reset: new Date().toISOString(),
@@ -95,11 +95,11 @@ export default async function handler(req, res) {
         }
 
         return res.status(200).json({
-            tier: 'pro', // GLOBAL PRO OVERRIDE
+            tier: userData?.tier || 'free', // USE ACTUAL TIER
             operations_today: userData?.operations_today || 0,
             ai_docs_weekly: userData?.ai_docs_weekly || 0,
             ai_docs_monthly: userData?.ai_docs_monthly || 0,
-            ai_pack_credits: userData?.ai_pack_credits ?? 999, // Current credits or start at 999
+            ai_pack_credits: userData?.ai_pack_credits || 0,
             last_reset_daily: userData?.last_operation_reset || new Date().toISOString(),
             last_reset_weekly: userData?.last_ai_weekly_reset || new Date().toISOString(),
             last_reset_monthly: userData?.last_ai_monthly_reset || new Date().toISOString(),
@@ -114,6 +114,17 @@ export default async function handler(req, res) {
 
         if (!updates) {
             return res.status(400).json({ error: 'Missing request body' });
+        }
+
+        // SECURITY: CSRF Protection (Defense-in-Depth)
+        const csrfHeader = req.headers['x-csrf-token'];
+        const currentUid = session?.uid || deviceId;
+        // Import verifyCsrfToken logic or use verifySessionToken as they share the same signing secret
+        const csrfPayload = verifySessionToken(csrfHeader);
+
+        if (!csrfPayload || csrfPayload.uid !== currentUid) {
+            console.warn(`API SECURITY: CSRF validation failed for subscription update from ${deviceId}`);
+            return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
         }
 
         // SECURITY: CRITICAL VULNERABILITY FIX (P0) - Tier Injection Prevention

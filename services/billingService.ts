@@ -7,8 +7,10 @@ import AuthService from './authService';
 import Config from './configService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 
-export const LIFETIME_PRODUCT_ID = 'pro_access_lifetime';
-export const PRO_MONTHLY_ID = 'pro_subscription_monthly';
+const LIFETIME_PRODUCT_ID = 'lifetime_pro_access';
+const LIFETIME_PRODUCT_ID_ALT = 'pro_access_lifetime'; // Legacy variant
+export const PRO_MONTHLY_ID = 'monthly_pro_pass';
+export const PRO_MONTHLY_PLAN_ID = 'monthly-standard';
 
 
 export interface ProductInfo {
@@ -67,21 +69,28 @@ class BillingService {
     // Force sync both storage keys to ensure they're consistent
     private forceSyncStorageKeys(): void {
         try {
-            const limitData = TaskLimitManager.isPro();
+            const isLocalPro = TaskLimitManager.isPro();
             const subscription = TaskLimitManager.getSubscriptionSync();
+            const subTier = subscription?.tier || SubscriptionTier.FREE;
+            const isSubPro = (subTier === SubscriptionTier.PRO || subTier === SubscriptionTier.PREMIUM || subTier === SubscriptionTier.LIFETIME);
 
-            console.log('Anti-Gravity Billing: Storage sync check:', {
-                limitManagerPro: limitData,
-                subscriptionTier: subscription?.tier
+            console.log('Anti-Gravity Billing: Unified sync check:', {
+                isLocalPro,
+                subTier,
+                isSubPro
             });
 
-            // If one says Pro but the other doesn't, sync them
-            if (limitData && subscription?.tier !== SubscriptionTier.PRO) {
-                console.log('Anti-Gravity Billing: Syncing subscription tier to PRO');
-                upgradeTier(SubscriptionTier.PRO);
-            } else if (!limitData && (subscription?.tier === SubscriptionTier.PRO || subscription?.tier === SubscriptionTier.PREMIUM || subscription?.tier === SubscriptionTier.LIFETIME)) {
-                console.log('Anti-Gravity Billing: Syncing TaskLimitManager to PRO');
+            // 1. If Sub says Pro/Lifetime but Local doesn't, upgrade Local (The Source of Truth for daily tasks)
+            if (isSubPro && !isLocalPro) {
+                console.log('Anti-Gravity Billing: Syncing TaskLimitManager to PRO (from Sub state)');
                 TaskLimitManager.upgradeToPro();
+            }
+
+            // 2. If Local says Pro but Sub is Free, upgrade Sub to PRO
+            // (Note: If it was Lifetime, we'd only know after it syncs from server/Google Play)
+            if (isLocalPro && subTier === SubscriptionTier.FREE) {
+                console.log('Anti-Gravity Billing: Syncing subscription tier to PRO (from TaskLimit state)');
+                upgradeTier(SubscriptionTier.PRO);
             }
         } catch (error) {
             console.error('Anti-Gravity Billing: Storage sync error:', error);
@@ -96,13 +105,21 @@ class BillingService {
             }
 
             console.log('Anti-Gravity Billing: Fetching all products');
-            const result = await NativePurchases.getProducts({
-                productIdentifiers: [LIFETIME_PRODUCT_ID, PRO_MONTHLY_ID],
+            const inAppResult = await NativePurchases.getProducts({
+                productIdentifiers: [LIFETIME_PRODUCT_ID],
                 productType: PURCHASE_TYPE.INAPP
             });
-            console.log('Anti-Gravity Billing: Fetch Result:', result);
 
-            return result.products.map(p => ({
+            const subsResult = await NativePurchases.getProducts({
+                productIdentifiers: [PRO_MONTHLY_ID],
+                productType: PURCHASE_TYPE.SUBS
+            });
+
+            console.log('Anti-Gravity Billing: Fetch Result:', { inAppResult, subsResult });
+
+            const allProducts = [...inAppResult.products, ...subsResult.products];
+
+            return allProducts.map(p => ({
                 identifier: p.identifier,
                 description: p.description,
                 title: p.title,
@@ -125,10 +142,11 @@ class BillingService {
                 }
             }
 
-            console.log('Anti-Gravity Billing: Starting Pro purchase');
+            console.log('Anti-Gravity Billing: Starting Pro subscription purchase');
             const result = await NativePurchases.purchaseProduct({
                 productIdentifier: PRO_MONTHLY_ID,
-                productType: PURCHASE_TYPE.INAPP
+                productType: PURCHASE_TYPE.SUBS,
+                planIdentifier: PRO_MONTHLY_PLAN_ID
             });
 
             if (result.transactionId) {
@@ -191,43 +209,23 @@ class BillingService {
         } catch (error: any) {
             // Handle "already owns this item" error from Google Play
             const errorMessage = error?.message || error?.toString?.() || String(error);
-            const alreadyOwnsError =
-                errorMessage.toLowerCase().includes('already own') ||
-                errorMessage.toLowerCase().includes('purchased') ||
-                error?.code === 'USER_CANCELLED' && errorMessage.includes('own');
+            console.log('Anti-Gravity Billing: Pro Purchase Error Debug:', { message: errorMessage, error });
+
+            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|purchased/i;
+            const alreadyOwnsError = alreadyOwnsRegex.test(errorMessage);
 
             if (alreadyOwnsError) {
-                console.log('Anti-Gravity Billing: ✅ Product already owned on Google Play - Direct activation');
+                console.log('Anti-Gravity Billing: ✅ Product already owned on Google Play - Triggering server sync');
 
                 // User already owns it on Google Play (confirmed by the error)
                 // Directly activate Pro locally since we've confirmed ownership
                 try {
+                    console.log('Anti-Gravity Billing: 🛡️ Triggering server-side verification for already owned Pro...');
+                    // For already owned items, we don't have a new transactionId, so we use 'already_owned'
+                    await this.verifyPurchaseOnServer('already_owned', PRO_MONTHLY_ID, 'already_owned');
+
                     TaskLimitManager.upgradeToPro();
                     upgradeTier(SubscriptionTier.PRO, undefined, true);
-
-                    // STRICT VERIFICATION: Ensure both storage systems agreed
-                    const isProInLimit = TaskLimitManager.isPro();
-                    const subscription = TaskLimitManager.getSubscriptionSync();
-                    const isProInSub = subscription?.tier === SubscriptionTier.PRO || subscription?.tier === SubscriptionTier.PREMIUM || subscription?.tier === SubscriptionTier.LIFETIME;
-
-                    if (!isProInLimit || !isProInSub) {
-                        console.warn('Anti-Gravity Billing: ⚠️ Storage drift detected after "already owned" activation', {
-                            isProInLimit,
-                            isProInSub
-                        });
-
-                        // RETRY: Try one more forceful sync
-                        if (isProInLimit && !isProInSub) {
-                            upgradeTier(SubscriptionTier.PRO, undefined, true);
-                        } else if (!isProInLimit) {
-                            TaskLimitManager.upgradeToPro();
-                        }
-                    }
-
-                    console.log('Anti-Gravity Billing: ✅ Pro directly activated after "already owned" detection:', {
-                        tier: subscription?.tier,
-                        aiPackCredits: subscription?.aiPackCredits
-                    });
 
                     alert('✅ Pro status activated! You already own this product on Google Play.');
                     return true;
@@ -292,7 +290,15 @@ class BillingService {
             return false;
         } catch (error: any) {
             const errorMessage = error?.message || String(error);
-            if (errorMessage.toLowerCase().includes('already own')) {
+            console.log('Anti-Gravity Billing: Lifetime Purchase Error Debug:', { message: errorMessage, error });
+
+            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|purchased/i;
+            if (alreadyOwnsRegex.test(errorMessage)) {
+                console.log('Anti-Gravity Billing: ✅ Lifetime already owned - Triggering server sync');
+                // Try both IDs for server sync safety
+                await this.verifyPurchaseOnServer('already_owned', LIFETIME_PRODUCT_ID, 'already_owned');
+                await this.verifyPurchaseOnServer('already_owned', LIFETIME_PRODUCT_ID_ALT, 'already_owned');
+
                 upgradeTier(SubscriptionTier.LIFETIME, undefined, true);
                 alert('✅ Lifetime status activated! You already own this.');
                 return true;
@@ -401,39 +407,29 @@ class BillingService {
                 if (productId === PRO_MONTHLY_ID || productId === LIFETIME_PRODUCT_ID) {
                     hasProRestore = true;
 
-                    // PRIORITY CHECK: If we already found Lifetime in this loop or have it, don't downgrade to Pro
-                    const currentTierWait = TaskLimitManager.getSubscriptionSync()?.tier;
-                    if (currentTierWait === SubscriptionTier.LIFETIME && productId === PRO_MONTHLY_ID) {
-                        console.log('Anti-Gravity Billing: 🛡️ Skipping Pro restore because Lifetime is already active');
-                        continue;
-                    }
-
                     console.log('Anti-Gravity Billing: ✅ Restoring Status from manual restore...', { productId });
 
                     const tier = productId === LIFETIME_PRODUCT_ID ? SubscriptionTier.LIFETIME : SubscriptionTier.PRO;
 
-                    TaskLimitManager.upgradeToPro();
-                    upgradeTier(tier, purchase.transactionId, true);
+                    // SECURITY: Must verify on server to update the backend tier
+                    // Native restore events provide 'transactionId' and 'transactionReceipt' (on iOS) or 'purchaseToken'
+                    const transactionId = purchase.transactionId || purchase.orderId || 'restore_sync';
+                    const verificationToken = purchase.purchaseToken || transactionId;
 
-                    // STRICT VERIFICATION: Ensure both storage systems agreed
-                    const isProInLimit = TaskLimitManager.isPro();
-                    const subscription = TaskLimitManager.getSubscriptionSync();
-                    const isProInSub = subscription?.tier === SubscriptionTier.PRO || subscription?.tier === SubscriptionTier.PREMIUM || subscription?.tier === SubscriptionTier.LIFETIME;
+                    console.log('Anti-Gravity Billing: 🛡️ Triggering server-side verification for restored item...');
+                    const isVerified = await this.verifyPurchaseOnServer(verificationToken, productId, transactionId);
 
-                    if (!isProInLimit || !isProInSub) {
-                        console.warn('Anti-Gravity Billing: ⚠️ Storage drift detected after manual restore', {
-                            isProInLimit,
-                            isProInSub
-                        });
-
-                        // RETRY: Try one more forceful sync
-                        if (isProInLimit && !isProInSub) {
-                            upgradeTier(tier, purchase.transactionId, true);
-                        } else if (!isProInLimit) {
-                            TaskLimitManager.upgradeToPro();
-                        }
+                    if (isVerified) {
+                        console.log('Anti-Gravity Billing: 🛡️ Server verification successful for restored item');
+                        TaskLimitManager.upgradeToPro();
+                        upgradeTier(tier, transactionId, true);
+                        alert(`✅ ${tier === SubscriptionTier.LIFETIME ? 'Lifetime' : 'Pro'} status restored!`);
+                    } else {
+                        console.error('Anti-Gravity Billing: ❌ Server verification failed for restored item');
+                        // We still allow local upgrade for better UX, but it may be overwritten later
+                        TaskLimitManager.upgradeToPro();
+                        upgradeTier(tier, transactionId, true);
                     }
-                    alert(`✅ ${tier === SubscriptionTier.LIFETIME ? 'Lifetime' : 'Pro'} status restored!`);
                 }
 
 
