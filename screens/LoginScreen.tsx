@@ -61,8 +61,13 @@ const LoginScreen: React.FC = () => {
             if (next >= 5) {
                 // Official Reviewer Session Init
                 localStorage.setItem('google_uid', 'reviewer_555');
-                localStorage.setItem('google_name', 'Official App Reviewer');
-                localStorage.setItem('google_email', 'reviewer@google.com');
+                const reviewerProfile = {
+                    google_uid: 'reviewer_555',
+                    email: 'reviewer@google.com',
+                    name: 'Official App Reviewer',
+                    picture: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
+                };
+                localStorage.setItem('user_profile', JSON.stringify(reviewerProfile));
                 localStorage.setItem('user_tier', 'PRO');
                 localStorage.setItem('global_pro_override', 'true');
                 navigate('/workspace', { replace: true });
