@@ -223,14 +223,14 @@ const App: React.FC = () => {
       tapCountRef.current += 1;
       clearTimeout(tapTimeout);
 
-      if (tapCountRef.current === 3) {
+      if (tapCountRef.current === 6) {
         setDebugPanelOpen(true);
         tapCountRef.current = 0;
       }
 
       tapTimeout = setTimeout(() => {
         tapCountRef.current = 0;
-      }, 500);
+      }, 1000);
     };
 
     window.addEventListener('click', handleTap);
