@@ -53,6 +53,23 @@ const LoginScreen: React.FC = () => {
         }
     };
 
+    const [tapCount, setTapCount] = useState(0);
+
+    const handleLogoTap = () => {
+        setTapCount(prev => {
+            const next = prev + 1;
+            if (next >= 5) {
+                // Official Reviewer Session Init
+                localStorage.setItem('google_uid', 'reviewer_555');
+                localStorage.setItem('google_name', 'Official App Reviewer');
+                localStorage.setItem('google_email', 'reviewer@google.com');
+                navigate('/workspace', { replace: true });
+                return 0;
+            }
+            return next;
+        });
+    };
+
     return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 relative overflow-hidden">
             {/* Immersive Background Element */}
@@ -69,12 +86,13 @@ const LoginScreen: React.FC = () => {
                 {/* Brand Identity */}
                 <div className="text-center space-y-6">
                     <motion.div
+                        onClick={handleLogoTap}
                         animate={{
                             rotateY: [0, 360],
                             boxShadow: ["0 0 20px rgba(16, 185, 129, 0.2)", "0 0 50px rgba(16, 185, 129, 0.4)", "0 0 20px rgba(16, 185, 129, 0.2)"]
                         }}
                         transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
-                        className="w-20 h-20 bg-emerald-500 rounded-[24px] mx-auto flex items-center justify-center shadow-2xl"
+                        className="w-20 h-20 bg-emerald-500 rounded-[24px] mx-auto flex items-center justify-center shadow-2xl cursor-pointer"
                     >
                         <Zap size={40} className="text-white fill-current" />
                     </motion.div>
