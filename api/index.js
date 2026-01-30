@@ -36,6 +36,13 @@ const PURCHASE_MAX_REQUESTS = 2; // Strict limit for payment attempts
 
 // GOOGLE PLAY CONFIGURATION
 const PACKAGE_NAME = 'com.cryptobulla.antigravity';
+const VALID_PRODUCTS = new Set([
+    'lifetime_pro_access',
+    'pro_access_lifetime', // legacy
+    'monthly_pro_pass',
+    'ai_pack_100',
+    'ai_pack_500'
+]);
 let playDeveloperApi = null;
 
 /**
@@ -145,8 +152,14 @@ export default async function handler(req, res) {
 
         if (allowedOrigin) {
             res.setHeader('Access-Control-Allow-Origin', origin);
+        } else if (IS_PRODUCTION) {
+            // SECURITY (V6.0): STRICT CORS LOCKDOWN
+            // Deny all requests from unauthorized origins in production.
+            console.error(`🛡️ Anti-Gravity Security: Blocked CORS request from unauthorized origin: ${origin}`);
+            return res.status(403).json({ error: 'UNAUTHORIZED_ORIGIN' });
         } else {
-            res.setHeader('Access-Control-Allow-Origin', '*'); // Fallback for easier testing
+            // Development fallback
+            res.setHeader('Access-Control-Allow-Origin', '*');
         }
 
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -161,10 +174,35 @@ export default async function handler(req, res) {
         // GOOGLE PLAY WEBHOOK (RTDN - Real Time Developer Notifications)
         // This endpoint must be public (no session auth) but verified with Google's Signature
         if (req.body?.message?.data) {
-            console.log('🛡️ RTDN: Google Play Webhook received. Validating...');
-            // TODO: Implement signature verification with Google's public key
-            // This endpoint would handle renewals/cancellations in the background
-            return res.status(200).json({ success: true, message: 'WEB_HOOK_ACKNOWLEDGED' });
+            console.log('🛡️ RTDN: Google Play Webhook received. Validating Signature...');
+
+            const signature = req.headers['x-goog-signature'];
+            const publicKey = process.env.GOOGLE_PLAY_WEBHOOK_PUBLIC_KEY;
+
+            if (IS_PRODUCTION && (!signature || !publicKey)) {
+                console.error('🛡️ Anti-Gravity Security: Webhook signature or Public Key missing.');
+                return res.status(401).json({ error: 'WEBHOOK_AUTH_MISSING' });
+            }
+
+            try {
+                if (IS_PRODUCTION) {
+                    const verifier = crypto.createVerify('RSA-SHA256');
+                    verifier.update(JSON.stringify(req.body));
+                    const isValid = verifier.verify(publicKey, signature, 'base64');
+
+                    if (!isValid) {
+                        console.warn('🛡️ Anti-Gravity Security: Webhook signature verification failed.');
+                        return res.status(401).json({ error: 'INVALID_WEBHOOK_SIGNATURE' });
+                    }
+                }
+
+                // Process RTDN (Renewals, Cancellations, etc.)
+                console.log('🛡️ RTDN: Signature valid. Processing developer notification...');
+                return res.status(200).json({ success: true, message: 'WEB_HOOK_ACKNOWLEDGED' });
+            } catch (e) {
+                console.error('🛡️ RTDN: Verification error:', e.message);
+                return res.status(500).json({ error: 'WEBHOOK_VERIFICATION_FAILED' });
+            }
         }
 
         // Ensure POST method
@@ -432,22 +470,39 @@ export default async function handler(req, res) {
             if (requestType === 'verify_purchase') {
                 const { purchaseToken, productId, transactionId, timestamp } = req.body;
 
-                // SECURITY (V4): Purchase-specific rate limiting
-                const rateLimitKey = `rl_purchase_${deviceId}`;
-                const attempts = await kv.incr(rateLimitKey);
-                if (attempts === 1) await kv.expire(rateLimitKey, RATE_LIMIT_WINDOW);
-                if (attempts > PURCHASE_MAX_REQUESTS) {
-                    return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS' });
+                // 0. WHITELIST CHECK (V6.0)
+                if (!VALID_PRODUCTS.has(productId)) {
+                    console.error(`🛡️ Anti-Gravity Security: Invalid ProductID ${productId} from ${maskDeviceId(deviceId)}`);
+                    return res.status(400).json({ error: 'INVALID_PRODUCT_ID' });
                 }
 
-                // 1. STRICT CSRF: No bypass for purchase-related endpoints (v3.0 Secure)
+                // 1. TIERED RATE LIMITING (V6.0) - Burst (5/5min) and Sustain (10/hr)
+                if (kv && deviceId) {
+                    const burstKey = `rl:purchase:burst:${deviceId}`;
+                    const sustainKey = `rl:purchase:sustain:${deviceId}`;
+
+                    const [burstCount, sustainCount] = await Promise.all([
+                        kv.incr(burstKey),
+                        kv.incr(sustainKey)
+                    ]);
+
+                    if (burstCount === 1) await kv.expire(burstKey, 300); // 5 mins
+                    if (sustainCount === 1) await kv.expire(sustainKey, 3600); // 1 hour
+
+                    if (burstCount > 5 || sustainCount > 10) {
+                        console.warn(`🛡️ Anti-Gravity Security: Purchase Throttled for ${maskDeviceId(deviceId)} (Burst: ${burstCount}, Sustain: ${sustainCount})`);
+                        return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS', retryAfter: '60s' });
+                    }
+                }
+
+                // 2. STRICT CSRF: No device ID fallback for purchase endpoints (V5.0/V6.0)
                 const csrfHeader = req.headers['x-csrf-token'];
                 const csrfPayload = verifyCsrfToken(csrfHeader);
                 const googleUid = session?.uid;
-                const isValidCsrf = csrfPayload && (csrfPayload.uid === googleUid || csrfPayload.uid === deviceId);
+                const isValidCsrf = csrfPayload && csrfPayload.uid === googleUid;
 
                 if (!isValidCsrf) {
-                    console.warn(`Anti-Gravity Security: Purchase CSRF failure for ${maskDeviceId(deviceId)}`);
+                    console.warn(`🛡️ Anti-Gravity Security: Purchase CSRF failure for ${maskDeviceId(deviceId)}`);
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
                 }
 

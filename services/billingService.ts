@@ -60,6 +60,9 @@ class BillingService {
                 }
             }
 
+            // SECURITY (V6.0): Process any pending purchases that didn't complete verification
+            this.processPendingPurchases().catch(e => console.warn('Anti-Gravity Billing: Pending purchase recovery failed:', e));
+
             this.isInitialized = true;
             return true;
         } catch (error) {
@@ -167,10 +170,15 @@ class BillingService {
 
                 // SECURITY: Verify and Grant on SERVER SIDE (v2.9.0)
                 const purchaseToken = (result as any).purchaseToken || result.transactionId;
+
+                // V6.0: Store in pending queue before verification
+                await this.addToPendingQueue({ purchaseToken, productId: PRO_MONTHLY_ID, transactionId: result.transactionId });
+
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_MONTHLY_ID, result.transactionId);
 
                 if (verifyResult) {
                     console.log('Anti-Gravity Billing: ✅ Server verified and granted Pro status');
+                    await this.removeFromPendingQueue(result.transactionId); // V6.0: Success!
                     // Sync in correct order - TaskLimitManager first, then SubscriptionService
                     TaskLimitManager.upgradeToPro();
                     upgradeTier(SubscriptionTier.PRO, result.transactionId);
@@ -301,10 +309,15 @@ class BillingService {
 
                 // SECURITY: Verify on SERVER SIDE
                 const purchaseToken = (result as any).purchaseToken || result.transactionId;
+
+                // V6.0: Store in pending queue before verification
+                await this.addToPendingQueue({ purchaseToken, productId: LIFETIME_PRODUCT_ID, transactionId: result.transactionId });
+
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
 
                 if (verifyResult) {
                     console.log('Anti-Gravity Billing: ✅ Server verified status');
+                    await this.removeFromPendingQueue(result.transactionId); // V6.0: Success!
                     TaskLimitManager.upgradeToPro();
                     upgradeTier(SubscriptionTier.LIFETIME, result.transactionId);
                     alert('Lifetime Access Unlocked!');
@@ -660,6 +673,57 @@ class BillingService {
         const signatureBuffer = await crypto.subtle.sign("HMAC", key, dataBuffer);
         const hashArray = Array.from(new Uint8Array(signatureBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // SECURITY (V6.0): Pending Purchase Queue Management
+    // Prevents revenue loss if app crashes between Google Payment and Server Verification
+
+    private async addToPendingQueue(purchase: any): Promise<void> {
+        try {
+            const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
+            // Avoid duplicates
+            if (!queue.find((p: any) => p.transactionId === purchase.transactionId)) {
+                queue.push(purchase);
+                localStorage.setItem('ag_pending_purchases', JSON.stringify(queue));
+                console.log('Anti-Gravity Security: Added purchase to pending queue:', purchase.transactionId);
+            }
+        } catch (e) {
+            console.error('Failed to update pending queue:', e);
+        }
+    }
+
+    private async removeFromPendingQueue(transactionId: string): Promise<void> {
+        try {
+            const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
+            const newQueue = queue.filter((p: any) => p.transactionId !== transactionId);
+            localStorage.setItem('ag_pending_purchases', JSON.stringify(newQueue));
+            console.log('Anti-Gravity Security: Cleared verified purchase from queue:', transactionId);
+        } catch (e) {
+            console.error('Failed to clear pending queue:', e);
+        }
+    }
+
+    private async processPendingPurchases(): Promise<void> {
+        const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
+        if (queue.length === 0) return;
+
+        console.log(`Anti-Gravity Security: 🔍 Hub-link found ${queue.length} pending purchases. Attempting recovery...`);
+
+        for (const purchase of queue) {
+            try {
+                const verified = await this.verifyPurchaseOnServer(purchase.purchaseToken, purchase.productId, purchase.transactionId);
+                if (verified) {
+                    console.log('Anti-Gravity Security: ✅ Recovered pending purchase:', purchase.transactionId);
+                    TaskLimitManager.upgradeToPro();
+                    const tier = (purchase.productId.includes('lifetime') || purchase.productId.includes('pass'))
+                        ? SubscriptionTier.LIFETIME : SubscriptionTier.PRO;
+                    upgradeTier(tier, purchase.transactionId, true);
+                    await this.removeFromPendingQueue(purchase.transactionId);
+                }
+            } catch (e) {
+                console.warn('Anti-Gravity Security: Failed to process pending purchase recovery:', purchase.transactionId);
+            }
+        }
     }
 }
 

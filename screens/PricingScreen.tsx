@@ -13,19 +13,36 @@ const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
   const [currentTier, setCurrentTier] = React.useState(getSubscription().tier);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [proPrice, setProPrice] = React.useState('$7.99');
-  const [lifetimePrice, setLifetimePrice] = React.useState('$99');
+  const [proPrice, setProPrice] = React.useState('...');
+  const [lifetimePrice, setLifetimePrice] = React.useState('...');
 
   React.useEffect(() => {
     // Fetch localized prices from Google Play
     const fetchPrices = async () => {
       try {
         const products = await BillingService.getProducts();
-        const pro = products.find(p => p.identifier === 'monthly_pro_pass');
-        const life = products.find(p => p.identifier === 'lifetime_pro_access');
 
-        if (pro) setProPrice(pro.price);
-        if (life) setLifetimePrice(life.price);
+        // ADVANCED MATCHING (V6.1)
+        // Lifetime usually has a clean ID
+        const life = products.find(p =>
+          p.identifier === 'lifetime_pro_access' ||
+          p.identifier === 'pro_access_lifetime' ||
+          p.identifier.includes('lifetime')
+        );
+
+        // Pro Subscriptions often have suffixes (e.g. monthly_pro_pass:monthly-standard)
+        const pro = products.find(p => p.identifier.includes('monthly_pro_pass')) ||
+          products.find(p => p.identifier.toLowerCase().includes('pro') && !p.identifier.toLowerCase().includes('lifetime')) ||
+          products.find(p => p.identifier.toLowerCase().includes('monthly'));
+
+        if (pro) {
+          console.log('🛡️ Pricing: Matched Pro Plan:', pro.identifier);
+          setProPrice(pro.price);
+        }
+        if (life) {
+          console.log('🛡️ Pricing: Matched Lifetime Plan:', life.identifier);
+          setLifetimePrice(life.price);
+        }
       } catch (err) {
         console.warn('Failed to fetch localized prices:', err);
       }
@@ -301,7 +318,7 @@ const PricingScreen: React.FC = () => {
               <tbody className="text-[10px] font-black uppercase">
                 {[
                   { f: "Data Privacy", c: "Cloud (Risk)", l: "Isolated Disk" },
-                  { f: "Pricing", c: "$240/Year", l: "$99 One-Time" },
+                  { f: "Pricing", c: "Yearly Subscription", l: `${lifetimePrice} One-Time` },
                   { f: "Watermarks", c: "Paid Only", l: "Never" },
                 ].map((row, i) => (
                   <tr key={i} className="border-b border-black/5 dark:border-white/5 last:border-0">
