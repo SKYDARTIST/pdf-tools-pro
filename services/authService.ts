@@ -3,6 +3,7 @@ import { getDeviceId } from './deviceService';
 import { getIntegrityToken } from './integrityService';
 import Config from './configService';
 import { setCsrfToken, clearCsrfToken } from './csrfService';
+import { STORAGE_KEYS } from '../utils/constants';
 
 // Backend URL selection (DRY principle)
 const getBackendUrl = () => {
@@ -141,6 +142,15 @@ class AuthService {
         localStorage.removeItem('ag_session_expiry');
         // SECURITY: Clear CSRF token on logout
         clearCsrfToken();
+    }
+
+    /**
+     * Helper to detect authorized test accounts
+     */
+    isTestAccount(): boolean {
+        const uid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
+        const TEST_ACCOUNTS = ['reviewer_555', 'test@example.com']; // Whitelist
+        return TEST_ACCOUNTS.some(testId => uid?.includes(testId));
     }
 }
 

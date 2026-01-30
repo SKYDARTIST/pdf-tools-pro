@@ -5,6 +5,9 @@ import { google } from 'googleapis';
 // Anti-Gravity Backend v2.9.0 - Cyber Security Hardened
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
 
+// ENVIRONMENT DETECTION
+const IS_PRODUCTION = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
+
 // Supabase credentials - MUST be set in Vercel environment variables
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -70,6 +73,10 @@ async function validateWithGooglePlay(productId, purchaseToken) {
 
     // SECURITY: Fail-CLOSED in production
     if (!api) {
+        if (!IS_PRODUCTION) {
+            console.warn('⚠️ Development mode: Allowing purchase without Google Play verification.');
+            return true;
+        }
         console.error('⚠️ Google Play API not available. Verification failed.');
         return false;
     }

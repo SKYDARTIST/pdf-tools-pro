@@ -6,6 +6,7 @@ import { getCsrfToken } from './csrfService';
 import AuthService from './authService';
 import Config from './configService';
 import TaskLimitManager from '../utils/TaskLimitManager';
+import { STORAGE_KEYS } from '../utils/constants';
 
 const LIFETIME_PRODUCT_ID = 'lifetime_pro_access';
 const LIFETIME_PRODUCT_ID_ALT = 'pro_access_lifetime'; // Legacy variant
@@ -25,6 +26,7 @@ class BillingService {
     private isInitialized = false;
     private restoredPurchases: any[] = [];
     private transactionListener: any = null;
+    private isTestMode = AuthService.isTestAccount(); // Automatically detect test accounts
 
     async initialize() {
         try {
@@ -215,7 +217,18 @@ class BillingService {
             const alreadyOwnsError = alreadyOwnsRegex.test(errorMessage);
 
             if (alreadyOwnsError) {
-                console.log('Anti-Gravity Billing: ✅ Product already owned - Verifying with server...');
+                const deviceId = await getDeviceId();
+                const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
+
+                console.log('Anti-Gravity Billing: 🔍 Product already owned - attempting recovery:', {
+                    productId: PRO_MONTHLY_ID,
+                    currentAccount: googleUid,
+                    deviceId: deviceId
+                });
+
+                // SECURITY: Fingerprint for log analysis
+                const fingerprint = `${PRO_MONTHLY_ID}_${deviceId}_${googleUid}`;
+                console.log('Anti-Gravity Billing: Purchase fingerprint:', fingerprint);
 
                 try {
                     // SECURITY FIX #3: Get the actual purchase token from Google Play to prevent spoofing
@@ -309,7 +322,18 @@ class BillingService {
 
             const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|not\s*purchased/i;
             if (alreadyOwnsRegex.test(errorMessage)) {
-                console.log('Anti-Gravity Billing: ✅ Lifetime already owned - Verifying...');
+                const deviceId = await getDeviceId();
+                const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
+
+                console.log('Anti-Gravity Billing: 🔍 Lifetime already owned - attempting recovery:', {
+                    productId: LIFETIME_PRODUCT_ID,
+                    currentAccount: googleUid,
+                    deviceId: deviceId
+                });
+
+                // SECURITY: Fingerprint for log analysis
+                const fingerprint = `${LIFETIME_PRODUCT_ID}_${deviceId}_${googleUid}`;
+                console.log('Anti-Gravity Billing: Purchase fingerprint:', fingerprint);
 
                 try {
                     const ownedPurchase = await this.getOwnedPurchase(LIFETIME_PRODUCT_ID, PURCHASE_TYPE.INAPP);
@@ -563,6 +587,42 @@ class BillingService {
             console.error('Anti-Gravity Billing: Failed to query owned purchases:', error);
             return null;
         }
+    }
+
+    /**
+     * EXPERT TOOL: Debug purchase state
+     * Dumps all Google Play and Local state to console for troubleshooting
+     */
+    async debugPurchaseState(): Promise<void> {
+        console.log('=== ANTI-GRAVITY PURCHASE DEBUG REPORT ===');
+        try {
+            const inAppPurchases = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.INAPP });
+            const subPurchases = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS });
+
+            console.log('📲 Google Play (In-App):', JSON.stringify(inAppPurchases, null, 2));
+            console.log('📲 Google Play (Subs):', JSON.stringify(subPurchases, null, 2));
+
+            // Check local state
+            const subscription = TaskLimitManager.getSubscriptionSync();
+            console.log('💾 Local Storage State:', {
+                tier: subscription?.tier,
+                isPro: TaskLimitManager.isPro(),
+                credits: subscription?.aiPackCredits
+            });
+
+            // Check server state
+            const serverUsage = await fetchUserUsage();
+            console.log('☁️ Supabase Server State:', serverUsage);
+
+            console.log('🔧 App Config:', {
+                apiUrl: Config.VITE_AG_API_URL,
+                isTestMode: this.isTestMode
+            });
+
+        } catch (error) {
+            console.error('❌ Debug Report Failed:', error);
+        }
+        console.log('=== END DEBUG REPORT ===');
     }
 }
 
