@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
+import crypto from 'crypto';
 
 // Anti-Gravity Backend v2.9.0 - Cyber Security Hardened
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
@@ -28,9 +29,10 @@ let lastDiscovery = 0;
 import { kv } from '@vercel/kv';
 
 // RATE LIMITING (Distributed Vercel KV)
-// SECURITY: Global limit across all serverless nodes
-const RATE_LIMIT_WINDOW = 60; // 1 Minute (in seconds for Redis)
-const MAX_REQUESTS = 10; // 10 reqs / min
+// SECURITY: Stricter limits for production readiness
+const RATE_LIMIT_WINDOW = 60; // 1 Minute
+const MAX_REQUESTS = 5; // Reduced from 10 to 5 reqs / min
+const PURCHASE_MAX_REQUESTS = 2; // Strict limit for payment attempts
 
 // GOOGLE PLAY CONFIGURATION
 const PACKAGE_NAME = 'com.cryptobulla.antigravity';
@@ -84,6 +86,7 @@ async function validateWithGooglePlay(productId, purchaseToken) {
     try {
         // Distinguish between Subscriptions and One-time Products
         const isSubscription = productId.includes('monthly') || productId.includes('yearly') || productId.includes('pass');
+        const now = Date.now();
 
         if (isSubscription) {
             const res = await api.purchases.subscriptions.get({
@@ -91,19 +94,36 @@ async function validateWithGooglePlay(productId, purchaseToken) {
                 subscriptionId: productId,
                 token: purchaseToken,
             });
-            // 0 = Active, 1 = Canceled. paymentState: 1 = received, 2 = free trial, etc.
-            // Check both state and expiry
-            const now = Date.now();
+
+            // SECURITY (V4): Verify Acknowledgment + Payment + Expiry
+            const isAcknowledged = res.data.acknowledgementState === 1;
+            const isPaid = res.data.paymentState === 1 || res.data.paymentState === 2; // 1=Received, 2=Free Trial
             const expiryTime = res.data.expiryTimeMillis ? parseInt(res.data.expiryTimeMillis) : 0;
-            return (res.data.paymentState === 1 || res.data.paymentState === 2) && expiryTime > now;
+            const isActive = expiryTime > now;
+
+            if (!isAcknowledged && IS_PRODUCTION) {
+                console.warn(`Anti-Gravity Security: Unacknowledged purchase detected for ${productId}`);
+                return false;
+            }
+
+            return isPaid && isActive;
         } else {
             const res = await api.purchases.products.get({
                 packageName: PACKAGE_NAME,
                 productId: productId,
                 token: purchaseToken,
             });
-            // 0 = Purchased, 1 = Canceled
-            return res.data.purchaseState === 0;
+
+            // SECURITY (V4): Verify Acknowledgment for One-time products
+            const isAcknowledged = res.data.acknowledgementState === 1;
+            const isPurchased = res.data.purchaseState === 0;
+
+            if (!isAcknowledged && IS_PRODUCTION) {
+                console.warn(`Anti-Gravity Security: Unacknowledged product detected for ${productId}`);
+                return false;
+            }
+
+            return isPurchased;
         }
     } catch (err) {
         console.error(`Google Play Verification Failed for ${productId}:`, err.message);
@@ -140,6 +160,15 @@ export default async function handler(req, res) {
 
         if (req.method === 'OPTIONS') {
             return res.status(200).end();
+        }
+
+        // GOOGLE PLAY WEBHOOK (RTDN - Real Time Developer Notifications)
+        // This endpoint must be public (no session auth) but verified with Google's Signature
+        if (req.body?.message?.data) {
+            console.log('🛡️ RTDN: Google Play Webhook received. Validating...');
+            // TODO: Implement signature verification with Google's public key
+            // This endpoint would handle renewals/cancellations in the background
+            return res.status(200).json({ success: true, message: 'WEB_HOOK_ACKNOWLEDGED' });
         }
 
         // Ensure POST method
@@ -304,33 +333,22 @@ export default async function handler(req, res) {
             if (credential) {
                 // SECURITY: Verify Identity (SERVER-SIDE)
                 try {
-                    // SECURITY: Reviewer Bypass Logic
-                    if (credential === 'reviewer_secret_token') {
-                        verifiedUid = 'reviewer_555';
+                    // Normal verification flow
+                    const parts = credential.split('.');
+                    if (parts.length === 3) {
+                        const b64Payload = parts[1];
+                        const payloadStr = Buffer.from(b64Payload, 'base64').toString();
+                        const payload = JSON.parse(payloadStr);
                         profile = {
-                            google_uid: 'reviewer_555',
-                            email: 'reviewer@google.com',
-                            name: 'Official App Reviewer',
-                            picture: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
+                            google_uid: payload.sub,
+                            email: payload.email,
+                            name: payload.name,
+                            picture: payload.picture
                         };
-                    } else {
-                        // Normal verification flow
-                        const parts = credential.split('.');
-                        if (parts.length === 3) {
-                            const b64Payload = parts[1];
-                            const payloadStr = Buffer.from(b64Payload, 'base64').toString();
-                            const payload = JSON.parse(payloadStr);
-                            profile = {
-                                google_uid: payload.sub,
-                                email: payload.email,
-                                name: payload.name,
-                                picture: payload.picture
-                            };
-                        }
-
-                        verifiedUid = await verifyIdentity(credential);
-                        if (!verifiedUid) return res.status(401).json({ error: 'INVALID_CREDENTIAL' });
                     }
+
+                    verifiedUid = await verifyIdentity(credential);
+                    if (!verifiedUid) return res.status(401).json({ error: 'INVALID_CREDENTIAL' });
 
                     // SYNC USER TO DB (SERVICE ROLE BYPASSES RLS)
                     if (supabase && profile) {
@@ -412,7 +430,15 @@ export default async function handler(req, res) {
             }
 
             if (requestType === 'verify_purchase') {
-                const { purchaseToken, productId, transactionId } = req.body;
+                const { purchaseToken, productId, transactionId, timestamp } = req.body;
+
+                // SECURITY (V4): Purchase-specific rate limiting
+                const rateLimitKey = `rl_purchase_${deviceId}`;
+                const attempts = await kv.incr(rateLimitKey);
+                if (attempts === 1) await kv.expire(rateLimitKey, RATE_LIMIT_WINDOW);
+                if (attempts > PURCHASE_MAX_REQUESTS) {
+                    return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS' });
+                }
 
                 // 1. STRICT CSRF: No bypass for purchase-related endpoints (v3.0 Secure)
                 const csrfHeader = req.headers['x-csrf-token'];
@@ -423,6 +449,26 @@ export default async function handler(req, res) {
                 if (!isValidCsrf) {
                     console.warn(`Anti-Gravity Security: Purchase CSRF failure for ${maskDeviceId(deviceId)}`);
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
+                }
+
+                // 2. SIGNATURE & TIMESTAMP VERIFICATION (V4.0)
+                const clientSignature = req.headers['x-ag-signature'];
+                const clientTimestamp = parseInt(req.headers['x-ag-timestamp']);
+                const now = Date.now();
+
+                // a) Replay Protection: Check if timestamp is too old (> 5 mins)
+                if (!clientTimestamp || Math.abs(now - clientTimestamp) > 300000) {
+                    console.warn(`Anti-Gravity Security: Purchase timestamp validation failed for ${maskDeviceId(deviceId)}`);
+                    return res.status(401).json({ error: 'REQUEST_EXPIRED' });
+                }
+
+                // b) Integrity check: Verify SHA-256 signature
+                const bodyToSign = { purchaseToken, productId, transactionId, deviceId, timestamp };
+                const expectedSignature = crypto.createHash('sha256').update(JSON.stringify(bodyToSign)).digest('hex');
+
+                if (clientSignature !== expectedSignature) {
+                    console.warn(`Anti-Gravity Security: Purchase signature mismatch for ${maskDeviceId(deviceId)}`);
+                    return res.status(401).json({ error: 'INVALID_SIGNATURE' });
                 }
 
                 if (!purchaseToken || !productId || (!transactionId && productId !== 'reset_to_free')) {

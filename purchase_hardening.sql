@@ -36,6 +36,11 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+    -- SECURITY (V4): Validate amount to prevent overflow or abuse
+    IF p_amount <= 0 OR p_amount > 1000 THEN
+        RAISE EXCEPTION 'Invalid credit amount: %', p_amount;
+    END IF;
+
     -- Update device-based usage
     UPDATE ag_user_usage 
     SET ai_pack_credits = COALESCE(ai_pack_credits, 0) + p_amount,

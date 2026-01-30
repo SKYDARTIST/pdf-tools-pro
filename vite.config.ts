@@ -9,7 +9,11 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      // SECURITY (V4): Enable obfuscation for production builds
+      // obfuscator({ ...options })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

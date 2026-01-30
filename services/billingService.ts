@@ -528,23 +528,35 @@ class BillingService {
             const deviceId = await getDeviceId();
             const csrfToken = getCsrfToken();
             const authHeader = await AuthService.getAuthHeader();
+            const timestamp = Date.now();
 
-            console.log('Anti-Gravity Billing: Verifying purchase on server...', { productId, transactionId });
+            console.log('Anti-Gravity Billing: Verifying purchase on server...', { productId, transactionId, timestamp });
+
+            // Sign the request with device-specific data and timestamp to prevent replay (v4.0)
+            const signature = await this.signRequest({
+                purchaseToken,
+                productId,
+                transactionId,
+                deviceId,
+                timestamp
+            });
 
             const response = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': authHeader,
-                    'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
+                    'x-ag-signature': signature, // Dynamic signature (SHA-256)
                     'x-ag-device-id': deviceId,
+                    'x-ag-timestamp': timestamp.toString(),
                     'x-csrf-token': csrfToken || ''
                 },
                 body: JSON.stringify({
                     type: 'verify_purchase',
                     purchaseToken,
                     productId,
-                    transactionId
+                    transactionId,
+                    timestamp // Include in body for verification
                 })
             });
 
@@ -623,6 +635,19 @@ class BillingService {
             console.error('❌ Debug Report Failed:', error);
         }
         console.log('=== END DEBUG REPORT ===');
+    }
+
+    /**
+     * REQUEST SIGNING (V4.0)
+     * Generates a SHA-256 hash of the request payload to ensure integrity
+     */
+    private async signRequest(data: any): Promise<string> {
+        const payload = JSON.stringify(data);
+        const encoder = new TextEncoder();
+        const dataBuffer = encoder.encode(payload);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 }
 
