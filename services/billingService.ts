@@ -501,9 +501,7 @@ class BillingService {
                         if (!silent) alert(`✅ ${tier === SubscriptionTier.LIFETIME ? 'Lifetime' : 'Pro'} status restored!`);
                     } else {
                         console.error('Anti-Gravity Billing: ❌ Server verification failed for restored item');
-                        // We still allow local upgrade for better UX, but it may be overwritten later
-                        TaskLimitManager.upgradeToPro();
-                        upgradeTier(tier, transactionId, true);
+                        // SECURITY (Audit High #4): DO NOT upgrade locally if server verification fails
                     }
                 }
             }
@@ -645,8 +643,22 @@ class BillingService {
         const payload = JSON.stringify(data);
         const encoder = new TextEncoder();
         const dataBuffer = encoder.encode(payload);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
+
+        // SECURE HMAC SIGNING (V5.0)
+        // Use the same secret key from VITE_AG_PROTOCOL_SIGNATURE (conceptually our HMAC secret)
+        const secret = Config.VITE_AG_PROTOCOL_SIGNATURE || "REPLACE_WITH_SECURE_HMAC_SECRET";
+        const keyData = encoder.encode(secret);
+
+        const key = await crypto.subtle.importKey(
+            "raw",
+            keyData,
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign"]
+        );
+
+        const signatureBuffer = await crypto.subtle.sign("HMAC", key, dataBuffer);
+        const hashArray = Array.from(new Uint8Array(signatureBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 }

@@ -70,7 +70,8 @@ const PREMIUM_LIMITS = {
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (user?: any): Promise<UserSubscription> => {
     // Proactive reconciliation on every boot (Security Fix #7)
-    reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
+    // Await drift check first to settle tier before returning reconcile
+    await reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
     return await forceReconcileFromServer();
 };
 
@@ -211,7 +212,7 @@ export const saveSubscription = (subscription: UserSubscription): void => {
 
 // Check if user is within the 20-day trial period
 export const isInTrialPeriod = (): boolean => {
-    // DISABLED: Users want to see actual credit usage updates now.
+    // Audit Response P2: Completely disabled trial logic
     return false;
 };
 

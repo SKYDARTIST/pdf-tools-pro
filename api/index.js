@@ -75,11 +75,7 @@ async function validateWithGooglePlay(productId, purchaseToken) {
 
     // SECURITY: Fail-CLOSED in production
     if (!api) {
-        if (!IS_PRODUCTION) {
-            console.warn('⚠️ Development mode: Allowing purchase without Google Play verification.');
-            return true;
-        }
-        console.error('⚠️ Google Play API not available. Verification failed.');
+        console.error('🛡️ Anti-Gravity Security: Google Play API not available. Critical Failure.');
         return false;
     }
 
@@ -234,7 +230,11 @@ export default async function handler(req, res) {
         const { createHmac, randomBytes, timingSafeEqual } = await import('node:crypto');
 
         // SECURE SIGNING KEY: Use dedicated session secret, fallback to service key for safety
-        const sessionSecret = process.env.SESSION_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const sessionSecret = process.env.AG_PROTOCOL_SIGNATURE;
+        if (!sessionSecret) {
+            console.error("🛡️ Anti-Gravity Security: AG_PROTOCOL_SIGNATURE is missing. Rejecting auth.");
+            return null;
+        }
 
         if (!sessionSecret) {
             console.error('FATAL: SESSION_TOKEN_SECRET or SUPABASE_SERVICE_ROLE_KEY missing');
@@ -451,23 +451,23 @@ export default async function handler(req, res) {
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
                 }
 
-                // 2. SIGNATURE & TIMESTAMP VERIFICATION (V4.0)
+                // 2. SIGNATURE & TIMESTAMP VERIFICATION (V5.0 HMAC)
                 const clientSignature = req.headers['x-ag-signature'];
                 const clientTimestamp = parseInt(req.headers['x-ag-timestamp']);
                 const now = Date.now();
 
-                // a) Replay Protection: Check if timestamp is too old (> 5 mins)
+                const hmacSecret = process.env.AG_PROTOCOL_SIGNATURE;
+
                 if (!clientTimestamp || Math.abs(now - clientTimestamp) > 300000) {
-                    console.warn(`Anti-Gravity Security: Purchase timestamp validation failed for ${maskDeviceId(deviceId)}`);
+                    console.warn(`🛡️ Anti-Gravity Security: Expired request from ${maskDeviceId(deviceId)}`);
                     return res.status(401).json({ error: 'REQUEST_EXPIRED' });
                 }
 
-                // b) Integrity check: Verify SHA-256 signature
-                const bodyToSign = { purchaseToken, productId, transactionId, deviceId, timestamp };
-                const expectedSignature = crypto.createHash('sha256').update(JSON.stringify(bodyToSign)).digest('hex');
+                const bodyToSign = JSON.stringify({ purchaseToken, productId, transactionId, deviceId, timestamp });
+                const expectedSignature = crypto.createHmac('sha256', hmacSecret).update(bodyToSign).digest('hex');
 
                 if (clientSignature !== expectedSignature) {
-                    console.warn(`Anti-Gravity Security: Purchase signature mismatch for ${maskDeviceId(deviceId)}`);
+                    console.warn(`🛡️ Anti-Gravity Security: HMAC Mismatch for ${maskDeviceId(deviceId)}`);
                     return res.status(401).json({ error: 'INVALID_SIGNATURE' });
                 }
 
@@ -644,9 +644,7 @@ export default async function handler(req, res) {
                 const csrfHeader = req.headers['x-csrf-token'];
                 const csrfPayload = verifyCsrfToken(csrfHeader);
 
-                // CSRF RELAXATION (v2.9.4): Allow token to match either Google UID OR Device ID
-                // This prevents 403 errors when users login and their memory-token is still for their device
-                const isValidCsrf = csrfPayload && (csrfPayload.uid === session?.uid || csrfPayload.uid === deviceId);
+                const isValidCsrf = csrfPayload && csrfPayload.uid === session?.uid;
 
                 if (!isValidCsrf) {
                     console.warn(`Anti-Gravity Security: CSRF mismatch (Token Uid: ${csrfPayload?.uid}, Device: ${deviceId}, User: ${session?.uid})`);
@@ -723,19 +721,13 @@ export default async function handler(req, res) {
                     .eq(queryTarget, currentUid)
                     .single();
 
-                // FAIL-OPEN FOR PRO: If user is verified Pro but DB check fails, let them through
-                // SECURITY: CRITICAL FIX - Don't grant "Pro" just for being logged in (session?.is_auth)
-                // This was accidentally allowing all Google users to bypass AI limits.
-                const isVerifiedPro = usage?.tier === 'pro' || usage?.tier === 'lifetime' || session?.uid === 'reviewer_555';
-
+                // SECURITY: STRICT FAIL-CLOSED (Audit Response P0)
                 if (error) {
-                    if (isVerifiedPro) {
-                        console.warn("Supabase Sync Warning (Pro Fail-Open): Quota check failed, allowing Pro request.");
-                    } else {
-                        console.error("Supabase Sync Error (Fail-Closed Engaged):", { message: error.message, code: error.code });
-                        return res.status(500).json({ error: "SERVICE_UNAVAILABLE", details: "Quota check failed. Please try again." });
-                    }
+                    console.error("🛡️ Supabase Sync Error (Fail-Closed Engaged):", { message: error.message, code: error.code });
+                    return res.status(500).json({ error: "SERVICE_UNAVAILABLE", details: "Quota check failed. Please try again." });
                 }
+
+                const isVerifiedPro = usage?.tier === 'pro' || usage?.tier === 'lifetime' || session?.uid === 'reviewer_555';
 
                 if (usage || isVerifiedPro) {
                     // If we have a record, perform actual deduction (Async/Background for performance)
