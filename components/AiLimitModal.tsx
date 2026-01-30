@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Crown, Zap, AlertCircle, Loader2 } from 'lucide-react';
 import { getSubscription, SubscriptionTier, AiBlockMode } from '../services/subscriptionService';
 import BillingService from '../services/billingService';
+import { useNavigate } from 'react-router-dom';
 
 interface AiLimitModalProps {
     isOpen: boolean;
@@ -19,34 +20,13 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
     used = 0,
     limit = 0
 }) => {
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const subscription = getSubscription();
-    const isFreeUser = subscription.tier === SubscriptionTier.FREE;
 
-    const handleProPurchase = async () => {
-        setIsLoading(true);
-        try {
-            const success = await BillingService.purchasePro();
-            if (success) {
-                onClose();
-                window.location.reload();
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleAiPackPurchase = async () => {
-        setIsLoading(true);
-        try {
-            const success = await BillingService.purchaseAiPack();
-            if (success) {
-                onClose();
-                window.location.reload();
-            }
-        } finally {
-            setIsLoading(false);
-        }
+    const handleNavigateToPricing = () => {
+        onClose();
+        navigate('/pricing');
     };
 
     // Modal content based on block mode
@@ -56,16 +36,13 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                 icon: Crown,
                 title: 'AI Limit Reached',
                 subtitle: `${used}/${limit} Free AI Docs Used`,
-                description: 'Upgrade to Pro for 10 AI documents per month, or buy an AI Pack for 100 credits.',
+                description: 'Unlock 50 AI documents per month and unlimited PDF tasks with Pro access.',
                 primaryAction: {
-                    label: 'Upgrade to Pro - $2.99',
-                    onClick: handleProPurchase,
+                    label: 'View Pro Plans',
+                    onClick: handleNavigateToPricing,
                     color: 'black'
                 },
-                secondaryAction: {
-                    label: 'Buy AI Pack - $4.99',
-                    onClick: handleAiPackPurchase
-                }
+                secondaryAction: null
             };
         } else {
             // BUY_CREDITS mode
@@ -73,10 +50,10 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                 icon: Sparkles,
                 title: 'Monthly Limit Reached',
                 subtitle: `${used}/${limit} Pro AI Docs Used`,
-                description: 'You\'ve used all 10 AI documents this month. Buy an AI Pack for 100 more credits.',
+                description: "You've reached your monthly allowance. Visit the pricing page to secure more AI credits.",
                 primaryAction: {
-                    label: 'Buy 100 AI Credits - $4.99',
-                    onClick: handleAiPackPurchase,
+                    label: 'Get AI Credits',
+                    onClick: handleNavigateToPricing,
                     color: '#00C896'
                 },
                 secondaryAction: null
@@ -165,7 +142,7 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                                         </h3>
                                         <div className="space-y-2">
                                             <InfoItem text="Unlimited PDF Tasks" />
-                                            <InfoItem text="10 AI Docs per Month" />
+                                            <InfoItem text="50 AI Docs per Month" />
                                             <InfoItem text="Lifetime Access" />
                                         </div>
                                     </div>

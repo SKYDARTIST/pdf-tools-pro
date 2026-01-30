@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    const session = verifySessionToken(token);
+    const session = await verifySessionToken(token, supabase);
     // FORCE LEGACY BYPASS OFF FOR PRODUCTION
     const legacyEnabled = false;
 
@@ -119,8 +119,8 @@ export default async function handler(req, res) {
         // SECURITY: CSRF Protection (Defense-in-Depth)
         const csrfHeader = req.headers['x-csrf-token'];
         const currentUid = session?.uid || deviceId;
-        // Import verifyCsrfToken logic or use verifySessionToken as they share the same signing secret
-        const csrfPayload = verifySessionToken(csrfHeader);
+        // CSRF verification using the same database-backed logic
+        const csrfPayload = await verifySessionToken(csrfHeader, supabase);
 
         if (!csrfPayload || csrfPayload.uid !== currentUid) {
             console.warn(`API SECURITY: CSRF validation failed for subscription update from ${deviceId}`);

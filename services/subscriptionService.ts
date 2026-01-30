@@ -2,11 +2,11 @@ import { fetchUserUsage, syncUsageToServer } from './usageService';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import { SecurityLogger } from '../utils/securityUtils';
 
-import { STORAGE_KEYS, SUBSCRIPTION_TIERS, AI_OPERATION_TYPES, HEADERS, DEFAULTS } from '../utils/constants';
+import { STORAGE_KEYS, SUBSCRIPTION_TIERS, AI_OPERATION_TYPES, DEFAULTS } from '../utils/constants';
 import AuthService from './authService';
 import Config from './configService';
 import { getDeviceId } from './deviceService';
-import { getCsrfToken } from './csrfService';
+import { secureFetch } from './apiService';
 
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
@@ -84,16 +84,8 @@ export const reconcileSubscriptionDrift = async (): Promise<void> => {
         const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
         if (!googleUid) return;
 
-        const authHeader = await AuthService.getAuthHeader();
-        const response = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
+        const response = await secureFetch(`${Config.VITE_AG_API_URL}/api/index`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authHeader,
-                'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
-                'x-ag-device-id': await getDeviceId(),
-                'x-csrf-token': getCsrfToken() || ''
-            },
             body: JSON.stringify({ type: 'check_subscription_status' })
         });
 

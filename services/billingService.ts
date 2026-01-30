@@ -2,7 +2,7 @@ import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
 import { upgradeTier, SubscriptionTier, saveSubscription } from './subscriptionService';
 import { syncUsageToServer, fetchUserUsage } from './usageService';
 import { getDeviceId } from './deviceService';
-import { getCsrfToken } from './csrfService';
+import { secureFetch } from './apiService';
 import AuthService from './authService';
 import Config from './configService';
 import TaskLimitManager from '../utils/TaskLimitManager';
@@ -536,10 +536,8 @@ class BillingService {
     // SECURITY: Server-Side Verification Helper
     private async verifyPurchaseOnServer(purchaseToken: string, productId: string, transactionId: string): Promise<boolean> {
         try {
-            const deviceId = await getDeviceId();
-            const csrfToken = getCsrfToken();
-            const authHeader = await AuthService.getAuthHeader();
             const timestamp = Date.now();
+            const deviceId = await getDeviceId();
 
             console.log('Anti-Gravity Billing: Verifying purchase on server...', { productId, transactionId, timestamp });
 
@@ -552,23 +550,19 @@ class BillingService {
                 timestamp
             });
 
-            const response = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
+            const response = await secureFetch(`${Config.VITE_AG_API_URL}/api/index`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': authHeader,
-                    'x-ag-signature': signature, // Dynamic signature (SHA-256)
-                    'x-ag-device-id': deviceId,
-                    'x-ag-timestamp': timestamp.toString(),
-                    'x-csrf-token': csrfToken || ''
-                },
                 body: JSON.stringify({
                     type: 'verify_purchase',
                     purchaseToken,
                     productId,
                     transactionId,
                     timestamp // Include in body for verification
-                })
+                }),
+                headers: {
+                    'x-ag-signature-signature': signature, // Custom header for dynamic signature
+                    'x-ag-timestamp': timestamp.toString()
+                }
             });
 
             if (!response.ok) {

@@ -4,6 +4,7 @@ import { SecurityLogger, maskEmail } from '../utils/securityUtils';
 import { clearLogs } from './persistentLogService';
 import AuthService from './authService';
 import { getDeviceId } from './deviceService';
+import { initSubscription } from './subscriptionService';
 
 export interface GoogleUser {
     google_uid: string;
@@ -56,6 +57,13 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
 
         // Update memory cache
         cachedUser = userProfile;
+
+        // PROACTIVE: Pull latest usage/tier data for the new identity
+        try {
+            await initSubscription();
+        } catch (subErr) {
+            console.warn('Google Auth: Background subscription sync failed', subErr);
+        }
 
         return cachedUser;
     } catch (error) {

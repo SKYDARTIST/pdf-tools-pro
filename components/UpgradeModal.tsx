@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Crown, Zap, Shield, Sparkles, Check, Loader2 } from 'lucide-react';
+import { X, Crown, Zap, Shield, Sparkles, Check, Loader2, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import TaskLimitManager from '../utils/TaskLimitManager';
 import { upgradeTier, SubscriptionTier } from '../services/subscriptionService';
-import BillingService, { PRO_PRODUCT_ID } from '../services/billingService';
+import BillingService from '../services/billingService';
 
 interface UpgradeModalProps {
     isOpen: boolean;
@@ -16,32 +17,14 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
     onClose,
     reason = 'upgrade_prompt'
 }) => {
+    const navigate = useNavigate();
     const remaining = TaskLimitManager.getRemainingTasks();
     const limit = TaskLimitManager.getDailyLimit();
     const [isLoading, setIsLoading] = useState(false);
-    const [displayPrice, setDisplayPrice] = useState('$2.99');
 
-    useEffect(() => {
-        // Price is locked to Dollars ($) as requested.
-    }, [isOpen]);
-
-    const handleUpgrade = async () => {
-        setIsLoading(true);
-        try {
-            const success = await BillingService.purchasePro();
-            console.log('Purchase result in UI:', success);
-            if (success) {
-                onClose();
-                window.location.reload();
-            } else {
-                alert('Payment was not completed. If the Google Play window did not open, please check your network.');
-            }
-        } catch (error: any) {
-            console.error('Upgrade failed:', error);
-            alert('Critial Error: ' + (error.message || 'Unknown error during upgrade'));
-        } finally {
-            setIsLoading(false);
-        }
+    const handleUpgrade = () => {
+        onClose();
+        navigate('/pricing');
     };
 
     return (
@@ -103,12 +86,12 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-4 sm:space-y-6">
                                 {/* Pricing */}
                                 <div className="text-center">
-                                    <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2">
-                                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{displayPrice}</span>
-                                        <span className="text-[10px] sm:text-sm font-bold text-slate-400 dark:text-gray-600">one-time</span>
+                                    <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2 text-violet-600 dark:text-violet-400">
+                                        <Sparkles size={20} className="animate-pulse" />
+                                        <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter">Premium Access</span>
                                     </div>
-                                    <p className="text-[10px] sm:text-xs font-bold text-violet-600 dark:text-violet-500">
-                                        Lifetime access • No subscription
+                                    <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
+                                        Choose your protocol in the next step
                                     </p>
                                 </div>
 
@@ -128,7 +111,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity</span>
-                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">{displayPrice} LIFETIME</span>
+                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">BEST VALUE</span>
                                     </div>
                                 </div>
                             </div>
@@ -149,10 +132,13 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                         {isLoading ? (
                                             <>
                                                 <Loader2 size={16} className="animate-spin" />
-                                                Processing...
+                                                Synchronizing...
                                             </>
                                         ) : (
-                                            `Get Pro Access - ${displayPrice}`
+                                            <>
+                                                <span>View Pro Plans</span>
+                                                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                            </>
                                         )}
                                     </button>
 

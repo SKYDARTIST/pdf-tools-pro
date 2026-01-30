@@ -279,22 +279,40 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Internal Server Error: Authentication not configured' });
         }
 
-        // Helper: Generate Session Token (Stateless JWT-lite)
-        const generateSessionToken = (uid, isAuth = false) => {
+        // Helper: Generate Session Token (Stateless JWT-lite + DB Persistence)
+        const generateSessionToken = async (uid, isAuth = false) => {
             const now = Date.now();
+            const exp = now + (60 * 60 * 1000); // 1 hour
             const payload = JSON.stringify({
                 uid: uid,
                 is_auth: isAuth,
                 iat: now,
-                exp: now + (60 * 60 * 1000), // 1 hour
+                exp: exp,
                 jti: Buffer.from(`${uid}-${now}-${randomBytes(8).toString('hex')}`).toString('base64')
             });
             const signature = createHmac('sha256', sessionSecret).update(payload).digest('hex');
-            return Buffer.from(payload).toString('base64') + '.' + signature;
+            const token = Buffer.from(payload).toString('base64') + '.' + signature;
+
+            // SECURITY: Persist to DB for authoritative validation (Fix for 401 loops)
+            if (supabase) {
+                console.log(`[AUTH] Registering fresh session for ${isAuth ? 'Google' : 'Device'} user: ${maskDeviceId(uid)}`);
+                const { error: sessErr } = await supabase.from('sessions').insert([{
+                    session_token: token,
+                    user_uid: uid,
+                    device_id: deviceId || 'unknown',
+                    expires_at: new Date(exp).toISOString()
+                }]);
+
+                if (sessErr) {
+                    console.error('[AUTH] Failed to persist session to DB:', sessErr.message);
+                }
+            }
+
+            return token;
         };
 
         // Helper: Verify Session Token
-        const verifySessionToken = (token) => {
+        const verifySessionToken = async (token) => {
             if (!token || typeof token !== 'string') return null;
             try {
                 const [b64Payload, signature] = token.split('.');
@@ -311,6 +329,21 @@ export default async function handler(req, res) {
 
                 const payload = JSON.parse(payloadStr);
                 if (Date.now() > payload.exp) return null;
+
+                // CRITICAL: Double-check DB persistence to prevent 401 retry loops
+                if (supabase) {
+                    const { data, error } = await supabase
+                        .from('sessions')
+                        .select('user_uid')
+                        .eq('session_token', token)
+                        .gt('expires_at', new Date().toISOString())
+                        .maybeSingle();
+
+                    if (error || !data) {
+                        console.warn('[AUTH] Token signature valid but NOT FOUND in sessions table.');
+                        return null;
+                    }
+                }
 
                 return payload;
             } catch (e) { return null; }
@@ -403,8 +436,8 @@ export default async function handler(req, res) {
             }
 
             const targetUid = verifiedUid || deviceId;
-            const sessionToken = generateSessionToken(targetUid, !!verifiedUid);
-            const csrfToken = generateSessionToken(targetUid, !!verifiedUid);
+            const sessionToken = await generateSessionToken(targetUid, !!verifiedUid);
+            const csrfToken = await generateSessionToken(targetUid, !!verifiedUid);
 
             return res.status(200).json({
                 sessionToken,
@@ -416,7 +449,7 @@ export default async function handler(req, res) {
         // SECURITY: Unified Auth Enforcement for ALL other routes
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-        const session = verifySessionToken(token);
+        const session = await verifySessionToken(token);
 
         // MANDATORY LOGIN ENFORCEMENT (v2.9.2)
         // All requests except handshake must be backed by a verified Google Identity

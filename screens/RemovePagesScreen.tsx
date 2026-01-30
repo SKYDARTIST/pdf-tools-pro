@@ -172,11 +172,15 @@ const RemovePagesScreen: React.FC = () => {
                         </label>
                         <ToolGuide
                             title="How to remove pages"
+                            description="Surgical document editing. Precise removal of unwanted pages from your PDF to streamline content and reduce file size."
                             steps={[
                                 "Tap to upload your PDF document",
                                 "Select the pages you want to delete",
                                 "Click 'Confirm Changes' to finalize",
                                 "Download your trimmed document instantly"
+                            ]}
+                            useCases={[
+                                "Trimming Contracts", "Removing Blank Pages", "Snippet Extraction", "Data Sanitization"
                             ]}
                         />
                     </div>

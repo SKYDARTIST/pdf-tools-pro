@@ -1,15 +1,8 @@
-/**
- * ANTI-GRAVITY AI SERVICE
- * Dual-mode implementation for Play Store Compliance.
- */
-
 const aiCache = new Map<string, string>();
 
-import { getDeviceId } from './deviceService';
-import { getIntegrityToken } from './integrityService';
 import AuthService from './authService';
 import Config from './configService';
-import { getCsrfToken } from './csrfService';
+import { secureFetch } from './apiService';
 
 export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' | 'guidance' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
   // Neuro-Caching Logic
@@ -23,22 +16,10 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
     // Always use production URL for Capacitor builds
     const backendUrl = `${Config.VITE_AG_API_URL}/api/index`;
 
-    const integrityToken = await getIntegrityToken();
-    const deviceId = await getDeviceId();
-    const csrfToken = getCsrfToken();
-
     let response: Response;
     try {
-      response = await fetch(backendUrl, {
+      response = await secureFetch(backendUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': await AuthService.getAuthHeader(),
-          'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
-          'x-ag-device-id': deviceId,
-          'x-ag-integrity-token': integrityToken,
-          'x-csrf-token': csrfToken || ''
-        },
         body: JSON.stringify({ prompt, documentText: documentText || "", type, image, mimeType }),
       });
     } catch (fetchError: any) {
