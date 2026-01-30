@@ -9,6 +9,7 @@ interface AppConfig {
     VITE_SUPABASE_ANON_KEY: string;
     VITE_AG_PROTOCOL_SIGNATURE: string;
     VITE_AG_API_URL: string;
+    VITE_ADMIN_UIDS: string[];
     IS_PRODUCTION: boolean;
 }
 
@@ -33,6 +34,7 @@ export const Config: AppConfig = {
     VITE_AG_API_URL: import.meta.env.PROD
         ? 'https://pdf-tools-pro-indol.vercel.app'
         : 'http://localhost:3000',
+    VITE_ADMIN_UIDS: (import.meta.env.VITE_ADMIN_UIDS || '').split(',').filter(Boolean),
     IS_PRODUCTION: import.meta.env.PROD
 };
 

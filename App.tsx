@@ -45,8 +45,8 @@ import PullToRefresh from './components/PullToRefresh';
 import { getAiPackNotification, ackAiNotification, initSubscription } from './services/subscriptionService';
 import { initServerTime } from './services/serverTimeService';
 import BillingService from './services/billingService';
-import { initializePersistentLogging } from './services/persistentLogService';
 import DebugLogPanel from './components/DebugLogPanel';
+import Config from './services/configService';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
@@ -207,7 +207,14 @@ const App: React.FC = () => {
       clearTimeout(tapTimeout);
 
       if (tapCountRef.current === 3) {
-        setDebugPanelOpen(true);
+        // SECURITY: Only allow admins to open the debug panel
+        const user = getCurrentUser();
+        if (user && Config.VITE_ADMIN_UIDS.includes(user.id)) {
+          setDebugPanelOpen(true);
+        } else if (!import.meta.env.PROD) {
+          // In development, allow it anyway for convenience
+          setDebugPanelOpen(true);
+        }
         tapCountRef.current = 0;
       }
 
