@@ -169,14 +169,14 @@ class BillingService {
 
                 if (verifyResult) {
                     console.log('Anti-Gravity Billing: ✅ Server verified and granted Pro status');
+                    // Sync in correct order - TaskLimitManager first, then SubscriptionService
+                    TaskLimitManager.upgradeToPro();
+                    upgradeTier(SubscriptionTier.PRO, result.transactionId);
                 } else {
-                    console.warn('Anti-Gravity Billing: ⚠️ Server verification failed - Pro status might not stick on other devices');
-                    // We still allow local upgrade for UX (Optimistic UI), but server is source of truth
+                    console.error('Anti-Gravity Billing: ❌ Server verification failed - Pro status NOT granted');
+                    alert('⚠️ Payment verification failed. Please contact support if you were charged.');
+                    return false;
                 }
-
-                // Sync in correct order - TaskLimitManager first, then SubscriptionService
-                TaskLimitManager.upgradeToPro();
-                upgradeTier(SubscriptionTier.PRO, result.transactionId);
 
                 // STRICT VERIFICATION: Ensure both storage systems agreed
                 const isProInLimit = TaskLimitManager.isPro();
@@ -211,7 +211,7 @@ class BillingService {
             const errorMessage = error?.message || error?.toString?.() || String(error);
             console.log('Anti-Gravity Billing: Pro Purchase Error Debug:', { message: errorMessage, error });
 
-            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|purchased/i;
+            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|not\s*purchased/i;
             const alreadyOwnsError = alreadyOwnsRegex.test(errorMessage);
 
             if (alreadyOwnsError) {
@@ -222,7 +222,8 @@ class BillingService {
                 try {
                     console.log('Anti-Gravity Billing: 🛡️ Triggering server-side verification for already owned Pro...');
                     // For already owned items, we don't have a new transactionId, so we use 'already_owned'
-                    await this.verifyPurchaseOnServer('already_owned', PRO_MONTHLY_ID, 'already_owned');
+                    const verified = await this.verifyPurchaseOnServer('already_owned', PRO_MONTHLY_ID, 'already_owned');
+                    console.log('Anti-Gravity Billing: 🛡️ Server verification result for already owned Pro:', verified);
 
                     TaskLimitManager.upgradeToPro();
                     upgradeTier(SubscriptionTier.PRO, undefined, true);
@@ -271,28 +272,27 @@ class BillingService {
                 }
 
                 // SECURITY: Verify on SERVER SIDE
-                try {
-                    const purchaseToken = (result as any).purchaseToken || result.transactionId;
-                    const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
+                const purchaseToken = (result as any).purchaseToken || result.transactionId;
+                const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
 
-                    if (verifyResult) {
-                        console.log('Anti-Gravity Billing: ✅ Server verified status');
-                    }
-                } catch (verifyError) {
-                    console.error('Server verification failed:', verifyError);
+                if (verifyResult) {
+                    console.log('Anti-Gravity Billing: ✅ Server verified status');
+                    TaskLimitManager.upgradeToPro();
+                    upgradeTier(SubscriptionTier.LIFETIME, result.transactionId);
+                    alert('Lifetime Access Unlocked!');
+                    return true;
+                } else {
+                    console.error('Anti-Gravity Billing: ❌ Server verification failed');
+                    alert('⚠️ Payment verification failed. Please contact support if you were charged.');
+                    return false;
                 }
-
-                TaskLimitManager.upgradeToPro();
-                upgradeTier(SubscriptionTier.LIFETIME, result.transactionId);
-                alert('Lifetime Access Unlocked!');
-                return true;
             }
             return false;
         } catch (error: any) {
             const errorMessage = error?.message || String(error);
             console.log('Anti-Gravity Billing: Lifetime Purchase Error Debug:', { message: errorMessage, error });
 
-            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|purchased/i;
+            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|not\s*purchased/i;
             if (alreadyOwnsRegex.test(errorMessage)) {
                 console.log('Anti-Gravity Billing: ✅ Lifetime already owned - Triggering server sync');
                 // Try both IDs for server sync safety
@@ -350,14 +350,10 @@ class BillingService {
             // First, force sync storage keys to ensure consistency
             this.forceSyncStorageKeys();
 
-            // LIMITATION: Boot-time restore via listeners has fundamental timing issues
-            // The @capgo/native-purchases plugin doesn't fire transactionUpdated events during boot
-            // Tested extensively with waits up to 35+ seconds - events never fire during boot
-            // Manual restore (user clicking "Restore Purchases" button) works perfectly
-            // This is a known plugin lifecycle limitation
-            console.warn('Anti-Gravity Billing: ⚠️ Skipping boot-time purchase restore (plugin limitation)');
-            console.warn('Anti-Gravity Billing: ℹ️ Users with existing purchases should tap "Restore Purchases" on the pricing screen');
-            console.log('Anti-Gravity Billing: Proceeding with Free tier - restore available manually on demand');
+            // SILENT BACKGROUND RESTORE: Try to sync with Google Play automatically at boot.
+            // This fix addresses the issue where Pro status is lost after app restart.
+            console.log('Anti-Gravity Billing: 🚀 Initiating background purchase restore...');
+            this.restorePurchases(true).catch(e => console.warn('Background restore failed:', e));
 
             // Final sync check after processing
             this.forceSyncStorageKeys();
@@ -368,9 +364,10 @@ class BillingService {
         }
     }
 
-    async restorePurchases(): Promise<boolean> {
+    async restorePurchases(silent = false): Promise<boolean> {
         try {
-            console.log('Anti-Gravity Billing: Manual restore triggered by user...');
+            if (!silent) console.log('Anti-Gravity Billing: Manual restore triggered by user...');
+            else console.log('Anti-Gravity Billing: Background restore running...');
 
             // CRITICAL: First, check Supabase for existing data (source of truth for remaining credits)
             try {
@@ -423,7 +420,7 @@ class BillingService {
                         console.log('Anti-Gravity Billing: 🛡️ Server verification successful for restored item');
                         TaskLimitManager.upgradeToPro();
                         upgradeTier(tier, transactionId, true);
-                        alert(`✅ ${tier === SubscriptionTier.LIFETIME ? 'Lifetime' : 'Pro'} status restored!`);
+                        if (!silent) alert(`✅ ${tier === SubscriptionTier.LIFETIME ? 'Lifetime' : 'Pro'} status restored!`);
                     } else {
                         console.error('Anti-Gravity Billing: ❌ Server verification failed for restored item');
                         // We still allow local upgrade for better UX, but it may be overwritten later
@@ -431,13 +428,11 @@ class BillingService {
                         upgradeTier(tier, transactionId, true);
                     }
                 }
-
-
             }
 
             if (!hasProRestore && capturedPurchases.length === 0) {
                 console.log('Anti-Gravity Billing: ℹ️ No new purchases found to restore (no active purchases on Google Play)');
-                alert('ℹ️ No active purchases found on Google Play.');
+                if (!silent) alert('ℹ️ No active purchases found on Google Play.');
                 return false;
             }
 

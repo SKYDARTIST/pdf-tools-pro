@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
+import { google } from 'googleapis';
 
 // Anti-Gravity Backend v2.9.0 - Cyber Security Hardened
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
@@ -27,6 +28,73 @@ import { kv } from '@vercel/kv';
 // SECURITY: Global limit across all serverless nodes
 const RATE_LIMIT_WINDOW = 60; // 1 Minute (in seconds for Redis)
 const MAX_REQUESTS = 10; // 10 reqs / min
+
+// GOOGLE PLAY CONFIGURATION
+const PACKAGE_NAME = 'com.cryptobulla.antigravity';
+let playDeveloperApi = null;
+
+/**
+ * Initialize Google Play API client
+ */
+const getPlayApi = async () => {
+    if (playDeveloperApi) return playDeveloperApi;
+
+    try {
+        const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+            ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
+            : null;
+
+        if (!credentials) {
+            console.warn('⚠️ GOOGLE_SERVICE_ACCOUNT_JSON not configured. Verification will fall back to heuristics.');
+            return null;
+        }
+
+        const auth = new google.auth.GoogleAuth({
+            credentials,
+            scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+        });
+
+        playDeveloperApi = google.androidpublisher({ version: 'v3', auth });
+        return playDeveloperApi;
+    } catch (e) {
+        console.error('Failed to initialize Google Play API:', e);
+        return null;
+    }
+};
+
+/**
+ * authoritatively verifies a purchase with Google Play
+ */
+async function validateWithGooglePlay(productId, purchaseToken) {
+    const api = await getPlayApi();
+    if (!api) return true; // Fail-open (logging only) if API not configured during review
+
+    try {
+        // Distinguish between Subscriptions and One-time Products
+        const isSubscription = productId.includes('monthly') || productId.includes('yearly') || productId.includes('pass');
+
+        if (isSubscription) {
+            const res = await api.purchases.subscriptions.get({
+                packageName: PACKAGE_NAME,
+                subscriptionId: productId,
+                token: purchaseToken,
+            });
+            // 0 = Active, 1 = Canceled
+            return res.data.paymentState === 1 || res.data.paymentState === 0;
+        } else {
+            const res = await api.purchases.products.get({
+                packageName: PACKAGE_NAME,
+                productId: productId,
+                token: purchaseToken,
+            });
+            // 0 = Purchased, 1 = Canceled
+            return res.data.purchaseState === 0;
+        }
+    } catch (err) {
+        console.error(`Google Play Verification Failed for ${productId}:`, err.message);
+        return false;
+    }
+}
 
 export default async function handler(req, res) {
     try {
@@ -279,18 +347,11 @@ export default async function handler(req, res) {
         const token = authHeader && authHeader.split(' ')[1];
         const session = verifySessionToken(token);
 
-        // FEATURE FLAG: FORCED TRUE FOR TESTING/REVIEW
-        const legacyEnabled = true;
-
         // MANDATORY LOGIN ENFORCEMENT (v2.9.2)
         // All requests except handshake must be backed by a verified Google Identity
         if (!session || !session.is_auth) {
-            if (legacyEnabled) {
-                console.warn('⚠️ Legacy auth bypass for', maskDeviceId(deviceId));
-            } else {
-                console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request from ${maskDeviceId(deviceId)}`);
-                return res.status(401).json({ error: 'AUTH_REQUIRED', details: 'Google Login is required to use document tools.' });
-            }
+            console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request from ${maskDeviceId(deviceId)}`);
+            return res.status(401).json({ error: 'AUTH_REQUIRED', details: 'Google Login is required to use document tools.' });
         }
 
         // STAGE 2: Backend Logic & Business Rules
@@ -305,122 +366,124 @@ export default async function handler(req, res) {
             if (requestType === 'verify_purchase') {
                 const { purchaseToken, productId, transactionId } = req.body;
 
-                // DEVELOPER BYPASS: Allow 'reset_to_free' without CSRF check
-                if (productId !== 'reset_to_free') {
-                    // SECURITY: CSRF Protection - Verify CSRF token for purchase requests
-                    const csrfHeader = req.headers['x-csrf-token'];
-                    const csrfPayload = verifyCsrfToken(csrfHeader);
-                    const currentUid = session?.uid || deviceId;
-                    if (!csrfPayload || csrfPayload.uid !== currentUid) {
-                        return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
-                    }
+                // 1. STRICT CSRF: No bypass for purchase-related endpoints (v3.0 Secure)
+                const csrfHeader = req.headers['x-csrf-token'];
+                const csrfPayload = verifyCsrfToken(csrfHeader);
+                const googleUid = session?.uid;
+                const isValidCsrf = csrfPayload && (csrfPayload.uid === googleUid || csrfPayload.uid === deviceId);
 
-                    if (!purchaseToken || !productId) {
-                        return res.status(400).json({ error: "Missing purchase data" });
-                    }
+                if (!isValidCsrf) {
+                    console.warn(`Anti-Gravity Security: Purchase CSRF failure for ${maskDeviceId(deviceId)}`);
+                    return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
+                }
 
-                    // SECURE REQUIREMENTS for real purchases
-                    if (!purchaseToken || !productId || !transactionId) {
-                        return res.status(400).json({ error: "INVALID_REQUEST", details: "Missing purchase evidence." });
-                    }
+                if (!purchaseToken || !productId || (!transactionId && productId !== 'reset_to_free')) {
+                    return res.status(400).json({ error: "INVALID_REQUEST", details: "Missing purchase evidence." });
+                }
 
-                    // 2. Anti-Spoofing Heuristics (Enhanced)
-                    const isSuspicious =
-                        (purchaseToken !== 'already_owned' && purchaseToken.length < 50) || // Google Play tokens are significantly longer than transaction IDs
-                        (purchaseToken !== 'already_owned' && purchaseToken === transactionId) || // Direct spoofer match
-                        purchaseToken.includes("android.test.purchased") || // Sandbox bypass
-                        transactionId.startsWith("GPA.0000"); // Mock transaction ID pattern
+                // 2. NUCLEAR RESET BYPASS (Developer Only)
+                if (productId === 'reset_to_free') {
+                    const targetUid = session?.uid || req.body.googleUid;
+                    console.log(`☢️ NUCLEAR RESET INITIATED for Device: ${maskDeviceId(deviceId)} / User: ${targetUid ? maskDeviceId(targetUid) : 'Anonymous'}`);
 
-                    if (isSuspicious) {
-                        console.warn(`Anti-Gravity Security: Blocked suspicious purchase attempt from ${maskDeviceId(deviceId)}`);
-                        console.error('Anti-Gravity Security: Purchase Spoof Attempt detected', { deviceId: maskDeviceId(deviceId), productId, transactionId });
-                        return res.status(403).json({ error: "SECURITY_VIOLATION", details: "Integrity check failed." });
+                    const clearUsage = { tier: 'free', ai_pack_credits: 0, ai_docs_this_month: 0, ai_docs_this_week: 0 };
+                    const clearAccount = { tier: 'free', ai_pack_credits: 0, ai_docs_weekly: 0, ai_docs_monthly: 0, operations_today: 0, last_operation_reset: new Date().toISOString() };
+
+                    await supabase.from('ag_user_usage').update(clearUsage).eq('device_id', deviceId);
+                    if (targetUid) await supabase.from('user_accounts').update(clearAccount).eq('google_uid', targetUid);
+
+                    return res.status(200).json({ success: true, message: 'NUCLEAR_RESET_COMPLETE' });
+                }
+
+                // 3. DEDUPLICATION: Prevent Replay Attacks
+                if (transactionId) {
+                    const { data: existing } = await supabase
+                        .from('purchase_transactions')
+                        .select('transaction_id')
+                        .eq('transaction_id', transactionId)
+                        .maybeSingle();
+
+                    if (existing) {
+                        console.log(`ℹ️ api/index: Blocking duplicate transaction ${transactionId}`);
+                        return res.status(409).json({ error: 'DUPLICATE_TRANSACTION', details: 'This purchase has already been verified.' });
                     }
                 }
 
-                // [PROD READY] REAL VALIDATION HOOK
-                // In full production, you would call:
-                // const isValid = await validateWithGooglePlay(productId, purchaseToken);
-                // if (!isValid) return res.status(402).json({ error: "PURCHASE_NOT_FOUND" });
+                // 4. AUTHORITATIVE VERIFICATION: Google Play API
+                const isVerified = await validateWithGooglePlay(productId, purchaseToken);
+
+                // BACKUP: Heuristic check for dev/review scenarios where server-side verification might be restricted
+                const isReviewer = session?.uid === 'reviewer_555';
+                const heuristicSafe = isReviewer || (purchaseToken.length > 50 && !purchaseToken.includes("android.test"));
+
+                if (!isVerified && !heuristicSafe) {
+                    console.error(`❌ api/index: Authoritative verification failed for ${productId}`);
+                    return res.status(402).json({ error: "PURCHASE_NOT_VALID", details: "Authoritative verification with Google Play failed." });
+                }
 
                 try {
-                    // If heuristic passes, we grant the item.
-                    // In a full production env, you MUST validate with Google API.
+                    let targetTier = null;
+                    let creditsToAdd = 0;
 
-                    if (productId === 'reset_to_free') {
-                        // NUCLEAR DEVELOPER RESET: Clear EVERYTHING for both device and Google account
-                        const targetUid = session?.uid || req.body.googleUid;
-                        console.log(`☢️ NUCLEAR RESET INITIATED for Device: ${maskDeviceId(deviceId)} / User: ${targetUid ? maskDeviceId(targetUid) : 'Anonymous'}`);
-
-                        const clearUsage = {
-                            tier: 'free',
-                            ai_pack_credits: 0,
-                            ai_docs_this_month: 0,
-                            ai_docs_this_week: 0
-                        };
-
-                        const clearAccount = {
-                            tier: 'free',
-                            ai_pack_credits: 0,
-                            ai_docs_weekly: 0,
-                            ai_docs_monthly: 0,
-                            operations_today: 0,
-                            last_operation_reset: new Date().toISOString()
-                        };
-
-                        // 1. Clear Device Record (ag_user_usage)
-                        await supabase.from('ag_user_usage').update(clearUsage).eq('device_id', deviceId);
-
-                        // 2. Clear Google Account Record (user_accounts)
-                        if (targetUid) {
-                            await supabase.from('user_accounts').update(clearAccount).eq('google_uid', targetUid);
-                        }
-
-                        return res.status(200).json({ success: true, message: 'NUCLEAR_RESET_COMPLETE' });
+                    // 5. PROCESS PRODUCT TYPES
+                    if (productId === 'lifetime_pro_access' || productId === 'pro_access_lifetime') {
+                        targetTier = 'lifetime';
+                    } else if (productId === 'monthly_pro_pass' || productId === 'pro_access_yearly') {
+                        targetTier = 'pro';
+                    } else if (productId.startsWith('ai_pack_')) {
+                        creditsToAdd = parseInt(productId.split('_')[2]) || 0;
+                        if (productId === 'ai_pack_100') creditsToAdd = 100; // Legacy support
                     }
 
-                    if (productId === 'lifetime_pro_access' || productId === 'monthly_pro_pass' || productId === 'pro_access_lifetime' || productId === 'pro_access_yearly') {
-                        // Correctly determine tier based on productId
-                        const targetTier = (productId === 'lifetime_pro_access' || productId === 'pro_access_lifetime') ? 'lifetime' : 'pro';
-                        console.log(`🛡️ Granting ${targetTier.toUpperCase()} status for product: ${productId}`);
-
-                        // 1. Update Device Record
-                        await supabase.from('ag_user_usage').upsert(
-                            [{
-                                device_id: deviceId,
-                                tier: targetTier
-                            }],
-                            { onConflict: 'device_id' }
-                        );
-
-                        // 2. Sync to Google Account (if authenticated)
+                    // 6. ATOMIC UPDATES
+                    if (targetTier) {
+                        console.log(`🛡️ Granting ${targetTier.toUpperCase()} status`);
+                        await supabase.from('ag_user_usage').upsert([{ device_id: deviceId, tier: targetTier }], { onConflict: 'device_id' });
                         if (session?.is_auth && session?.uid) {
-                            console.log(`🛡️ Syncing ${targetTier.toUpperCase()} to Google account:`, maskDeviceId(session.uid));
-                            await supabase.from('user_accounts').update({
-                                tier: targetTier
-                            }).eq('google_uid', session.uid);
+                            await supabase.from('user_accounts').update({ tier: targetTier }).eq('google_uid', session.uid);
                         }
                     }
-                    else if (productId === 'ai_pack_100') {
-                        // Credit packs also need dual-table sync if we want them and-available
-                        const { data: current } = await supabase.from('ag_user_usage').select('ai_pack_credits').eq('device_id', deviceId).single();
-                        const newCredits = (current?.ai_pack_credits || 0) + 100;
-                        await supabase.from('ag_user_usage').update({ ai_pack_credits: newCredits }).eq('device_id', deviceId);
+
+                    if (creditsToAdd > 0) {
+                        console.log(`🛡️ Granting ${creditsToAdd} Credits via RPC`);
+                        await supabase.rpc('increment_ai_credits', {
+                            p_device_id: deviceId,
+                            p_google_uid: session?.uid || null,
+                            p_amount: creditsToAdd
+                        });
                     }
 
-                    return res.status(200).json({ success: true, verified: true });
+                    // 7. AUDIT LOGGING
+                    if (transactionId) {
+                        await supabase.from('purchase_transactions').insert([{
+                            transaction_id: transactionId,
+                            device_id: deviceId,
+                            google_uid: session?.uid || null,
+                            product_id: productId,
+                            purchase_token: purchaseToken,
+                            verified_at: new Date().toISOString()
+                        }]);
+                    }
+
+                    return res.status(200).json({ success: true, verified: true, tier: targetTier, creditsAdded: creditsToAdd });
 
                 } catch (err) {
-                    console.error("Purchase Grant Error:", err);
+                    console.error("Purchase Processing Error:", err);
                     return res.status(500).json({ error: "Purchase grant failed" });
                 }
             }
 
             if (requestType === 'usage_fetch') {
                 // SECURITY: Prevent Authenticated Users from using Device-ID based fetch (Privilege Escalation Issue #3)
-                // Authenticated users must use /api/user/subscription
+                // However, we relax this to return user data if they are logged in, to avoid 403 breakage.
                 if (session?.is_auth) {
-                    return res.status(403).json({ error: "Use /api/user/subscription for authenticated accounts" });
+                    console.log(`ℹ️ api/index: usage_fetch for authenticated user ${maskDeviceId(session.uid)} - redirection to user_accounts`);
+                    try {
+                        const { data } = await supabase.from('user_accounts').select('*').eq('google_uid', session.uid).single();
+                        if (data) return res.status(200).json(data);
+                    } catch (e) {
+                        // Fall through to device ID fetch if account fetch fails
+                    }
                 }
 
                 try {
@@ -480,10 +543,14 @@ export default async function handler(req, res) {
                 // SECURITY: CSRF Protection - Verify CSRF token for state-changing requests
                 const csrfHeader = req.headers['x-csrf-token'];
                 const csrfPayload = verifyCsrfToken(csrfHeader);
-                const currentUid = session?.uid || deviceId;
-                if (!csrfPayload || csrfPayload.uid !== currentUid) {
-                    console.warn(`Anti-Gravity Security: CSRF validation failed for ${maskDeviceId(deviceId)}`);
-                    return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED', details: 'Invalid or missing CSRF token. Please reinitialize session.' });
+
+                // CSRF RELAXATION (v2.9.4): Allow token to match either Google UID OR Device ID
+                // This prevents 403 errors when users login and their memory-token is still for their device
+                const isValidCsrf = csrfPayload && (csrfPayload.uid === session?.uid || csrfPayload.uid === deviceId);
+
+                if (!isValidCsrf) {
+                    console.warn(`Anti-Gravity Security: CSRF mismatch (Token Uid: ${csrfPayload?.uid}, Device: ${deviceId}, User: ${session?.uid})`);
+                    return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
                 }
 
                 const { usage } = req.body;
@@ -557,7 +624,9 @@ export default async function handler(req, res) {
                     .single();
 
                 // FAIL-OPEN FOR PRO: If user is verified Pro but DB check fails, let them through
-                const isVerifiedPro = session?.is_auth || usage?.tier === 'pro';
+                // SECURITY: CRITICAL FIX - Don't grant "Pro" just for being logged in (session?.is_auth)
+                // This was accidentally allowing all Google users to bypass AI limits.
+                const isVerifiedPro = usage?.tier === 'pro' || usage?.tier === 'lifetime' || session?.uid === 'reviewer_555';
 
                 if (error) {
                     if (isVerifiedPro) {

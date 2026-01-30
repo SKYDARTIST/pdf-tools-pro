@@ -80,10 +80,19 @@ export const forceReconcileFromServer = async (): Promise<UserSubscription> => {
 
             // Sync TaskLimitManager
             if (supabaseUsage.tier === SubscriptionTier.PRO || supabaseUsage.tier === SubscriptionTier.LIFETIME) {
+                console.log('Anti-Gravity Subscription: 🛡️ Tier confirmed Pro/Lifetime from server');
                 TaskLimitManager.upgradeToPro();
             } else {
-                // EXPLICIT DOWNGRADE: If server says Free, local must be Free (Nuclear Logic)
-                TaskLimitManager.resetToFree();
+                // PERSISTENCE BUFFER: Don't downgrade immediately if we think we are Pro locally.
+                // This prevents the "Flash of Free Tier" if the DB update is lagging behind a successful purchase.
+                if (TaskLimitManager.isPro()) {
+                    console.warn('Anti-Gravity Subscription: ⚠️ Server says Free but Local says Pro. Preserving local state until manual restore or native sync.');
+                    // We return PRO for now to avoid UI flickering
+                    supabaseUsage.tier = SubscriptionTier.PRO;
+                } else {
+                    console.log('Anti-Gravity Subscription: ℹ️ Tier confirmed Free from server');
+                    TaskLimitManager.resetToFree();
+                }
             }
 
             return supabaseUsage;

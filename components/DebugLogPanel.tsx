@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Trash2 } from 'lucide-react';
+import { X, Copy, Trash2, RefreshCcw } from 'lucide-react';
 import { getLogs, clearLogs, getLogsAsText } from '../services/persistentLogService';
+import TaskLimitManager from '../utils/TaskLimitManager';
 
 interface DebugLogPanelProps {
     isOpen: boolean;
@@ -31,6 +32,19 @@ const DebugLogPanel: React.FC<DebugLogPanelProps> = ({ isOpen, onClose }) => {
         }
     };
 
+    const handleResetTiers = () => {
+        if (confirm('⚠️ NUCLEAR RESET: This will clear all local Pro/Lifetime status and log you out. Proceed?')) {
+            TaskLimitManager.resetToFree();
+            localStorage.removeItem('google_user');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('google_uid');
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('pdf_tools_subscription');
+            localStorage.removeItem('ag_csrf_token');
+            window.location.reload();
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -53,6 +67,13 @@ const DebugLogPanel: React.FC<DebugLogPanelProps> = ({ isOpen, onClose }) => {
                             title="Clear logs"
                         >
                             <Trash2 size={18} />
+                        </button>
+                        <button
+                            onClick={handleResetTiers}
+                            className="p-2 hover:bg-red-900/40 rounded-lg transition-colors text-red-400 hover:text-red-300"
+                            title="Reset to Free (Testing)"
+                        >
+                            <RefreshCcw size={18} />
                         </button>
                         <button
                             onClick={onClose}

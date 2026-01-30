@@ -45,7 +45,7 @@ const LegalFooter: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse" />
                         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-500">
-                            Anti-Gravity AI v2.1.0
+                            Anti-Gravity AI v2.9.5
                         </span>
                     </div>
                     <a

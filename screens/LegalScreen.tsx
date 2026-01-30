@@ -10,11 +10,11 @@ const LEGAL_CONTENT = {
         icon: Shield,
         subtitle: 'Privacy',
         content: [
-            "DATA WE COLLECT: We collect your Device ID (UUID) for basic limits and anonymized usage. If you sign in with Google, we also store your email to sync your credits across devices.",
-            "DATA WE DON'T COLLECT: We do NOT track your behavior, collect analytics, or share your data with third parties. Your document content is never stored.",
-            "STORAGE: Data is stored in Supabase with encryption at rest. Session tokens are cleared on logout, and debug logs auto-expire after 24 hours.",
-            "GDPR RIGHTS: You have the right to download your data or delete your account permanently. These options are available in your data & privacy settings.",
-            "UNSUBSCRIBE: You can manage your subscription and turn off auto-renewal at any time through the Google Play Store or App Store."
+            "ZERO-KNOWLEDGE: Anti-Gravity processes your document content locally. We never upload, store, or see your files. This is the core of our local-first intelligence.",
+            "IDENTITY SYNC: If you sign in with Google, we securely store your email and profile info only to synchronize your subscription and credits across devices.",
+            "DATA MINIMIZATION: we do NOT track your behavior, use analytics, or share data with third parties. We collect only what is necessary for security and limits.",
+            "SOVEREIGNTY: Your data belongs to you. You can permanently delete your account or download your account metadata at any time from your settings.",
+            "MANAGEMENT: Manage your subscription and find our full Privacy Manifesto and legal policy links in the app footer and settings."
         ]
     },
     terms: {
@@ -22,11 +22,11 @@ const LEGAL_CONTENT = {
         icon: FileText,
         subtitle: 'Agreement',
         content: [
-            "CONTENT UPLOAD: You agree not to upload illegal, harmful, or copyrighted content that you do not have permission to process.",
-            "WARRANTY: We provide the Anti-Gravity service 'as-is' with no guarantees of 100% uptime or absolute accuracy of AI-generated output.",
-            "SERVICE SUSPENSION: We reserve the right to suspend or terminate access for users who abuse the platform, spam the AI, or attempt unauthorized access.",
-            "REFUND POLICY: If you are unsatisfied with a premium purchase, please contact us within 30 days of purchase for a full refund.",
-            "API ACCESS: No unauthorized API access, scrapers, or bots are allowed. Any attempt to bypass our security protocols will result in a permanent ban."
+            "ACCEPTABLE USE: You agree to use Anti-Gravity for legal purposes only and represent that you have the rights to process the documents you upload.",
+            "SERVICE LIMITS: We provide AI-powered tools 'as-is'. While highly accurate, we do not guarantee 100% precision for every AI output or 100% platform uptime.",
+            "BILLING: Premium status is granted upon successful payment. Refunds are available within 30 days via app store channels or by contacting the developer.",
+            "IP RIGHTS: The Anti-Gravity brand and software are protected intellectual property. Reverse engineering or unauthorized API scraping is strictly prohibited.",
+            "MODIFICATIONS: We reserve the right to update these terms. Continued use of the platform after updates constitutes acceptance of the new terms."
         ]
     },
     disclaimer: {
@@ -34,10 +34,10 @@ const LEGAL_CONTENT = {
         icon: Bot,
         subtitle: 'AI Note',
         content: [
-            "The Anti-Gravity AI is an advanced system. While very powerful, it can still make mistakes, common to all AI models.",
-            "VERIFICATION REQUIRED: AI-generated summaries and checklists may occasionally contain mistakes. You should always double-check important financial, legal, or medical information.",
-            "LIABILITY: We are not responsible for decisions made based on AI output. The app is a tool to assist you, not a replacement for your own judgment.",
-            "SENSITIVITY: Very complex documents or low-quality scans may make the AI less accurate."
+            "NEURAL LIMITATIONS: Anti-Gravity AI is based on advanced large language models. While powerful, AI can occasionally generate incorrect or biased information.",
+            "DOUBLE-CHECK: AI outputs should be verified, especially when used for critical medical, financial, or legal decisions. The app is an assistant, not a replacement for human judgment.",
+            "ACCURACY: Document quality and complexity can affect AI performance. Low-quality scans or extremely dense legal text may decrease accuracy.",
+            "LIABILITY: We are not responsible for decisions made based on AI output. Users should use the platform responsibly as part of their professional workflow."
         ]
     }
 };

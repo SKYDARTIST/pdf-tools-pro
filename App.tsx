@@ -206,7 +206,7 @@ const App: React.FC = () => {
       tapCountRef.current += 1;
       clearTimeout(tapTimeout);
 
-      if (tapCountRef.current === 6) {
+      if (tapCountRef.current === 3) {
         setDebugPanelOpen(true);
         tapCountRef.current = 0;
       }
