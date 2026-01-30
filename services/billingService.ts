@@ -215,24 +215,39 @@ class BillingService {
             const alreadyOwnsError = alreadyOwnsRegex.test(errorMessage);
 
             if (alreadyOwnsError) {
-                console.log('Anti-Gravity Billing: ✅ Product already owned on Google Play - Triggering server sync');
+                console.log('Anti-Gravity Billing: ✅ Product already owned - Verifying with server...');
 
-                // User already owns it on Google Play (confirmed by the error)
-                // Directly activate Pro locally since we've confirmed ownership
                 try {
-                    console.log('Anti-Gravity Billing: 🛡️ Triggering server-side verification for already owned Pro...');
-                    // For already owned items, we don't have a new transactionId, so we use 'already_owned'
-                    const verified = await this.verifyPurchaseOnServer('already_owned', PRO_MONTHLY_ID, 'already_owned');
-                    console.log('Anti-Gravity Billing: 🛡️ Server verification result for already owned Pro:', verified);
+                    // SECURITY FIX #3: Get the actual purchase token from Google Play to prevent spoofing
+                    const ownedPurchase = await this.getOwnedPurchase(PRO_MONTHLY_ID, PURCHASE_TYPE.SUBS);
 
-                    TaskLimitManager.upgradeToPro();
-                    upgradeTier(SubscriptionTier.PRO, undefined, true);
+                    if (!ownedPurchase) {
+                        console.error('Anti-Gravity Billing: Could not retrieve purchase token for owned item');
+                        alert('⚠️ Ownership verification failed. Please use "Restore Purchases".');
+                        return false;
+                    }
 
-                    alert('✅ Pro status activated! You already own this product on Google Play.');
-                    return true;
+                    console.log('Anti-Gravity Billing: 🛡️ Verifying ownership with server...');
+                    const verified = await this.verifyPurchaseOnServer(
+                        ownedPurchase.purchaseToken,
+                        PRO_MONTHLY_ID,
+                        ownedPurchase.transactionId
+                    );
+
+                    if (verified) {
+                        console.log('Anti-Gravity Billing: ✅ Ownership verified by server');
+                        TaskLimitManager.upgradeToPro();
+                        upgradeTier(SubscriptionTier.PRO, ownedPurchase.transactionId);
+                        alert('✅ Pro status activated! Ownership verified.');
+                        return true;
+                    } else {
+                        console.error('Anti-Gravity Billing: ❌ Server rejected ownership claim');
+                        alert('⚠️ Ownership verification failed. Please contact support.');
+                        return false;
+                    }
                 } catch (activationError) {
-                    console.error('Anti-Gravity Billing: Failed to activate Pro after "already owned":', activationError);
-                    alert('⚠️ You already own Pro on Google Play, but activation failed. Try "Restore Purchases" on the pricing page.');
+                    console.error('Anti-Gravity Billing: Failed to verify ownership:', activationError);
+                    alert('⚠️ Could not verify ownership. Please try "Restore Purchases".');
                     return false;
                 }
             }
@@ -294,14 +309,53 @@ class BillingService {
 
             const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|not\s*purchased/i;
             if (alreadyOwnsRegex.test(errorMessage)) {
-                console.log('Anti-Gravity Billing: ✅ Lifetime already owned - Triggering server sync');
-                // Try both IDs for server sync safety
-                await this.verifyPurchaseOnServer('already_owned', LIFETIME_PRODUCT_ID, 'already_owned');
-                await this.verifyPurchaseOnServer('already_owned', LIFETIME_PRODUCT_ID_ALT, 'already_owned');
+                console.log('Anti-Gravity Billing: ✅ Lifetime already owned - Verifying...');
 
-                upgradeTier(SubscriptionTier.LIFETIME, undefined, true);
-                alert('✅ Lifetime status activated! You already own this.');
-                return true;
+                try {
+                    const ownedPurchase = await this.getOwnedPurchase(LIFETIME_PRODUCT_ID, PURCHASE_TYPE.INAPP);
+
+                    if (!ownedPurchase) {
+                        // Try alternate product ID
+                        const ownedPurchaseAlt = await this.getOwnedPurchase(LIFETIME_PRODUCT_ID_ALT, PURCHASE_TYPE.INAPP);
+                        if (!ownedPurchaseAlt) {
+                            alert('⚠️ Could not verify ownership. Please use "Restore Purchases".');
+                            return false;
+                        }
+
+                        const verified = await this.verifyPurchaseOnServer(
+                            ownedPurchaseAlt.purchaseToken,
+                            LIFETIME_PRODUCT_ID_ALT,
+                            ownedPurchaseAlt.transactionId
+                        );
+
+                        if (verified) {
+                            TaskLimitManager.upgradeToPro();
+                            upgradeTier(SubscriptionTier.LIFETIME, ownedPurchaseAlt.transactionId);
+                            alert('✅ Lifetime status activated!');
+                            return true;
+                        }
+                    } else {
+                        const verified = await this.verifyPurchaseOnServer(
+                            ownedPurchase.purchaseToken,
+                            LIFETIME_PRODUCT_ID,
+                            ownedPurchase.transactionId
+                        );
+
+                        if (verified) {
+                            TaskLimitManager.upgradeToPro();
+                            upgradeTier(SubscriptionTier.LIFETIME, ownedPurchase.transactionId);
+                            alert('✅ Lifetime status activated!');
+                            return true;
+                        }
+                    }
+
+                    alert('⚠️ Ownership verification failed. Please contact support.');
+                    return false;
+                } catch (verifyError) {
+                    console.error('Lifetime ownership verification failed:', verifyError);
+                    alert('⚠️ Could not verify ownership. Please try "Restore Purchases".');
+                    return false;
+                }
             }
             alert('Purchase failed: ' + errorMessage);
             return false;
@@ -387,9 +441,9 @@ class BillingService {
             console.log('Anti-Gravity Billing: Calling native restorePurchases() for new purchases...');
             await NativePurchases.restorePurchases();
 
-            // Wait for listener events (up to 3 seconds for manual restore)
+            // Wait for events with timeout (Issue #6 Fix: increased timeout)
             console.log('Anti-Gravity Billing: Waiting for transactionUpdated events...');
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            await new Promise(resolve => setTimeout(resolve, silent ? 3000 : 5000));
 
             const capturedPurchases = this.restoredPurchases;
             console.log(`Anti-Gravity Billing: Manual restore captured ${capturedPurchases.length} purchases`);
@@ -480,6 +534,34 @@ class BillingService {
         } catch (error) {
             console.error('Anti-Gravity Billing: Verification network error:', error);
             return false;
+        }
+    }
+
+    /**
+     * SECURITY FIX #3: Helper to get owned purchase data from Google Play
+     * This prevents client-side spoofing by retrieving real tokens for verification
+     */
+    private async getOwnedPurchase(productId: string, productType: PURCHASE_TYPE): Promise<{ purchaseToken: string; transactionId: string } | null> {
+        try {
+            console.log(`Anti-Gravity Billing: Querying owned purchases for ${productId}...`);
+            const purchases = productType === PURCHASE_TYPE.SUBS
+                ? await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS })
+                : await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.INAPP });
+
+            const matchingPurchase = purchases.purchases?.find((p: any) =>
+                p.productId === productId || p.productIdentifier === productId
+            );
+
+            if (matchingPurchase) {
+                return {
+                    purchaseToken: matchingPurchase.purchaseToken || matchingPurchase.transactionId,
+                    transactionId: matchingPurchase.orderId || matchingPurchase.transactionId
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Anti-Gravity Billing: Failed to query owned purchases:', error);
+            return null;
         }
     }
 }

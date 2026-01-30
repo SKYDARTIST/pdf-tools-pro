@@ -3,6 +3,10 @@ import TaskLimitManager from '../utils/TaskLimitManager';
 import { SecurityLogger } from '../utils/securityUtils';
 
 import { STORAGE_KEYS, SUBSCRIPTION_TIERS, AI_OPERATION_TYPES, HEADERS, DEFAULTS } from '../utils/constants';
+import AuthService from './authService';
+import Config from './configService';
+import { getDeviceId } from './deviceService';
+import { getCsrfToken } from './csrfService';
 
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
@@ -65,7 +69,46 @@ const PREMIUM_LIMITS = {
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (user?: any): Promise<UserSubscription> => {
+    // Proactive reconciliation on every boot (Security Fix #7)
+    reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
     return await forceReconcileFromServer();
+};
+
+/**
+ * Proactive Reconciliation (Security Fix #7)
+ * Authoritatively syncs local tier with backend user_accounts table
+ */
+export const reconcileSubscriptionDrift = async (): Promise<void> => {
+    try {
+        const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
+        if (!googleUid) return;
+
+        const authHeader = await AuthService.getAuthHeader();
+        const response = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader,
+                'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
+                'x-ag-device-id': await getDeviceId(),
+                'x-csrf-token': getCsrfToken() || ''
+            },
+            body: JSON.stringify({ type: 'check_subscription_status' })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.tier) {
+                const sub = getSubscription();
+                if (sub.tier !== data.tier) {
+                    console.log(`🛡️ Drift Reconciliation: Updating local tier ${sub.tier} -> ${data.tier}`);
+                    upgradeTier(data.tier as SubscriptionTier, undefined, true);
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Subscription drift reconciliation failed:', e);
+    }
 };
 
 // Force fetch from server and update local state

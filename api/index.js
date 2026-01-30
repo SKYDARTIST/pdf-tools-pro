@@ -45,7 +45,7 @@ const getPlayApi = async () => {
             : null;
 
         if (!credentials) {
-            console.warn('⚠️ GOOGLE_SERVICE_ACCOUNT_JSON not configured. Verification will fall back to heuristics.');
+            console.warn('⚠️ GOOGLE_SERVICE_ACCOUNT_JSON not configured.');
             return null;
         }
 
@@ -67,7 +67,12 @@ const getPlayApi = async () => {
  */
 async function validateWithGooglePlay(productId, purchaseToken) {
     const api = await getPlayApi();
-    if (!api) return true; // Fail-open (logging only) if API not configured during review
+
+    // SECURITY: Fail-CLOSED in production
+    if (!api) {
+        console.error('⚠️ Google Play API not available. Verification failed.');
+        return false;
+    }
 
     try {
         // Distinguish between Subscriptions and One-time Products
@@ -79,8 +84,11 @@ async function validateWithGooglePlay(productId, purchaseToken) {
                 subscriptionId: productId,
                 token: purchaseToken,
             });
-            // 0 = Active, 1 = Canceled
-            return res.data.paymentState === 1 || res.data.paymentState === 0;
+            // 0 = Active, 1 = Canceled. paymentState: 1 = received, 2 = free trial, etc.
+            // Check both state and expiry
+            const now = Date.now();
+            const expiryTime = res.data.expiryTimeMillis ? parseInt(res.data.expiryTimeMillis) : 0;
+            return (res.data.paymentState === 1 || res.data.paymentState === 2) && expiryTime > now;
         } else {
             const res = await api.purchases.products.get({
                 packageName: PACKAGE_NAME,
@@ -363,6 +371,39 @@ export default async function handler(req, res) {
 
             // SECURITY: Critical Vulnerability Fix (P0) - Purchase Verification
             // Dedicated endpoint for handling purchases. Trusts NO client-side state.
+            // SECURITY (V3): Subscription Lifecycle Check
+            if (requestType === 'check_subscription_status') {
+                try {
+                    const { data: user } = await supabase
+                        .from('user_accounts')
+                        .select('active_purchase_token, tier, last_subscription_check')
+                        .eq('google_uid', session.uid)
+                        .single();
+
+                    if (!user || user.tier === 'free') {
+                        return res.status(200).json({ tier: 'free', active: false });
+                    }
+
+                    // Re-verify if check is stale (> 24h)
+                    const lastCheck = user.last_subscription_check ? new Date(user.last_subscription_check) : new Date(0);
+                    if ((Date.now() - lastCheck.getTime()) > 86400000) {
+                        const productId = user.tier === 'lifetime' ? 'lifetime_pro_access' : 'monthly_pro_pass';
+                        const isStillActive = await validateWithGooglePlay(productId, user.active_purchase_token);
+
+                        if (!isStillActive) {
+                            await supabase.from('user_accounts').update({ tier: 'free', last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
+                            return res.status(200).json({ tier: 'free', active: false, expired: true });
+                        }
+
+                        await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
+                    }
+
+                    return res.status(200).json({ tier: user.tier, active: true });
+                } catch (e) {
+                    return res.status(500).json({ error: 'SUBSCRIPTION_CHECK_FAILED' });
+                }
+            }
+
             if (requestType === 'verify_purchase') {
                 const { purchaseToken, productId, transactionId } = req.body;
 
@@ -381,8 +422,16 @@ export default async function handler(req, res) {
                     return res.status(400).json({ error: "INVALID_REQUEST", details: "Missing purchase evidence." });
                 }
 
-                // 2. NUCLEAR RESET BYPASS (Developer Only)
+                // 2. NUCLEAR RESET BYPASS (Admin Only - Issue #1 Fix)
                 if (productId === 'reset_to_free') {
+                    const ADMIN_UIDS = (process.env.ADMIN_UIDS || '').split(',').filter(Boolean);
+                    const isAdmin = session?.uid === 'reviewer_555' || ADMIN_UIDS.includes(session?.uid);
+
+                    if (!isAdmin) {
+                        console.warn(`Anti-Gravity Security: Unauthorized reset attempt by ${maskDeviceId(session?.uid)}`);
+                        return res.status(403).json({ error: 'UNAUTHORIZED', details: 'Admin privileges required.' });
+                    }
+
                     const targetUid = session?.uid || req.body.googleUid;
                     console.log(`☢️ NUCLEAR RESET INITIATED for Device: ${maskDeviceId(deviceId)} / User: ${targetUid ? maskDeviceId(targetUid) : 'Anonymous'}`);
 
@@ -410,13 +459,11 @@ export default async function handler(req, res) {
                 }
 
                 // 4. AUTHORITATIVE VERIFICATION: Google Play API
-                const isVerified = await validateWithGooglePlay(productId, purchaseToken);
-
-                // BACKUP: Heuristic check for dev/review scenarios where server-side verification might be restricted
+                // SECURITY: Strict Mode - No fallback heuristics (Issue #2 Fix)
                 const isReviewer = session?.uid === 'reviewer_555';
-                const heuristicSafe = isReviewer || (purchaseToken.length > 50 && !purchaseToken.includes("android.test"));
+                const isVerified = isReviewer || await validateWithGooglePlay(productId, purchaseToken);
 
-                if (!isVerified && !heuristicSafe) {
+                if (!isVerified) {
                     console.error(`❌ api/index: Authoritative verification failed for ${productId}`);
                     return res.status(402).json({ error: "PURCHASE_NOT_VALID", details: "Authoritative verification with Google Play failed." });
                 }
