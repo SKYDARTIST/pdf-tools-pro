@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, Loader2, Bot, ShieldAlert, Quote } from 'lucide-react';
 import { askGemini } from '@/services/aiService';
+import { recordAIUsage, AiOperationType } from '@/services/subscriptionService';
 
 interface AIAssistantProps {
   contextText: string;
@@ -24,6 +25,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
 
     const botResponse = await askGemini(userMsg, contextText);
     setMessages(prev => [...prev, { role: 'bot', text: botResponse }]);
+    await recordAIUsage(AiOperationType.HEAVY);
     setIsLoading(false);
   };
 
@@ -34,6 +36,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
 
     const botResponse = await askGemini("Extract all academic citations, references, and bibliography entries found in this text. Format them clearly.", contextText, "citation");
     setMessages(prev => [...prev, { role: 'bot', text: botResponse }]);
+    await recordAIUsage(AiOperationType.HEAVY);
     setIsLoading(false);
   };
 

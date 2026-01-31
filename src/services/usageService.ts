@@ -72,8 +72,17 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         });
 
         // Payload Key Fix: new API expects flat object, old API expects { type, usage }
-        // We will adapt payload based on endpoint
-        const payload = googleUser ? usage : { type: 'usage_sync', usage };
+        // SECURITY (V6.0): Never sync AI doc counts from client to server. 
+        // The server increments these internally when an AI operation is performed.
+        const secureUsage = {
+            operationsToday: usage.operationsToday,
+            lastOperationReset: usage.lastOperationReset,
+            // tier: usage.tier, // Server-authoritative
+            // ai_pack_credits: usage.aiPackCredits, // Server knows credits
+            // ai_docs_monthly: usage.aiDocsThisMonth, // Server tracks this
+        };
+
+        const payload = googleUser ? secureUsage : { type: 'usage_sync', usage: secureUsage };
 
         const response = await secureFetch(backendUrl, {
             method: 'POST',

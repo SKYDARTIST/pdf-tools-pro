@@ -402,6 +402,47 @@ class BillingService {
 
 
 
+    async purchaseAiPack(productId: string): Promise<boolean> {
+        try {
+            console.log(`Anti-Gravity Billing: Starting AI Pack purchase for ${productId}`);
+            const result = await NativePurchases.purchaseProduct({
+                productIdentifier: productId,
+                productType: PURCHASE_TYPE.INAPP
+            });
+
+            if (result.transactionId) {
+                console.log('Anti-Gravity Billing: ✅ AI Pack purchase successful, acknowledging...');
+                const purchaseToken = (result as any).purchaseToken || result.transactionId;
+
+                // V6.0: Store in pending queue
+                await this.addToPendingQueue({ purchaseToken, productId, transactionId: result.transactionId });
+
+                const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, productId, result.transactionId);
+
+                if (verifyResult) {
+                    console.log('Anti-Gravity Billing: ✅ AI Pack verified and credits granted');
+                    await this.removeFromPendingQueue(result.transactionId);
+
+                    // RECONCILE: Force refresh usage from server to show new credits
+                    const freshUsage = await fetchUserUsage();
+                    if (freshUsage) saveSubscription(freshUsage);
+
+                    alert('Credits Added! You can now use AI tools.');
+                    return true;
+                } else {
+                    console.error('Anti-Gravity Billing: ❌ AI Pack verification failed');
+                    alert('⚠️ Credit verification failed. Please contact support.');
+                    return false;
+                }
+            }
+            return false;
+        } catch (error: any) {
+            console.error('Anti-Gravity Billing: AI Pack Purchase Error:', error);
+            alert('Purchase failed: ' + (error.message || 'Check your Google Play account.'));
+            return false;
+        }
+    }
+
     async syncPurchasesWithState(): Promise<void> {
         try {
             console.log('Anti-Gravity Billing: Syncing purchases with state...');
@@ -677,7 +718,12 @@ class BillingService {
             const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
             // Avoid duplicates
             if (!queue.find((p: any) => p.transactionId === purchase.transactionId)) {
-                queue.push(purchase);
+                queue.push({
+                    ...purchase,
+                    addedAt: Date.now(),
+                    retryCount: 0,
+                    maxRetries: 5  // Limit to 5 attempts
+                });
                 localStorage.setItem('ag_pending_purchases', JSON.stringify(queue));
                 console.log('Anti-Gravity Security: Added purchase to pending queue:', purchase.transactionId);
             }
@@ -703,7 +749,23 @@ class BillingService {
 
         console.log(`Anti-Gravity Security: 🔍 Hub-link found ${queue.length} pending purchases. Attempting recovery...`);
 
+        const now = Date.now();
+        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+        const updatedQueue = [];
+
         for (const purchase of queue) {
+            // Remove expired items (older than 7 days)
+            if (now - purchase.addedAt > SEVEN_DAYS) {
+                console.log('Anti-Gravity Security: ⏰ Removing expired pending purchase:', purchase.transactionId);
+                continue;
+            }
+
+            // Remove items that exceeded retry limit
+            if (purchase.retryCount >= purchase.maxRetries) {
+                console.error('Anti-Gravity Security: ❌ Max retries exceeded for:', purchase.transactionId, '- Manual support needed');
+                continue;
+            }
+
             try {
                 const verified = await this.verifyPurchaseOnServer(purchase.purchaseToken, purchase.productId, purchase.transactionId);
                 if (verified) {
@@ -712,12 +774,23 @@ class BillingService {
                     const tier = (purchase.productId.includes('lifetime') || purchase.productId.includes('pass'))
                         ? SubscriptionTier.LIFETIME : SubscriptionTier.PRO;
                     upgradeTier(tier, purchase.transactionId, true);
-                    await this.removeFromPendingQueue(purchase.transactionId);
+                    // Don't add back to queue - successfully processed
+                } else {
+                    // Verification failed - increment retry count and keep in queue
+                    purchase.retryCount = (purchase.retryCount || 0) + 1;
+                    updatedQueue.push(purchase);
+                    console.warn(`Anti-Gravity Security: Retry ${purchase.retryCount}/${purchase.maxRetries} for:`, purchase.transactionId);
                 }
             } catch (e) {
+                // Network error - increment retry count and keep in queue
+                purchase.retryCount = (purchase.retryCount || 0) + 1;
+                updatedQueue.push(purchase);
                 console.warn('Anti-Gravity Security: Failed to process pending purchase recovery:', purchase.transactionId);
             }
         }
+
+        // Save updated queue
+        localStorage.setItem('ag_pending_purchases', JSON.stringify(updatedQueue));
     }
 }
 

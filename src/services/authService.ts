@@ -212,9 +212,8 @@ class AuthService {
      * Helper to detect authorized test accounts
      */
     isTestAccount(): boolean {
-        const uid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
-        const TEST_ACCOUNTS = ['reviewer_555', 'test@example.com']; // Whitelist
-        return TEST_ACCOUNTS.some(testId => uid?.includes(testId));
+        // Test account whitelist disabled in production for security
+        return false;
     }
 }
 

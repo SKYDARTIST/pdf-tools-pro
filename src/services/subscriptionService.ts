@@ -8,6 +8,14 @@ import Config from './configService';
 import { getDeviceId } from './deviceService';
 import { secureFetch } from './apiService';
 
+// AI Pack Constants
+const UNLIMITED_CREDITS_THRESHOLD = 990; // Packs with 990+ credits are treated as "unlimited"
+const AI_PACK_SIZES = {
+    SMALL: 100,
+    LARGE: 500,
+    UNLIMITED: 999
+};
+
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
     FREE = 'free',
@@ -40,7 +48,6 @@ export interface UserSubscription {
     lastOperationReset: string; // ISO date
     lastAiWeeklyReset: string; // ISO date
     lastAiMonthlyReset: string; // ISO date
-    trialStartDate?: string; // ISO date - when the 20-day trial started
     purchaseToken?: string;
     lastNotifiedCredits?: number;
     hasReceivedBonus: boolean;
@@ -147,12 +154,6 @@ export const getSubscription = (): UserSubscription => {
         try {
             const subscription = JSON.parse(stored);
 
-            // RETROACTIVE TRIAL: Add trial start date to existing users who don't have it
-            if (!subscription.trialStartDate) {
-                subscription.trialStartDate = new Date().toISOString();
-                saveSubscription(subscription);
-            }
-
             // SECURITY: Restore tier from TaskLimitManager (trusted source) if local state is missing
             if (!subscription.tier || subscription.tier === SubscriptionTier.FREE) {
                 if (TaskLimitManager.isPro()) {
@@ -160,8 +161,10 @@ export const getSubscription = (): UserSubscription => {
                 }
             }
 
-            // SANITY CHECK: Reset trial credits (999+) to 0 to force monthy quota usage
-            if (subscription.aiPackCredits >= 990) {
+            // SANITY CHECK: Reset unlimited pack credits to monthly quota
+            // This shouldn't happen in production but protects against data corruption
+            if (subscription.aiPackCredits >= UNLIMITED_CREDITS_THRESHOLD) {
+                console.warn('Subscription: Resetting corrupted unlimited credits to 0');
                 subscription.aiPackCredits = 0;
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
             }
@@ -186,7 +189,6 @@ export const getSubscription = (): UserSubscription => {
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
-        trialStartDate: now,
         hasReceivedBonus: false,
     };
     saveSubscription(defaultSubscription);
@@ -202,19 +204,8 @@ export const saveSubscription = (subscription: UserSubscription): void => {
     window.dispatchEvent(new CustomEvent('subscription-updated'));
 };
 
-// Check if user is within the 20-day trial period
-export const isInTrialPeriod = (): boolean => {
-    // Audit Response P2: Completely disabled trial logic
-    return false;
-};
-
 // Check if user can perform a PDF operation
 export const canPerformOperation = (): { allowed: boolean; reason?: string } => {
-    // 20-DAY TRIAL: Unlimited operations
-    if (isInTrialPeriod()) {
-        return { allowed: true };
-    }
-
     const subscription = getSubscription();
 
     // Reset daily counter if needed
@@ -266,8 +257,8 @@ export const isNearAiLimit = (): boolean => {
 export const getAiPackNotification = (): { message: string; type: 'milestone' | 'warning' | 'exhausted' } | null => {
     const subscription = getSubscription();
 
-    // 1. SILENCE for 999 pack (Unlimited Experience)
-    if (subscription.aiPackCredits >= 990) return null;
+    // 1. SILENCE for unlimited packs
+    if (subscription.aiPackCredits >= UNLIMITED_CREDITS_THRESHOLD) return null;
 
     // 2. Only notify if user actually has/had an AI pack
     if (subscription.aiPackCredits === undefined && (subscription.lastNotifiedCredits === undefined || subscription.lastNotifiedCredits === 0)) {
@@ -322,11 +313,6 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
 } => {
     // GUIDANCE: Always allowed for all users (Zero Cost to users)
     if (operationType === AiOperationType.GUIDANCE) {
-        return { allowed: true, blockMode: AiBlockMode.NONE };
-    }
-
-    // 20-DAY TRIAL: Unlimited AI usage
-    if (isInTrialPeriod()) {
         return { allowed: true, blockMode: AiBlockMode.NONE };
     }
 
@@ -425,15 +411,30 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
 
     // Logic for tracking usage
     if (subscription.aiPackCredits > 0) {
-        // Priority 1: Use AI Pack Credits (the 999 balance)
+        // Priority 1: Use AI Pack Credits (the unlimited balance)
         subscription.aiPackCredits -= 1;
+
+        // SECURITY: Race condition protection - rollback if negative
+        if (subscription.aiPackCredits < 0) {
+            console.error('AI Credits: Race condition detected! Rolling back.');
+            subscription.aiPackCredits = 0;
+            saveSubscription(subscription);
+            return {
+                tier: subscription.tier,
+                used: 0,
+                limit: 0,
+                remaining: 0,
+                message: 'AI Credits exhausted. Please purchase more.'
+            };
+        }
+
         const remaining = subscription.aiPackCredits;
         console.log(`AI Usage: HEAVY operation - AI Pack Credit consumed. ${remaining} remaining.`);
 
         stats = {
             tier: subscription.tier,
             used: 1,
-            limit: 999, // Total pack
+            limit: AI_PACK_SIZES.UNLIMITED, // Total pack
             remaining,
             message: `AI Pack: ${remaining} credits remaining`
         };

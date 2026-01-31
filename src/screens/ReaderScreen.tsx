@@ -152,6 +152,7 @@ const ReaderScreen: React.FC = () => {
         try {
             const response = await askGemini(currentQuery, documentContext, 'chat');
             setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
+            await recordAIUsage(AiOperationType.HEAVY);
         } catch (err) {
             console.error('Chat Error:', err);
         } finally {
@@ -224,7 +225,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
                 return;
             }
             setMindMapData(response);
-            await recordAIUsage(AiOperationType.GUIDANCE);
+            await recordAIUsage(AiOperationType.HEAVY);
         } catch (error) { console.error(error); } finally {
             setIsGeneratingMindMap(false);
             setLoadProgress(0);

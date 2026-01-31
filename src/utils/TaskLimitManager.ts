@@ -22,27 +22,45 @@ class TaskLimitManager {
     private static getData(): TaskLimitData {
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
+
+            // SECURITY FIX: Read Pro status from SubscriptionService (single source of truth)
+            const subscriptionData = this.getSubscriptionSync();
+            const isProFromSubscription = subscriptionData?.tier === 'pro'
+                || subscriptionData?.tier === 'premium'
+                || subscriptionData?.tier === 'lifetime';
+
             if (!stored) {
                 return {
                     count: 0,
                     date: this.getTodayDate(),
-                    isPro: false,
+                    isPro: isProFromSubscription,
                 };
             }
-            return JSON.parse(stored);
+
+            const data = JSON.parse(stored);
+            // Always sync Pro status from subscription service
+            data.isPro = isProFromSubscription;
+            return data;
         } catch (error) {
             console.error('Error reading task limit data:', error);
+            const subscriptionData = this.getSubscriptionSync();
             return {
                 count: 0,
                 date: this.getTodayDate(),
-                isPro: false,
+                isPro: subscriptionData?.tier === 'pro' || subscriptionData?.tier === 'lifetime',
             };
         }
     }
 
     private static saveData(data: TaskLimitData): void {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            // Don't persist isPro - always read from SubscriptionService
+            const dataToSave = {
+                count: data.count,
+                date: data.date,
+                // isPro omitted intentionally - read from subscription
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
         } catch (error) {
             console.error('Error saving task limit data:', error);
         }
@@ -143,11 +161,7 @@ class TaskLimitManager {
      * Check if user is Pro
      */
     static isPro(): boolean {
-        // If the reviewer bypass exists, return true
-        if (localStorage.getItem('global_pro_override') === 'true') {
-            return true;
-        }
-
+        // Reviewer access is now server-side only for security
         const data = this.getData();
         return data.isPro === true;
     }
@@ -156,18 +170,15 @@ class TaskLimitManager {
      * Upgrade to Pro (call after payment)
      */
     static upgradeToPro(): void {
-        const data = this.getData();
-        this.saveData({
-            ...data,
-            isPro: true,
-        });
+        // Pro status is managed by SubscriptionService only
+        // This method is kept for API compatibility but does nothing
+        console.log('TaskLimitManager: upgradeToPro() called - managed by SubscriptionService');
     }
 
     /**
      * Reset to free (for testing)
      */
     static resetToFree(): void {
-        localStorage.removeItem('global_pro_override');
         localStorage.removeItem(STORAGE_KEY);
         // Also clear any cached subscription just in case
         localStorage.removeItem('pdf_tools_subscription');

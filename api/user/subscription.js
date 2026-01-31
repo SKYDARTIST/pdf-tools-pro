@@ -128,17 +128,10 @@ export default async function handler(req, res) {
         }
 
         // SECURITY: CRITICAL VULNERABILITY FIX (P0) - Tier Injection Prevention
-        // trusts NO client-provided state for billing fields.
+        // trusts NO client-provided state for billing or AI quota fields.
         const dbUpdates = {
-            // tier: updates.tier, // REMOVED: Prevent client-side override
-            // ai_pack_credits: updates.aiPackCredits, // REMOVED: Prevent client-side override
             operations_today: updates.operationsToday,
-            ai_docs_weekly: updates.aiDocsThisWeek,
-            ai_docs_monthly: updates.aiDocsThisMonth,
             last_operation_reset: updates.lastOperationReset,
-            last_ai_weekly_reset: updates.lastAiWeeklyReset,
-            last_ai_monthly_reset: updates.lastAiMonthlyReset,
-            has_received_bonus: updates.hasReceivedBonus,
             updated_at: new Date().toISOString()
         };
 

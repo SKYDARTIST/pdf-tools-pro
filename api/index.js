@@ -566,7 +566,7 @@ export default async function handler(req, res) {
                 // 2. NUCLEAR RESET BYPASS (Admin Only - Issue #1 Fix)
                 if (productId === 'reset_to_free') {
                     const ADMIN_UIDS = (process.env.ADMIN_UIDS || '').split(',').filter(Boolean);
-                    const isAdmin = session?.uid === 'reviewer_555' || ADMIN_UIDS.includes(session?.uid);
+                    const isAdmin = ADMIN_UIDS.includes(session?.uid);
 
                     if (!isAdmin) {
                         console.warn(`Anti-Gravity Security: Unauthorized reset attempt by ${maskDeviceId(session?.uid)}`);
@@ -601,7 +601,7 @@ export default async function handler(req, res) {
 
                 // 4. AUTHORITATIVE VERIFICATION: Google Play API
                 // SECURITY: Strict Mode - No fallback heuristics (Issue #2 Fix)
-                const isReviewer = session?.uid === 'reviewer_555';
+                const isReviewer = false;
                 const isVerified = isReviewer || await validateWithGooglePlay(productId, purchaseToken);
 
                 if (!isVerified) {
@@ -797,6 +797,7 @@ export default async function handler(req, res) {
 
         // Stage 3: Neural Credit Verification (Supabase) - Only for processing/AI requests
         // SECURITY: CRITICAL VULNERABILITY FIX (P1)
+        let usageRecord = null;
         if (supabase && (deviceId || session?.uid) && requestType !== 'guidance') {
             try {
                 const currentUid = session?.uid || deviceId;
@@ -815,7 +816,8 @@ export default async function handler(req, res) {
                     return res.status(500).json({ error: "SERVICE_UNAVAILABLE", details: "Quota check failed. Please try again." });
                 }
 
-                const isVerifiedPro = usage?.tier === 'pro' || usage?.tier === 'lifetime' || session?.uid === 'reviewer_555';
+                usageRecord = usage;
+                const isVerifiedPro = usage?.tier === 'pro' || usage?.tier === 'lifetime';
 
                 if (usage || isVerifiedPro) {
                     // If we have a record, perform actual deduction (Async/Background for performance)
@@ -1070,6 +1072,29 @@ ${wrapDoc(documentText || "No text content - analyzing image only.")}`;
                         const lowerText = text.toLowerCase();
                         if (lowerText.length < 200 && (lowerText.includes("i can't help") || lowerText.includes("safety"))) {
                             return res.status(400).json({ error: "Safety Violation: Asset discarded by Neural Guard." });
+                        }
+                    }
+
+                    // AUTHORITATIVE SYNC (Security Fix Tooling)
+                    if (usageRecord) {
+                        const currentUid = session?.uid || deviceId;
+                        const isAuth = session?.is_auth;
+                        const table = isAuth ? 'user_accounts' : 'ag_user_usage';
+                        const key = isAuth ? 'google_uid' : 'device_id';
+
+                        if (usageRecord.ai_pack_credits > 0) {
+                            // RACE CONDITION PROTECTION: Use authoritative decrement
+                            await supabase.from(table)
+                                .update({ ai_pack_credits: usageRecord.ai_pack_credits - 1 })
+                                .eq(key, currentUid);
+                        } else {
+                            // Increment monthly/weekly usage
+                            await supabase.from(table)
+                                .update({
+                                    ai_docs_monthly: (usageRecord.ai_docs_monthly || 0) + 1,
+                                    ai_docs_weekly: (usageRecord.ai_docs_weekly || 0) + 1
+                                })
+                                .eq(key, currentUid);
                         }
                     }
 

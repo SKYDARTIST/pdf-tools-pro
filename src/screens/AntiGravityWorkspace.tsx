@@ -149,6 +149,7 @@ const AntiGravityWorkspace: React.FC = () => {
     try {
       const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
       setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
+      await recordAIUsage(AiOperationType.HEAVY);
     } catch (err) {
       console.error('AI Chat Error:', err);
       showToast('Processing failed. Try again.');
