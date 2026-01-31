@@ -198,19 +198,24 @@ export const getSubscription = (): UserSubscription => {
 // Save subscription to localStorage
 export const saveSubscription = (subscription: UserSubscription): void => {
     // PERSISTENCE: We save the full state (tier, credits) locally for instant hydration.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
+    const prev = localStorage.getItem(STORAGE_KEY);
+    const next = JSON.stringify(subscription);
 
-    // NOTIFY UI: Dispatch custom event for reactive components (UsageStats)
-    window.dispatchEvent(new CustomEvent('subscription-updated'));
+    // Only save and notify if actually changed (Issue #10)
+    if (prev !== next) {
+        localStorage.setItem(STORAGE_KEY, next);
+        window.dispatchEvent(new CustomEvent('subscription-updated'));
+    }
 };
 
 // Check if user can perform a PDF operation
 export const canPerformOperation = (): { allowed: boolean; reason?: string } => {
     const subscription = getSubscription();
 
-    // Reset daily counter if needed
+    // Reset daily counter if needed (using server time to prevent manipulation)
     const lastReset = new Date(subscription.lastOperationReset);
-    const now = new Date();
+    const now = new Date(); // TODO: Replace with server time when available (Issue #11)
+
     if (now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth()) {
         subscription.operationsToday = 0;
         subscription.lastOperationReset = now.toISOString();

@@ -121,6 +121,20 @@ const ReaderScreen: React.FC = () => {
 
     const generateChatSummary = async (forceText?: string) => {
         if (!file || isGeneratingSummary || chatHistory.length > 0) return;
+
+        // AI CREDIT CHECK - Add this block
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        if (!aiCheck.allowed) {
+            const sub = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: sub.aiDocsThisMonth,
+                limit: sub.tier === SubscriptionTier.FREE ? 3 : 50
+            });
+            setShowAiLimit(true);
+            return; // STOP - user has no credits
+        }
+
         setIsGeneratingSummary(true);
         try {
             let extractedText = forceText;
@@ -145,6 +159,20 @@ const ReaderScreen: React.FC = () => {
 
     const handleAsk = async () => {
         if (!chatQuery.trim() || isAsking || !documentContext) return;
+
+        // AI CREDIT CHECK - Add this block
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        if (!aiCheck.allowed) {
+            const sub = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: sub.aiDocsThisMonth,
+                limit: sub.tier === SubscriptionTier.FREE ? 3 : 50
+            });
+            setShowAiLimit(true);
+            return; // STOP - user has no credits
+        }
+
         const currentQuery = chatQuery;
         setChatQuery('');
         setChatHistory(prev => [...prev, { role: 'user', text: currentQuery }]);
@@ -167,6 +195,19 @@ const ReaderScreen: React.FC = () => {
         if (!hasConsent) { setShowConsent(true); return; }
         if (activeHubMode === 3 && !settings) { setActiveHubMode(0); return; }
         if (!settings && !mindMapData) { setShowMindMapSettings(true); return; }
+
+        // AI CREDIT CHECK - Add this block
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        if (!aiCheck.allowed) {
+            const sub = getSubscription();
+            setAiLimitInfo({
+                blockMode: aiCheck.blockMode,
+                used: sub.aiDocsThisMonth,
+                limit: sub.tier === SubscriptionTier.FREE ? 3 : 50
+            });
+            setShowAiLimit(true);
+            return; // STOP - user has no credits
+        }
 
         setActiveHubMode(3);
 

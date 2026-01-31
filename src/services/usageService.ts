@@ -8,6 +8,14 @@ import { getDeviceId } from './deviceService';
 import { getCurrentUser } from './googleAuthService';
 import { secureFetch } from './apiService';
 
+const FAILED_SYNCS_KEY = 'ag_failed_syncs';
+
+interface FailedSync {
+    usage: UserSubscription;
+    timestamp: number;
+    attempts: number;
+}
+
 
 export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
     try {
@@ -40,7 +48,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
             lastOperationReset: data.last_reset_daily || new Date().toISOString(),
             lastAiWeeklyReset: data.last_reset_weekly || new Date().toISOString(),
             lastAiMonthlyReset: data.last_reset_monthly || new Date().toISOString(),
-            trialStartDate: data.trial_start_date,
+            // trialStartDate: data.trial_start_date, // DEPRECATED
             hasReceivedBonus: data.has_received_bonus || false,
             purchaseToken: undefined // Not persisted in this table
         };
@@ -60,7 +68,6 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         const googleUser = await getCurrentUser();
         const deviceId = await getDeviceId();
 
-        // Use the new Unified API endpoint if possible, or fallback to index
         const apiEndpoint = googleUser ? API_ENDPOINTS.SUBSCRIPTION : API_ENDPOINTS.INDEX;
         const backendUrl = `${Config.VITE_AG_API_URL}${apiEndpoint}`;
 
@@ -71,15 +78,9 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             timestamp: new Date().toISOString()
         });
 
-        // Payload Key Fix: new API expects flat object, old API expects { type, usage }
-        // SECURITY (V6.0): Never sync AI doc counts from client to server. 
-        // The server increments these internally when an AI operation is performed.
         const secureUsage = {
             operationsToday: usage.operationsToday,
             lastOperationReset: usage.lastOperationReset,
-            // tier: usage.tier, // Server-authoritative
-            // ai_pack_credits: usage.aiPackCredits, // Server knows credits
-            // ai_docs_monthly: usage.aiDocsThisMonth, // Server tracks this
         };
 
         const payload = googleUser ? secureUsage : { type: 'usage_sync', usage: secureUsage };
@@ -105,6 +106,10 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
                 aiPackCredits: usage.aiPackCredits,
                 tier: usage.tier,
             });
+
+            // CHANGE: Add to retry queue instead of just logging
+            addToRetryQueue(usage);
+            notifyUserOfSyncFailure();
             return;
         }
 
@@ -112,9 +117,88 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             aiPackCredits: usage.aiPackCredits,
             tier: usage.tier,
         });
+
+        // CHANGE: Clear from retry queue on success
+        clearFromRetryQueue();
+
     } catch (error) {
         Logger.error('Billing', 'syncUsageToServer network error', {
             error: error instanceof Error ? error.message : String(error),
         });
+
+        // CHANGE: Add to retry queue on network error
+        addToRetryQueue(usage);
+        notifyUserOfSyncFailure();
     }
 };
+
+const addToRetryQueue = (usage: UserSubscription): void => {
+    try {
+        const queue: FailedSync[] = JSON.parse(localStorage.getItem(FAILED_SYNCS_KEY) || '[]');
+
+        // Check if already in queue
+        const existing = queue.find(item => item.timestamp > Date.now() - 60000); // Last minute
+        if (existing) {
+            existing.attempts += 1;
+        } else {
+            queue.push({
+                usage,
+                timestamp: Date.now(),
+                attempts: 1
+            });
+        }
+
+        // Keep only last 10 failed syncs
+        if (queue.length > 10) {
+            queue.shift();
+        }
+
+        localStorage.setItem(FAILED_SYNCS_KEY, JSON.stringify(queue));
+        console.warn('Anti-Gravity Sync: Added to retry queue');
+    } catch (e) {
+        console.error('Failed to add to retry queue:', e);
+    }
+};
+
+const clearFromRetryQueue = (): void => {
+    try {
+        localStorage.removeItem(FAILED_SYNCS_KEY);
+        console.log('Anti-Gravity Sync: Retry queue cleared');
+    } catch (e) {
+        console.error('Failed to clear retry queue:', e);
+    }
+};
+
+const notifyUserOfSyncFailure = (): void => {
+    window.dispatchEvent(new CustomEvent('sync-failed', {
+        detail: { message: 'Changes will sync when online' }
+    }));
+};
+
+export const retryFailedSyncs = async (): Promise<void> => {
+    try {
+        const queue: FailedSync[] = JSON.parse(localStorage.getItem(FAILED_SYNCS_KEY) || '[]');
+        if (queue.length === 0) return;
+
+        console.log(`Anti-Gravity Sync: Retrying ${queue.length} failed syncs...`);
+
+        for (const item of queue) {
+            // Skip if too old (7 days)
+            if (Date.now() - item.timestamp > 7 * 24 * 60 * 60 * 1000) {
+                console.warn('Skipping sync older than 7 days');
+                continue;
+            }
+
+            // Skip if too many attempts
+            if (item.attempts >= 5) {
+                console.error('Max retry attempts exceeded');
+                continue;
+            }
+
+            await syncUsageToServer(item.usage);
+        }
+    } catch (e) {
+        console.error('Failed to retry syncs:', e);
+    }
+};
+

@@ -44,9 +44,12 @@ import NeuralAssistant from '@/components/NeuralAssistant';
 import PullToRefresh from '@/components/PullToRefresh';
 import { getAiPackNotification, ackAiNotification, initSubscription } from '@/services/subscriptionService';
 import { initServerTime } from '@/services/serverTimeService';
+// Add retry for failed syncs
+import { retryFailedSyncs } from '@/services/usageService';
 import BillingService from '@/services/billingService';
-import DebugLogPanel from '@/components/DebugLogPanel';
+const DebugLogPanel = lazy(() => import('@/components/DebugLogPanel'));
 import Config from '@/services/configService';
+import { initializePersistentLogging } from '@/utils/logger';
 import { Filesystem } from '@capacitor/filesystem';
 import { useNavigate } from 'react-router-dom';
 
@@ -79,11 +82,13 @@ const App: React.FC = () => {
         initializePersistentLogging(); // Start capturing logs to localStorage
         initServerTime();  // Fetch server time immediately (non-blocking)
 
-        // NON-BLOCKING: Start subscription fetch in background
-        // The app will load with cached state (from localStorage) immediately,
-        // and update if the server state is different.
-        console.log('🚀 App: Starting background subscription sync...');
-        initSubscription().catch(e => console.warn('Non-critical subscription sync failed:', e));
+        // BLOCKING: Start subscription fetch and wait to prevent credit flash
+        // The app will wait for sync before showing data-dependent UI
+        console.log('🚀 App: Starting subscription sync...');
+        await initSubscription().catch(e => console.warn('Non-critical subscription sync failed:', e));
+
+        // Retry any failed usage syncs from previous sessions
+        retryFailedSyncs().catch(e => console.warn('Retry failed syncs error:', e));
 
         console.log('🚀 App: Initialization complete (Optimized)');
       } catch (e) {
@@ -208,13 +213,14 @@ const App: React.FC = () => {
 
       if (tapCountRef.current === 3) {
         // SECURITY: Only allow admins to open the debug panel
-        const user = getCurrentUser();
-        if (user && Config.VITE_ADMIN_UIDS.includes(user.id)) {
-          setDebugPanelOpen(true);
-        } else if (!import.meta.env.PROD) {
-          // In development, allow it anyway for convenience
-          setDebugPanelOpen(true);
-        }
+        getCurrentUser().then(user => {
+          if (user && Config.VITE_ADMIN_UIDS.includes(user.google_uid)) {
+            setDebugPanelOpen(true);
+          } else if (!import.meta.env.PROD) {
+            // In development, allow it anyway for convenience
+            setDebugPanelOpen(true);
+          }
+        });
         tapCountRef.current = 0;
       }
 

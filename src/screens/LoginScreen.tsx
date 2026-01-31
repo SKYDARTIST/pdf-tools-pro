@@ -6,6 +6,8 @@ import { generateCodeVerifier, generateCodeChallenge } from '@/services/pkce';
 import { Browser } from '@capacitor/browser';
 import { getFriendlyErrorMessage } from '@/utils/errorMapping';
 
+import Config from '@/services/configService';
+
 const LoginScreen: React.FC = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +29,7 @@ const LoginScreen: React.FC = () => {
             const codeChallenge = await generateCodeChallenge(codeVerifier);
             localStorage.setItem('google_code_verifier', codeVerifier);
 
-            const clientId = '577377406590-9jl373159h9a2bgr3i6fbngv18ndjf75.apps.googleusercontent.com';
+            const clientId = Config.GOOGLE_OAUTH_CLIENT_ID;
             const isCapacitor = (window as any).Capacitor?.isNativePlatform();
             const redirectUri = isCapacitor
                 ? 'com.cryptobulla.antigravity:/auth-callback'

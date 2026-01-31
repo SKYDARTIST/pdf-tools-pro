@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/services/googleAuthService';
 import { SecurityLogger, maskEmail } from '@/utils/securityUtils';
+import Config from '@/services/configService';
 
 const GoogleAuthCallback: React.FC = () => {
     const navigate = useNavigate();
@@ -47,8 +48,9 @@ const GoogleAuthCallback: React.FC = () => {
                     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        /* RESTORING CORRECT STRUCTURE */
                         body: new URLSearchParams({
-                            client_id: '577377406590-9jl373159h9a2bgr3i6fbngv18ndjf75.apps.googleusercontent.com',
+                            client_id: Config.GOOGLE_OAUTH_CLIENT_ID,
                             grant_type: 'authorization_code',
                             code: code,
                             redirect_uri: (window as any).Capacitor?.isNativePlatform()
@@ -85,6 +87,10 @@ const GoogleAuthCallback: React.FC = () => {
             } catch (err) {
                 const errorMsg = err instanceof Error ? err.message : 'Authentication failed';
                 console.error('Auth callback error:', { message: errorMsg, timestamp: new Date().toISOString() });
+
+                // SHOW ERROR to user
+                alert(`Login failed: ${errorMsg}\n\nRedirecting to homepage...`);
+
                 // Let's just redirect after 2s
                 setTimeout(() => navigate('/workspace'), 2000);
             }

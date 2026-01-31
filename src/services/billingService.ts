@@ -171,8 +171,10 @@ class BillingService {
                 // SECURITY: Verify and Grant on SERVER SIDE (v2.9.0)
                 const purchaseToken = (result as any).purchaseToken || result.transactionId;
 
-                // V6.0: Store in pending queue before verification
+                // CRITICAL: Add to queue IMMEDIATELY - before verification
+                // This ensures purchase is not lost if app crashes
                 await this.addToPendingQueue({ purchaseToken, productId: PRO_MONTHLY_ID, transactionId: result.transactionId });
+                console.log('Anti-Gravity Billing: 🛡️ Purchase queued for verification');
 
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, PRO_MONTHLY_ID, result.transactionId);
 
@@ -310,8 +312,10 @@ class BillingService {
                 // SECURITY: Verify on SERVER SIDE
                 const purchaseToken = (result as any).purchaseToken || result.transactionId;
 
-                // V6.0: Store in pending queue before verification
+                // CRITICAL: Add to queue IMMEDIATELY - before verification
+                // This ensures purchase is not lost if app crashes
                 await this.addToPendingQueue({ purchaseToken, productId: LIFETIME_PRODUCT_ID, transactionId: result.transactionId });
+                console.log('Anti-Gravity Billing: 🛡️ Purchase queued for verification');
 
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
 
@@ -414,8 +418,10 @@ class BillingService {
                 console.log('Anti-Gravity Billing: ✅ AI Pack purchase successful, acknowledging...');
                 const purchaseToken = (result as any).purchaseToken || result.transactionId;
 
-                // V6.0: Store in pending queue
+                // CRITICAL: Add to queue IMMEDIATELY - before verification
+                // This ensures purchase is not lost if app crashes
                 await this.addToPendingQueue({ purchaseToken, productId, transactionId: result.transactionId });
+                console.log('Anti-Gravity Billing: 🛡️ Purchase queued for verification');
 
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, productId, result.transactionId);
 

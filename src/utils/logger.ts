@@ -38,3 +38,15 @@ export const Logger = {
         }
     },
 };
+
+export const initializePersistentLogging = () => {
+    // STARTUP: Ensure log storage exists
+    try {
+        if (!localStorage.getItem('ag_persistent_logs')) {
+            localStorage.setItem('ag_persistent_logs', JSON.stringify([]));
+        }
+        console.log('✅ Persistent logging initialized');
+    } catch (e) {
+        console.warn('Failed to init persistent logging:', e);
+    }
+};
