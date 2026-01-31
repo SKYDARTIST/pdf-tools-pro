@@ -11,31 +11,18 @@
     <meta http-equiv="Expires" content="0">
 
     <title>Anti-Gravity PDF: AI Editor & Scan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    screens: {
-                        'xs': '380px',
-                        'android-sm': { 'max': '375px' },
-                    }
-                }
-            }
-        }
-    </script>
+
     <!-- Blocking script to apply dark mode BEFORE React hydrates -->
     <script>
-            (function () {
-                try {
-                    var saved = localStorage.getItem('darkMode');
-                    if (saved && JSON.parse(saved)) {
-                        document.documentElement.classList.add('dark');
-                        document.documentElement.style.backgroundColor = '#000000';
-                    }
-                } catch (e) { }
-            })();
+        (function () {
+            try {
+                var saved = localStorage.getItem('darkMode');
+                if (saved && JSON.parse(saved)) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.backgroundColor = '#000000';
+                }
+            } catch (e) { }
+        })();
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,7 +37,7 @@
     <div id="bg-light" class="neural-background"></div>
     <div id="bg-dark" class="neural-background"></div>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="/src/index.tsx"></script>
 </body>
 
 </html>

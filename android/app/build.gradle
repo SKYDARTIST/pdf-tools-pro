@@ -17,9 +17,10 @@ android {
         }
     }
 
-    lintOptions {
-        abortOnError false
-        checkReleaseBuilds false
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+        disable 'MissingTranslation'
     }
     buildTypes {
         release {

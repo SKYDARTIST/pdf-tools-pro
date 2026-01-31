@@ -16,12 +16,15 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, './src'),
       }
     },
     build: {
       chunkSizeWarningLimit: 2000,
       minify: 'esbuild',
+      esbuild: {
+        drop: mode === 'production' ? ['console', 'debugger'] : [],
+      },
       rollupOptions: {
         output: {
           manualChunks: (id) => {
