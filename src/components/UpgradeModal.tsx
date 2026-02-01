@@ -74,10 +74,10 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
                                 <div className="relative z-10 text-center">
                                     <h2 className="text-xl sm:text-3xl font-black uppercase tracking-tighter leading-none mb-1 sm:mb-3">
-                                        {reason === 'limit_reached' ? 'Daily Limit' : 'Anti-Gravity Pro'}
+                                        {reason === 'limit_reached' ? 'Neural Link Required' : 'Anti-Gravity Lifetime'}
                                     </h2>
                                     <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60">
-                                        {reason === 'limit_reached' ? 'Daily free tasks completed' : 'Get Unlimited Access'}
+                                        {reason === 'limit_reached' ? 'Lifetime Access Unlock Required' : 'Get Unlimited Forever'}
                                     </p>
                                 </div>
                             </div>
@@ -86,32 +86,32 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-4 sm:space-y-6">
                                 {/* Pricing */}
                                 <div className="text-center">
-                                    <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2 text-violet-600 dark:text-violet-400">
+                                    <div className="flex items-center justify-center gap-2 mb-1 sm:mb-2 text-emerald-600 dark:text-emerald-400">
                                         <Sparkles size={20} className="animate-pulse" />
-                                        <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter">Premium Access</span>
+                                        <span className="text-xl sm:text-2xl font-black uppercase tracking-tighter">Lifetime Member</span>
                                     </div>
                                     <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-widest">
-                                        Choose your protocol in the next step
+                                        Own the portal with one-time payment
                                     </p>
                                 </div>
 
                                 {/* Features */}
                                 <div className="space-y-3 sm:space-y-4">
-                                    <Feature icon={Zap} text="Unlimited Daily Tasks" />
-                                    <Feature icon={Sparkles} text="All 14 Powerful Tools" />
-                                    <Feature icon={Check} text="Zero Watermarks • All Plans" />
-                                    <Feature icon={Shield} text="100% Private Processing" />
+                                    <Feature icon={Zap} text="Unlimited Neural Operations" />
+                                    <Feature icon={Sparkles} text="Full AI-Powered Toolset" />
+                                    <Feature icon={Check} text="One-Time License • Own Forever" />
+                                    <Feature icon={Shield} text="Private On-Device Privacy" />
                                 </div>
 
-                                {/* Comparison Card - More compact */}
+                                {/* Comparison Card */}
                                 <div className="p-4 sm:p-8 bg-black/5 dark:bg-white/5 rounded-[24px] sm:rounded-[40px] space-y-2 sm:space-y-4 border border-black/[0.03] dark:border-white/[0.03]">
                                     <div className="flex items-center justify-between">
                                         <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">Standard Apps</span>
-                                        <span className="text-[10px] sm:text-xs font-black text-red-500 uppercase tracking-tighter">$100/YEAR</span>
+                                        <span className="text-[10px] sm:text-xs font-black text-red-500 uppercase tracking-tighter">RECURRING FEES</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity</span>
-                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">BEST VALUE</span>
+                                        <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 text-black dark:text-white">Anti-Gravity Lifetime</span>
+                                        <span className="text-xs sm:text-sm font-black text-emerald-500 uppercase tracking-tighter">PAY ONCE</span>
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +136,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                             </>
                                         ) : (
                                             <>
-                                                <span>View Pro Plans</span>
+                                                <span>Unlock Lifetime Access</span>
                                                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                             </>
                                         )}

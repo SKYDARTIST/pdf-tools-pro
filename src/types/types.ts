@@ -22,16 +22,10 @@ export interface AppNotification {
 
 export enum SubscriptionTier {
   FREE = 'free',
-  PRO = 'pro',
-  PREMIUM = 'premium',
   LIFETIME = 'lifetime'
 }
 
 export interface UserSubscription {
   tier: SubscriptionTier;
-  operationsToday: number;
-  aiDocsThisWeek: number;
-  lastOperationReset: string;
-  lastAiReset: string;
   purchaseToken?: string;
 }

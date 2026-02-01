@@ -5,7 +5,7 @@
  */
 
 const STORAGE_KEY = 'pdf_tools_task_limit';
-const FREE_DAILY_LIMIT = 3;
+// Task limits removed - Unlimited for all tiers
 
 interface TaskLimitData {
     count: number;
@@ -70,91 +70,29 @@ class TaskLimitManager {
      * Check if user has tasks remaining
      */
     static canUseTask(): boolean {
-        // Pro users have unlimited tasks
-        if (this.isPro()) {
-            return true;
-        }
-
-        const data = this.getData();
-
-        // Check if date has changed (new day)
-        const today = this.getTodayDate();
-        if (data.date !== today) {
-            // Reset counter for new day
-            this.saveData({
-                count: 0,
-                date: today,
-                isPro: false,
-            });
-            return true;
-        }
-
-        // Check if under limit
-        return data.count < FREE_DAILY_LIMIT;
+        // ALL users have unlimited PDF tasks now
+        return true;
     }
 
     /**
      * Increment task count (call after successful task)
      */
     static incrementTask(): void {
-        const data = this.getData();
-
-        // Don't increment for Pro users
-        if (this.isPro()) {
-            return;
-        }
-
-        // Check if date has changed
-        const today = this.getTodayDate();
-        if (data.date !== today) {
-            // New day, reset and increment
-            this.saveData({
-                count: 1,
-                date: today,
-                isPro: false,
-            });
-        } else {
-            // Same day, increment
-            this.saveData({
-                ...data,
-                count: data.count + 1,
-            });
-        }
+        // No longer incrementing - Unlimited tasks
     }
 
     /**
      * Get remaining tasks for today
      */
     static getRemainingTasks(): number {
-        const data = this.getData();
-
-        // Pro users have unlimited
-        if (this.isPro()) {
-            return Infinity;
-        }
-
-        // Check if date has changed
-        const today = this.getTodayDate();
-        if (data.date !== today) {
-            return FREE_DAILY_LIMIT;
-        }
-
-        return Math.max(0, FREE_DAILY_LIMIT - data.count);
+        return Infinity;
     }
 
     /**
      * Get used tasks for today
      */
     static getUsedTasks(): number {
-        const data = this.getData();
-
-        // Check if date has changed
-        const today = this.getTodayDate();
-        if (data.date !== today) {
-            return 0;
-        }
-
-        return data.count;
+        return 0;
     }
 
     /**
@@ -188,7 +126,7 @@ class TaskLimitManager {
      * Get daily limit
      */
     static getDailyLimit(): number {
-        return FREE_DAILY_LIMIT;
+        return Infinity;
     }
 
     /**

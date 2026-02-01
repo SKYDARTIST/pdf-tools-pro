@@ -39,9 +39,7 @@ const PACKAGE_NAME = 'com.cryptobulla.antigravity';
 const VALID_PRODUCTS = new Set([
     'lifetime_pro_access',
     'pro_access_lifetime', // legacy
-    'monthly_pro_pass',
-    'ai_pack_100',
-    'ai_pack_500'
+    'monthly_pro_pass'
 ]);
 let playDeveloperApi = null;
 
@@ -613,14 +611,9 @@ export default async function handler(req, res) {
                     let targetTier = null;
                     let creditsToAdd = 0;
 
-                    // 5. PROCESS PRODUCT TYPES
-                    if (productId === 'lifetime_pro_access' || productId === 'pro_access_lifetime') {
+                    // 5. PROCESS PRODUCT TYPES (Normalized to Lifetime)
+                    if (productId === 'lifetime_pro_access' || productId === 'pro_access_lifetime' || productId === 'monthly_pro_pass') {
                         targetTier = 'lifetime';
-                    } else if (productId === 'monthly_pro_pass' || productId === 'pro_access_yearly') {
-                        targetTier = 'pro';
-                    } else if (productId.startsWith('ai_pack_')) {
-                        creditsToAdd = parseInt(productId.split('_')[2]) || 0;
-                        if (productId === 'ai_pack_100') creditsToAdd = 100; // Legacy support
                     }
 
                     // 6. ATOMIC UPDATES
@@ -662,130 +655,57 @@ export default async function handler(req, res) {
             }
 
             if (requestType === 'usage_fetch') {
-                // SECURITY: Prevent Authenticated Users from using Device-ID based fetch (Privilege Escalation Issue #3)
-                // However, we relax this to return user data if they are logged in, to avoid 403 breakage.
                 if (session?.is_auth) {
-                    console.log(`ℹ️ api/index: usage_fetch for authenticated user ${maskDeviceId(session.uid)} - redirection to user_accounts`);
                     try {
-                        const { data } = await supabase.from('user_accounts').select('*').eq('google_uid', session.uid).single();
+                        const { data } = await supabase.from('user_accounts').select('google_uid, tier, updated_at').eq('google_uid', session.uid).single();
                         if (data) return res.status(200).json(data);
-                    } catch (e) {
-                        // Fall through to device ID fetch if account fetch fails
-                    }
+                    } catch (e) { }
                 }
 
                 try {
                     const { data, error } = await supabase
                         .from('ag_user_usage')
-                        .select('*')
+                        .select('device_id, tier, updated_at')
                         .eq('device_id', deviceId)
                         .single();
 
                     if (error && error.code === 'PGRST116') {
-                        // New user: Create default record
                         const newUser = {
                             device_id: deviceId,
-                            tier: 'free', // START AS FREE
-                            ai_pack_credits: 0,
-                            created_at: new Date().toISOString(),
-                            trial_start_date: new Date().toISOString()
+                            tier: 'free',
+                            updated_at: new Date().toISOString()
                         };
-                        const { error: createError } = await supabase
-                            .from('ag_user_usage')
-                            .insert([newUser])
-                            .single();
-                        if (createError) throw createError;
+                        await supabase.from('ag_user_usage').insert([newUser]);
                         return res.status(200).json(newUser);
-                    }
-
-                    // RETROACTIVE TRIAL: If existing user doesn't have trial_start_date, grant them one now
-                    if (!data.trial_start_date) {
-                        const trialStartDate = new Date().toISOString();
-                        await supabase
-                            .from('ag_user_usage')
-                            .update({ trial_start_date: trialStartDate })
-                            .eq('device_id', deviceId);
-                        data.trial_start_date = trialStartDate;
-                    }
-
-                    // SECURITY: Server-side source of truth for tier/credits
-                    // Default to free tier for everyone unless purchased.
-                    data.tier = data.tier || 'free';
-
-                    // SANITY RESET: Clear legacy trial credits (999) from response
-                    if (data.ai_pack_credits >= 990) {
-                        data.ai_pack_credits = 0;
-                    } else {
-                        data.ai_pack_credits = data.ai_pack_credits || 0;
                     }
 
                     return res.status(200).json(data);
                 } catch (dbError) {
-                    // SECURITY: Mask DB Errors (Issue #5)
-                    console.error("Database Proxy Error:", { message: dbError instanceof Error ? dbError.message : 'Unknown', timestamp: new Date().toISOString() });
+                    console.error("Database Proxy Error:", dbError.message);
                     return res.status(500).json({ error: "Database Sync Error" });
                 }
             }
 
             if (requestType === 'usage_sync') {
-                // SECURITY: CSRF Protection - Verify CSRF token for state-changing requests
                 const csrfHeader = req.headers['x-csrf-token'];
                 const csrfPayload = verifyCsrfToken(csrfHeader);
 
-                const isValidCsrf = csrfPayload && csrfPayload.uid === session?.uid;
-
-                if (!isValidCsrf) {
-                    console.warn(`Anti-Gravity Security: CSRF mismatch (Token Uid: ${csrfPayload?.uid}, Device: ${deviceId}, User: ${session?.uid})`);
+                if (!csrfPayload || csrfPayload.uid !== session?.uid) {
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
                 }
 
-                const { usage } = req.body;
-                if (!usage) return res.status(400).json({ error: "Missing usage payload" });
-
-                console.log('Anti-Gravity API: Processing usage_sync for device:', {
-                    deviceId: maskDeviceId(deviceId),
-                    timestamp: new Date().toISOString()
-                });
-
                 try {
-                    // SECURITY ALERT: IGNORE client-provided tier/credits
-                    // v2.9.0 Remediation: Prevent clients from overwriting their own billing tier info
-                    // We ONLY update usage counters (operations_today, ai_docs_weekly, etc.)
-                    const safeUpdates = {
-                        device_id: deviceId,
-                        operations_today: usage.operationsToday,
-                        ai_docs_weekly: usage.aiDocsThisWeek,
-                        ai_docs_monthly: usage.aiDocsThisMonth,
-                        last_reset_daily: usage.lastOperationReset,
-                        last_reset_weekly: usage.lastAiWeeklyReset,
-                        last_reset_monthly: usage.lastAiMonthlyReset,
-                        has_received_bonus: usage.hasReceivedBonus,
-                    };
-
-                    // Only allow upserting these "Usage Counter" fields. 
-                    // Tier and Credits must remain under server control.
-                    const { data, error } = await supabase
+                    await supabase
                         .from('ag_user_usage')
-                        .upsert(
-                            [safeUpdates],
-                            { onConflict: 'device_id' }
-                        );
-
-                    if (error) {
-                        throw error;
-                    }
+                        .upsert([{
+                            device_id: deviceId,
+                            updated_at: new Date().toISOString()
+                        }], { onConflict: 'device_id' });
 
                     return res.status(200).json({ success: true });
                 } catch (syncError) {
-                    // SECURITY: Mask Sync Errors (Issue #5)
-                    console.error('Anti-Gravity API: usage_sync sync error:', {
-                        message: syncError instanceof Error ? syncError.message : 'Unknown',
-                        deviceId: maskDeviceId(deviceId),
-                        timestamp: new Date().toISOString()
-                    });
-                    return res.status(500).json({
-                        error: "Usage sync failed"
-                    });
+                    console.error('API: usage_sync error:', syncError.message);
+                    return res.status(500).json({ error: "Usage sync failed" });
                 }
             }
         }
@@ -806,37 +726,27 @@ export default async function handler(req, res) {
 
                 const { data: usage, error } = await supabase
                     .from(tableTarget)
-                    .select('*')
+                    .select('tier')
                     .eq(queryTarget, currentUid)
                     .single();
 
-                // SECURITY: STRICT FAIL-CLOSED (Audit Response P0)
-                if (error) {
-                    console.error("🛡️ Supabase Sync Error (Fail-Closed Engaged):", { message: error.message, code: error.code });
-                    return res.status(500).json({ error: "SERVICE_UNAVAILABLE", details: "Quota check failed. Please try again." });
+                if (error || !usage) {
+                    console.error("🛡️ Quota Check Error:", error?.message);
+                    return res.status(403).json({ error: "ACCESS_DENIED", details: "User record not found or error." });
                 }
 
                 usageRecord = usage;
-                const isVerifiedPro = usage?.tier === 'pro' || usage?.tier === 'lifetime';
+                const isPaidTier = ['pro', 'premium', 'lifetime'].includes(usage.tier);
 
-                if (usage || isVerifiedPro) {
-                    // If we have a record, perform actual deduction (Async/Background for performance)
-                    if (usage && !isVerifiedPro) { // For Free tier, enforce strict limits
-                        const limit = 3;
-                        if (usage.ai_docs_monthly >= limit && usage.ai_pack_credits <= 0) {
-                            return res.status(403).json({ error: "NEURAL_LINK_EXHAUSTED", details: "You have reached your Free AI operation quota." });
-                        }
-                    }
-                } else {
-                    // FAIL-CLOSED: No usage record and not verified Pro
-                    return res.status(403).json({ error: "ACCESS_DENIED", details: "User record not found." });
+                if (!isPaidTier) {
+                    return res.status(403).json({
+                        error: "NEURAL_LINK_EXHAUSTED",
+                        details: "Lifetime Access is required for AI features."
+                    });
                 }
             } catch (e) {
                 console.error("Usage Check Fatal Error:", e);
-                // Default: allow if session is authenticated
-                if (!session?.is_auth) {
-                    return res.status(500).json({ error: "SYSTEM_ERROR", details: "Security check failed." });
-                }
+                return res.status(500).json({ error: "SYSTEM_ERROR", details: "Security check failed." });
             }
         }
 
@@ -1075,28 +985,7 @@ ${wrapDoc(documentText || "No text content - analyzing image only.")}`;
                         }
                     }
 
-                    // AUTHORITATIVE SYNC (Security Fix Tooling)
-                    if (usageRecord) {
-                        const currentUid = session?.uid || deviceId;
-                        const isAuth = session?.is_auth;
-                        const table = isAuth ? 'user_accounts' : 'ag_user_usage';
-                        const key = isAuth ? 'google_uid' : 'device_id';
-
-                        if (usageRecord.ai_pack_credits > 0) {
-                            // RACE CONDITION PROTECTION: Use authoritative decrement
-                            await supabase.from(table)
-                                .update({ ai_pack_credits: usageRecord.ai_pack_credits - 1 })
-                                .eq(key, currentUid);
-                        } else {
-                            // Increment monthly/weekly usage
-                            await supabase.from(table)
-                                .update({
-                                    ai_docs_monthly: (usageRecord.ai_docs_monthly || 0) + 1,
-                                    ai_docs_weekly: (usageRecord.ai_docs_weekly || 0) + 1
-                                })
-                                .eq(key, currentUid);
-                        }
-                    }
+                    // AI usage tracking removed - unlimited for lifetime tiers.
 
                     return res.status(200).json({ text: text });
 

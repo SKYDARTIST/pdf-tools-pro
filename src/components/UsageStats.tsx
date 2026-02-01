@@ -21,18 +21,6 @@ const UsageStats: React.FC = () => {
         return subscribeToSubscription(update);
     }, []);
 
-    // DERIVE DISPLAY: Show "Used" for subscription tiers, "Credits" for balance packs
-    const getAiDisplayValue = () => {
-        if (!subscription) return "0";
-        if (subscription.aiPackCredits > 0) return subscription.aiPackCredits.toString();
-        return (subscription.aiDocsThisMonth || 0).toString();
-    };
-
-    const getAiLabel = () => {
-        if (subscription && subscription.aiPackCredits > 0) return 'AI Credits';
-        return 'AI Used';
-    };
-
     const statCards = [
         {
             icon: Zap,
@@ -45,13 +33,6 @@ const UsageStats: React.FC = () => {
             label: 'Success Rate',
             value: `${stats.successRate || 100}%`,
             delay: 0.2,
-        },
-        {
-            icon: Sparkles,
-            label: getAiLabel(),
-            value: getAiDisplayValue(),
-            delay: 0.3,
-            isAi: true
         }
     ];
 
@@ -67,7 +48,7 @@ const UsageStats: React.FC = () => {
                         <card.icon size={12} className="text-gray-900 dark:text-white" />
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className={`text-lg sm:text-2xl font-black tracking-tighter leading-none truncate ${card.isAi ? 'text-[#00C896]' : 'text-[#000000] dark:text-white'}`}>
+                        <span className="text-lg sm:text-2xl font-black tracking-tighter leading-none truncate text-[#000000] dark:text-white">
                             {card.value}
                         </span>
                         <span className="text-[6px] sm:text-[8px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[#2D3748] dark:text-gray-400 opacity-80 mt-1 truncate">

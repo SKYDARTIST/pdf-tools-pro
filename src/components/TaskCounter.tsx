@@ -36,7 +36,7 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                     >
                         <Crown size={12} fill="currentColor" className="text-emerald-500" />
                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 whitespace-nowrap">
-                            {isLifetime ? 'LIFETIME' : 'PRO ACTIVE'}
+                            LIFETIME ACTIVE
                         </span>
                     </motion.div>
                 </div>
@@ -59,10 +59,10 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                 </div>
                 <div className="flex flex-col">
                     <span className="text-[11px] font-mono font-black uppercase tracking-widest text-emerald-400">
-                        {isLifetime ? 'LIFETIME AUTHORIZATION' : 'PRO AUTHORIZATION'}
+                        LIFETIME AUTHORIZATION
                     </span>
                     <span className="text-[8px] font-mono font-bold text-emerald-500/50 uppercase tracking-[0.2em] mt-0.5 whitespace-nowrap truncate">
-                        {isLifetime ? 'UNLIMITED LIFETIME ACCESS' : 'UNLIMITED ACCESS'}
+                        UNLIMITED LIFETIME ACCESS
                     </span>
                 </div>
             </motion.div>
@@ -77,16 +77,11 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
         return (
             <motion.div
                 onClick={onUpgradeClick}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0 ${isCritical
-                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-sm shadow-rose-500/10'
-                    : isWarning
-                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-                        : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-gray-400'
-                    }`}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
             >
-                <Activity size={12} strokeWidth={3} />
-                <span className="text-[10px] font-black tracking-tight uppercase">
-                    {used}/{limit}
+                <Sparkles size={10} className="animate-pulse" />
+                <span className="text-[9px] font-black tracking-tight uppercase">
+                    UNLOCK LIFETIME
                 </span>
             </motion.div>
         );
@@ -96,41 +91,18 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex items-center justify-between gap-4 px-6 py-4 rounded-[24px] border transition-all ${isCritical
-                ? 'bg-rose-500/5 border-rose-500/20'
-                : isWarning
-                    ? 'bg-amber-500/5 border-amber-500/20'
-                    : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 shadow-sm'
-                }`}
+            className="monolith-glass p-6 items-center flex gap-4 bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white border border-black/5 dark:border-white/5 rounded-[32px] overflow-hidden"
         >
-            <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors shadow-inner ${isCritical ? 'bg-rose-500/20 text-rose-500' : 'bg-black/10 dark:bg-white/10 text-gray-400'
-                    }`}>
-                    <Activity size={20} />
-                </div>
-                <div className="flex flex-col">
-                    <span className="text-[9px] font-mono font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none">
-                        {used} / {limit} TASKS CONSUMED
-                    </span>
-                    <div className="flex items-center gap-2 mt-2">
-                        <NeuralPulse
-                            color={isCritical ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}
-                            size="sm"
-                        />
-                        <span className="text-[8px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-none">
-                            SYNC STATUS: {isCritical ? 'EXHAUSTED' : 'OPERATIONAL'}
-                        </span>
-                    </div>
-                </div>
+            <div className="w-10 h-10 bg-black/10 dark:bg-white/10 rounded-xl flex items-center justify-center text-gray-400 shrink-0">
+                <Activity size={20} />
             </div>
-
-            <div className="flex flex-col items-end gap-1 shrink-0">
-                <div className={`text-[16px] font-black tracking-tighter leading-none ${isCritical ? 'text-rose-500' : 'text-gray-900 dark:text-white'}`}>
-                    {remaining}
-                </div>
-                <div className="text-[7px] font-mono font-black uppercase tracking-widest text-gray-400 leading-none">
-                    REMAINING
-                </div>
+            <div className="flex flex-col">
+                <span className="text-[11px] font-mono font-black uppercase tracking-widest text-gray-500">
+                    BASE UTILITY ACTIVE
+                </span>
+                <span className="text-[8px] font-mono font-bold text-gray-400 uppercase tracking-[0.2em] mt-0.5">
+                    UNLIMITED PDF TOOLS • FREE TIER
+                </span>
             </div>
         </motion.div>
     );

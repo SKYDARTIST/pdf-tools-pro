@@ -24,7 +24,7 @@ const TableExtractorScreen: React.FC = () => {
     const [showReport, setShowReport] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
     const [showAiLimit, setShowAiLimit] = useState(false);
-    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any }>({ blockMode: null });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,8 +49,6 @@ const TableExtractorScreen: React.FC = () => {
             const subscription = getSubscription();
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
-                used: subscription.aiDocsThisMonth,
-                limit: subscription.tier === SubscriptionTier.FREE ? 3 : 50
             });
             setShowAiLimit(true);
             return;

@@ -2,81 +2,54 @@ import { fetchUserUsage, syncUsageToServer } from './usageService';
 import TaskLimitManager from '@/utils/TaskLimitManager';
 import { SecurityLogger } from '@/utils/securityUtils';
 
-import { STORAGE_KEYS, SUBSCRIPTION_TIERS, AI_OPERATION_TYPES, DEFAULTS } from '@/utils/constants';
+import { STORAGE_KEYS, SUBSCRIPTION_TIERS, DEFAULTS } from '@/utils/constants';
 import AuthService from './authService';
 import Config from './configService';
-import { getDeviceId } from './deviceService';
 import { secureFetch } from './apiService';
 
+/**
+ * Subscription Service - Simplified (2-Tier System)
+ * 
+ * NO counters, NO limits, NO sync complexity.
+ * Everything is tier-based:
+ * - FREE: Unlimited PDF tools, No AI docs.
+ * - LIFETIME: Unlimited PDF tools, Unlimited AI docs.
+ */
 
-
-// Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
     FREE = 'free',
+    LIFETIME = 'lifetime',
+    // Legacy support for migration
     PRO = 'pro',
-    PREMIUM = 'premium',
-    LIFETIME = 'lifetime'
+    PREMIUM = 'premium'
 }
 
-// AI Operation Types - Determines if credits are consumed
 export enum AiOperationType {
-    // HEAVY: Consumes AI credits (Workspace, Audit, Briefing, Extractor, Redact, Compare)
     HEAVY = 'heavy',
-    // GUIDANCE: Free for all users (Scanner guidance, Reader mindmaps/outlines)
     GUIDANCE = 'guidance'
 }
 
-// Blocking modes when AI limits are hit
 export enum AiBlockMode {
-    BUY_PRO = 'buy_pro',           // Free user needs to buy Pro
-    NONE = 'none'                   // No blocking
+    BUY_PRO = 'buy_pro', // Effectively "Buy Lifetime" now
+    NONE = 'none'
 }
 
 export interface UserSubscription {
     tier: SubscriptionTier;
-    operationsToday: number;
-    aiDocsThisWeek: number;
-    aiDocsThisMonth: number;
-
-    lastOperationReset: string; // ISO date
-    lastAiWeeklyReset: string; // ISO date
-    lastAiMonthlyReset: string; // ISO date
     purchaseToken?: string;
-    lastNotifiedCredits?: number;
-    hasReceivedBonus: boolean;
 }
 
 const STORAGE_KEY = STORAGE_KEYS.SUBSCRIPTION;
-let isHydrated = false; // Memory flag to track if we've synced with server this session
-
-const FREE_LIMITS = {
-    operationsPerDay: DEFAULTS.FREE_DAILY_LIMIT,
-    aiDocsPerMonth: 3, // EXACT REQUESTed: 3 for free version
-    maxFileSize: 10 * 1024 * 1024, // 10MB
-};
-
-const PRO_LIMITS = {
-    operationsPerDay: Infinity,
-    aiDocsPerMonth: 50, // EXACT REQUESTED: 50 per month for pro pass
-    maxFileSize: 100 * 1024 * 1024, // 100MB
-};
-
-const PREMIUM_LIMITS = {
-    operationsPerDay: Infinity,
-    aiDocsPerMonth: Infinity,
-    maxFileSize: 200 * 1024 * 1024, // 200MB
-};
+let isHydrated = false;
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (user?: any): Promise<UserSubscription> => {
-    // Proactive reconciliation on every boot (Security Fix #7)
-    // Await drift check first to settle tier before returning reconcile
+    // Proactive reconciliation on every boot
     await reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
     return await forceReconcileFromServer();
 };
 
 /**
- * Proactive Reconciliation (Security Fix #7)
  * Authoritatively syncs local tier with backend user_accounts table
  */
 export const reconcileSubscriptionDrift = async (): Promise<void> => {
@@ -95,7 +68,7 @@ export const reconcileSubscriptionDrift = async (): Promise<void> => {
                 const sub = getSubscription();
                 if (sub.tier !== data.tier) {
                     console.log(`🛡️ Drift Reconciliation: Updating local tier ${sub.tier} -> ${data.tier}`);
-                    upgradeTier(data.tier as SubscriptionTier, undefined, true);
+                    upgradeTier(data.tier as SubscriptionTier, undefined);
                 }
             }
         }
@@ -111,22 +84,23 @@ export const forceReconcileFromServer = async (): Promise<UserSubscription> => {
         const supabaseUsage = await fetchUserUsage();
         if (supabaseUsage) {
             SecurityLogger.log('Anti-Gravity Subscription: ✅ Synchronized with Supabase');
+
+            // Normalize legacy tiers to Lifetime if needed
+            if (supabaseUsage.tier === SubscriptionTier.PRO || supabaseUsage.tier === SubscriptionTier.PREMIUM) {
+                supabaseUsage.tier = SubscriptionTier.LIFETIME;
+            }
+
             saveSubscription(supabaseUsage);
             isHydrated = true;
 
             // Sync TaskLimitManager
-            if (supabaseUsage.tier === SubscriptionTier.PRO || supabaseUsage.tier === SubscriptionTier.LIFETIME) {
-                console.log('Anti-Gravity Subscription: 🛡️ Tier confirmed Pro/Lifetime from server');
+            if (supabaseUsage.tier === SubscriptionTier.LIFETIME) {
                 TaskLimitManager.upgradeToPro();
             } else {
-                // PERSISTENCE BUFFER: Don't downgrade immediately if we think we are Pro locally.
-                // This prevents the "Flash of Free Tier" if the DB update is lagging behind a successful purchase.
                 if (TaskLimitManager.isPro()) {
-                    console.warn('Anti-Gravity Subscription: ⚠️ Server says Free but Local says Pro. Preserving local state until manual restore or native sync.');
-                    // We return PRO for now to avoid UI flickering
-                    supabaseUsage.tier = SubscriptionTier.PRO;
+                    // Persistence buffer: if we were pro locally, keep it until proven otherwise
+                    supabaseUsage.tier = SubscriptionTier.LIFETIME;
                 } else {
-                    console.log('Anti-Gravity Subscription: ℹ️ Tier confirmed Free from server');
                     TaskLimitManager.resetToFree();
                 }
             }
@@ -147,36 +121,27 @@ export const getSubscription = (): UserSubscription => {
         try {
             const subscription = JSON.parse(stored);
 
-            // SECURITY: Restore tier from TaskLimitManager (trusted source) if local state is missing
-            if (!subscription.tier || subscription.tier === SubscriptionTier.FREE) {
-                if (TaskLimitManager.isPro()) {
-                    subscription.tier = SubscriptionTier.PRO;
-                }
+            // Legacy normalization
+            if (subscription.tier === SubscriptionTier.PRO || subscription.tier === SubscriptionTier.PREMIUM) {
+                subscription.tier = SubscriptionTier.LIFETIME;
             }
 
-
+            // Trust TaskLimitManager
+            if (TaskLimitManager.isPro()) {
+                subscription.tier = SubscriptionTier.LIFETIME;
+            }
 
             return subscription;
         } catch (e) {
             console.error('Anti-Gravity Subscription: Malformed localStorage data, resetting.', e);
-            localStorage.removeItem(STORAGE_KEY); // Clear corrupted data
-            // Fall through to default behavior below
+            localStorage.removeItem(STORAGE_KEY);
         }
     }
 
-    // Default: Free tier with no credits (until purchased)
-    const now = new Date().toISOString();
+    // Default: Free tier
     const isProFromLimit = TaskLimitManager.isPro();
     const defaultSubscription = {
-        tier: isProFromLimit ? SubscriptionTier.PRO : SubscriptionTier.FREE,
-        operationsToday: 0,
-        aiDocsThisWeek: 0,
-        aiDocsThisMonth: 0,
-
-        lastOperationReset: now,
-        lastAiWeeklyReset: now,
-        lastAiMonthlyReset: now,
-        hasReceivedBonus: false,
+        tier: isProFromLimit ? SubscriptionTier.LIFETIME : SubscriptionTier.FREE
     };
     saveSubscription(defaultSubscription);
     return defaultSubscription;
@@ -184,86 +149,31 @@ export const getSubscription = (): UserSubscription => {
 
 // Save subscription to localStorage
 export const saveSubscription = (subscription: UserSubscription): void => {
-    // PERSISTENCE: We save the full state (tier, credits) locally for instant hydration.
     const prev = localStorage.getItem(STORAGE_KEY);
     const next = JSON.stringify(subscription);
 
-    // Only save and notify if actually changed (Issue #10)
     if (prev !== next) {
         localStorage.setItem(STORAGE_KEY, next);
         window.dispatchEvent(new CustomEvent('subscription-updated'));
     }
 };
-// Refund an AI credit in case of downstream failure after deduction
+
+// NO-OP: Counters removed
 export const refundAICredit = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<void> => {
-    if (operationType === AiOperationType.GUIDANCE) return;
-
-    const subscription = getSubscription();
-
-    // Logic: Restore counts.
-    if (subscription.tier === SubscriptionTier.PRO && subscription.aiDocsThisMonth === 0) {
-        // If they were Pro and hit 0, we can't really "refund" into negative usage here easily
-        // but normally we just decrement the usage counter.
-        if (subscription.aiDocsThisMonth > 0) subscription.aiDocsThisMonth -= 1;
-    } else {
-        if (subscription.aiDocsThisMonth > 0) subscription.aiDocsThisMonth -= 1;
-        if (subscription.aiDocsThisWeek > 0) subscription.aiDocsThisWeek -= 1;
-    }
-
-    saveSubscription(subscription);
-    await syncUsageToServer(subscription).catch(err => console.error('Refund Sync Failed:', err));
-    console.log('AI Usage: 🛡️ Credit REFUNDED successfully');
+    console.log('AI Usage: 🛡️ Refund (NO-OP) - Counters removed');
 };
 
-// Check if user can perform a PDF operation
+// ALWAYS ALLOWED: Daily limits removed
 export const canPerformOperation = (): { allowed: boolean; reason?: string } => {
-    const subscription = getSubscription();
-
-    // Reset daily counter if needed (using server time to prevent manipulation)
-    const lastReset = new Date(subscription.lastOperationReset);
-    const now = new Date(); // TODO: Replace with server time when available (Issue #11)
-
-    if (now.getDate() !== lastReset.getDate() || now.getMonth() !== lastReset.getMonth()) {
-        subscription.operationsToday = 0;
-        subscription.lastOperationReset = now.toISOString();
-        saveSubscription(subscription);
-    }
-
-    // Check limits based on tier
-    if (subscription.tier === SubscriptionTier.FREE) {
-        if (subscription.operationsToday >= FREE_LIMITS.operationsPerDay) {
-            return {
-                allowed: false,
-                reason: `You've reached your daily limit of ${FREE_LIMITS.operationsPerDay} operations. Upgrade to Pro for unlimited access!`
-            };
-        }
-    }
-
     return { allowed: true };
 };
 
-// Check if user is near their AI limit
+// ALWAYS FALSE: No limits to be near
 export const isNearAiLimit = (): boolean => {
-    const subscription = getSubscription();
-
-
-
-    // 2. Tier Specific Limits
-    if (subscription.tier === SubscriptionTier.FREE) {
-        return subscription.aiDocsThisMonth >= FREE_LIMITS.aiDocsPerMonth;
-    }
-
-    if (subscription.tier === SubscriptionTier.PRO) {
-        // High efficiency: warn when less than 3 docs remaining in monthly quota
-        return (PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth) <= 3;
-    }
-
     return false;
 };
 
-
-
-// Check if user can use AI
+// AI check: Only Lifetime users get AI
 export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY): {
     allowed: boolean;
     reason?: string;
@@ -271,186 +181,64 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
     warning?: boolean;
     blockMode?: AiBlockMode;
 } => {
-    // GUIDANCE: Always allowed for all users (Zero Cost to users)
     if (operationType === AiOperationType.GUIDANCE) {
         return { allowed: true, blockMode: AiBlockMode.NONE };
     }
 
     const subscription = getSubscription();
-    const now = new Date();
-    const warning = isNearAiLimit();
 
-
-
-    // 2. Weekly Reset for Free Tier
-    const lastWeeklyReset = new Date(subscription.lastAiWeeklyReset);
-    const weeksDiff = Math.floor((now.getTime() - lastWeeklyReset.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    if (weeksDiff >= 1) {
-        subscription.aiDocsThisWeek = 0;
-        subscription.lastAiWeeklyReset = now.toISOString();
-        saveSubscription(subscription);
+    if (subscription.tier === SubscriptionTier.LIFETIME) {
+        return { allowed: true, blockMode: AiBlockMode.NONE };
     }
 
-    // 3. Monthly Reset for Pro Tier
-    const lastMonthlyReset = new Date(subscription.lastAiMonthlyReset);
-    const monthsDiff = (now.getFullYear() - lastMonthlyReset.getFullYear()) * 12 + (now.getMonth() - lastMonthlyReset.getMonth());
-    if (monthsDiff >= 1) {
-        subscription.aiDocsThisMonth = 0;
-        subscription.lastAiMonthlyReset = now.toISOString();
-        saveSubscription(subscription);
-    }
-
-    // 4. Check limits based on tier
-    if (subscription.tier === SubscriptionTier.FREE) {
-        if (subscription.aiDocsThisMonth >= FREE_LIMITS.aiDocsPerMonth) {
-            return {
-                allowed: false,
-                reason: `You've used your ${FREE_LIMITS.aiDocsPerMonth} free AI documents this month. Upgrade to Pro for 50 AI documents per month!`,
-                blockMode: AiBlockMode.BUY_PRO
-            };
-        }
-        return { allowed: true, remaining: FREE_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning, blockMode: AiBlockMode.NONE };
-    }
-
-    if (subscription.tier === SubscriptionTier.PRO) {
-        if (subscription.aiDocsThisMonth >= PRO_LIMITS.aiDocsPerMonth) {
-            return {
-                allowed: false,
-                reason: `You've used all ${PRO_LIMITS.aiDocsPerMonth} AI documents this month. Upgrade to Lifetime for unlimited access!`,
-                blockMode: AiBlockMode.BUY_PRO
-            };
-        }
-        return { allowed: true, remaining: PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning, blockMode: AiBlockMode.NONE };
-    }
-
-    // Premium and Lifetime have unlimited
-    return { allowed: true, blockMode: AiBlockMode.NONE };
+    return {
+        allowed: false,
+        reason: "AI features require Lifetime Access. Upgrade now for unlimited AI usage!",
+        blockMode: AiBlockMode.BUY_PRO
+    };
 };
 
-// Check if a specific credit level is a milestone the user should be notified about
-const isMilestone = (credits: number): boolean => {
-    if (credits === 0) return true;
-    if (credits <= 10) return true;
-    return credits % 10 === 0;
-};
-
-// Record a PDF operation
+// NO-OP: Counters removed
 export const recordOperation = (): void => {
-    const subscription = getSubscription();
-    subscription.operationsToday += 1;
-    saveSubscription(subscription);
+    // No-op: No daily limits to track
 };
 
-// Record an AI usage
-export const recordAIUsage = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<{
-    tier: SubscriptionTier;
-    used: number;
-    limit: number;
-    remaining: number;
-    message?: string;
-} | null> => {
-    // Skip recording for guidance - it's free!
-    if (operationType === AiOperationType.GUIDANCE) {
-        console.log('AI Usage: GUIDANCE operation - no credits consumed');
-        return null; // No notification needed
-    }
-
-    // AUTH SAFETY: If user is logged in but we haven't hydrated from server yet, 
-    // fetch server data first to avoid overwriting with stale local data
-    const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
-    // 1. Sync CURRENT state before deduction (Phase 4 fix for "Disappearing Credits" on uninstall)
-    // This ensures that even if the app is uninstalled immediately after, the credits
-    // are synced.
-    const preSyncSub = getSubscription();
-    await syncUsageToServer(preSyncSub).catch(err => console.error('AI Usage: Pre-deduction Sync Failed:', err));
-
-    if (googleUid && !isHydrated) {
-        console.log('AI Usage: 🛡️ Forced hydration triggered before operation');
-        await initSubscription();
-    }
-
-    const subscription = getSubscription();
-    let stats = null;
-
-    // Logic for tracking usage
-    if (subscription.tier === SubscriptionTier.FREE) {
-        subscription.aiDocsThisMonth += 1;
-        const used = subscription.aiDocsThisMonth;
-        const limit = FREE_LIMITS.aiDocsPerMonth;
-        const remaining = Math.max(0, limit - used);
-
-        stats = {
-            tier: SubscriptionTier.FREE,
-            used,
-            limit,
-            remaining,
-            message: `Free Tier: ${used}/${limit} docs used this month`
-        };
-    } else {
-        // PRO or above
-        subscription.aiDocsThisMonth += 1;
-        const used = subscription.aiDocsThisMonth;
-        const limit = PRO_LIMITS.aiDocsPerMonth;
-        const remaining = Math.max(0, limit - used);
-
-        stats = {
-            tier: subscription.tier,
-            used,
-            limit,
-            remaining,
-            message: `Pro Plan: ${used}/${limit} docs used this month`
-        };
-    }
-
-    saveSubscription(subscription);
-
-    // 2. Sync NEW state after deduction (Immediate server persistence)
-    await syncUsageToServer(subscription).catch(err => console.error('AI Usage: Post-deduction Sync Failed:', err));
-
-    return stats;
+// NO-OP: Counters removed
+export const recordAIUsage = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<null> => {
+    // No-op: AI is unlimited for Lifetime users
+    return null;
 };
 
-// Internal helper for UsageStats to listen for updates
+// Listener for updates
 export const subscribeToSubscription = (callback: () => void) => {
     window.addEventListener('subscription-updated', callback);
     return () => window.removeEventListener('subscription-updated', callback);
 };
 
-
 // Upgrade user to a tier
-export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string, skipBonus: boolean = false): void => {
+export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): void => {
     const subscription = getSubscription();
     subscription.tier = tier;
     subscription.purchaseToken = purchaseToken;
 
     saveSubscription(subscription);
 
-    // Sync with TaskLimitManager
     try {
-        if (tier === SubscriptionTier.PRO || tier === SubscriptionTier.PREMIUM || tier === SubscriptionTier.LIFETIME) {
+        if (tier === SubscriptionTier.LIFETIME || tier === SubscriptionTier.PRO) {
             TaskLimitManager.upgradeToPro();
         }
     } catch (e) {
         console.warn("TaskLimitManager sync failed");
     }
 
-    // Persist to Supabase so it's not overwritten on next reload
     syncUsageToServer(subscription);
 };
 
-// Get limits for current tier
+// Unlimited limits
 export const getCurrentLimits = () => {
-    const subscription = getSubscription();
-
-    switch (subscription.tier) {
-        case SubscriptionTier.FREE:
-            return FREE_LIMITS;
-        case SubscriptionTier.PRO:
-            return PRO_LIMITS;
-        case SubscriptionTier.PREMIUM:
-        case SubscriptionTier.LIFETIME:
-            return PREMIUM_LIMITS;
-        default:
-            return FREE_LIMITS;
-    }
+    return {
+        operationsPerDay: Infinity,
+        aiDocsPerMonth: Infinity,
+        maxFileSize: 200 * 1024 * 1024 // Keep some limit for sanity
+    };
 };

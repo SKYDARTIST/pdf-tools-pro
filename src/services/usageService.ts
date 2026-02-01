@@ -16,6 +16,12 @@ interface FailedSync {
     attempts: number;
 }
 
+/**
+ * Usage Service - Simplified (2-Tier System)
+ * 
+ * NO usage tracking, NO counters.
+ * Just tier syncing.
+ */
 
 export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
     try {
@@ -38,19 +44,9 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
 
         const data = await response.json();
 
-        // Map snake_case response from Supabase to camelCase UserSubscription
+        // ONLY map the tier (counters removed from DB)
         const subscription: UserSubscription = {
-            tier: data.tier,
-            operationsToday: data.operations_today || 0,
-            aiDocsThisWeek: data.ai_docs_weekly || 0,
-            aiDocsThisMonth: data.ai_docs_monthly || 0,
-
-            lastOperationReset: data.last_reset_daily || new Date().toISOString(),
-            lastAiWeeklyReset: data.last_reset_weekly || new Date().toISOString(),
-            lastAiMonthlyReset: data.last_reset_monthly || new Date().toISOString(),
-            // trialStartDate: data.trial_start_date, // DEPRECATED
-            hasReceivedBonus: data.has_received_bonus || false,
-            purchaseToken: undefined // Not persisted in this table
+            tier: data.tier
         };
 
         return subscription;
@@ -71,21 +67,15 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         const apiEndpoint = googleUser ? API_ENDPOINTS.SUBSCRIPTION : API_ENDPOINTS.INDEX;
         const backendUrl = `${Config.VITE_AG_API_URL}${apiEndpoint}`;
 
-        SecurityLogger.log('Anti-Gravity Billing: Syncing usage to server...', {
+        SecurityLogger.log('Anti-Gravity Billing: Syncing tier to server...', {
             user: googleUser ? googleUser.email : maskString(deviceId),
             tier: usage.tier,
             timestamp: new Date().toISOString()
         });
 
+        // ONLY sync the tier
         const secureUsage = {
-            operationsToday: usage.operationsToday,
-            lastOperationReset: usage.lastOperationReset,
-
-            aiDocsThisWeek: usage.aiDocsThisWeek,
-            aiDocsThisMonth: usage.aiDocsThisMonth,
-            lastAiWeeklyReset: usage.lastAiWeeklyReset,
-            lastAiMonthlyReset: usage.lastAiMonthlyReset,
-            hasReceivedBonus: usage.hasReceivedBonus,
+            tier: usage.tier
         };
 
         const payload = googleUser ? secureUsage : { type: 'usage_sync', usage: secureUsage };
@@ -96,32 +86,19 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         });
 
         if (!response.ok) {
-            const responseBody = await response.text();
-            let errorDetails = {};
-            try {
-                errorDetails = JSON.parse(responseBody);
-            } catch {
-                errorDetails = { rawResponse: responseBody };
-            }
-
             Logger.error('Billing', 'syncUsageToServer failed', {
                 status: response.status,
-                statusText: response.statusText,
-                errorDetails,
                 tier: usage.tier,
             });
 
-            // CHANGE: Add to retry queue instead of just logging
             addToRetryQueue(usage);
-            notifyUserOfSyncFailure();
             return;
         }
 
-        Logger.info('Billing', '✅ Usage synced successfully', {
+        Logger.info('Billing', '✅ Tier synced successfully', {
             tier: usage.tier,
         });
 
-        // CHANGE: Clear from retry queue on success
         clearFromRetryQueue();
 
     } catch (error) {
@@ -129,53 +106,28 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
             error: error instanceof Error ? error.message : String(error),
         });
 
-        // CHANGE: Add to retry queue on network error
         addToRetryQueue(usage);
-        notifyUserOfSyncFailure();
     }
 };
 
 const addToRetryQueue = (usage: UserSubscription): void => {
     try {
         const queue: FailedSync[] = JSON.parse(localStorage.getItem(FAILED_SYNCS_KEY) || '[]');
+        queue.push({
+            usage,
+            timestamp: Date.now(),
+            attempts: 1
+        });
 
-        // Check if already in queue
-        const existing = queue.find(item => item.timestamp > Date.now() - 60000); // Last minute
-        if (existing) {
-            existing.attempts += 1;
-        } else {
-            queue.push({
-                usage,
-                timestamp: Date.now(),
-                attempts: 1
-            });
-        }
-
-        // Keep only last 10 failed syncs
-        if (queue.length > 10) {
-            queue.shift();
-        }
-
+        if (queue.length > 5) queue.shift();
         localStorage.setItem(FAILED_SYNCS_KEY, JSON.stringify(queue));
-        console.warn('Anti-Gravity Sync: Added to retry queue');
     } catch (e) {
         console.error('Failed to add to retry queue:', e);
     }
 };
 
 const clearFromRetryQueue = (): void => {
-    try {
-        localStorage.removeItem(FAILED_SYNCS_KEY);
-        console.log('Anti-Gravity Sync: Retry queue cleared');
-    } catch (e) {
-        console.error('Failed to clear retry queue:', e);
-    }
-};
-
-const notifyUserOfSyncFailure = (): void => {
-    window.dispatchEvent(new CustomEvent('sync-failed', {
-        detail: { message: 'Changes will sync when online' }
-    }));
+    localStorage.removeItem(FAILED_SYNCS_KEY);
 };
 
 export const retryFailedSyncs = async (): Promise<void> => {
@@ -183,21 +135,7 @@ export const retryFailedSyncs = async (): Promise<void> => {
         const queue: FailedSync[] = JSON.parse(localStorage.getItem(FAILED_SYNCS_KEY) || '[]');
         if (queue.length === 0) return;
 
-        console.log(`Anti-Gravity Sync: Retrying ${queue.length} failed syncs...`);
-
         for (const item of queue) {
-            // Skip if too old (7 days)
-            if (Date.now() - item.timestamp > 7 * 24 * 60 * 60 * 1000) {
-                console.warn('Skipping sync older than 7 days');
-                continue;
-            }
-
-            // Skip if too many attempts
-            if (item.attempts >= 5) {
-                console.error('Max retry attempts exceeded');
-                continue;
-            }
-
             await syncUsageToServer(item.usage);
         }
     } catch (e) {

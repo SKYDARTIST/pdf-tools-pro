@@ -43,7 +43,8 @@ const NeuralPulse: React.FC<NeuralPulseProps> = ({ color = 'bg-emerald-500', siz
                     repeat: Infinity,
                     ease: "easeInOut"
                 }}
-                className={`${sizeMap[size]} rounded-full ${color} relative z-10 shadow-[0_0_8px_${glowColor}]`}
+                className={`${sizeMap[size]} rounded-full ${color} relative z-10`}
+                style={{ boxShadow: `0 0 8px ${glowColor}` }}
             />
         </div>
     );

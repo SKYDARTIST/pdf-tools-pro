@@ -56,7 +56,7 @@ const ReaderScreen: React.FC = () => {
     const [showMindMapSettings, setShowMindMapSettings] = useState(false);
     const [showLoginPrompt, setShowLoginPrompt] = useState(false);
     const [hasConsent, setHasConsent] = useState(localStorage.getItem('ai_neural_consent') === 'true');
-    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any; used: number; limit: number }>({ blockMode: null, used: 0, limit: 0 });
+    const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any }>({ blockMode: null });
 
     const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
     const [pdfError, setPdfError] = useState<string | null>(null);
@@ -125,11 +125,8 @@ const ReaderScreen: React.FC = () => {
         // AI CREDIT CHECK - Add this block
         const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            const sub = getSubscription();
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
-                used: sub.aiDocsThisMonth,
-                limit: sub.tier === SubscriptionTier.FREE ? 3 : 50
             });
             setShowAiLimit(true);
             return; // STOP - user has no credits
@@ -166,11 +163,8 @@ const ReaderScreen: React.FC = () => {
         // AI CREDIT CHECK - Add this block
         const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            const sub = getSubscription();
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
-                used: sub.aiDocsThisMonth,
-                limit: sub.tier === SubscriptionTier.FREE ? 3 : 50
             });
             setShowAiLimit(true);
             return; // STOP - user has no credits
@@ -204,11 +198,8 @@ const ReaderScreen: React.FC = () => {
         // AI CREDIT CHECK - Add this block
         const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            const sub = getSubscription();
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
-                used: sub.aiDocsThisMonth,
-                limit: sub.tier === SubscriptionTier.FREE ? 3 : 50
             });
             setShowAiLimit(true);
             return; // STOP - user has no credits
@@ -282,8 +273,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
 
         const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
-            const sub = getSubscription();
-            setAiLimitInfo({ blockMode: aiCheck.blockMode, used: sub.aiDocsThisMonth, limit: sub.tier === SubscriptionTier.FREE ? 3 : 50 });
+            setAiLimitInfo({ blockMode: aiCheck.blockMode });
             setShowAiLimit(true);
             return;
         }
@@ -488,7 +478,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
             </div>
             <AIOptInModal isOpen={showConsent} onClose={() => setShowConsent(false)} onAccept={() => { localStorage.setItem('ai_neural_consent', 'true'); setHasConsent(true); setShowConsent(false); }} />
             <AIReportModal isOpen={showReport} onClose={() => setShowReport(false)} />
-            <AiLimitModal isOpen={showAiLimit} onClose={() => setShowAiLimit(false)} blockMode={aiLimitInfo.blockMode} used={aiLimitInfo.used} limit={aiLimitInfo.limit} />
+            <AiLimitModal isOpen={showAiLimit} onClose={() => setShowAiLimit(false)} blockMode={aiLimitInfo.blockMode} />
             <MindMapSettingsModal isOpen={showMindMapSettings} numPages={numPages} onClose={() => setShowMindMapSettings(false)} onConfirm={s => generateMindMap(s)} />
 
             {/* Login Required Modal */}

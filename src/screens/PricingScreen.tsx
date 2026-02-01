@@ -13,39 +13,22 @@ const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
   const [currentTier, setCurrentTier] = React.useState(getSubscription().tier);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [proPrice, setProPrice] = React.useState('...');
   const [lifetimePrice, setLifetimePrice] = React.useState('...');
 
 
   React.useEffect(() => {
-    // Fetch localized prices from Google Play
     const fetchPrices = async () => {
       try {
         const products = await BillingService.getProducts();
-
-        // ADVANCED MATCHING (V6.1)
-        // Lifetime usually has a clean ID
         const life = products.find(p =>
           p.identifier === 'lifetime_pro_access' ||
           p.identifier === 'pro_access_lifetime' ||
           p.identifier.includes('lifetime')
         );
 
-        // Pro Subscriptions often have suffixes (e.g. monthly_pro_pass:monthly-standard)
-        const pro = products.find(p => p.identifier.includes('monthly_pro_pass')) ||
-          products.find(p => p.identifier.toLowerCase().includes('pro') && !p.identifier.toLowerCase().includes('lifetime')) ||
-          products.find(p => p.identifier.toLowerCase().includes('monthly'));
-
-        if (pro) {
-          console.log('🛡️ Pricing: Matched Pro Plan:', pro.identifier);
-          setProPrice(pro.price);
-        }
         if (life) {
-          console.log('🛡️ Pricing: Matched Lifetime Plan:', life.identifier);
           setLifetimePrice(life.price);
         }
-
-
       } catch (err) {
         console.warn('Failed to fetch localized prices:', err);
       }
@@ -54,12 +37,10 @@ const PricingScreen: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    // Re-read subscription state on mount in case it changed during boot
     setCurrentTier(getSubscription().tier);
   }, []);
 
   React.useEffect(() => {
-    // Listen for storage changes (in case another tab/window updated it)
     const handleStorageChange = () => {
       setCurrentTier(getSubscription().tier);
     };
@@ -67,31 +48,15 @@ const PricingScreen: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const handleProPurchase = async () => {
-    setIsLoading(true);
-    try {
-      // Implement Monthly Subscription ID
-      const success = await BillingService.purchasePro();
-      if (success) handleSuccess();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleLifetimePurchase = async () => {
     setIsLoading(true);
     try {
-      // Implement Lifetime Product ID
       const success = await BillingService.purchaseLifetime();
       if (success) handleSuccess();
     } finally {
       setIsLoading(false);
     }
   };
-
-
-
-
 
   const handleSuccess = async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -106,43 +71,27 @@ const PricingScreen: React.FC = () => {
       price: '$0',
       period: 'FOREVER',
       features: [
-        { text: '5 Daily PDF Tasks', icon: Zap },
-        { text: '3 AI Docs / Month', icon: Cpu },
-        { text: 'Basic Secure Storage', icon: Shield }
+        { text: 'Unlimited PDF Operations', icon: Zap },
+        { text: 'Basic Secure Storage', icon: Shield },
+        { text: 'Interactive Viewing', icon: Activity }
       ],
-      cta: currentTier === SubscriptionTier.FREE ? 'CURRENT PLAN' : 'DOWNGRADE',
-      disabled: currentTier === SubscriptionTier.FREE,
-      recommended: false
-    },
-    {
-      id: SubscriptionTier.PRO,
-      name: 'Pro Pass',
-      price: proPrice,
-      period: 'PER MONTH',
-      badge: 'FLEXIBLE',
-      features: [
-        { text: 'UNLIMITED PDF Tasks', icon: Zap },
-        { text: '50 AI Docs / Month', icon: Cpu },
-        { text: 'Priority Processing', icon: Star },
-        { text: 'Cancel Anytime', icon: Check }
-      ],
-      cta: currentTier === SubscriptionTier.PRO ? 'PLAN ACTIVE' : (currentTier === SubscriptionTier.LIFETIME ? 'OWNED' : 'START MONTHLY'),
-      disabled: currentTier === SubscriptionTier.PRO || currentTier === SubscriptionTier.LIFETIME || isLoading,
+      cta: (currentTier === SubscriptionTier.FREE || !currentTier) ? 'CURRENT PLAN' : 'ACTIVE',
+      disabled: true,
       recommended: false
     },
     {
       id: SubscriptionTier.LIFETIME,
-      name: 'Lifetime',
+      name: 'Lifetime Protocol',
       price: lifetimePrice,
       period: 'ONE-TIME',
       badge: 'BEST VALUE',
       features: [
         { text: 'UNLIMITED EVERYTHING', icon: Zap },
-        { text: 'UNLIMITED AI Docs', icon: Sparkles },
+        { text: 'UNLIMITED AI UTILITIES', icon: Sparkles },
         { text: 'Own It Forever', icon: Shield },
-        { text: 'No Monthly Bill', icon: Star }
+        { text: 'Permanent Neural Hub', icon: Cpu }
       ],
-      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : (currentTier === SubscriptionTier.PRO ? 'UPGRADE' : 'BUY ONCE'),
+      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'SECURE ACCESS',
       disabled: currentTier === SubscriptionTier.LIFETIME || isLoading,
       recommended: true
     }
@@ -150,7 +99,6 @@ const PricingScreen: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black pb-[200px] relative overflow-hidden">
-      {/* Subtle Tech Grid Background */}
       <div className="absolute inset-0 opacity-[0.3] dark:opacity-[0.2] pointer-events-none"
         style={{
           backgroundImage: `
@@ -162,7 +110,6 @@ const PricingScreen: React.FC = () => {
       />
 
       <div className="pt-[160px] p-4 sm:p-6 space-y-[100px] relative z-[1] max-w-4xl mx-auto">
-        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -174,18 +121,16 @@ const PricingScreen: React.FC = () => {
             <div className="w-6 h-px bg-[#00C896]/30" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-[#000000] dark:text-white uppercase tracking-tighter leading-none px-4">
-            Scale Your Intelligence
+            Own Your Intelligence
           </h1>
           <p className="text-[10px] sm:text-[11px] font-bold text-[#909090] dark:text-[#909090] uppercase tracking-[0.4em]">
-            Flexible Access • Infinite Utility • Local Privacy
+            Zero Subscriptions • Perpetual Access • Local Privacy
           </p>
         </motion.div>
 
-        {/* Primary Pricing Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
           {tiers.map((tier, index) => {
-            const isActive = tier.id === currentTier;
-            const isSuperseded = currentTier === SubscriptionTier.PRO && tier.id === SubscriptionTier.FREE;
+            const isActive = tier.id === currentTier || (tier.id === SubscriptionTier.FREE && !currentTier);
 
             return (
               <motion.div
@@ -195,7 +140,6 @@ const PricingScreen: React.FC = () => {
                 transition={{ delay: index * 0.1 }}
                 className={`rounded-[48px] p-8 sm:p-10 flex flex-col relative group border transition-all duration-500 
                   ${isActive ? 'scale-[1.02] border-[#00C896] shadow-[0_0_50px_rgba(0,200,150,0.2)]' : ''}
-                  ${isSuperseded ? 'opacity-40 grayscale-[0.5]' : ''}
                   ${tier.recommended && !isActive
                     ? 'bg-white/80 dark:bg-black/40 backdrop-blur-3xl border-gray-200 dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_0_50px_rgba(0,200,150,0.1)]'
                     : 'bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-gray-100 dark:border-white/5'
@@ -209,7 +153,7 @@ const PricingScreen: React.FC = () => {
                   <div className="absolute -top-4 right-6 flex flex-col gap-2 items-end z-20">
                     <div className={`px-5 py-2 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl border border-white/10 flex items-center gap-2 ${isActive ? 'bg-[#00C896]' : 'bg-black dark:bg-[#00C896]'}`}>
                       {isActive ? <Check size={10} className="stroke-[4px]" /> : <Star size={10} className="fill-current" />}
-                      {isActive ? 'ACTIVE PROTOCOL' : tier.badge}
+                      {isActive ? 'PROTOCOL ACTIVE' : tier.badge}
                     </div>
                   </div>
                 )}
@@ -222,10 +166,10 @@ const PricingScreen: React.FC = () => {
                     {isActive ? (
                       <div className="flex flex-col gap-1">
                         <span className="text-4xl font-black text-[#00C896] tracking-tighter">
-                          {tier.id === SubscriptionTier.LIFETIME ? 'LIFETIME' : 'PRO ACTIVE'}
+                          {tier.id === SubscriptionTier.LIFETIME ? 'LIFETIME' : 'LITE ACTIVE'}
                         </span>
                         <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                          {tier.id === SubscriptionTier.LIFETIME ? 'UTILITY UNLOCKED' : 'PROTOCOL ACTIVE'}
+                          {tier.id === SubscriptionTier.LIFETIME ? 'UTILITY UNLOCKED' : 'BASE CAPACITY'}
                         </span>
                       </div>
                     ) : (
@@ -237,9 +181,6 @@ const PricingScreen: React.FC = () => {
                           <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
                             {tier.period}
                           </span>
-                          <span className="text-[7px] font-mono font-bold uppercase tracking-widest text-[#00C896] dark:text-[#00C896]">
-                            RENEWS MONTHLY
-                          </span>
                         </div>
                       </>
                     )}
@@ -248,7 +189,7 @@ const PricingScreen: React.FC = () => {
 
                 <div className="space-y-6 mb-12 flex-1">
                   {tier.features.map((feature, i) => (
-                    <div key={i} className={`flex items-start gap-4 transition-opacity ${isSuperseded ? 'opacity-50' : ''}`}>
+                    <div key={i} className="flex items-start gap-4">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? 'bg-[#00C896] text-white' : 'bg-[#00C896]/10 text-[#00C896]'}`}>
                         <feature.icon size={14} />
                       </div>
@@ -262,7 +203,6 @@ const PricingScreen: React.FC = () => {
                 <motion.button
                   disabled={tier.disabled}
                   onClick={() => {
-                    if (tier.id === SubscriptionTier.PRO) handleProPurchase();
                     if (tier.id === SubscriptionTier.LIFETIME) handleLifetimePurchase();
                   }}
                   className={`w-full py-5 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all relative overflow-hidden ${tier.disabled
@@ -270,14 +210,13 @@ const PricingScreen: React.FC = () => {
                     : 'bg-[#00C896] text-white shadow-xl hover:brightness-110 active:scale-95'
                     }`}
                 >
-                  {isLoading && (tier.id === SubscriptionTier.PRO || tier.id === SubscriptionTier.LIFETIME) ? 'PROCESSING...' : tier.cta}
+                  {isLoading && tier.id === SubscriptionTier.LIFETIME ? 'ESTABLISHING HANDSHAKE...' : tier.cta}
                 </motion.button>
               </motion.div>
             );
           })}
         </div>
 
-        {/* Secure Trust Banner */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -301,7 +240,6 @@ const PricingScreen: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Strategic Comparison Table */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -337,7 +275,6 @@ const PricingScreen: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* AI Tools Info Card */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -378,7 +315,6 @@ const PricingScreen: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Mission Transparency */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -393,11 +329,10 @@ const PricingScreen: React.FC = () => {
           </div>
           <p className="text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
             Anti-Gravity processes all neural computations locally on your hardware.
-            We offer total flexibility: Choose a low monthly pass or secure permanent access with our Lifetime Protocol.
+            We've simplified our model: Start for free with base tools, or secure permanent access with our Lifetime Protocol.
           </p>
         </motion.div>
 
-        {/* Restore Purchases Fallback */}
         <div className="flex flex-col items-center gap-4 py-8">
           <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest opacity-40 text-center px-8">
             Already purchased but not seeing it? <br />Google Play might need a manual handshake.

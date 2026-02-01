@@ -199,7 +199,7 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Triple-tap to open debug logs
+  // 5-tap to open debug logs (prevents accidental triggers)
   const tapCountRef = React.useRef(0);
   React.useEffect(() => {
     let tapTimeout: NodeJS.Timeout;
@@ -208,7 +208,7 @@ const App: React.FC = () => {
       tapCountRef.current += 1;
       clearTimeout(tapTimeout);
 
-      if (tapCountRef.current === 3) {
+      if (tapCountRef.current === 5) {
         // SECURITY: Only allow admins to open the debug panel
         getCurrentUser().then(user => {
           if (user && Config.VITE_ADMIN_UIDS.includes(user.google_uid)) {
