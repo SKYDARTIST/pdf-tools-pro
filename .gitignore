@@ -33,3 +33,30 @@ server/.env.local
 *.sln
 *.sw?
 .vercel
+
+# Build outputs (Android)
+android/app/build/
+android/build/
+android/.gradle/
+android/gradle/
+*.apk
+*.aab
+
+# Frontend build output
+dist/
+dist-ssr/
+
+# IDE and OS files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+frontend_log.txt
+frontend_pid.txt
+backend_log.txt
+backend_pid.txt
+

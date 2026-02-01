@@ -1,13 +1,14 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 // Shared signing secret from environment
-const sessionSecret = process.env.SESSION_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+// SECURITY: Synchronized with AG_PROTOCOL_SIGNATURE (Handshake Protocol)
+const sessionSecret = process.env.AG_PROTOCOL_SIGNATURE || process.env.SESSION_TOKEN_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /**
- * Verify Session Token (Stateless JWT-lite)
- * Enforces signature and expiration.
+ * Verify Session Token (Stateless JWT-lite + DB Persistence)
+ * Enforces signature, expiration, and database presence.
  */
-export const verifySessionToken = (token) => {
+export const verifySessionToken = async (token, supabase = null) => {
     if (!token || typeof token !== 'string') return null;
     try {
         const [b64Payload, signature] = token.split('.');
@@ -25,8 +26,27 @@ export const verifySessionToken = (token) => {
         const payload = JSON.parse(payloadStr);
         if (Date.now() > payload.exp) return null; // Expiration check
 
+        // SECURITY: Database-backed persistence check (Fix for 401 loops)
+        if (supabase) {
+            console.log(`[AUTH] Verifying session in DB: ${token.substring(0, 20)}...`);
+            const { data, error } = await supabase
+                .from('sessions')
+                .select('user_uid')
+                .eq('session_token', token)
+                .gt('expires_at', new Date().toISOString())
+                .single();
+
+            if (error || !data) {
+                console.warn('[AUTH] Session not found in DB or expired.');
+                return null;
+            }
+        }
+
         return payload;
-    } catch (e) { return null; }
+    } catch (e) {
+        console.error('[AUTH] Validation error:', e.message);
+        return null;
+    }
 };
 
 /**
@@ -37,7 +57,7 @@ export const setSecurityHeaders = (res, origin, allowedOrigins) => {
         res.setHeader('Access-Control-Allow-Origin', origin);
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-device-id, x-ag-signature, x-ag-integrity-token, x-csrf-token');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-device-id, x-ag-signature, x-ag-integrity-token, x-csrf-token, x-request-id');
     res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
