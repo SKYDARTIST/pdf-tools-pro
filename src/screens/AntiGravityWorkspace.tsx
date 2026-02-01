@@ -102,11 +102,19 @@ const AntiGravityWorkspace: React.FC = () => {
       const analysisPrompt = `Analyze this document and summarize it. Respond in a professional tone.`;
 
       const { suggestDocumentName } = await import('@/services/namingService');
-      const [initialAnalysis, smartName] = await Promise.all([
+      const [initialAnalysisResp, smartName] = await Promise.all([
         askGemini(analysisPrompt, context, 'chat', base64Images || undefined),
         extractedText ? suggestDocumentName(extractedText) : Promise.resolve(null)
       ]);
 
+      if (!initialAnalysisResp.success || !initialAnalysisResp.data) {
+        showToast(initialAnalysisResp.error || 'Initial analysis failed. Credit NOT deducted.');
+        setStatus('idle');
+        setIsImporting(false);
+        return;
+      }
+
+      const initialAnalysis = initialAnalysisResp.data;
       setAnalysis(initialAnalysis);
       setSuggestedName(smartName);
       setDocumentContext(context);
@@ -114,13 +122,14 @@ const AntiGravityWorkspace: React.FC = () => {
       setStatus('analyzed');
 
       const signaturePrompt = `1-sentence search summary. Document: ${initialAnalysis.substring(0, 500)}`;
-      const neuralSignature = await askGemini(signaturePrompt, context, 'chat');
+      const neuralSignatureResp = await askGemini(signaturePrompt, context, 'chat');
+      const neuralSignature = neuralSignatureResp.success ? neuralSignatureResp.data || '' : '';
 
       FileHistoryManager.addEntry({
         fileName: selected.name,
         operation: 'extract-text',
         status: 'success',
-        neuralSignature: neuralSignature.replace(/\n|"/g, '')
+        neuralSignature: (neuralSignature || '').replace(/\n|"/g, '')
       });
 
       await recordAIUsage(AiOperationType.HEAVY);
@@ -148,8 +157,13 @@ const AntiGravityWorkspace: React.FC = () => {
 
     try {
       const response = await askGemini(currentQuery, documentContext || "", 'chat', imageContext || undefined);
-      setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
-      await recordAIUsage(AiOperationType.HEAVY);
+
+      if (response.success && response.data) {
+        setChatHistory(prev => [...prev, { role: 'bot', text: response.data! }]);
+        await recordAIUsage(AiOperationType.HEAVY);
+      } else {
+        showToast(response.error || 'Processing failed. Credit NOT deducted.');
+      }
     } catch (err) {
       console.error('AI Chat Error:', err);
       showToast('Processing failed. Try again.');

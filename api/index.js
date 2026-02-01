@@ -163,7 +163,7 @@ export default async function handler(req, res) {
         }
 
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-signature, x-ag-device-id, x-ag-integrity-token, x-csrf-token');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-signature, x-ag-device-id, x-ag-integrity-token, x-csrf-token, X-Request-ID');
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('X-Frame-Options', 'DENY');
 
@@ -760,6 +760,7 @@ export default async function handler(req, res) {
                         last_reset_weekly: usage.lastAiWeeklyReset,
                         last_reset_monthly: usage.lastAiMonthlyReset,
                         has_received_bonus: usage.hasReceivedBonus,
+                        ai_pack_credits: usage.aiPackCredits,
                     };
 
                     // Only allow upserting these "Usage Counter" fields. 

@@ -4,12 +4,21 @@ import AuthService from './authService';
 import Config from './configService';
 import { secureFetch } from './apiService';
 
-export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' | 'guidance' = 'chat', image?: string | string[], mimeType?: string): Promise<string> => {
+export interface AIResponse {
+  success: boolean;
+  data?: string;
+  error?: string;
+}
+
+export const askGemini = async (prompt: string, documentText?: string, type: 'chat' | 'naming' | 'table' | 'polisher' | 'scrape' | 'mindmap' | 'redact' | 'citation' | 'audio_script' | 'diff' | 'outline' | 'guidance' = 'chat', image?: string | string[], mimeType?: string): Promise<AIResponse> => {
   // Neuro-Caching Logic
   const cacheKey = `${type}:${prompt}:${documentText?.substring(0, 500)}:${image ? 'img' : 'no-img'}`;
   if (aiCache.has(cacheKey)) {
     console.log("⚡ Neuro-Cache Hit: Returning cached intelligence...");
-    return aiCache.get(cacheKey)!;
+    return {
+      success: true,
+      data: aiCache.get(cacheKey)!
+    };
   }
 
   try {
@@ -27,13 +36,19 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
     }
 
     if (response.status === 429) {
-      return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
+      return {
+        success: false,
+        error: "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds."
+      };
     }
 
     if (response.status === 500) {
       const errorData = await response.json().catch(() => ({}));
       if (errorData.error === 'SERVICE_UNAVAILABLE') {
-        return "BACKEND_ERROR: Neural Link Syncing. The system is balancing load, please try again in a moment.";
+        return {
+          success: false,
+          error: "BACKEND_ERROR: Neural Link Syncing. The system is balancing load, please try again in a moment."
+        };
       }
       throw new Error(`Neural system failure (500). ${errorData.details || 'Synapse Overload Detected'}`);
     }
@@ -48,26 +63,31 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
     const result = data.text || "No response content.";
 
     // Store in cache if successful (do not cache errors or rate limits)
-    const isError = result.startsWith('AI_ERROR') ||
-      result.startsWith('BACKEND_ERROR') ||
-      result.startsWith('AI_RATE_LIMIT');
-
-    if (result && !isError) {
+    if (result) {
       aiCache.set(cacheKey, result);
     }
 
-    return result;
+    return {
+      success: true,
+      data: result
+    };
   } catch (err: any) {
     const isRateLimit = err.message?.includes('AI_RATE_LIMIT') ||
       err.message?.includes('429') ||
       err.message?.toLowerCase().includes('quota exceeded');
 
     if (isRateLimit) {
-      return "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds.";
+      return {
+        success: false,
+        error: "AI_RATE_LIMIT: Synapse cooling in progress. Please wait 15-30 seconds."
+      };
     }
 
     // More descriptive error message for user
     const details = err.message || 'Security proxy is unreachable.';
-    return `BACKEND_ERROR: ${details} (Access via secure edge protocol failed)`;
+    return {
+      success: false,
+      error: `BACKEND_ERROR: ${details} (Access via secure edge protocol failed)`
+    };
   }
 };

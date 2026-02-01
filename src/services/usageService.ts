@@ -81,6 +81,12 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         const secureUsage = {
             operationsToday: usage.operationsToday,
             lastOperationReset: usage.lastOperationReset,
+            aiPackCredits: usage.aiPackCredits,
+            aiDocsThisWeek: usage.aiDocsThisWeek,
+            aiDocsThisMonth: usage.aiDocsThisMonth,
+            lastAiWeeklyReset: usage.lastAiWeeklyReset,
+            lastAiMonthlyReset: usage.lastAiMonthlyReset,
+            hasReceivedBonus: usage.hasReceivedBonus,
         };
 
         const payload = googleUser ? secureUsage : { type: 'usage_sync', usage: secureUsage };

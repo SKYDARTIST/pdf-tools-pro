@@ -147,8 +147,11 @@ const ReaderScreen: React.FC = () => {
 
             const prompt = `Analyze this document and summarize it. Respond in a professional tone.`;
             const response = await askGemini(prompt, context, 'chat');
-            setChatHistory([{ role: 'bot', text: response }]);
-            await recordAIUsage(AiOperationType.HEAVY);
+
+            if (response.success && response.data) {
+                setChatHistory([{ role: 'bot', text: response.data }]);
+                await recordAIUsage(AiOperationType.HEAVY);
+            }
         } catch (err) {
             console.error('Summary Error:', err);
         } finally {
@@ -179,8 +182,10 @@ const ReaderScreen: React.FC = () => {
         setIsAsking(true);
         try {
             const response = await askGemini(currentQuery, documentContext, 'chat');
-            setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
-            await recordAIUsage(AiOperationType.HEAVY);
+            if (response.success && response.data) {
+                setChatHistory(prev => [...prev, { role: 'bot', text: response.data! }]);
+                await recordAIUsage(AiOperationType.HEAVY);
+            }
         } catch (err) {
             console.error('Chat Error:', err);
         } finally {
@@ -261,12 +266,10 @@ ${settings?.focus ? `STRATEGIC FOCUS: ${settings.focus}` : ""}
 Analyze the provided document text and return ONLY the indented list structure.`;
 
             const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
-            if (checkAuthBarrier(response)) {
-                setIsGeneratingMindMap(false);
-                return;
+            if (response.success && response.data) {
+                setMindMapData(response.data);
+                await recordAIUsage(AiOperationType.HEAVY);
             }
-            setMindMapData(response);
-            await recordAIUsage(AiOperationType.HEAVY);
         } catch (error) { console.error(error); } finally {
             setIsGeneratingMindMap(false);
             setLoadProgress(0);
@@ -295,8 +298,10 @@ Analyze the provided document text and return ONLY the indented list structure.`
             if (!documentContext) setDocumentContext(`FILENAME: ${file.name}\nCONTENT: ${text}`);
             const prompt = `Provide a structured outline of this document.`;
             const response = await askGemini(prompt, text, "outline");
-            setOutlineData(response);
-            await recordAIUsage(AiOperationType.HEAVY);
+            if (response.success && response.data) {
+                setOutlineData(response.data);
+                await recordAIUsage(AiOperationType.HEAVY);
+            }
         } catch (error) { console.error(error); } finally {
             setIsGeneratingOutline(false);
             setLoadProgress(0);

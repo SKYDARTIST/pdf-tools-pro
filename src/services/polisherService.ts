@@ -22,8 +22,13 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
     try {
         const response = await askGemini("Analyze scan quality.", sampleText || "Image scan analysis.", 'polisher', imageBase64);
 
+        if (!response.success || !response.data) {
+            console.error("Polisher AI failed:", response.error);
+            return defaultFilters;
+        }
+
         try {
-            const cleanJson = response.replace(/```json|```/g, '').trim();
+            const cleanJson = response.data.replace(/```json|```/g, '').trim();
             const filters: ScanFilters = JSON.parse(cleanJson);
 
             // Force color preservation - NEVER apply grayscale
@@ -61,8 +66,13 @@ export const getReconstructionProtocol = async (sampleText?: string, imageBase64
     try {
         const response = await askGemini("Analyze scan quality for aggressive reconstruction.", sampleText || "Image scan analysis.", 'polisher', imageBase64);
 
+        if (!response.success || !response.data) {
+            console.error("Reconstruction AI failed:", response.error);
+            return reconstructionDefaults;
+        }
+
         try {
-            const cleanJson = response.replace(/```json|```/g, '').trim();
+            const cleanJson = response.data.replace(/```json|```/g, '').trim();
             const filters: ScanFilters = JSON.parse(cleanJson);
 
             // Force color preservation

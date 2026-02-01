@@ -228,7 +228,7 @@ const ScannerScreen: React.FC = () => {
       const compressedImage = await compressImage(capturedImage);
       const protocolFn = getPolisherProtocol;
 
-      const [filters, nameSuggestion] = await Promise.all([
+      const [filters, nameResp] = await Promise.all([
         protocolFn(undefined, compressedImage),
         askGemini("Suggest a professional filename for this document.", undefined, 'naming', compressedImage)
       ]);
@@ -238,8 +238,13 @@ const ScannerScreen: React.FC = () => {
       // Apply filters from AI (color is always preserved via polisherService)
       setAppliedFilters(filters);
 
-      setSuggestedName(nameSuggestion.replace(/ /g, '_'));
-      await recordAIUsage(AiOperationType.GUIDANCE); // FREE - no credits consumed
+      if (nameResp.success && nameResp.data) {
+        setSuggestedName(nameResp.data.replace(/ /g, '_'));
+      }
+
+      if (nameResp.success) {
+        await recordAIUsage(AiOperationType.GUIDANCE); // FREE - no credits consumed
+      }
     } catch (err) {
       console.error("Enhancement failed", err);
       setError("Enhancement failed. Please try again.");

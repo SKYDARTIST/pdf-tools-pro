@@ -97,15 +97,21 @@ const NeuralAssistant: React.FC = () => {
             const response = await askGemini(userMsg, systemPrompt, 'guidance');
 
             // Parse for actions
-            let cleanText = response;
+            if (!response.success || !response.data) {
+                setMessages(prev => [...prev, { role: 'bot', text: response.error || "Sorry, I had trouble processing that request. Please try again." }]);
+                setIsLoading(false);
+                return;
+            }
+
+            let cleanText = response.data;
             let action: { name: string; path: string } | undefined;
 
-            const actionMatch = response.match(/ACTION_REQUIRED:\s*(\w+)/);
+            const actionMatch = cleanText.match(/ACTION_REQUIRED:\s*(\w+)/);
             if (actionMatch && actionMatch[1]) {
                 const key = actionMatch[1].toUpperCase();
                 if (TOOL_MAPPING[key]) {
                     action = TOOL_MAPPING[key];
-                    cleanText = response.replace(/ACTION_REQUIRED:\s*\w+/, '').trim();
+                    cleanText = cleanText.replace(/ACTION_REQUIRED:\s*\w+/, '').trim();
                 }
             }
 

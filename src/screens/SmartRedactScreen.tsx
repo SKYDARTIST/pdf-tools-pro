@@ -224,13 +224,17 @@ const SmartRedactScreen: React.FC = () => {
 
             const response = await askGemini(prompt, sanitizedText, "redact", imageBase64);
 
-            if (response.startsWith('AI_RATE_LIMIT')) {
-                setIsCooling(true);
+            if (!response.success || !response.data) {
+                if (response.error?.includes('AI_RATE_LIMIT')) {
+                    setIsCooling(true);
+                } else {
+                    alert(response.error || "Redaction failed. Credit NOT deducted.");
+                }
                 setStatus('ready');
                 return;
             }
 
-            const finalSanitized = localRegexSanitize(response);
+            const finalSanitized = localRegexSanitize(response.data);
             setRedactedContent(finalSanitized);
             await recordAIUsage(AiOperationType.HEAVY);
             setStatus('done');

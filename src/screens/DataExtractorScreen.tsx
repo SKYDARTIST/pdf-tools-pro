@@ -110,12 +110,16 @@ const DataExtractorScreen: React.FC = () => {
 
             const response = await askGemini(prompt, text, "table", imageBase64 || undefined, fileMime);
 
-            if (response.startsWith('AI_RATE_LIMIT')) {
-                setIsCooling(true);
+            if (!response.success) {
+                if (response.error?.includes('AI_RATE_LIMIT')) {
+                    setIsCooling(true);
+                } else {
+                    setError(response.error || "Extraction failed. Credit NOT deducted.");
+                }
                 return;
             }
 
-            const cleanedResponse = response
+            const cleanedResponse = (response.data || "")
                 .replace(/^```[a-z]*\n/i, '')
                 .replace(/\n```$/i, '')
                 .trim();

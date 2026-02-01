@@ -99,11 +99,17 @@ const NeuralDiffScreen: React.FC = () => {
         Format the output with bold headers and bullet points. Focus on risk and semantic changes.`;
 
             const response = await askGemini(prompt, "Comparing two document versions.", "diff", images.length > 0 ? images : undefined);
-            if (response.startsWith('AI_RATE_LIMIT')) {
-                setIsCooling(true);
+
+            if (!response.success) {
+                if (response.error?.includes('AI_RATE_LIMIT')) {
+                    setIsCooling(true);
+                } else {
+                    setError(response.error || "Analysis failed. Credit NOT deducted.");
+                }
                 return;
             }
-            setDiffResult(response);
+
+            setDiffResult(response.data || "");
             await recordAIUsage(AiOperationType.HEAVY);
         } catch (err) {
             setError("Analysis failed. Ensure both files are readable PDFs.");

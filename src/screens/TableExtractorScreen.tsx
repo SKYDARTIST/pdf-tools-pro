@@ -60,7 +60,7 @@ const TableExtractorScreen: React.FC = () => {
         setStatus('analyzing');
 
         try {
-            let extractedTables: ExtractedTable[] = [];
+            let response;
 
             if (file.type === 'application/pdf') {
                 const arrayBuffer = await file.arrayBuffer();
@@ -69,9 +69,9 @@ const TableExtractorScreen: React.FC = () => {
                 if (!text || text.trim() === '') {
                     const { renderPageToImage } = await import('@/utils/pdfExtractor');
                     const imageBase64 = await renderPageToImage(arrayBuffer.slice(0), 1);
-                    extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                    response = await extractTablesFromDocument(undefined, imageBase64);
                 } else {
-                    extractedTables = await extractTablesFromDocument(text);
+                    response = await extractTablesFromDocument(text);
                 }
             } else if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
@@ -80,12 +80,18 @@ const TableExtractorScreen: React.FC = () => {
                     reader.readAsDataURL(file);
                 });
                 const imageBase64 = await compressImage(rawBase64);
-                extractedTables = await extractTablesFromDocument(undefined, imageBase64);
+                response = await extractTablesFromDocument(undefined, imageBase64);
             }
 
-            setTables(extractedTables);
-            await recordAIUsage(AiOperationType.HEAVY);
-            setStatus('done');
+            if (response && response.success) {
+                setTables(response.data);
+                await recordAIUsage(AiOperationType.HEAVY);
+                setStatus('done');
+            } else {
+                console.error("Extraction Failed:", response?.error);
+                alert(response?.error || "AI Table Extraction failed. Credit NOT deducted.");
+                setStatus('idle');
+            }
         } catch (err) {
             console.error("Extraction Failed:", err);
             setStatus('idle');

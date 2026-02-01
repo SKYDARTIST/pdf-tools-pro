@@ -207,6 +207,25 @@ export const saveSubscription = (subscription: UserSubscription): void => {
         window.dispatchEvent(new CustomEvent('subscription-updated'));
     }
 };
+// Refund an AI credit in case of downstream failure after deduction
+export const refundAICredit = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<void> => {
+    if (operationType === AiOperationType.GUIDANCE) return;
+
+    const subscription = getSubscription();
+
+    // Logic: Restore counts. If user has AI pack credits, we assume the last deduction was from there.
+    // If they have 0 credits, they might have used their last one, so we check if they are Pro to know if it was monthly or pack.
+    if (subscription.aiPackCredits > 0 || (subscription.tier === SubscriptionTier.PRO && subscription.aiDocsThisMonth === 0)) {
+        subscription.aiPackCredits += 1;
+    } else {
+        if (subscription.aiDocsThisMonth > 0) subscription.aiDocsThisMonth -= 1;
+        if (subscription.aiDocsThisWeek > 0) subscription.aiDocsThisWeek -= 1;
+    }
+
+    saveSubscription(subscription);
+    await syncUsageToServer(subscription).catch(err => console.error('Refund Sync Failed:', err));
+    console.log('AI Usage: 🛡️ Credit REFUNDED successfully');
+};
 
 // Check if user can perform a PDF operation
 export const canPerformOperation = (): { allowed: boolean; reason?: string } => {
@@ -406,6 +425,12 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     // AUTH SAFETY: If user is logged in but we haven't hydrated from server yet, 
     // fetch server data first to avoid overwriting with stale local data
     const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
+    // 1. Sync CURRENT state before deduction (Phase 4 fix for "Disappearing Credits" on uninstall)
+    // This ensures that even if the app is uninstalled immediately after, the credits
+    // are synced.
+    const preSyncSub = getSubscription();
+    await syncUsageToServer(preSyncSub).catch(err => console.error('AI Usage: Pre-deduction Sync Failed:', err));
+
     if (googleUid && !isHydrated) {
         console.log('AI Usage: 🛡️ Forced hydration triggered before operation');
         await initSubscription();
@@ -474,8 +499,8 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
 
     saveSubscription(subscription);
 
-    // SILENT SYNC: Sync to server in background
-    syncUsageToServer(subscription).catch(err => console.error('Subscription Sync Failed:', err));
+    // 2. Sync NEW state after deduction (Immediate server persistence)
+    await syncUsageToServer(subscription).catch(err => console.error('AI Usage: Post-deduction Sync Failed:', err));
 
     return stats;
 };

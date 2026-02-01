@@ -11,13 +11,13 @@ export const suggestDocumentName = async (text: string): Promise<string> => {
     try {
         const response = await askGemini("Extract a professional filename.", text, 'naming');
 
-        // Check if response is an error message
-        if (!response || response.startsWith("BACKEND_ERROR") || response.startsWith("AI_ERROR")) {
+        // Check if response is successful
+        if (!response.success || !response.data) {
             return "unnamed_document";
         }
 
         // Clean up the name
-        let cleanName = response.trim()
+        let cleanName = response.data.trim()
             .replace(/\.[^/.]+$/, "") // Remove extensions
             .replace(/[^a-z0-9_]/gi, "_") // Replace non-alphanumeric with underscores
             .replace(/_+/g, "_") // Consolidate underscores
