@@ -57,7 +57,7 @@ export const setSecurityHeaders = (res, origin, allowedOrigins) => {
         res.setHeader('Access-Control-Allow-Origin', origin);
     }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-device-id, x-ag-signature, x-ag-integrity-token, x-csrf-token');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ag-device-id, x-ag-signature, x-ag-integrity-token, x-csrf-token, x-request-id');
     res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
