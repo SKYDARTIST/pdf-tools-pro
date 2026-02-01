@@ -537,23 +537,22 @@ export default async function handler(req, res) {
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
                 }
 
-                // 2. SIGNATURE & TIMESTAMP VERIFICATION (V5.0 HMAC)
+                // 2. PROTOCOL SIGNATURE & TIMESTAMP VERIFICATION (V2.9.3/V3.0.0 Secure Pattern)
                 const clientSignature = req.headers['x-ag-signature'];
                 const clientTimestamp = parseInt(req.headers['x-ag-timestamp']);
                 const now = Date.now();
 
-                const hmacSecret = process.env.AG_PROTOCOL_SIGNATURE;
+                const protocolSecret = process.env.AG_PROTOCOL_SIGNATURE;
 
                 if (!clientTimestamp || Math.abs(now - clientTimestamp) > 300000) {
                     console.warn(`🛡️ Anti-Gravity Security: Expired request from ${maskDeviceId(deviceId)}`);
                     return res.status(401).json({ error: 'REQUEST_EXPIRED' });
                 }
 
-                const bodyToSign = JSON.stringify({ purchaseToken, productId, transactionId, deviceId, timestamp });
-                const expectedSignature = crypto.createHmac('sha256', hmacSecret).update(bodyToSign).digest('hex');
-
-                if (clientSignature !== expectedSignature) {
-                    console.warn(`🛡️ Anti-Gravity Security: HMAC Mismatch for ${maskDeviceId(deviceId)}`);
+                // SECURITY: Remove Body-HMAC to prevent secret extraction from client.
+                // Protocol Signature acts as a barrier, Session Token is the primary authority.
+                if (clientSignature !== protocolSecret) {
+                    console.warn(`🛡️ Anti-Gravity Security: Protocol Signature Mismatch for ${maskDeviceId(deviceId)}`);
                     return res.status(401).json({ error: 'INVALID_SIGNATURE' });
                 }
 
