@@ -80,7 +80,8 @@ class AuthService {
             console.log(activeCredential ? 'Anti-Gravity Auth: UPGRADING session identity...' : 'Anti-Gravity Auth: Handshaking...');
             const deviceId = await getDeviceId();
             const integrityToken = await getIntegrityToken();
-            const signature = Config.VITE_AG_PROTOCOL_SIGNATURE;
+            // SECURITY FIX: Use environment variable directly (not from Config)
+            const signature = import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || '';
 
             const response = await fetch(getBackendUrl(), {
                 method: 'POST',

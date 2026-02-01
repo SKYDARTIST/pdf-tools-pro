@@ -221,7 +221,7 @@ class BillingService {
             const errorMessage = error?.message || error?.toString?.() || String(error);
             console.log('Anti-Gravity Billing: Pro Purchase Error Debug:', { message: errorMessage, error });
 
-            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|not\s*purchased/i;
+            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED/i;
             const alreadyOwnsError = alreadyOwnsRegex.test(errorMessage);
 
             if (alreadyOwnsError) {
@@ -333,7 +333,7 @@ class BillingService {
             const errorMessage = error?.message || String(error);
             console.log('Anti-Gravity Billing: Lifetime Purchase Error Debug:', { message: errorMessage, error });
 
-            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED|not\s*purchased/i;
+            const alreadyOwnsRegex = /already\s*own|ITEM_ALREADY_OWNED/i;
             if (alreadyOwnsRegex.test(errorMessage)) {
                 const deviceId = await getDeviceId();
                 const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
@@ -653,26 +653,12 @@ class BillingService {
      * Generates a SHA-256 hash of the request payload to ensure integrity
      */
     private async signRequest(data: any): Promise<string> {
-        const payload = JSON.stringify(data);
-        const encoder = new TextEncoder();
-        const dataBuffer = encoder.encode(payload);
-
-        // SECURE HMAC SIGNING (V5.0)
-        // Use the same secret key from VITE_AG_PROTOCOL_SIGNATURE (conceptually our HMAC secret)
-        const secret = Config.VITE_AG_PROTOCOL_SIGNATURE || "REPLACE_WITH_SECURE_HMAC_SECRET";
-        const keyData = encoder.encode(secret);
-
-        const key = await crypto.subtle.importKey(
-            "raw",
-            keyData,
-            { name: "HMAC", hash: "SHA-256" },
-            false,
-            ["sign"]
-        );
-
-        const signatureBuffer = await crypto.subtle.sign("HMAC", key, dataBuffer);
-        const hashArray = Array.from(new Uint8Array(signatureBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        // SECURITY FIX: CLIENT-SIDE SIGNING REMOVED
+        // The server is the authority for request verification
+        // Client sends raw request data, server validates using its own secret
+        console.log('Anti-Gravity Billing: Server will validate request signature');
+        // Return empty string - server handles all signature verification
+        return '';
     }
 
     // SECURITY (V6.0): Pending Purchase Queue Management
