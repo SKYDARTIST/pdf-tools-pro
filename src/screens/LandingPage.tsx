@@ -44,7 +44,7 @@ const LandingPage: React.FC = () => {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': authHeader ? `Bearer ${authHeader}` : '',
-                        'x-ag-signature': Config.VITE_AG_PROTOCOL_SIGNATURE,
+                        'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || '',
                         'x-ag-device-id': deviceId,
                         'x-csrf-token': csrfToken || ''
                     },
