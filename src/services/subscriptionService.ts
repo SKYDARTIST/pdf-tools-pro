@@ -44,9 +44,23 @@ let isHydrated = false;
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (user?: any): Promise<UserSubscription> => {
-    // Proactive reconciliation on every boot
-    await reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
-    return await forceReconcileFromServer();
+    // Run drift reconciliation in the background - don't block boot
+    reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
+
+    // Force reconcile with a hard timeout to prevent hanging the app boot
+    // If it fails or times out, we'll just use the cached version from getSubscription()
+    try {
+        const timeoutPromise = new Promise<null>((_, reject) =>
+            setTimeout(() => reject(new Error('Sync Timeout')), 2500)
+        );
+
+        const syncPromise = forceReconcileFromServer();
+
+        return await Promise.race([syncPromise, timeoutPromise]) as UserSubscription;
+    } catch (e) {
+        console.warn('Anti-Gravity Subscription: Initial sync failed produced fallback:', e);
+        return getSubscription();
+    }
 };
 
 /**

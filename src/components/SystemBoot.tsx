@@ -45,12 +45,12 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
                     // Add a tiny extra delay to ensure smooth transition
                     setTimeout(() => {
                         if (isMounted) onComplete();
-                    }, 500);
+                    }, 200);
                     return prev;
                 }
                 return prev + 1;
             });
-        }, 300); // Slightly slower for more "engine-like" feel during sync
+        }, 200); // Slightly faster for a snappier "engine start" feel
 
         return () => {
             isMounted = false;

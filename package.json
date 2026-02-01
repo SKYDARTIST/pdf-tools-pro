@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "npm run sync-worker && vite build",
+    "preview": "vite preview",
+    "sync-worker": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs",
+    "postinstall": "npm run sync-worker"
   },
   "dependencies": {
     "@capacitor-community/play-integrity": "^8.0.0",

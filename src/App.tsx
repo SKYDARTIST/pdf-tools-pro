@@ -79,15 +79,15 @@ const App: React.FC = () => {
   React.useEffect(() => {
     const init = async () => {
       try {
-        initializePersistentLogging(); // Start capturing logs to localStorage
-        initServerTime();  // Fetch server time immediately (non-blocking)
+        // Initialize logging and server time in parallel
+        initializePersistentLogging();
+        initServerTime();
 
-        // BLOCKING: Start subscription fetch and wait to prevent credit flash
-        // The app will wait for sync before showing data-dependent UI
+        // BLOCKING (with timeout): Start subscription fetch to prevent tier flash
         console.log('🚀 App: Starting subscription sync...');
         await initSubscription().catch(e => console.warn('Non-critical subscription sync failed:', e));
 
-        // Retry any failed usage syncs from previous sessions
+        // Background retry failed syncs
         retryFailedSyncs().catch(e => console.warn('Retry failed syncs error:', e));
 
         console.log('🚀 App: Initialization complete (Optimized)');

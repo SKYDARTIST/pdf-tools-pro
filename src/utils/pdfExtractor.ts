@@ -1,7 +1,7 @@
 import * as pdfjs from 'pdfjs-dist';
 
 // Configure PDF.js worker - using local bundle for Capacitor stability
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
 export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: number, endPage?: number, onProgress?: (percent: number) => void): Promise<string> => {
     try {
