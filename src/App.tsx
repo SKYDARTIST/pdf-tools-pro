@@ -39,10 +39,10 @@ const LoginScreen = lazy(() => import('@/screens/LoginScreen'));
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import SystemBoot from '@/components/SystemBoot';
-import AiPackNotification from '@/components/AiPackNotification';
+
 import NeuralAssistant from '@/components/NeuralAssistant';
 import PullToRefresh from '@/components/PullToRefresh';
-import { getAiPackNotification, ackAiNotification, initSubscription } from '@/services/subscriptionService';
+import { initSubscription } from '@/services/subscriptionService';
 import { initServerTime } from '@/services/serverTimeService';
 // Add retry for failed syncs
 import { retryFailedSyncs } from '@/services/usageService';
@@ -61,7 +61,7 @@ const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
-  const [activeNotification, setActiveNotification] = React.useState<{ message: string; type: 'milestone' | 'warning' | 'exhausted' } | null>(null);
+
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
   // Catch Google OAuth redirect from the root
@@ -178,10 +178,7 @@ const App: React.FC = () => {
 
 
 
-  // Global AI Notification Listener: Clears notification on navigation to keep UI clean
-  React.useEffect(() => {
-    setActiveNotification(null);
-  }, [location.pathname]);
+
 
   React.useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
@@ -344,14 +341,7 @@ const App: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <AiPackNotification
-        message={activeNotification?.message || null}
-        type={activeNotification?.type || null}
-        onClose={() => {
-          ackAiNotification();
-          setActiveNotification(null);
-        }}
-      />
+
       {!isLandingPage && <NeuralAssistant />}
       <DebugLogPanel isOpen={debugPanelOpen} onClose={() => setDebugPanelOpen(false)} />
     </div>

@@ -31,34 +31,22 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
 
     // Modal content based on block mode
     const getModalContent = () => {
-        if (blockMode === AiBlockMode.BUY_PRO) {
-            return {
-                icon: Crown,
-                title: 'AI Limit Reached',
-                subtitle: `${used}/${limit} Free AI Docs Used`,
-                description: 'Unlock 50 AI documents per month and unlimited PDF tasks with Pro access.',
-                primaryAction: {
-                    label: 'View Pro Plans',
-                    onClick: handleNavigateToPricing,
-                    color: 'black'
-                },
-                secondaryAction: null
-            };
-        } else {
-            // BUY_CREDITS mode
-            return {
-                icon: Sparkles,
-                title: 'Monthly Limit Reached',
-                subtitle: `${used}/${limit} Pro AI Docs Used`,
-                description: "You've reached your monthly allowance. Visit the pricing page to secure more AI credits.",
-                primaryAction: {
-                    label: 'Get AI Credits',
-                    onClick: handleNavigateToPricing,
-                    color: '#00C896'
-                },
-                secondaryAction: null
-            };
-        }
+        const isPro = subscription.tier === SubscriptionTier.PRO;
+
+        return {
+            icon: isPro ? Sparkles : Crown,
+            title: isPro ? 'Monthly Limit Reached' : 'AI Limit Reached',
+            subtitle: `${used}/${limit} ${isPro ? 'Pro' : 'Free'} AI Docs Used`,
+            description: isPro
+                ? "You've reached your monthly allowance. Upgrade to Lifetime for unlimited neural computations."
+                : 'Unlock 50 AI documents per month and unlimited PDF tasks with Pro access.',
+            primaryAction: {
+                label: 'View Plans',
+                onClick: handleNavigateToPricing,
+                color: isPro ? '#00C896' : 'black'
+            },
+            secondaryAction: null
+        };
     };
 
     const content = getModalContent();
@@ -135,7 +123,7 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                                 </div>
 
                                 {/* What's Included */}
-                                {blockMode === AiBlockMode.BUY_PRO && (
+                                {subscription.tier === SubscriptionTier.FREE ? (
                                     <div className="space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-600">
                                             Pro Includes:
@@ -143,20 +131,18 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                                         <div className="space-y-2">
                                             <InfoItem text="Unlimited PDF Tasks" />
                                             <InfoItem text="50 AI Docs per Month" />
-                                            <InfoItem text="Lifetime Access" />
+                                            <InfoItem text="Authoritative Sync" />
                                         </div>
                                     </div>
-                                )}
-
-                                {blockMode === AiBlockMode.BUY_CREDITS && (
+                                ) : (
                                     <div className="space-y-3">
                                         <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-600">
-                                            AI Pack Includes:
+                                            Lifetime Includes:
                                         </h3>
                                         <div className="space-y-2">
-                                            <InfoItem text="100 AI Credits" />
-                                            <InfoItem text="No Expiry Date" />
-                                            <InfoItem text="Works with All AI Tools" />
+                                            <InfoItem text="Unlimited AI Documents" />
+                                            <InfoItem text="UNLIMITED PDF Tasks" />
+                                            <InfoItem text="Own It Forever" />
                                         </div>
                                     </div>
                                 )}
