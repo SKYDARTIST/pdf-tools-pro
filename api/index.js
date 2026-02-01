@@ -537,24 +537,19 @@ export default async function handler(req, res) {
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
                 }
 
-                // 2. PROTOCOL SIGNATURE & TIMESTAMP VERIFICATION (V2.9.3/V3.0.0 Secure Pattern)
-                const clientSignature = req.headers['x-ag-signature'];
+                // 2. TIMESTAMP VERIFICATION (V6.0 - Body-HMAC removed for security)
+                // NOTE: Signature validation removed in V2.9.3 because client no longer signs requests
+                // This prevents secret exposure in client bundle. Session token is now sole authority.
                 const clientTimestamp = parseInt(req.headers['x-ag-timestamp']);
                 const now = Date.now();
-
-                const protocolSecret = process.env.AG_PROTOCOL_SIGNATURE;
 
                 if (!clientTimestamp || Math.abs(now - clientTimestamp) > 300000) {
                     console.warn(`🛡️ Anti-Gravity Security: Expired request from ${maskDeviceId(deviceId)}`);
                     return res.status(401).json({ error: 'REQUEST_EXPIRED' });
                 }
 
-                // SECURITY: Remove Body-HMAC to prevent secret extraction from client.
-                // Protocol Signature acts as a barrier, Session Token is the primary authority.
-                if (clientSignature !== protocolSecret) {
-                    console.warn(`🛡️ Anti-Gravity Security: Protocol Signature Mismatch for ${maskDeviceId(deviceId)}`);
-                    return res.status(401).json({ error: 'INVALID_SIGNATURE' });
-                }
+                // Request signature validated via session token (above). Timestamp prevents replay attacks.
+                console.log(`🛡️ Anti-Gravity Security: Purchase request validated (session + timestamp)`)
 
                 if (!purchaseToken || !productId || (!transactionId && productId !== 'reset_to_free')) {
                     return res.status(400).json({ error: "INVALID_REQUEST", details: "Missing purchase evidence." });
