@@ -453,7 +453,7 @@ export default async function handler(req, res) {
         // All requests except handshake must be backed by a verified Google Identity
         if (!session || !session.is_auth) {
             console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request from ${maskDeviceId(deviceId)}`);
-            return res.status(401).json({ error: 'AUTH_REQUIRED', details: 'Google Login is required to use document tools.' });
+            return res.status(401).json({ error: 'SESSION_EXPIRED', details: 'Your session has expired or is invalid. Please log in again.' });
         }
 
         // STAGE 2: Backend Logic & Business Rules

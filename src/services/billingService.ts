@@ -38,10 +38,17 @@ class BillingService {
 
             if (!this.transactionListener) {
                 try {
+                    console.log('Anti-Gravity Billing: Registering transactionUpdated listener...');
                     this.transactionListener = await NativePurchases.addListener('transactionUpdated', (transaction: any) => {
-                        console.log('Anti-Gravity Billing: 📲 transactionUpdated event received:', transaction?.productIdentifier);
+                        console.log('Anti-Gravity Billing: 📲 transactionUpdated event received:', {
+                            productId: transaction?.productIdentifier,
+                            transactionId: transaction?.transactionId,
+                            status: transaction?.transactionState
+                        });
                         if (transaction && transaction.transactionId) {
                             this.restoredPurchases.push(transaction);
+                        } else {
+                            console.warn('Anti-Gravity Billing: Received event with missing transactionId');
                         }
                     });
                 } catch (listenerError) {
@@ -113,6 +120,16 @@ class BillingService {
                 await NativePurchases.acknowledgePurchase({ purchaseToken }).catch(() => { });
                 await this.addToPendingQueue({ purchaseToken, productId: LIFETIME_PRODUCT_ID, transactionId: result.transactionId });
 
+                // SECURITY: Before verification, ensure session is valid
+                const status = AuthService.getSessionStatus();
+                if (!status.isValid) {
+                    const refreshed = await AuthService.initializeSession();
+                    if (!refreshed.success) {
+                        alert('Session expired during purchase. Your purchase is recorded locally and will sync once you log in again.');
+                        return false;
+                    }
+                }
+
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
 
                 if (verifyResult) {
@@ -154,29 +171,83 @@ class BillingService {
         try {
             if (!silent) console.log('Anti-Gravity Billing: Manual restore triggered...');
 
+            // SECURITY: Ensure session is valid before starting expensive restore flow
+            const authStatus = AuthService.getSessionStatus();
+            if (!authStatus.isValid) {
+                console.warn('Anti-Gravity Billing: Session invalid during restore. Attempting refresh...');
+                const refresh = await AuthService.initializeSession();
+                if (!refresh.success) {
+                    if (!silent) alert('Session expired. Please log in again to restore purchases.');
+                    return false;
+                }
+            }
+
             this.restoredPurchases = [];
             await NativePurchases.restorePurchases();
-            await new Promise(resolve => setTimeout(resolve, silent ? 2000 : 4000));
+
+            console.log('Anti-Gravity Billing: Waiting for restore events...');
+            await new Promise(resolve => setTimeout(resolve, silent ? 2500 : 5000));
+
+            // FALLBACK: If no transactions from events, query directly
+            if (this.restoredPurchases.length === 0) {
+                console.log('Anti-Gravity Billing: No transactions from events, querying directly via getPurchases...');
+                try {
+                    // Query INAPP purchases
+                    const inAppPurchases = await NativePurchases.getPurchases({
+                        productType: PURCHASE_TYPE.INAPP
+                    });
+
+                    // Query SUBSCRIPTION purchases  
+                    const subsPurchases = await NativePurchases.getPurchases({
+                        productType: PURCHASE_TYPE.SUBS
+                    });
+
+                    console.log('Anti-Gravity Billing: Direct query results:', {
+                        inApp: inAppPurchases.purchases?.length || 0,
+                        subs: subsPurchases.purchases?.length || 0
+                    });
+
+                    // Combine and process
+                    const allPurchases = [
+                        ...(inAppPurchases.purchases || []),
+                        ...(subsPurchases.purchases || [])
+                    ];
+
+                    for (const purchase of allPurchases) {
+                        this.restoredPurchases.push(purchase);
+                    }
+                } catch (queryError) {
+                    console.error('Anti-Gravity Billing: Direct query failed:', queryError);
+                }
+            }
 
             let hasLifetime = false;
+            let verificationErrors = 0;
+
             for (const purchase of this.restoredPurchases) {
                 const productId = purchase.productIdentifier || purchase.productId || purchase.sku;
                 if (productId === LIFETIME_PRODUCT_ID || productId === LIFETIME_PRODUCT_ID_ALT) {
-                    hasLifetime = true;
                     const transactionId = purchase.transactionId || purchase.orderId || 'restore_sync';
                     const verificationToken = purchase.purchaseToken || transactionId;
 
                     const isVerified = await this.verifyPurchaseOnServer(verificationToken, productId, transactionId);
                     if (isVerified) {
+                        hasLifetime = true;
                         TaskLimitManager.upgradeToPro();
                         upgradeTier(SubscriptionTier.LIFETIME, transactionId);
                         if (!silent) alert('✅ Lifetime status restored!');
+                    } else {
+                        verificationErrors++;
                     }
                 }
             }
 
             if (!hasLifetime && !silent) {
-                alert('ℹ️ No active Lifetime purchase found.');
+                if (verificationErrors > 0) {
+                    alert('⚠️ Verification failed for your previous purchase. Please check your internet connection or log in again.');
+                } else {
+                    alert('ℹ️ No active Lifetime purchase found.');
+                }
             }
             return hasLifetime;
         } catch (error) {

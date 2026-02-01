@@ -12,8 +12,8 @@ import { saveBase64ToCache } from '@/services/downloadService';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Configure PDF.js worker - versioned local file
+pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
 
 const ExtractImagesScreen: React.FC = () => {
     const navigate = useNavigate();

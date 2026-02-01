@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "npm run sync-worker && vite build",
     "preview": "vite preview",
-    "sync-worker": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs",
+    "sync-worker": "cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.v5.4.296.min.mjs && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.min.mjs && cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/pdf.worker.mjs",
     "postinstall": "npm run sync-worker"
   },
   "dependencies": {
@@ -37,7 +37,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.563.0",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^5.4.530",
+    "pdfjs-dist": "5.4.296",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-pdf": "^10.3.0",

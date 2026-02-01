@@ -19,8 +19,8 @@ import ToolGuide from '@/components/ToolGuide';
 import MindMapSettingsModal from '@/components/MindMapSettingsModal';
 
 // Configure PDF.js worker
-// Use relative path for Capacitor compatibility
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Use versioned local file with origin to force cache bust and correct resolution on Android
+pdfjs.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
 
 const ReaderScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -70,8 +70,8 @@ const ReaderScreen: React.FC = () => {
     };
 
     const pdfOptions = useMemo(() => ({
-        workerSrc: '/pdf.worker.min.mjs',
-        cMapUrl: 'https://unpkg.com/pdfjs-dist@5.4.296/cmaps/',
+        workerSrc: window.location.origin + '/pdf.worker.v5.4.296.min.mjs',
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/cmaps/',
         cMapPacked: true,
     }), []);
 

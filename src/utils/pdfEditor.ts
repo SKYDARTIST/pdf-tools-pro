@@ -1,6 +1,9 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
 
+// Configure PDF.js worker - pinned versioned local file
+pdfjs.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
+
 export const replaceTextInPdf = async (
     arrayBuffer: ArrayBuffer,
     searchText: string,

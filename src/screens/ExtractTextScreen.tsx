@@ -11,8 +11,8 @@ import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import { downloadFile } from '@/services/downloadService';
 
-// Configure PDF.js worker - using local file
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Configure PDF.js worker - versioned local file
+pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
 
 const ExtractTextScreen: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
