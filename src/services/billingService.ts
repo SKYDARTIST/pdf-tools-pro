@@ -406,48 +406,7 @@ class BillingService {
 
 
 
-    async purchaseAiPack(productId: string): Promise<boolean> {
-        try {
-            console.log(`Anti-Gravity Billing: Starting AI Pack purchase for ${productId}`);
-            const result = await NativePurchases.purchaseProduct({
-                productIdentifier: productId,
-                productType: PURCHASE_TYPE.INAPP
-            });
 
-            if (result.transactionId) {
-                console.log('Anti-Gravity Billing: ✅ AI Pack purchase successful, acknowledging...');
-                const purchaseToken = (result as any).purchaseToken || result.transactionId;
-
-                // CRITICAL: Add to queue IMMEDIATELY - before verification
-                // This ensures purchase is not lost if app crashes
-                await this.addToPendingQueue({ purchaseToken, productId, transactionId: result.transactionId });
-                console.log('Anti-Gravity Billing: 🛡️ Purchase queued for verification');
-
-                const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, productId, result.transactionId);
-
-                if (verifyResult) {
-                    console.log('Anti-Gravity Billing: ✅ AI Pack verified and credits granted');
-                    await this.removeFromPendingQueue(result.transactionId);
-
-                    // RECONCILE: Force refresh usage from server to show new credits
-                    const freshUsage = await fetchUserUsage();
-                    if (freshUsage) saveSubscription(freshUsage);
-
-                    alert('Credits Added! You can now use AI tools.');
-                    return true;
-                } else {
-                    console.error('Anti-Gravity Billing: ❌ AI Pack verification failed');
-                    alert('⚠️ Credit verification failed. Please contact support.');
-                    return false;
-                }
-            }
-            return false;
-        } catch (error: any) {
-            console.error('Anti-Gravity Billing: AI Pack Purchase Error:', error);
-            alert('Purchase failed: ' + (error.message || 'Check your Google Play account.'));
-            return false;
-        }
-    }
 
     async syncPurchasesWithState(): Promise<void> {
         try {
@@ -460,7 +419,6 @@ class BillingService {
                 if (existingUsage) {
                     console.log('Anti-Gravity Billing: ✅ Existing usage found in Supabase:', {
                         tier: existingUsage.tier,
-                        aiPackCredits: existingUsage.aiPackCredits,
                         aiDocsWeek: existingUsage.aiDocsThisWeek,
                         aiDocsMonth: existingUsage.aiDocsThisMonth
                     });
@@ -670,8 +628,7 @@ class BillingService {
             const subscription = TaskLimitManager.getSubscriptionSync();
             console.log('💾 Local Storage State:', {
                 tier: subscription?.tier,
-                isPro: TaskLimitManager.isPro(),
-                credits: subscription?.aiPackCredits
+                isPro: TaskLimitManager.isPro()
             });
 
             // Check server state

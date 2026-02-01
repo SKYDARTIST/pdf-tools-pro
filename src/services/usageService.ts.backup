@@ -44,7 +44,7 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
             operationsToday: data.operations_today || 0,
             aiDocsThisWeek: data.ai_docs_weekly || 0,
             aiDocsThisMonth: data.ai_docs_monthly || 0,
-
+            aiPackCredits: data.ai_pack_credits || 0,
             lastOperationReset: data.last_reset_daily || new Date().toISOString(),
             lastAiWeeklyReset: data.last_reset_weekly || new Date().toISOString(),
             lastAiMonthlyReset: data.last_reset_monthly || new Date().toISOString(),
@@ -73,6 +73,7 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
 
         SecurityLogger.log('Anti-Gravity Billing: Syncing usage to server...', {
             user: googleUser ? googleUser.email : maskString(deviceId),
+            aiPackCredits: usage.aiPackCredits,
             tier: usage.tier,
             timestamp: new Date().toISOString()
         });
@@ -80,12 +81,6 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         const secureUsage = {
             operationsToday: usage.operationsToday,
             lastOperationReset: usage.lastOperationReset,
-
-            aiDocsThisWeek: usage.aiDocsThisWeek,
-            aiDocsThisMonth: usage.aiDocsThisMonth,
-            lastAiWeeklyReset: usage.lastAiWeeklyReset,
-            lastAiMonthlyReset: usage.lastAiMonthlyReset,
-            hasReceivedBonus: usage.hasReceivedBonus,
         };
 
         const payload = googleUser ? secureUsage : { type: 'usage_sync', usage: secureUsage };
@@ -108,6 +103,7 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
                 status: response.status,
                 statusText: response.statusText,
                 errorDetails,
+                aiPackCredits: usage.aiPackCredits,
                 tier: usage.tier,
             });
 
@@ -118,6 +114,7 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
         }
 
         Logger.info('Billing', '✅ Usage synced successfully', {
+            aiPackCredits: usage.aiPackCredits,
             tier: usage.tier,
         });
 

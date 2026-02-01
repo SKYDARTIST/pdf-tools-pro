@@ -15,7 +15,7 @@ const PricingScreen: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [proPrice, setProPrice] = React.useState('...');
   const [lifetimePrice, setLifetimePrice] = React.useState('...');
-  const [aiPackPrice, setAiPackPrice] = React.useState('...');
+
 
   React.useEffect(() => {
     // Fetch localized prices from Google Play
@@ -45,11 +45,7 @@ const PricingScreen: React.FC = () => {
           setLifetimePrice(life.price);
         }
 
-        const aiPack = products.find(p => p.identifier === 'ai_pack_100' || p.identifier.includes('ai_pack'));
-        if (aiPack) {
-          console.log('🛡️ Pricing: Matched AI Pack:', aiPack.identifier);
-          setAiPackPrice(aiPack.price);
-        }
+
       } catch (err) {
         console.warn('Failed to fetch localized prices:', err);
       }
@@ -93,15 +89,7 @@ const PricingScreen: React.FC = () => {
     }
   };
 
-  const handleAiPackPurchase = async () => {
-    setIsLoading(true);
-    try {
-      const success = await BillingService.purchaseAiPack('ai_pack_100');
-      if (success) handleSuccess();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
 
 
@@ -157,22 +145,6 @@ const PricingScreen: React.FC = () => {
       cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : (currentTier === SubscriptionTier.PRO ? 'UPGRADE' : 'BUY ONCE'),
       disabled: currentTier === SubscriptionTier.LIFETIME || isLoading,
       recommended: true
-    },
-    {
-      id: 'ai_pack',
-      name: 'AI Power Pack',
-      price: aiPackPrice,
-      period: '100 CREDITS',
-      badge: 'POPULAR',
-      features: [
-        { text: '100 Neural Link Credits', icon: Sparkles },
-        { text: 'Never Expires', icon: Shield },
-        { text: 'Stackable Balance', icon: Cpu },
-        { text: 'Authoritative Sync', icon: Check }
-      ],
-      cta: 'GET CREDITS',
-      disabled: isLoading,
-      recommended: false
     }
   ];
 
@@ -292,7 +264,6 @@ const PricingScreen: React.FC = () => {
                   onClick={() => {
                     if (tier.id === SubscriptionTier.PRO) handleProPurchase();
                     if (tier.id === SubscriptionTier.LIFETIME) handleLifetimePurchase();
-                    if (tier.id === 'ai_pack') handleAiPackPurchase();
                   }}
                   className={`w-full py-5 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] transition-all relative overflow-hidden ${tier.disabled
                     ? `bg-transparent border border-[#00C896]/30 ${isActive ? 'text-[#00C896]' : 'text-gray-400 cursor-not-allowed'}`

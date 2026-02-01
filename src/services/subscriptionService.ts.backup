@@ -8,7 +8,13 @@ import Config from './configService';
 import { getDeviceId } from './deviceService';
 import { secureFetch } from './apiService';
 
-
+// AI Pack Constants
+const UNLIMITED_CREDITS_THRESHOLD = 990; // Packs with 990+ credits are treated as "unlimited"
+const AI_PACK_SIZES = {
+    SMALL: 100,
+    LARGE: 500,
+    UNLIMITED: 999
+};
 
 // Subscription Service - Manages user tiers and usage limits
 export enum SubscriptionTier {
@@ -29,6 +35,7 @@ export enum AiOperationType {
 // Blocking modes when AI limits are hit
 export enum AiBlockMode {
     BUY_PRO = 'buy_pro',           // Free user needs to buy Pro
+    BUY_CREDITS = 'buy_credits',   // Pro user needs to buy AI Pack
     NONE = 'none'                   // No blocking
 }
 
@@ -37,7 +44,7 @@ export interface UserSubscription {
     operationsToday: number;
     aiDocsThisWeek: number;
     aiDocsThisMonth: number;
-
+    aiPackCredits: number;
     lastOperationReset: string; // ISO date
     lastAiWeeklyReset: string; // ISO date
     lastAiMonthlyReset: string; // ISO date
@@ -154,7 +161,13 @@ export const getSubscription = (): UserSubscription => {
                 }
             }
 
-
+            // SANITY CHECK: Reset unlimited pack credits to monthly quota
+            // This shouldn't happen in production but protects against data corruption
+            if (subscription.aiPackCredits >= UNLIMITED_CREDITS_THRESHOLD) {
+                console.warn('Subscription: Resetting corrupted unlimited credits to 0');
+                subscription.aiPackCredits = 0;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
+            }
 
             return subscription;
         } catch (e) {
@@ -172,7 +185,7 @@ export const getSubscription = (): UserSubscription => {
         operationsToday: 0,
         aiDocsThisWeek: 0,
         aiDocsThisMonth: 0,
-
+        aiPackCredits: 0,
         lastOperationReset: now,
         lastAiWeeklyReset: now,
         lastAiMonthlyReset: now,
@@ -193,26 +206,6 @@ export const saveSubscription = (subscription: UserSubscription): void => {
         localStorage.setItem(STORAGE_KEY, next);
         window.dispatchEvent(new CustomEvent('subscription-updated'));
     }
-};
-// Refund an AI credit in case of downstream failure after deduction
-export const refundAICredit = async (operationType: AiOperationType = AiOperationType.HEAVY): Promise<void> => {
-    if (operationType === AiOperationType.GUIDANCE) return;
-
-    const subscription = getSubscription();
-
-    // Logic: Restore counts.
-    if (subscription.tier === SubscriptionTier.PRO && subscription.aiDocsThisMonth === 0) {
-        // If they were Pro and hit 0, we can't really "refund" into negative usage here easily
-        // but normally we just decrement the usage counter.
-        if (subscription.aiDocsThisMonth > 0) subscription.aiDocsThisMonth -= 1;
-    } else {
-        if (subscription.aiDocsThisMonth > 0) subscription.aiDocsThisMonth -= 1;
-        if (subscription.aiDocsThisWeek > 0) subscription.aiDocsThisWeek -= 1;
-    }
-
-    saveSubscription(subscription);
-    await syncUsageToServer(subscription).catch(err => console.error('Refund Sync Failed:', err));
-    console.log('AI Usage: 🛡️ Credit REFUNDED successfully');
 };
 
 // Check if user can perform a PDF operation
@@ -246,7 +239,11 @@ export const canPerformOperation = (): { allowed: boolean; reason?: string } => 
 export const isNearAiLimit = (): boolean => {
     const subscription = getSubscription();
 
-
+    // 1. Check AI Pack Credits First (High Priority)
+    if (subscription.aiPackCredits > 0) {
+        // AI Pack efficiency: warn when less than 10 credits remaining
+        return subscription.aiPackCredits <= 10;
+    }
 
     // 2. Tier Specific Limits
     if (subscription.tier === SubscriptionTier.FREE) {
@@ -261,7 +258,55 @@ export const isNearAiLimit = (): boolean => {
     return false;
 };
 
+// Get the latest notification message if a milestone is hit
+export const getAiPackNotification = (): { message: string; type: 'milestone' | 'warning' | 'exhausted' } | null => {
+    const subscription = getSubscription();
 
+    // 1. SILENCE for unlimited packs
+    if (subscription.aiPackCredits >= UNLIMITED_CREDITS_THRESHOLD) return null;
+
+    // 2. Only notify if user actually has/had an AI pack
+    if (subscription.aiPackCredits === undefined && (subscription.lastNotifiedCredits === undefined || subscription.lastNotifiedCredits === 0)) {
+        return null;
+    }
+
+    const credits = subscription.aiPackCredits || 0;
+
+    // 3. INITIALIZATION SAFETY: If lastNotified is not set, set it to current credits to avoid "Empty" flash on mount
+    if (subscription.lastNotifiedCredits === undefined) {
+        subscription.lastNotifiedCredits = credits;
+        saveSubscription(subscription);
+        return null;
+    }
+
+    const lastNotified = subscription.lastNotifiedCredits;
+
+    // Don't notify if we haven't consumed anything since last notification
+    if (credits === lastNotified) return null;
+
+    // 4. EXHAUSTED: Only if they just dropped to 0 from something higher
+    if (credits === 0 && lastNotified > 0) {
+        return { message: "AI Credits Empty. Buy more credits to continue using AI tools.", type: 'exhausted' };
+    }
+
+    if (credits <= 10 && credits > 0 && lastNotified > credits) {
+        return { message: `AI Credits Low: ${credits} remaining.`, type: 'warning' };
+    }
+
+    // Every 10 milestone
+    if (credits > 10 && credits % 10 === 0 && lastNotified > credits) {
+        return { message: `AI Credits: ${credits} remaining.`, type: 'milestone' };
+    }
+
+    return null;
+};
+
+// Acknowledge a notification to prevent re-rendering
+export const ackAiNotification = (): void => {
+    const subscription = getSubscription();
+    subscription.lastNotifiedCredits = subscription.aiPackCredits;
+    saveSubscription(subscription);
+};
 
 // Check if user can use AI
 export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY): {
@@ -280,7 +325,10 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
     const now = new Date();
     const warning = isNearAiLimit();
 
-
+    // 1. Check AI Pack Credits First (High Priority)
+    if (subscription.aiPackCredits > 0) {
+        return { allowed: true, remaining: subscription.aiPackCredits, warning, blockMode: AiBlockMode.NONE };
+    }
 
     // 2. Weekly Reset for Free Tier
     const lastWeeklyReset = new Date(subscription.lastAiWeeklyReset);
@@ -316,8 +364,8 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
         if (subscription.aiDocsThisMonth >= PRO_LIMITS.aiDocsPerMonth) {
             return {
                 allowed: false,
-                reason: `You've used all ${PRO_LIMITS.aiDocsPerMonth} AI documents this month. Upgrade to Lifetime for unlimited access!`,
-                blockMode: AiBlockMode.BUY_PRO
+                reason: `You've used all ${PRO_LIMITS.aiDocsPerMonth} AI documents this month. Buy an AI Pack for 100 more credits!`,
+                blockMode: AiBlockMode.BUY_CREDITS
             };
         }
         return { allowed: true, remaining: PRO_LIMITS.aiDocsPerMonth - subscription.aiDocsThisMonth, warning, blockMode: AiBlockMode.NONE };
@@ -358,12 +406,6 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     // AUTH SAFETY: If user is logged in but we haven't hydrated from server yet, 
     // fetch server data first to avoid overwriting with stale local data
     const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
-    // 1. Sync CURRENT state before deduction (Phase 4 fix for "Disappearing Credits" on uninstall)
-    // This ensures that even if the app is uninstalled immediately after, the credits
-    // are synced.
-    const preSyncSub = getSubscription();
-    await syncUsageToServer(preSyncSub).catch(err => console.error('AI Usage: Pre-deduction Sync Failed:', err));
-
     if (googleUid && !isHydrated) {
         console.log('AI Usage: 🛡️ Forced hydration triggered before operation');
         await initSubscription();
@@ -373,7 +415,35 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
     let stats = null;
 
     // Logic for tracking usage
-    if (subscription.tier === SubscriptionTier.FREE) {
+    if (subscription.aiPackCredits > 0) {
+        // Priority 1: Use AI Pack Credits (the unlimited balance)
+        subscription.aiPackCredits -= 1;
+
+        // SECURITY: Race condition protection - rollback if negative
+        if (subscription.aiPackCredits < 0) {
+            console.error('AI Credits: Race condition detected! Rolling back.');
+            subscription.aiPackCredits = 0;
+            saveSubscription(subscription);
+            return {
+                tier: subscription.tier,
+                used: 0,
+                limit: 0,
+                remaining: 0,
+                message: 'AI Credits exhausted. Please purchase more.'
+            };
+        }
+
+        const remaining = subscription.aiPackCredits;
+        console.log(`AI Usage: HEAVY operation - AI Pack Credit consumed. ${remaining} remaining.`);
+
+        stats = {
+            tier: subscription.tier,
+            used: 1,
+            limit: AI_PACK_SIZES.UNLIMITED, // Total pack
+            remaining,
+            message: `AI Pack: ${remaining} credits remaining`
+        };
+    } else if (subscription.tier === SubscriptionTier.FREE) {
         subscription.aiDocsThisMonth += 1;
         const used = subscription.aiDocsThisMonth;
         const limit = FREE_LIMITS.aiDocsPerMonth;
@@ -387,7 +457,7 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
             message: `Free Tier: ${used}/${limit} docs used this month`
         };
     } else {
-        // PRO or above
+        // PRO or above (no pack credits)
         subscription.aiDocsThisMonth += 1;
         const used = subscription.aiDocsThisMonth;
         const limit = PRO_LIMITS.aiDocsPerMonth;
@@ -404,8 +474,8 @@ export const recordAIUsage = async (operationType: AiOperationType = AiOperation
 
     saveSubscription(subscription);
 
-    // 2. Sync NEW state after deduction (Immediate server persistence)
-    await syncUsageToServer(subscription).catch(err => console.error('AI Usage: Post-deduction Sync Failed:', err));
+    // SILENT SYNC: Sync to server in background
+    syncUsageToServer(subscription).catch(err => console.error('Subscription Sync Failed:', err));
 
     return stats;
 };

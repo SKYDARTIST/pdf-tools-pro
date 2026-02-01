@@ -760,7 +760,6 @@ export default async function handler(req, res) {
                         last_reset_weekly: usage.lastAiWeeklyReset,
                         last_reset_monthly: usage.lastAiMonthlyReset,
                         has_received_bonus: usage.hasReceivedBonus,
-                        ai_pack_credits: usage.aiPackCredits,
                     };
 
                     // Only allow upserting these "Usage Counter" fields. 
