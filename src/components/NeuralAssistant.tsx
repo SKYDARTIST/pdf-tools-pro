@@ -249,21 +249,26 @@ const NeuralAssistant: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            {/* Toggle Button with Breathing Pulse */}
+            {/* Toggle Button with Breathing Pulse (PERFORMANCE: Only animate when closed) */}
             <motion.button
                 initial={false}
-                animate={{
+                animate={!isOpen ? {
                     scale: [1, 1.05, 1],
                     boxShadow: [
                         "0 16px 32px -12px rgba(0,0,0,0.5)",
                         "0 16px 48px -12px rgba(16, 185, 129, 0.3)",
                         "0 16px 32px -12px rgba(0,0,0,0.5)"
                     ]
+                } : {
+                    scale: 1,
+                    boxShadow: "0 16px 32px -12px rgba(0,0,0,0.5)"
                 }}
-                transition={{
+                transition={!isOpen ? {
                     repeat: Infinity,
                     duration: 4,
                     ease: "easeInOut"
+                } : {
+                    duration: 0.3
                 }}
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 whileTap={{ scale: 0.9 }}

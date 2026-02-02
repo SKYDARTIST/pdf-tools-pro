@@ -44,31 +44,49 @@ export const secureFetch = async (url: string, options: RequestInit = {}): Promi
         });
 
         try {
-            const response = await fetch(url, {
-                ...options,
-                headers
-            });
+            // SAFETY: Add 30-second timeout to prevent hanging on network issues
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-            console.log(`[${requestId}] 📥 Response: ${response.status}`, {
-                statusText: response.statusText,
-                contentType: response.headers.get('content-type')
-            });
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers,
+                    signal: controller.signal
+                });
 
-            // 401 UNAUTHORIZED -> Session is dead
-            if (response.status === 401) {
-                if (isRetry) {
-                    Logger.error('API', `[${requestId}] Handshake retry failed with 401 again. Giving up.`, { url });
-                    return response;
+                clearTimeout(timeoutId);
+
+                console.log(`[${requestId}] 📥 Response: ${response.status}`, {
+                    statusText: response.statusText,
+                    contentType: response.headers.get('content-type')
+                });
+
+                // 401 UNAUTHORIZED -> Session is dead
+                if (response.status === 401) {
+                    if (isRetry) {
+                        Logger.error('API', `[${requestId}] Handshake retry failed with 401 again. Giving up.`, { url });
+                        return response;
+                    }
+
+                    console.warn(`[${requestId}] 🛡️ Unauthorized (401). Retrying with fresh session...`);
+                    AuthService.handleUnauthorized(); // Clear local state
+
+                    // Force a new handshake by getting header again
+                    return performRequest(true);
                 }
 
-                console.warn(`[${requestId}] 🛡️ Unauthorized (401). Retrying with fresh session...`);
-                AuthService.handleUnauthorized(); // Clear local state
+                return response;
+            } catch (fetchError: any) {
+                clearTimeout(timeoutId);
 
-                // Force a new handshake by getting header again
-                return performRequest(true);
+                // Check if it was a timeout
+                if (fetchError.name === 'AbortError') {
+                    console.error(`[${requestId}] ⏱️ Request timeout after 30 seconds`);
+                    throw new Error('Request timeout - please check your network connection');
+                }
+                throw fetchError;
             }
-
-            return response;
         } catch (error: any) {
             console.error(`[${requestId}] 🚨 Network error:`, error.message);
             if (!isRetry) {

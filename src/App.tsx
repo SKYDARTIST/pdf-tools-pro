@@ -180,8 +180,16 @@ const App: React.FC = () => {
 
 
 
+  // PERFORMANCE: Throttled mouse/touch tracking to prevent excessive reflows
   React.useEffect(() => {
+    let lastUpdate = 0;
+    const throttleMs = 16; // Max 60fps (1000ms / 60fps = 16.67ms)
+
     const handleMove = (e: MouseEvent | TouchEvent) => {
+      const now = Date.now();
+      if (now - lastUpdate < throttleMs) return; // Skip if too soon
+      lastUpdate = now;
+
       const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
       document.documentElement.style.setProperty('--mouse-x', `${x}px`);

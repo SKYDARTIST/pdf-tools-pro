@@ -26,6 +26,18 @@ class BillingService {
     private transactionListener: any = null;
     private isTestMode = AuthService.isTestAccount();
 
+    // SAFETY: Parse localStorage with corruption protection
+    private safeParsePurchaseQueue(key: string): any[] {
+        try {
+            const value = localStorage.getItem(key);
+            return value ? JSON.parse(value) : [];
+        } catch (e) {
+            console.error(`Anti-Gravity Billing: Corrupted data in ${key}, clearing and resetting.`, e);
+            localStorage.removeItem(key);
+            return [];
+        }
+    }
+
     async initialize() {
         try {
             console.log('Anti-Gravity Billing: Initializing...');
@@ -277,18 +289,18 @@ class BillingService {
     }
 
     private async addToPendingQueue(purchase: any): Promise<void> {
-        const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
+        const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
         queue.push({ ...purchase, addedAt: Date.now() });
         localStorage.setItem('ag_pending_purchases', JSON.stringify(queue));
     }
 
     private async removeFromPendingQueue(transactionId: string): Promise<void> {
-        const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
+        const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
         localStorage.setItem('ag_pending_purchases', JSON.stringify(queue.filter((p: any) => p.transactionId !== transactionId)));
     }
 
     private async processPendingPurchases(): Promise<void> {
-        const queue = JSON.parse(localStorage.getItem('ag_pending_purchases') || '[]');
+        const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
         if (queue.length === 0) return;
 
         for (const purchase of queue) {

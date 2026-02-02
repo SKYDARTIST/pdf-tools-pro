@@ -14,12 +14,22 @@ interface TaskLimitData {
 }
 
 class TaskLimitManager {
+    // PERFORMANCE: Cache localStorage reads to prevent repeated JSON parsing
+    private static cachedData: TaskLimitData | null = null;
+    private static cacheTime: number = 0;
+    private static readonly CACHE_TTL = 5000; // 5 seconds
+
     private static getTodayDate(): string {
         const now = new Date();
         return now.toISOString().split('T')[0]; // YYYY-MM-DD
     }
 
     private static getData(): TaskLimitData {
+        // Return cached data if still valid
+        const now = Date.now();
+        if (this.cachedData && (now - this.cacheTime) < this.CACHE_TTL) {
+            return this.cachedData;
+        }
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
 
@@ -30,25 +40,37 @@ class TaskLimitManager {
                 || subscriptionData?.tier === 'lifetime';
 
             if (!stored) {
-                return {
+                const defaultData = {
                     count: 0,
                     date: this.getTodayDate(),
                     isPro: isProFromSubscription,
                 };
+                // Cache the result
+                this.cachedData = defaultData;
+                this.cacheTime = Date.now();
+                return defaultData;
             }
 
             const data = JSON.parse(stored);
             // Always sync Pro status from subscription service
             data.isPro = isProFromSubscription;
+
+            // Cache the result
+            this.cachedData = data;
+            this.cacheTime = Date.now();
             return data;
         } catch (error) {
             console.error('Error reading task limit data:', error);
             const subscriptionData = this.getSubscriptionSync();
-            return {
+            const fallbackData = {
                 count: 0,
                 date: this.getTodayDate(),
                 isPro: subscriptionData?.tier === 'pro' || subscriptionData?.tier === 'lifetime',
             };
+            // Cache even error fallback
+            this.cachedData = fallbackData;
+            this.cacheTime = Date.now();
+            return fallbackData;
         }
     }
 

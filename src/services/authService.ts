@@ -146,6 +146,13 @@ class AuthService {
             }
 
             const data = await response.json();
+
+            // SAFETY: Validate response before accessing properties
+            if (!data || typeof data !== 'object') {
+                console.error('Anti-Gravity Auth: Invalid response format from server');
+                return { token: null, success: false };
+            }
+
             if (data.sessionToken) {
                 this.sessionToken = data.sessionToken;
                 // Expiry buffer: 55 mins (server issues 1h)

@@ -265,16 +265,10 @@ export default async function handler(req, res) {
         // --------------------------------------------------------------------------------
         const { createHmac, randomBytes, timingSafeEqual } = await import('node:crypto');
 
-        // SECURE SIGNING KEY: Use dedicated session secret, fallback to service key for safety
         const sessionSecret = process.env.AG_PROTOCOL_SIGNATURE;
         if (!sessionSecret) {
             console.error("🛡️ Anti-Gravity Security: AG_PROTOCOL_SIGNATURE is missing. Rejecting auth.");
-            return null;
-        }
-
-        if (!sessionSecret) {
-            console.error('FATAL: SESSION_TOKEN_SECRET or SUPABASE_SERVICE_ROLE_KEY missing');
-            return res.status(500).json({ error: 'Internal Server Error: Authentication not configured' });
+            return res.status(500).json({ error: 'SERVER_CONFIG_ERROR', details: 'AG_PROTOCOL_SIGNATURE not set' });
         }
 
         // Helper: Generate Session Token (Stateless JWT-lite + DB Persistence)
@@ -440,6 +434,7 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 sessionToken,
                 csrfToken,
+                is_auth: !!verifiedUid,
                 profile: profile // Return profile to client to avoid RLS SELECT requirement
             });
         }

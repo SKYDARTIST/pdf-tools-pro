@@ -78,6 +78,13 @@ export const reconcileSubscriptionDrift = async (): Promise<void> => {
 
         if (response.ok) {
             const data = await response.json();
+
+            // SAFETY: Validate response before accessing properties
+            if (!data || typeof data !== 'object') {
+                console.error('Anti-Gravity Subscription: Invalid response format from server');
+                return;
+            }
+
             if (data.tier) {
                 const sub = getSubscription();
                 if (sub.tier !== data.tier) {
@@ -147,8 +154,11 @@ export const getSubscription = (): UserSubscription => {
 
             return subscription;
         } catch (e) {
-            console.error('Anti-Gravity Subscription: Malformed localStorage data, resetting.', e);
+            console.error('Anti-Gravity Subscription: Malformed localStorage data, wiping and resetting.', e);
+            // AGGRESSIVE WIPE: Clear corrupted keys to break potential error loops
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem('ag_session_token'); // Also clear session as it's likely tied to the corruption
+            localStorage.removeItem('ag_session_expiry');
         }
     }
 

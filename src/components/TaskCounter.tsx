@@ -108,4 +108,9 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
     );
 };
 
-export default TaskCounter;
+// PERFORMANCE: Memoize to prevent unnecessary re-renders
+export default React.memo(TaskCounter, (prevProps, nextProps) => {
+    // Only re-render if props actually changed
+    return prevProps.variant === nextProps.variant &&
+           prevProps.onUpgradeClick === nextProps.onUpgradeClick;
+});

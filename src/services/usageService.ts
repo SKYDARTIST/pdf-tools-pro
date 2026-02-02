@@ -16,6 +16,18 @@ interface FailedSync {
     attempts: number;
 }
 
+// SAFETY: Parse localStorage with corruption protection
+const safeParseFailedSyncs = (key: string): FailedSync[] => {
+    try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : [];
+    } catch (e) {
+        console.error(`Anti-Gravity Usage: Corrupted data in ${key}, clearing and resetting.`, e);
+        localStorage.removeItem(key);
+        return [];
+    }
+};
+
 /**
  * Usage Service - Simplified (2-Tier System)
  * 
@@ -43,6 +55,12 @@ export const fetchUserUsage = async (): Promise<UserSubscription | null> => {
         }
 
         const data = await response.json();
+
+        // SAFETY: Validate response before accessing properties
+        if (!data || typeof data !== 'object') {
+            Logger.error('Billing', 'fetchUserUsage invalid response format', { data });
+            return null;
+        }
 
         // ONLY map the tier (counters removed from DB)
         const subscription: UserSubscription = {
@@ -112,7 +130,7 @@ export const syncUsageToServer = async (usage: UserSubscription): Promise<void> 
 
 const addToRetryQueue = (usage: UserSubscription): void => {
     try {
-        const queue: FailedSync[] = JSON.parse(localStorage.getItem(FAILED_SYNCS_KEY) || '[]');
+        const queue: FailedSync[] = safeParseFailedSyncs(FAILED_SYNCS_KEY);
         queue.push({
             usage,
             timestamp: Date.now(),
@@ -132,7 +150,7 @@ const clearFromRetryQueue = (): void => {
 
 export const retryFailedSyncs = async (): Promise<void> => {
     try {
-        const queue: FailedSync[] = JSON.parse(localStorage.getItem(FAILED_SYNCS_KEY) || '[]');
+        const queue: FailedSync[] = safeParseFailedSyncs(FAILED_SYNCS_KEY);
         if (queue.length === 0) return;
 
         for (const item of queue) {

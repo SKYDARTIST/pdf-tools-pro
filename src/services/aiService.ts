@@ -1,4 +1,15 @@
+// PERFORMANCE: LRU Cache with size limit to prevent memory leaks
+const MAX_CACHE_SIZE = 50;
 const aiCache = new Map<string, string>();
+
+const setCache = (key: string, value: string) => {
+  // If cache is full and this is a new key, remove oldest entry
+  if (aiCache.size >= MAX_CACHE_SIZE && !aiCache.has(key)) {
+    const firstKey = aiCache.keys().next().value;
+    aiCache.delete(firstKey);
+  }
+  aiCache.set(key, value);
+};
 
 import AuthService from './authService';
 import Config from './configService';
@@ -64,7 +75,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
 
     // Store in cache if successful (do not cache errors or rate limits)
     if (result) {
-      aiCache.set(cacheKey, result);
+      setCache(cacheKey, result);
     }
 
     return {
