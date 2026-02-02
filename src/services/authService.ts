@@ -4,6 +4,7 @@ import { getIntegrityToken } from './integrityService';
 import Config from './configService';
 import { setCsrfToken, clearCsrfToken } from './csrfService';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { getGoogleAuthCredential } from './googleAuthService';
 
 // Backend URL selection (DRY principle)
 const getBackendUrl = () => {
@@ -61,19 +62,24 @@ class AuthService {
             return { token: this.sessionToken, success: true };
         }
 
-        // AUTO-AUTH: If no credential provided, check if we have a persisted Supabase session
+        // AUTO-AUTH: Check for persisted Google identity first (Strongest proof)
         let activeCredential = credential;
         if (!activeCredential) {
+            activeCredential = await getGoogleAuthCredential();
+            if (activeCredential) {
+                console.log('Anti-Gravity Auth: Restored Google credential for handshake');
+            }
+        }
+
+        // Fallback: Check standard Supabase session
+        if (!activeCredential) {
             try {
-                // Check standard Supabase storage keys via helper
                 const { data } = await supabase.auth.getSession();
                 if (data.session?.access_token) {
-                    activeCredential = data.session.access_token; // Use existing token for handshake
-                    console.log('Anti-Gravity Auth: Restored active session from storage');
+                    activeCredential = data.session.access_token;
+                    console.log('Anti-Gravity Auth: Restored Supabase session for handshake');
                 }
-            } catch (e) {
-                console.warn('Anti-Gravity Auth: Failed to restore session from storage', e);
-            }
+            } catch (e) { }
         }
 
         return this.performHandshakeWithRetry(activeCredential);

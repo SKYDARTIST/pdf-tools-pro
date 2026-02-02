@@ -11,6 +11,7 @@ export interface GoogleUser {
     email: string;
     name: string;
     picture: string;
+    idToken?: string; // Raw JWT for credential verification
 }
 
 // Memory cache for the current user profile to avoid redundant DB calls per session
@@ -38,14 +39,15 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
         let userProfile: GoogleUser;
 
         if (profile) {
-            userProfile = profile;
+            userProfile = { ...profile, idToken: credential };
         } else {
             const tempDecoded = JSON.parse(atob(credential.split('.')[1]));
             userProfile = {
                 google_uid: tempDecoded.sub,
                 email: tempDecoded.email,
                 name: tempDecoded.name,
-                picture: tempDecoded.picture
+                picture: tempDecoded.picture,
+                idToken: credential
             };
         }
 
@@ -103,6 +105,14 @@ export const getCurrentUser = async (): Promise<GoogleUser | null> => {
     // All profile sync must happen via the backend handshake.
 
     return null;
+};
+
+/**
+ * Get the raw Google credential for handshake
+ */
+export const getGoogleAuthCredential = async (): Promise<string | null> => {
+    const user = await getCurrentUser();
+    return user?.idToken || null;
 };
 
 /**

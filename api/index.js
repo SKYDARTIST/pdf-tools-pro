@@ -440,6 +440,7 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 sessionToken,
                 csrfToken,
+                is_auth: !!verifiedUid,
                 profile: profile // Return profile to client to avoid RLS SELECT requirement
             });
         }
@@ -449,11 +450,25 @@ export default async function handler(req, res) {
         const token = authHeader && authHeader.split(' ')[1];
         const session = await verifySessionToken(token);
 
-        // MANDATORY LOGIN ENFORCEMENT (v2.9.2)
-        // All requests except handshake must be backed by a verified Google Identity
-        if (!session || !session.is_auth) {
-            console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request from ${maskDeviceId(deviceId)}`);
-            return res.status(401).json({ error: 'SESSION_EXPIRED', details: 'Your session has expired or is invalid. Please log in again.' });
+        // MANDATORY LOGIN ENFORCEMENT (v2.9.2/V3.0.0 Revised)
+        // Public actions allowed for Device-Only sessions (No Google ID required)
+        const PUBLIC_ACTIONS = [
+            'session_init',
+            'verify_purchase',
+            'check_subscription_status',
+            'usage_fetch',
+            'usage_sync',
+            'server_time'
+        ];
+
+        const isPublicAction = PUBLIC_ACTIONS.includes(requestType);
+
+        if (!isPublicAction && (!session || !session.is_auth)) {
+            console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request for [${requestType}] from ${maskDeviceId(deviceId)}`);
+            return res.status(401).json({
+                error: 'SESSION_EXPIRED',
+                details: 'Google login is required to use AI tools. Please sign in to continue.'
+            });
         }
 
         // STAGE 2: Backend Logic & Business Rules
