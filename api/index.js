@@ -440,7 +440,6 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 sessionToken,
                 csrfToken,
-                is_auth: !!verifiedUid,
                 profile: profile // Return profile to client to avoid RLS SELECT requirement
             });
         }
@@ -450,25 +449,23 @@ export default async function handler(req, res) {
         const token = authHeader && authHeader.split(' ')[1];
         const session = await verifySessionToken(token);
 
-        // MANDATORY LOGIN ENFORCEMENT (v2.9.2/V3.0.0 Revised)
-        // Public actions allowed for Device-Only sessions (No Google ID required)
+        // PUBLIC ACTIONS: Endpoints that don't require is_auth validation
+        // These handle their own authorization logic or are safe for anonymous users
         const PUBLIC_ACTIONS = [
-            'session_init',
-            'verify_purchase',
-            'check_subscription_status',
-            'usage_fetch',
-            'usage_sync',
-            'server_time'
+            'verify_purchase',           // Purchase verification (has own validation)
+            'check_subscription_status', // Status check (read-only)
+            'usage_fetch',               // Usage data fetch
+            'usage_sync',                // Usage data sync
+            'server_time'                // Server time (utility endpoint)
         ];
 
-        const isPublicAction = PUBLIC_ACTIONS.includes(requestType);
-
-        if (!isPublicAction && (!session || !session.is_auth)) {
-            console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request for [${requestType}] from ${maskDeviceId(deviceId)}`);
-            return res.status(401).json({
-                error: 'SESSION_EXPIRED',
-                details: 'Google login is required to use AI tools. Please sign in to continue.'
-            });
+        // MANDATORY LOGIN ENFORCEMENT (v2.9.2)
+        // All requests except public actions must be backed by a verified Google Identity
+        if (!PUBLIC_ACTIONS.includes(requestType)) {
+            if (!session || !session.is_auth) {
+                console.warn(`Anti-Gravity Security: Blocked unauthenticated/anonymous request from ${maskDeviceId(deviceId)} for ${requestType}`);
+                return res.status(401).json({ error: 'SESSION_EXPIRED', details: 'Your session has expired or is invalid. Please log in again.' });
+            }
         }
 
         // STAGE 2: Backend Logic & Business Rules
