@@ -151,7 +151,19 @@ class BillingService {
                     alert('Lifetime Access Unlocked!');
                     return true;
                 } else {
-                    alert('⚠️ Payment verification failed. Please contact support if you were charged.');
+                    const confirmSupport = window.confirm(
+                        '⚠️ PAYMENT VERIFICATION DELAYED\n\n' +
+                        'Google has processed your payment, but our server is having trouble confirming it right now. Your purchase is safe and recorded locally.\n\n' +
+                        'Would you like to email support now to resolve this manually?'
+                    );
+                    if (confirmSupport) {
+                        const deviceId = await getDeviceId();
+                        const subject = encodeURIComponent('Purchase Verification Failed');
+                        const body = encodeURIComponent(
+                            `Transaction ID: ${result.transactionId}\nDevice ID: ${deviceId}\nProduct: ${LIFETIME_PRODUCT_ID}\nTime: ${new Date().toISOString()}`
+                        );
+                        window.location.href = `mailto:antigravitybybulla@gmail.com?subject=${subject}&body=${body}`;
+                    }
                     return false;
                 }
             }
@@ -297,6 +309,10 @@ class BillingService {
     private async removeFromPendingQueue(transactionId: string): Promise<void> {
         const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
         localStorage.setItem('ag_pending_purchases', JSON.stringify(queue.filter((p: any) => p.transactionId !== transactionId)));
+    }
+
+    public getPendingQueue(): any[] {
+        return this.safeParsePurchaseQueue('ag_pending_purchases');
     }
 
     private async processPendingPurchases(): Promise<void> {

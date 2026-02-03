@@ -115,6 +115,11 @@ const App: React.FC = () => {
         BillingService.syncPurchasesWithState().catch(error => {
           console.error('🚀 App: Deferred purchase restore error:', error);
         });
+
+        // Phase 4 Check
+        import('@/services/subscriptionService').then(({ checkPostPurchaseStatus }) => {
+          checkPostPurchaseStatus();
+        });
       }
     }
   }, [isDataReady, bootAnimFinished, isBooting]);

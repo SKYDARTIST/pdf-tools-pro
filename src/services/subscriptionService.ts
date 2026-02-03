@@ -266,3 +266,31 @@ export const getCurrentLimits = () => {
         maxFileSize: 200 * 1024 * 1024 // Keep some limit for sanity
     };
 };
+
+// Phase 4: Post-Purchase Validation Check
+export const checkPostPurchaseStatus = async (): Promise<void> => {
+    try {
+        const BillingService = (await import('./billingService')).default;
+        const pending = BillingService.getPendingQueue();
+
+        for (const purchase of pending) {
+            const age = Date.now() - purchase.addedAt;
+            const oneHour = 60 * 60 * 1000;
+
+            if (age > oneHour) {
+                const wantVerify = window.confirm(
+                    '🛰️ RECOVERY PROTOCOL\n\n' +
+                    'We noticed a pending Lifetime Pro purchase from a previous session. Would you like to verify and unlock your Pro features now?'
+                );
+                if (wantVerify) {
+                    await forceReconcileFromServer();
+                    // Also trigger the billing service to process its queue
+                    await BillingService.initialize();
+                }
+                break; // Only prompt once
+            }
+        }
+    } catch (e) {
+        console.warn('Post-purchase check failed:', e);
+    }
+};

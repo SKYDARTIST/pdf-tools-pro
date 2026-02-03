@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut, FileText, Bot } from 'lucide-react';
+import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut, FileText, Bot, CreditCard, Activity, ChevronRight, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, GoogleUser } from '@/services/googleAuthService';
 
@@ -134,30 +134,50 @@ const AISettingsScreen: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Technical Detail Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            { icon: Shield, title: "Zero Logging", desc: "No local or remote persistence", delay: 0.3 },
-            { icon: Zap, title: "Fast Processing", desc: "Optimized for speed", delay: 0.4 },
-          ].map((item) => (
-            <motion.div
-              key={item.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: item.delay }}
-              whileHover={{ y: -4 }}
-              className="monolith-card p-8 flex flex-col gap-6"
+        {/* Billing & Support Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="monolith-card p-8 space-y-6 border-none"
+        >
+          <div className="flex items-center gap-6">
+            <div className="w-12 h-12 flex items-center justify-center bg-[#00C896]/10 text-[#00C896] rounded-2xl">
+              <CreditCard size={20} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Billing & Support</h4>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 font-mono">Transaction Recovery Center</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full flex items-center justify-between p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-[#00C896]/10 transition-all group"
             >
-              <div className="w-12 h-12 flex items-center justify-center bg-black/5 dark:bg-white/5 text-gray-900 dark:text-white rounded-2xl">
-                <item.icon size={20} />
+              <div className="flex items-center gap-4">
+                <Activity size={16} className="text-[#00C896]" />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">Payment Issues?</span>
               </div>
-              <div className="space-y-1">
-                <h5 className="text-sm font-black uppercase tracking-tighter text-gray-900 dark:text-white">{item.title}</h5>
-                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{item.desc}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-[#00C896] opacity-0 group-hover:opacity-100 transition-opacity">Launch Recovery</span>
+                <ChevronRight size={14} className="text-gray-300" />
               </div>
-            </motion.div>
-          ))}
-        </div>
+            </button>
+
+            <a
+              href="mailto:antigravitybybulla@gmail.com?subject=Anti-Gravity Support Request"
+              className="w-full flex items-center justify-between p-5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-[#00C896]/10 transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <Mail size={16} className="text-[#00C896]" />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">Contact Developer</span>
+              </div>
+              <ChevronRight size={14} className="text-gray-300" />
+            </a>
+          </div>
+        </motion.div>
 
         {/* Legal Links Section */}
         <div className="monolith-card p-6 divide-y divide-black/5 dark:divide-white/5 border-none">
@@ -209,7 +229,7 @@ const AISettingsScreen: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </motion.div>
+    </motion.div >
   );
 };
 

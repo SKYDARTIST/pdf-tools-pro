@@ -129,8 +129,13 @@ const DataExtractorScreen: React.FC = () => {
             setExtractedData(cleanedResponse);
             await recordAIUsage(AiOperationType.HEAVY);
         } catch (err: any) {
-            setError(err.message || "Extraction failed.");
-            console.error(err);
+            const friendlyMsg = err.message || "Extraction failed. Check your connection or file size.";
+            setError(friendlyMsg);
+            console.error('DataExtractor Error:', {
+                message: err.message,
+                stack: err.stack,
+                timestamp: new Date().toISOString()
+            });
         } finally {
             setIsExtracting(false);
         }

@@ -132,8 +132,11 @@ const AntiGravityWorkspace: React.FC = () => {
 
       await recordAIUsage(AiOperationType.HEAVY);
     } catch (error) {
-      console.error('Error processing PDF:', error);
-      showToast(getFriendlyErrorMessage(error));
+      console.error('Error processing document:', {
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      });
+      setError(getFriendlyErrorMessage(error) || "Neural link failed. Please try a different document.");
       setStatus('idle');
     } finally {
       setIsImporting(false);
