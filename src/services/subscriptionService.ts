@@ -44,21 +44,46 @@ let isHydrated = false;
 
 // Initialize subscription from Supabase or localStorage
 export const initSubscription = async (user?: any): Promise<UserSubscription> => {
+    console.log('Anti-Gravity Subscription: 🔄 Initializing subscription...', {
+        timestamp: new Date().toISOString()
+    });
+
+    // CRITICAL: Trigger pending purchase recovery BEFORE checking subscription
+    // This ensures failed purchases from previous sessions are recovered
+    try {
+        const BillingService = (await import('./billingService')).default;
+        const pending = BillingService.getPendingQueue();
+        if (pending.length > 0) {
+            console.log('Anti-Gravity Subscription: 🔐 Found pending purchases, triggering recovery...', {
+                count: pending.length
+            });
+            // Don't await - run in background
+            BillingService.initialize().catch(e => console.warn('Pending purchase recovery failed:', e));
+        }
+    } catch (e) {
+        console.warn('Anti-Gravity Subscription: Could not check pending purchases:', e);
+    }
+
     // Run drift reconciliation in the background - don't block boot
     reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
 
     // Force reconcile with a hard timeout to prevent hanging the app boot
     // If it fails or times out, we'll just use the cached version from getSubscription()
     try {
+        console.log('Anti-Gravity Subscription: ⏱️ Attempting server sync with 2.5s timeout...');
         const timeoutPromise = new Promise<null>((_, reject) =>
             setTimeout(() => reject(new Error('Sync Timeout')), 2500)
         );
 
         const syncPromise = forceReconcileFromServer();
 
-        return await Promise.race([syncPromise, timeoutPromise]) as UserSubscription;
+        const result = await Promise.race([syncPromise, timeoutPromise]) as UserSubscription;
+        console.log('Anti-Gravity Subscription: ✅ Server sync successful', {
+            tier: result.tier
+        });
+        return result;
     } catch (e) {
-        console.warn('Anti-Gravity Subscription: Initial sync failed produced fallback:', e);
+        console.warn('Anti-Gravity Subscription: ⏳ Initial sync timed out, using fallback:', e);
         return getSubscription();
     }
 };
@@ -69,7 +94,12 @@ export const initSubscription = async (user?: any): Promise<UserSubscription> =>
 export const reconcileSubscriptionDrift = async (): Promise<void> => {
     try {
         const googleUid = localStorage.getItem(STORAGE_KEYS.GOOGLE_UID);
-        if (!googleUid) return;
+        if (!googleUid) {
+            console.log('Anti-Gravity Subscription: No Google UID, skipping drift reconciliation');
+            return;
+        }
+
+        console.log('Anti-Gravity Subscription: 🔄 Running drift reconciliation with server...');
 
         const response = await secureFetch(`${Config.VITE_AG_API_URL}/api/index`, {
             method: 'POST',
@@ -88,13 +118,17 @@ export const reconcileSubscriptionDrift = async (): Promise<void> => {
             if (data.tier) {
                 const sub = getSubscription();
                 if (sub.tier !== data.tier) {
-                    console.log(`🛡️ Drift Reconciliation: Updating local tier ${sub.tier} -> ${data.tier}`);
+                    console.log(`🛡️ Anti-Gravity Subscription: Drift detected! Updating local tier ${sub.tier} -> ${data.tier}`);
                     upgradeTier(data.tier as SubscriptionTier, undefined);
+                } else {
+                    console.log('Anti-Gravity Subscription: ✅ Tier is in sync', { tier: data.tier });
                 }
             }
+        } else {
+            console.warn('Anti-Gravity Subscription: ⚠️ Drift reconciliation returned non-OK status:', response.status);
         }
-    } catch (e) {
-        console.error('Subscription drift reconciliation failed:', e);
+    } catch (e: any) {
+        console.error('Anti-Gravity Subscription: ❌ Drift reconciliation failed:', e.message);
     }
 };
 
@@ -273,24 +307,58 @@ export const checkPostPurchaseStatus = async (): Promise<void> => {
         const BillingService = (await import('./billingService')).default;
         const pending = BillingService.getPendingQueue();
 
+        if (pending.length === 0) {
+            console.log('Anti-Gravity Subscription: No pending purchases to check');
+            return;
+        }
+
+        console.log('Anti-Gravity Subscription: 🔍 Checking pending purchases', {
+            count: pending.length,
+            timestamp: new Date().toISOString()
+        });
+
         for (const purchase of pending) {
-            const age = Date.now() - purchase.addedAt;
+            const age = Date.now() - (purchase.addedAt || 0);
             const oneHour = 60 * 60 * 1000;
 
             if (age > oneHour) {
+                console.warn('Anti-Gravity Subscription: Found stale pending purchase', {
+                    transactionId: purchase.transactionId,
+                    ageMs: age
+                });
+
                 const wantVerify = window.confirm(
                     '🛰️ RECOVERY PROTOCOL\n\n' +
-                    'We noticed a pending Lifetime Pro purchase from a previous session. Would you like to verify and unlock your Pro features now?'
+                    'We noticed a pending Lifetime Pro purchase from a previous session.\n\n' +
+                    'Your payment was processed by Google. Would you like us to verify and unlock your Pro features now?'
                 );
                 if (wantVerify) {
-                    await forceReconcileFromServer();
-                    // Also trigger the billing service to process its queue
-                    await BillingService.initialize();
+                    console.log('Anti-Gravity Subscription: 🔐 User confirmed recovery, attempting verification...');
+                    try {
+                        // Force reconcile with timeout
+                        const timeoutPromise = new Promise<void>((_, reject) =>
+                            setTimeout(() => reject(new Error('Recovery sync timeout')), 5000)
+                        );
+                        const syncPromise = forceReconcileFromServer();
+                        await Promise.race([syncPromise, timeoutPromise]);
+
+                        // Also trigger the billing service to process its queue
+                        console.log('Anti-Gravity Subscription: Initializing billing service for final processing...');
+                        await BillingService.initialize();
+
+                        console.log('Anti-Gravity Subscription: ✅ Recovery completed');
+                    } catch (recoveryError: any) {
+                        console.error('Anti-Gravity Subscription: ❌ Recovery failed:', recoveryError.message);
+                        alert('Recovery failed. Your purchase is still safe and will be verified automatically.');
+                    }
+                } else {
+                    console.log('Anti-Gravity Subscription: User deferred recovery, will retry automatically');
+                    alert('✅ Your purchase is safe! We\'ll automatically verify it in the background.');
                 }
                 break; // Only prompt once
             }
         }
     } catch (e) {
-        console.warn('Post-purchase check failed:', e);
+        console.error('Anti-Gravity Subscription: Post-purchase check failed:', e);
     }
 };

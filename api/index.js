@@ -540,8 +540,15 @@ export default async function handler(req, res) {
                 const isValidCsrf = csrfPayload && csrfPayload.uid === googleUid;
 
                 if (!isValidCsrf) {
-                    console.warn(`🛡️ Anti-Gravity Security: Purchase CSRF failure for ${maskDeviceId(deviceId)}`);
-                    return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED' });
+                    console.warn(`🛡️ Anti-Gravity Security: Purchase CSRF failure for ${maskDeviceId(deviceId)}`, {
+                        hasCsrfHeader: !!csrfHeader,
+                        hasCsrfPayload: !!csrfPayload,
+                        csrfUid: csrfPayload?.uid,
+                        sessionUid: googleUid,
+                        transactionId,
+                        timestamp: new Date().toISOString()
+                    });
+                    return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED', details: 'CSRF token missing or invalid' });
                 }
 
                 // 2. TIMESTAMP VERIFICATION (V6.0 - Body-HMAC removed for security)
@@ -600,13 +607,37 @@ export default async function handler(req, res) {
 
                 // 4. AUTHORITATIVE VERIFICATION: Google Play API
                 // SECURITY: Strict Mode - No fallback heuristics (Issue #2 Fix)
+                console.log(`🔐 api/index: Verifying purchase with Google Play...`, {
+                    productId,
+                    transactionId,
+                    hasToken: !!purchaseToken,
+                    userPreview: maskDeviceId(googleUid || deviceId)
+                });
+
                 const isReviewer = false;
                 const isVerified = isReviewer || await validateWithGooglePlay(productId, purchaseToken);
 
                 if (!isVerified) {
-                    console.error(`❌ api/index: Authoritative verification failed for ${productId}`);
-                    return res.status(402).json({ error: "PURCHASE_NOT_VALID", details: "Authoritative verification with Google Play failed." });
+                    console.error(`❌ api/index: Authoritative verification FAILED for purchase`, {
+                        productId,
+                        transactionId,
+                        device: maskDeviceId(deviceId),
+                        user: maskDeviceId(googleUid || 'anonymous'),
+                        purchaseTokenPreview: purchaseToken ? purchaseToken.substring(0, 16) + '...' : 'none',
+                        timestamp: new Date().toISOString()
+                    });
+                    return res.status(402).json({
+                        error: "PURCHASE_NOT_VALID",
+                        details: "Authoritative verification with Google Play failed.",
+                        transactionId
+                    });
                 }
+
+                console.log(`✅ api/index: Purchase verified successfully with Google Play`, {
+                    productId,
+                    transactionId,
+                    timestamp: new Date().toISOString()
+                });
 
                 try {
                     let targetTier = null;
@@ -619,10 +650,22 @@ export default async function handler(req, res) {
 
                     // 6. ATOMIC UPDATES
                     if (targetTier) {
-                        console.log(`🛡️ Granting ${targetTier.toUpperCase()} status`);
-                        await supabase.from('ag_user_usage').upsert([{ device_id: deviceId, tier: targetTier }], { onConflict: 'device_id' });
+                        console.log(`🛡️ GRANTING ${targetTier.toUpperCase()} STATUS`, {
+                            productId,
+                            transactionId,
+                            device: maskDeviceId(deviceId),
+                            user: maskDeviceId(googleUid || 'anonymous')
+                        });
+
+                        const usageUpdate = await supabase.from('ag_user_usage').upsert(
+                            [{ device_id: deviceId, tier: targetTier }],
+                            { onConflict: 'device_id' }
+                        );
+                        console.log('✅ Device usage updated:', { error: usageUpdate.error });
+
                         if (session?.is_auth && session?.uid) {
-                            await supabase.from('user_accounts').update({ tier: targetTier }).eq('google_uid', session.uid);
+                            const accountUpdate = await supabase.from('user_accounts').update({ tier: targetTier }).eq('google_uid', session.uid);
+                            console.log('✅ User account updated:', { error: accountUpdate.error });
                         }
                     }
 
@@ -635,9 +678,9 @@ export default async function handler(req, res) {
                         });
                     }
 
-                    // 7. AUDIT LOGGING
+                    // 7. AUDIT LOGGING (Critical for troubleshooting)
                     if (transactionId) {
-                        await supabase.from('purchase_transactions').insert([{
+                        const auditResult = await supabase.from('purchase_transactions').insert([{
                             transaction_id: transactionId,
                             device_id: deviceId,
                             google_uid: session?.uid || null,
@@ -645,7 +688,17 @@ export default async function handler(req, res) {
                             purchase_token: purchaseToken,
                             verified_at: new Date().toISOString()
                         }]);
+                        console.log('✅ Audit log recorded:', { error: auditResult.error });
                     }
+
+                    console.log(`✅✅✅ PURCHASE COMPLETE AND GRANTED`, {
+                        productId,
+                        transactionId,
+                        tier: targetTier,
+                        device: maskDeviceId(deviceId),
+                        user: maskDeviceId(googleUid || 'anonymous'),
+                        timestamp: new Date().toISOString()
+                    });
 
                     return res.status(200).json({ success: true, verified: true, tier: targetTier, creditsAdded: creditsToAdd });
 
