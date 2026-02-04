@@ -2,9 +2,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
 import crypto from 'crypto';
+import { Resend } from 'resend';
 
 // Anti-Gravity Backend v2.9.0 - Cyber Security Hardened
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
+
+// EMAIL SERVICE (Resend)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const OWNER_EMAIL = process.env.OWNER_EMAIL || 'antigravitybybulla@gmail.com';
 
 // ENVIRONMENT DETECTION
 const IS_PRODUCTION = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
@@ -42,6 +47,75 @@ const VALID_PRODUCTS = new Set([
     'monthly_pro_pass'
 ]);
 let playDeveloperApi = null;
+
+/**
+ * Send email notification for successful payment
+ */
+async function sendPaymentSuccessEmail(productId, transactionId, deviceId, googleUid, userEmail = null) {
+    if (!resend) {
+        console.warn('⚠️ Email service not configured (RESEND_API_KEY missing)');
+        return;
+    }
+
+    try {
+        await resend.emails.send({
+            from: 'payments@antigravity.app',
+            to: OWNER_EMAIL,
+            subject: '✅ Payment Verification Successful - Anti-Gravity',
+            html: `
+                <h2>✅ Payment Verified Successfully</h2>
+                <p>A user has completed a purchase:</p>
+                <ul>
+                    <li><strong>Product:</strong> ${productId}</li>
+                    <li><strong>Transaction ID:</strong> ${transactionId}</li>
+                    <li><strong>Device ID:</strong> ${deviceId.substring(0, 16)}...</li>
+                    <li><strong>User UID:</strong> ${googleUid || 'Anonymous'}</li>
+                    <li><strong>User Email:</strong> ${userEmail || 'Not available'}</li>
+                    <li><strong>Timestamp:</strong> ${new Date().toISOString()}</li>
+                </ul>
+                <p><strong>Status:</strong> Lifetime access granted ✅</p>
+            `
+        });
+        console.log('📧 Payment success email sent to', OWNER_EMAIL);
+    } catch (error) {
+        console.error('❌ Failed to send payment success email:', error.message);
+    }
+}
+
+/**
+ * Send email notification for failed payment verification
+ */
+async function sendPaymentFailureEmail(productId, transactionId, deviceId, googleUid, errorReason, userEmail = null) {
+    if (!resend) {
+        console.warn('⚠️ Email service not configured (RESEND_API_KEY missing)');
+        return;
+    }
+
+    try {
+        await resend.emails.send({
+            from: 'payments@antigravity.app',
+            to: OWNER_EMAIL,
+            subject: '❌ Payment Verification Failed - Anti-Gravity',
+            html: `
+                <h2>❌ Payment Verification Failed</h2>
+                <p>A payment verification failed and requires investigation:</p>
+                <ul>
+                    <li><strong>Product:</strong> ${productId}</li>
+                    <li><strong>Transaction ID:</strong> ${transactionId}</li>
+                    <li><strong>Device ID:</strong> ${deviceId.substring(0, 16)}...</li>
+                    <li><strong>User UID:</strong> ${googleUid || 'Anonymous'}</li>
+                    <li><strong>User Email:</strong> ${userEmail || 'Not available'}</li>
+                    <li><strong>Error Reason:</strong> ${errorReason}</li>
+                    <li><strong>Timestamp:</strong> ${new Date().toISOString()}</li>
+                </ul>
+                <p><strong>Action Required:</strong> User purchase may be pending recovery. Review in Admin Dashboard.</p>
+            `
+        });
+        console.log('📧 Payment failure email sent to', OWNER_EMAIL);
+    } catch (error) {
+        console.error('❌ Failed to send payment failure email:', error.message);
+    }
+}
 
 /**
  * Initialize Google Play API client
@@ -626,6 +700,16 @@ export default async function handler(req, res) {
                         purchaseTokenPreview: purchaseToken ? purchaseToken.substring(0, 16) + '...' : 'none',
                         timestamp: new Date().toISOString()
                     });
+
+                    // Send failure notification email (non-blocking)
+                    sendPaymentFailureEmail(
+                        productId,
+                        transactionId,
+                        deviceId,
+                        googleUid || 'anonymous',
+                        'Google Play verification failed - Payment may be invalid or already used'
+                    ).catch(e => console.error('Email send failed:', e));
+
                     return res.status(402).json({
                         error: "PURCHASE_NOT_VALID",
                         details: "Authoritative verification with Google Play failed.",
@@ -699,6 +783,14 @@ export default async function handler(req, res) {
                         user: maskDeviceId(googleUid || 'anonymous'),
                         timestamp: new Date().toISOString()
                     });
+
+                    // Send success notification email (non-blocking)
+                    sendPaymentSuccessEmail(
+                        productId,
+                        transactionId,
+                        deviceId,
+                        googleUid || 'anonymous'
+                    ).catch(e => console.error('Email send failed:', e));
 
                     return res.status(200).json({ success: true, verified: true, tier: targetTier, creditsAdded: creditsToAdd });
 
