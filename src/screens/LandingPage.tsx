@@ -10,6 +10,14 @@ const LandingPage: React.FC = () => {
     const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
 
 
+    // Auto-redirect if already logged in
+    React.useEffect(() => {
+        if (localStorage.getItem('google_uid')) {
+            console.log('🛡️ Landing: User authenticated, auto-moving to workspace');
+            navigate('/workspace', { replace: true });
+        }
+    }, [navigate]);
+
     const handleLaunch = () => {
         const uid = localStorage.getItem('google_uid');
         if (uid) {

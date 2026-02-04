@@ -39,6 +39,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     if (!isAuthenticated) {
         console.log('🛡️ ProtectedRoute: Gating access, redirecting to /login from', location.pathname);
+        // Store the attempted path so GoogleAuthCallback can return the user here after login
+        localStorage.setItem('auth_redirect_path', location.pathname + location.search);
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 

@@ -4,12 +4,168 @@ import { google } from 'googleapis';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 
+// Email notification service
+const OWNER_EMAIL = process.env.OWNER_EMAIL || 'antigravitybybulla@gmail.com';
+const EMAIL_SERVICE = process.env.EMAIL_SERVICE || 'resend'; // 'resend' or 'sendgrid'
+
+/**
+ * Send payment notification email to owner
+ */
+async function sendPaymentNotification(eventType, data) {
+    try {
+        if (!OWNER_EMAIL) {
+            console.warn('⚠️ OWNER_EMAIL not configured. Email notifications disabled.');
+            return;
+        }
+
+        let subject = '';
+        let htmlContent = '';
+
+        if (eventType === 'payment_success') {
+            subject = `💰 Payment Received: Lifetime Access Purchased`;
+            htmlContent = `
+                <h2 style="color: #10b981;">✅ Payment Successful</h2>
+                <p><strong>Product:</strong> Lifetime Pro Access</p>
+                <p><strong>Transaction ID:</strong> <code>${data.transactionId}</code></p>
+                <p><strong>Device ID:</strong> <code>${data.deviceId}</code></p>
+                <p><strong>User ID:</strong> ${data.googleUid || 'Anonymous'}</p>
+                <p><strong>Amount:</strong> Lifetime Access (One-time)</p>
+                <p><strong>Verified at:</strong> ${new Date().toISOString()}</p>
+                <hr>
+                <p style="color: #6b7280; font-size: 12px;">
+                    This is an automated notification from your PDF Tools Pro payment system.
+                </p>
+            `;
+        } else if (eventType === 'payment_failed') {
+            subject = `⚠️ Payment Verification Failed: Manual Review Needed`;
+            htmlContent = `
+                <h2 style="color: #ef4444;">❌ Payment Verification Failed</h2>
+                <p><strong>Product:</strong> Lifetime Pro Access</p>
+                <p><strong>Transaction ID:</strong> <code>${data.transactionId}</code></p>
+                <p><strong>Device ID:</strong> <code>${data.deviceId}</code></p>
+                <p><strong>User ID:</strong> ${data.googleUid || 'Anonymous'}</p>
+                <p><strong>Error:</strong> ${data.error}</p>
+                <p><strong>Details:</strong> ${data.details}</p>
+                <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+                <hr>
+                <p style="color: #ef4444; font-weight: bold;">
+                    ⚠️ ACTION REQUIRED: This purchase may need manual verification.
+                    The customer's payment was processed by Google, but your server couldn't verify it.
+                </p>
+                <p>
+                    <strong>Next Steps:</strong>
+                    <ol>
+                        <li>Check Vercel logs for detailed error information</li>
+                        <li>Verify the transaction with Google Play Console</li>
+                        <li>Manually grant access if verified, or contact the customer</li>
+                    </ol>
+                </p>
+            `;
+        } else if (eventType === 'payment_pending') {
+            subject = `⏳ Pending Payment Recovery: Retry Scheduled`;
+            htmlContent = `
+                <h2 style="color: #f59e0b;">⏳ Payment Pending</h2>
+                <p><strong>Product:</strong> Lifetime Pro Access</p>
+                <p><strong>Transaction ID:</strong> <code>${data.transactionId}</code></p>
+                <p><strong>Device ID:</strong> <code>${data.deviceId}</code></p>
+                <p><strong>Pending Since:</strong> ${new Date(data.addedAt).toISOString()}</p>
+                <p><strong>Age:</strong> ${Math.round((Date.now() - data.addedAt) / 1000 / 60)} minutes</p>
+                <hr>
+                <p>
+                    ℹ️ This payment is in the queue for automatic retry every 30 seconds.
+                    It will be automatically verified when the backend connection improves.
+                </p>
+            `;
+        }
+
+        // Send email based on configured service
+        if (EMAIL_SERVICE === 'resend') {
+            await sendViaResend(OWNER_EMAIL, subject, htmlContent);
+        } else if (EMAIL_SERVICE === 'sendgrid') {
+            await sendViaSendGrid(OWNER_EMAIL, subject, htmlContent);
+        } else {
+            console.warn(`⚠️ Unknown email service: ${EMAIL_SERVICE}`);
+        }
+
+        console.log(`📧 Payment notification sent: ${eventType}`);
+    } catch (error) {
+        console.error('❌ Failed to send payment notification:', error.message);
+        // Don't block payment flow if email fails
+    }
+}
+
+/**
+ * Send email via Resend (modern email service)
+ */
+async function sendViaResend(to, subject, htmlContent) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+        console.warn('⚠️ RESEND_API_KEY not configured. Install: npm install resend');
+        return;
+    }
+
+    try {
+        const response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${resendApiKey}`
+            },
+            body: JSON.stringify({
+                from: 'payments@antigravity.app',
+                to: to,
+                subject: subject,
+                html: htmlContent
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Resend API error');
+        }
+    } catch (error) {
+        console.error('❌ Resend email failed:', error.message);
+        throw error;
+    }
+}
+
+/**
+ * Send email via SendGrid (alternative)
+ */
+async function sendViaSendGrid(to, subject, htmlContent) {
+    const sendGridApiKey = process.env.SENDGRID_API_KEY;
+    if (!sendGridApiKey) {
+        console.warn('⚠️ SENDGRID_API_KEY not configured. Install: npm install @sendgrid/mail');
+        return;
+    }
+
+    try {
+        const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sendGridApiKey}`
+            },
+            body: JSON.stringify({
+                personalizations: [{ to: [{ email: to }] }],
+                from: { email: 'noreply@antigravity.app', name: 'PDF Tools Pro' },
+                subject: subject,
+                content: [{ type: 'text/html', value: htmlContent }]
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.errors?.[0]?.message || 'SendGrid API error');
+        }
+    } catch (error) {
+        console.error('❌ SendGrid email failed:', error.message);
+        throw error;
+    }
+}
+
 // Anti-Gravity Backend v2.9.0 - Cyber Security Hardened
 const SYSTEM_INSTRUCTION = `You are the Anti-Gravity AI. Your goal is to help users understand complex documents. Use the provided CONTEXT or DOCUMENT TEXT as your primary source. Maintain a professional, technical tone.`;
-
-// EMAIL SERVICE (Resend)
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const OWNER_EMAIL = process.env.OWNER_EMAIL || 'antigravitybybulla@gmail.com';
 
 // ENVIRONMENT DETECTION
 const IS_PRODUCTION = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
@@ -346,12 +502,13 @@ export default async function handler(req, res) {
         }
 
         // Helper: Generate Session Token (Stateless JWT-lite + DB Persistence)
-        const generateSessionToken = async (uid, isAuth = false) => {
+        const generateSessionToken = async (uid, isAuth = false, email = null) => {
             const now = Date.now();
             const exp = now + (60 * 60 * 1000); // 1 hour
             const payload = JSON.stringify({
                 uid: uid,
                 is_auth: isAuth,
+                email: email,
                 iat: now,
                 exp: exp,
                 jti: Buffer.from(`${uid}-${now}-${randomBytes(8).toString('hex')}`).toString('base64')
@@ -502,8 +659,8 @@ export default async function handler(req, res) {
             }
 
             const targetUid = verifiedUid || deviceId;
-            const sessionToken = await generateSessionToken(targetUid, !!verifiedUid);
-            const csrfToken = await generateSessionToken(targetUid, !!verifiedUid);
+            const sessionToken = await generateSessionToken(targetUid, !!verifiedUid, profile?.email);
+            const csrfToken = await generateSessionToken(targetUid, !!verifiedUid, profile?.email);
 
             return res.status(200).json({
                 sessionToken,
@@ -525,6 +682,7 @@ export default async function handler(req, res) {
             'check_subscription_status', // Status check (read-only)
             'usage_fetch',               // Usage data fetch
             'usage_sync',                // Usage data sync
+            'exchange_google_code',      // Exchange OAuth code for tokens (Fixes client_secret error)
             'server_time'                // Server time (utility endpoint)
         ];
 
@@ -542,6 +700,44 @@ export default async function handler(req, res) {
         async function handleBackendLogic() {
             if (requestType === 'server_time') {
                 return res.status(200).json({ iso: new Date().toISOString() });
+            }
+
+            if (requestType === 'exchange_google_code') {
+                const { code, codeVerifier, redirectUri } = req.body;
+
+                if (!code) {
+                    return res.status(400).json({ error: 'Missing authorization code' });
+                }
+
+                try {
+                    // Use standard fetch if available, otherwise fallback (Vercel Node 18+ has global fetch)
+                    const response = await fetch('https://oauth2.googleapis.com/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            client_id: process.env.VITE_GOOGLE_OAUTH_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID,
+                            client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                            grant_type: 'authorization_code',
+                            code: code,
+                            redirect_uri: redirectUri,
+                            code_verifier: codeVerifier || '',
+                        }),
+                    });
+
+                    const tokens = await response.json();
+
+                    if (!response.ok || tokens.error) {
+                        console.error('Neural Auth: Google Token Exchange Failed:', tokens);
+                        return res.status(response.status).json({
+                            error: tokens.error_description || tokens.error || 'Exchange failed'
+                        });
+                    }
+
+                    return res.status(200).json(tokens);
+                } catch (error) {
+                    console.error("Neural Auth: Fatal Token Exchange Error:", error.message);
+                    return res.status(500).json({ error: "Inter-orbital Exchange Failed" });
+                }
             }
 
             // SECURITY: Critical Vulnerability Fix (P0) - Purchase Verification
@@ -701,6 +897,7 @@ export default async function handler(req, res) {
                         timestamp: new Date().toISOString()
                     });
 
+<<<<<<< HEAD
                     // Send failure notification email (non-blocking)
                     sendPaymentFailureEmail(
                         productId,
@@ -709,6 +906,30 @@ export default async function handler(req, res) {
                         googleUid || 'anonymous',
                         'Google Play verification failed - Payment may be invalid or already used'
                     ).catch(e => console.error('Email send failed:', e));
+=======
+                    // Send payment failed notification email
+                    await sendPaymentNotification('payment_failed', {
+                        transactionId,
+                        deviceId: maskDeviceId(deviceId),
+                        googleUid: googleUid || 'Anonymous',
+                        error: 'PURCHASE_NOT_VALID',
+                        details: 'Authoritative verification with Google Play failed'
+                    }).catch(e => console.warn('Failed to send failure notification:', e));
+
+                    // LOG FAILURE TO DB
+                    if (transactionId) {
+                        await supabase.from('purchase_transactions').insert([{
+                            transaction_id: transactionId,
+                            device_id: deviceId,
+                            google_uid: googleUid || null,
+                            product_id: productId,
+                            purchase_token: purchaseToken,
+                            status: 'failed',
+                            error_message: 'Authoritative verification with Google Play failed.',
+                            verified_at: new Date().toISOString()
+                        }]);
+                    }
+>>>>>>> origin/main
 
                     return res.status(402).json({
                         error: "PURCHASE_NOT_VALID",
@@ -762,7 +983,7 @@ export default async function handler(req, res) {
                         });
                     }
 
-                    // 7. AUDIT LOGGING (Critical for troubleshooting)
+                    // 7. AUDIT LOGGING (Improved for Dashboard)
                     if (transactionId) {
                         const auditResult = await supabase.from('purchase_transactions').insert([{
                             transaction_id: transactionId,
@@ -770,6 +991,9 @@ export default async function handler(req, res) {
                             google_uid: session?.uid || null,
                             product_id: productId,
                             purchase_token: purchaseToken,
+                            status: 'success',
+                            amount: 29.99, // Standardized for summary
+                            currency: 'USD',
                             verified_at: new Date().toISOString()
                         }]);
                         console.log('✅ Audit log recorded:', { error: auditResult.error });
@@ -784,6 +1008,7 @@ export default async function handler(req, res) {
                         timestamp: new Date().toISOString()
                     });
 
+<<<<<<< HEAD
                     // Send success notification email (non-blocking)
                     sendPaymentSuccessEmail(
                         productId,
@@ -791,6 +1016,14 @@ export default async function handler(req, res) {
                         deviceId,
                         googleUid || 'anonymous'
                     ).catch(e => console.error('Email send failed:', e));
+=======
+                    // Send payment success notification email
+                    await sendPaymentNotification('payment_success', {
+                        transactionId,
+                        deviceId: maskDeviceId(deviceId),
+                        googleUid: googleUid || 'Anonymous'
+                    }).catch(e => console.warn('Failed to send success notification:', e));
+>>>>>>> origin/main
 
                     return res.status(200).json({ success: true, verified: true, tier: targetTier, creditsAdded: creditsToAdd });
 
@@ -825,7 +1058,7 @@ export default async function handler(req, res) {
                         return res.status(200).json(newUser);
                     }
 
-                    return res.status(200).json(data);
+                    return res.status(200).json(data || { device_id: deviceId, tier: 'free', updated_at: new Date().toISOString() });
                 } catch (dbError) {
                     console.error("Database Proxy Error:", dbError.message);
                     return res.status(500).json({ error: "Database Sync Error" });
@@ -852,6 +1085,74 @@ export default async function handler(req, res) {
                 } catch (syncError) {
                     console.error('API: usage_sync error:', syncError.message);
                     return res.status(500).json({ error: "Usage sync failed" });
+                }
+            }
+
+            if (requestType === 'admin_fetch_payments') {
+                if (!session?.is_auth || session.email !== OWNER_EMAIL) {
+                    return res.status(403).json({ error: 'ADMIN_ACCESS_REQUIRED' });
+                }
+
+                try {
+                    const { data, error } = await supabase
+                        .from('purchase_transactions')
+                        .select(`
+                            *,
+                            user_accounts (
+                                name,
+                                email
+                            )
+                        `)
+                        .order('verified_at', { ascending: false })
+                        .limit(100);
+
+                    if (error) throw error;
+                    return res.status(200).json(data);
+                } catch (adminError) {
+                    console.error('Admin Fetch Error:', adminError.message);
+                    return res.status(500).json({ error: "Admin data fetch failed" });
+                }
+            }
+
+            if (requestType === 'admin_grant_access') {
+                if (!session?.is_auth || session.email !== OWNER_EMAIL) {
+                    return res.status(403).json({ error: 'ADMIN_ACCESS_REQUIRED' });
+                }
+
+                const { targetUid, targetDeviceId, targetTier } = req.body;
+
+                try {
+                    if (targetUid) {
+                        await supabase.from('user_accounts').update({ tier: targetTier }).eq('google_uid', targetUid);
+                    }
+                    if (targetDeviceId) {
+                        await supabase.from('ag_user_usage').upsert([{ device_id: targetDeviceId, tier: targetTier }], { onConflict: 'device_id' });
+                    }
+                    return res.status(200).json({ success: true });
+                } catch (grantError) {
+                    return res.status(500).json({ error: "Manual grant failed" });
+                }
+            }
+
+            if (requestType === 'admin_get_stats') {
+                if (!session?.is_auth || session.email !== OWNER_EMAIL) {
+                    return res.status(403).json({ error: 'ADMIN_ACCESS_REQUIRED' });
+                }
+
+                try {
+                    const { data: revData } = await supabase.from('purchase_transactions').select('amount').eq('status', 'success');
+                    const totalRevenue = revData?.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0) || 0;
+
+                    const { count: userCount } = await supabase.from('user_accounts').select('*', { count: 'exact', head: true });
+                    const { count: failedCount } = await supabase.from('purchase_transactions').select('*', { count: 'exact', head: true }).eq('status', 'failed');
+
+                    return res.status(200).json({
+                        totalRevenue,
+                        userCount,
+                        failedCount
+                    });
+                } catch (statsError) {
+                    return res.status(500).json({ error: "Stats fetch failed" });
                 }
             }
         }

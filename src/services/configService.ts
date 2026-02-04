@@ -37,10 +37,9 @@ export const Config: AppConfig = {
         : 'http://localhost:3000',
     VITE_ADMIN_UIDS: (import.meta.env.VITE_ADMIN_UIDS || '').split(',').filter(Boolean),
     IS_PRODUCTION: import.meta.env.PROD,
-    GOOGLE_OAUTH_CLIENT_ID: getEnvVar(
-        'VITE_GOOGLE_OAUTH_CLIENT_ID',
+    GOOGLE_OAUTH_CLIENT_ID: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ||
+        import.meta.env.VITE_GOOGLE_CLIENT_ID ||
         '577377406590-9jl373159h9a2bgr3i6fbngv18ndjf75.apps.googleusercontent.com'
-    )
 };
 
 export default Config;

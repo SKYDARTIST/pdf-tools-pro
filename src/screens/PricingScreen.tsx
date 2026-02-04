@@ -317,8 +317,8 @@ const PricingScreen: React.FC = () => {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           className="rounded-[40px] p-12 border border-gray-100 dark:border-white/5 bg-white/80 dark:bg-black/40 backdrop-blur-3xl space-y-12"
         >
@@ -332,6 +332,59 @@ const PricingScreen: React.FC = () => {
             Anti-Gravity processes all neural computations locally on your hardware.
             We've simplified our model: Start for free with base tools, or secure permanent access with our Lifetime Protocol.
           </p>
+        </motion.div>
+
+        {/* Payment Intelligence Hub (FAQ) */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="space-y-8"
+        >
+          <div className="text-center space-y-2">
+            <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Encryption & Access</span>
+            <h4 className="text-3xl font-black uppercase tracking-tighter">Payment Intelligence Hub</h4>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {[
+              {
+                q: "What is Lifetime Access?",
+                a: "Unlimited everything. No expiration, no recurring monthly charges, and no hidden fees. Pay once, own the protocol forever."
+              },
+              {
+                q: "How long does it take to get access?",
+                a: "Instant in 99% of cases. Due to Google Play sync, it may occasionally take up to 5 minutes to propagate to your device."
+              },
+              {
+                q: "I paid but don't see access - what do I do?",
+                a: "Simply restart the app or use the 'Reconcile Tiers' button below. Ensure you have a stable connection during the first 5 minutes after purchase."
+              },
+              {
+                q: "Is my payment safe?",
+                a: "Absolutely. Google Play handles all transaction logic. Anti-Gravity never sees your card details or personal billings."
+              },
+              {
+                q: "Can I use my purchase on another device?",
+                a: "Yes. Your Lifetime status is tied to your Google Account. Just log in on any device to restore your full capacity."
+              }
+            ].map((faq, i) => (
+              <details
+                key={i}
+                className="group rounded-[32px] border border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-xl overflow-hidden"
+              >
+                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-black dark:text-white">{faq.q}</span>
+                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center group-open:rotate-180 transition-transform">
+                    <ChevronDown size={14} className="text-gray-400" />
+                  </div>
+                </summary>
+                <div className="px-6 pb-6 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-relaxed">
+                  {faq.a}
+                </div>
+              </details>
+            ))}
+          </div>
         </motion.div>
 
         <motion.div

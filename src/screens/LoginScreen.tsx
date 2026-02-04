@@ -36,6 +36,7 @@ const LoginScreen: React.FC = () => {
                 : window.location.origin + '/auth-callback';
 
             const scope = 'openid profile email';
+
             const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +

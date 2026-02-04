@@ -36,6 +36,7 @@ const DataExtractorScreen = lazy(() => import('@/screens/DataExtractorScreen'));
 const ProtocolGuideScreen = lazy(() => import('@/screens/ProtocolGuideScreen'));
 const GoogleAuthCallback = lazy(() => import('@/screens/GoogleAuthCallback'));
 const LoginScreen = lazy(() => import('@/screens/LoginScreen'));
+const AdminDashboard = lazy(() => import('@/screens/AdminDashboard'));
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import SystemBoot from '@/components/SystemBoot';
@@ -64,11 +65,28 @@ const App: React.FC = () => {
 
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
-  // Catch Google OAuth redirect from the root
+  // Catch Google OAuth redirect from the root OR path
   React.useEffect(() => {
-    if (window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=')) {
+    console.log('🔍 App: OAuth detection check', {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash
+    });
+
+    const hasToken = window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=');
+    const hasCode = window.location.search.includes('code=');
+    const isAuthPath = window.location.pathname.includes('/auth-callback');
+
+    console.log('🔑 App: OAuth state', { hasToken, hasCode, isAuthPath });
+
+    if (hasToken) {
       console.log('🔑 App: Found OAuth token in hash, pushing to callback processor');
       navigate('/auth-callback' + window.location.hash, { replace: true });
+    } else if (isAuthPath || hasCode) {
+      console.log('🔑 App: Found OAuth path/code, normalizing for HashRouter...');
+      const params = window.location.search;
+      console.log('🔑 App: Navigating to auth-callback with params:', params);
+      navigate('/auth-callback' + params, { replace: true });
     }
   }, [location.pathname, navigate]);
 
@@ -335,6 +353,7 @@ const App: React.FC = () => {
                   <Route path="/legal/:type" element={<LegalScreen />} />
                   <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
                   <Route path="/auth-callback" element={<GoogleAuthCallback />} />
+                  <Route path="/admin/payments" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </motion.div>
