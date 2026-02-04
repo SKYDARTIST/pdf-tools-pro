@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Check, Zap, Sparkles, Shield, Lock, Globe,
   Cpu, ZapOff, CreditCard, ChevronRight, Info,
-  Star, ArrowRight, Activity, Mail, Twitter
+  Star, ArrowRight, Activity, Mail, Twitter, ChevronDown
 } from 'lucide-react';
 import { getSubscription, upgradeTier, SubscriptionTier } from '@/services/subscriptionService';
 import BillingService from '@/services/billingService';
@@ -14,6 +14,7 @@ const PricingScreen: React.FC = () => {
   const [currentTier, setCurrentTier] = React.useState(getSubscription().tier);
   const [isLoading, setIsLoading] = React.useState(false);
   const [lifetimePrice, setLifetimePrice] = React.useState('...');
+  const [expandedFaq, setExpandedFaq] = React.useState<string | null>(null);
 
 
   React.useEffect(() => {
@@ -331,6 +332,87 @@ const PricingScreen: React.FC = () => {
             Anti-Gravity processes all neural computations locally on your hardware.
             We've simplified our model: Start for free with base tools, or secure permanent access with our Lifetime Protocol.
           </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-[48px] p-8 sm:p-12 border border-gray-100 dark:border-white/5 bg-white/80 dark:bg-black/40 backdrop-blur-3xl space-y-6"
+        >
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-[#00C896]/10 flex items-center justify-center">
+              <CreditCard size={24} className="text-[#00C896]" />
+            </div>
+            <h3 className="text-2xl font-black uppercase tracking-tighter text-black dark:text-white">Payment FAQ</h3>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                id: 'secure',
+                q: 'Is My Payment Secure?',
+                a: 'Yes! All payments are processed through Google Play, which uses bank-level encryption. Your card details are never shared with us.'
+              },
+              {
+                id: 'methods',
+                q: 'What Payment Methods Do You Accept?',
+                a: 'We accept all payment methods supported by Google Play Billing: Credit cards, debit cards, Google Play balance, and regional payment methods.'
+              },
+              {
+                id: 'failed',
+                q: 'What If My Payment Fails?',
+                a: 'Failed payments are automatically queued for retry every 30 seconds. If you\'ve already been charged by Google, your purchase will be verified automatically. Check "Restore Purchases" on the pricing page.'
+              },
+              {
+                id: 'refund',
+                q: 'Can I Get A Refund?',
+                a: 'Google Play allows refunds within 48 hours of purchase. After that, we can manually process refund requests. Email support@antigravity.app with your transaction ID.'
+              },
+              {
+                id: 'restore',
+                q: 'How Do I Restore My Purchase?',
+                a: 'Click "Restore Purchases" on the pricing page. Make sure you\'re signed in with the same Google Play account that made the purchase. Your status will update instantly.'
+              },
+              {
+                id: 'trial',
+                q: 'Is There A Trial Period?',
+                a: 'No, but the Free tier gives you unlimited access to all PDF tools forever. Upgrade to Lifetime Protocol to unlock AI features.'
+              },
+              {
+                id: 'support',
+                q: 'Still Having Issues?',
+                a: 'Email antigravitybybulla@gmail.com with your Device ID (in Settings) and transaction ID. We typically respond within 24 hours.'
+              }
+            ].map((item) => (
+              <div key={item.id} className="border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden">
+                <button
+                  onClick={() => setExpandedFaq(expandedFaq === item.id ? null : item.id)}
+                  className="w-full p-6 flex items-center justify-between hover:bg-black/2 dark:hover:bg-white/2 transition-colors"
+                >
+                  <span className="text-[12px] font-black uppercase tracking-tight text-black dark:text-white text-left">
+                    {item.q}
+                  </span>
+                  <motion.div
+                    animate={{ rotate: expandedFaq === item.id ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown size={18} className="text-[#00C896] shrink-0 ml-4" />
+                  </motion.div>
+                </button>
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: expandedFaq === item.id ? 'auto' : 0, opacity: expandedFaq === item.id ? 1 : 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden border-t border-gray-200 dark:border-white/10"
+                >
+                  <p className="p-6 text-[11px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {item.a}
+                  </p>
+                </motion.div>
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         <motion.div
