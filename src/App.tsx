@@ -36,6 +36,7 @@ const DataExtractorScreen = lazy(() => import('@/screens/DataExtractorScreen'));
 const ProtocolGuideScreen = lazy(() => import('@/screens/ProtocolGuideScreen'));
 const GoogleAuthCallback = lazy(() => import('@/screens/GoogleAuthCallback'));
 const LoginScreen = lazy(() => import('@/screens/LoginScreen'));
+const AdminDashboard = lazy(() => import('@/screens/AdminDashboard'));
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import SystemBoot from '@/components/SystemBoot';
@@ -335,6 +336,7 @@ const App: React.FC = () => {
                   <Route path="/legal/:type" element={<LegalScreen />} />
                   <Route path="/protocol-guide" element={<ProtocolGuideScreen />} />
                   <Route path="/auth-callback" element={<GoogleAuthCallback />} />
+                  <Route path="/admin/payments" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
             </motion.div>

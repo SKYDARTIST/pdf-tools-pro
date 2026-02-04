@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { signInWithGoogle } from '@/services/googleAuthService';
+import Config from '@/services/configService';
 import { getFriendlyErrorMessage } from '@/utils/errorMapping';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateCodeVerifier, generateCodeChallenge } from '@/services/pkce';
@@ -50,8 +51,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setIsLoading(false);
             });
 
-            // Use the new Mobile Client ID from the user
-            const clientId = '577377406590-9jl373159h9a2bgr3i6fbngv18ndjf75.apps.googleusercontent.com';
+            // Use the dynamic Client ID from Config (Defaults to Mobile, Overrides with Web on Vercel)
+            const clientId = Config.GOOGLE_OAUTH_CLIENT_ID;
 
             // If we are on a real device (Capacitor), use the custom scheme with double-slash
             // This MUST match the android:host in AndroidManifest.xml
