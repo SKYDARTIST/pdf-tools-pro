@@ -366,7 +366,10 @@ class BillingService {
     }
 
     private async verifyPurchaseOnServer(purchaseToken: string, productId: string, transactionId: string): Promise<boolean> {
-        try {
+        const verificationStartTime = Date.now();
+        const VERIFICATION_TIMEOUT = 30000; // 30 seconds for entire verification flow
+
+        const performVerification = async (): Promise<boolean> => {
             console.log('Anti-Gravity Billing: 🔐 Verifying purchase on server...', {
                 transactionId,
                 productId,
@@ -430,7 +433,8 @@ class BillingService {
             if (data.success === true) {
                 console.log('Anti-Gravity Billing: ✅ Purchase verified successfully', {
                     tier: data.tier,
-                    transactionId
+                    transactionId,
+                    duration: Date.now() - verificationStartTime
                 });
                 return true;
             } else {
@@ -441,12 +445,38 @@ class BillingService {
                 });
                 return false;
             }
+        };
+
+        try {
+            // Wrap entire verification in timeout
+            const timeoutPromise = new Promise<boolean>((_, reject) =>
+                setTimeout(
+                    () => reject(new Error(`Verification timeout after ${VERIFICATION_TIMEOUT / 1000}s`)),
+                    VERIFICATION_TIMEOUT
+                )
+            );
+
+            const result = await Promise.race([performVerification(), timeoutPromise]);
+            return result;
         } catch (error: any) {
+            const duration = Date.now() - verificationStartTime;
+            const isTimeout = error.message.includes('timeout');
+
             console.error('Anti-Gravity Billing: ❌ Verification request failed', {
                 error: error.message,
+                isTimeout,
+                duration,
                 transactionId,
                 timestamp: new Date().toISOString()
             });
+
+            if (isTimeout) {
+                console.warn('Anti-Gravity Billing: ⏱️ Verification timed out - will retry from queue', {
+                    transactionId,
+                    duration
+                });
+            }
+
             return false;
         }
     }
