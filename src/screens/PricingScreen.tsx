@@ -42,11 +42,17 @@ const PricingScreen: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    const handleStorageChange = () => {
+    // Listen for subscription-updated CustomEvent (fired by saveSubscription)
+    // Note: 'storage' event only fires in OTHER tabs, not the current one
+    const handleSubscriptionChange = () => {
       setCurrentTier(getSubscription().tier);
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('subscription-updated', handleSubscriptionChange);
+    window.addEventListener('storage', handleSubscriptionChange);
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionChange);
+      window.removeEventListener('storage', handleSubscriptionChange);
+    };
   }, []);
 
   const handleLifetimePurchase = async () => {

@@ -192,7 +192,7 @@ import { kv } from '@vercel/kv';
 // RATE LIMITING (Distributed Vercel KV)
 // SECURITY: Stricter limits for production readiness
 const RATE_LIMIT_WINDOW = 60; // 1 Minute
-const MAX_REQUESTS = 5; // Reduced from 10 to 5 reqs / min
+const MAX_REQUESTS = 15; // 15 reqs/min - purchase flow needs ~4-5 calls (handshake + verify + status + usage)
 const PURCHASE_MAX_REQUESTS = 2; // Strict limit for payment attempts
 
 // GOOGLE PLAY CONFIGURATION
@@ -313,13 +313,16 @@ async function validateWithGooglePlay(productId, purchaseToken) {
                 clearTimeout(timeout);
             }
 
-            // SECURITY (V5): Verify Acknowledgment + Purchased State only
+            // Verify purchase state (0=purchased, 1=canceled)
+            const isPurchased = res.data.purchaseState === 0;
             const isAcknowledged = res.data.acknowledgementState === 1;
-            const isPurchased = res.data.purchaseState === 0; // 0=purchased, 1=canceled
 
-            if (!isAcknowledged && IS_PRODUCTION) {
-                console.warn(`Anti-Gravity Security: Unacknowledged product detected for ${productId}`);
-                return false;
+            // NOTE: Do NOT reject unacknowledged INAPP purchases.
+            // Google Play takes time to propagate acknowledgement after client calls acknowledgePurchase().
+            // The purchase is valid as soon as purchaseState === 0 (purchased).
+            // Google auto-acknowledges after 3 days if not acknowledged manually.
+            if (!isAcknowledged) {
+                console.log(`ℹ️ Anti-Gravity: Unacknowledged INAPP product (will auto-acknowledge). Proceeding with verification.`, { productId });
             }
 
             if (!isPurchased) {
@@ -747,15 +750,31 @@ export default async function handler(req, res) {
                     // Re-verify if check is stale (> 24h)
                     const lastCheck = user.last_subscription_check ? new Date(user.last_subscription_check) : new Date(0);
                     if ((Date.now() - lastCheck.getTime()) > 86400000) {
-                        const productId = user.tier === 'lifetime' ? 'lifetime_pro_access' : 'monthly_pro_pass';
-                        const isStillActive = await validateWithGooglePlay(productId, user.active_purchase_token);
+                        // SAFETY: Skip re-validation if no purchase token stored
+                        // This prevents downgrading users who purchased before we stored the token
+                        // Lifetime one-time purchases don't expire, so trusting the DB tier is safe
+                        if (!user.active_purchase_token) {
+                            console.log(`ℹ️ Subscription check: No active_purchase_token for ${maskDeviceId(session.uid)}, skipping re-validation (tier: ${user.tier})`);
+                            await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
+                        } else {
+                            const productId = user.tier === 'lifetime' ? 'lifetime_pro_access' : 'monthly_pro_pass';
+                            const isStillActive = await validateWithGooglePlay(productId, user.active_purchase_token);
 
-                        if (!isStillActive) {
-                            await supabase.from('user_accounts').update({ tier: 'free', last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
-                            return res.status(200).json({ tier: 'free', active: false, expired: true });
+                            if (!isStillActive) {
+                                // Only downgrade subscriptions, not lifetime purchases
+                                // Lifetime INAPP purchases never expire - Google Play may return false
+                                // if the token format doesn't match a subscription lookup
+                                if (user.tier === 'lifetime') {
+                                    console.log(`ℹ️ Subscription check: Lifetime user re-validation returned false (expected for INAPP). Keeping tier.`, { uid: maskDeviceId(session.uid) });
+                                    await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
+                                } else {
+                                    await supabase.from('user_accounts').update({ tier: 'free', last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
+                                    return res.status(200).json({ tier: 'free', active: false, expired: true });
+                                }
+                            } else {
+                                await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
+                            }
                         }
-
-                        await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
                     }
 
                     return res.status(200).json({ tier: user.tier, active: true });

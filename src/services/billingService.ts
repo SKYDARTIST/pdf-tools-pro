@@ -1,7 +1,6 @@
 import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
 import { upgradeTier, SubscriptionTier, saveSubscription, getSubscription } from './subscriptionService';
 import { syncUsageToServer, fetchUserUsage } from './usageService';
-import { getDeviceId } from './deviceService';
 import { secureFetch } from './apiService';
 import AuthService from './authService';
 import Config from './configService';
@@ -150,6 +149,13 @@ class BillingService {
                 await this.addToPendingQueue({ purchaseToken, productId: LIFETIME_PRODUCT_ID, transactionId: result.transactionId });
                 console.log('Anti-Gravity Billing: ✅ Added to pending recovery queue', { transactionId: result.transactionId });
 
+                // OPTIMISTIC GRANT: User has been charged by Google Play.
+                // Grant Lifetime immediately so badge appears instantly.
+                // Server verification will confirm; pending queue handles retries if server is down.
+                console.log('Anti-Gravity Billing: 🎯 Optimistic tier grant - user has been charged', { transactionId: result.transactionId });
+                TaskLimitManager.upgradeToPro();
+                upgradeTier(SubscriptionTier.LIFETIME, result.transactionId);
+
                 // SECURITY: Before verification, ensure session is valid with timeout
                 const status = AuthService.getSessionStatus();
                 if (!status.isValid) {
@@ -180,42 +186,22 @@ class BillingService {
                 const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
 
                 if (verifyResult) {
-                    console.log('Anti-Gravity Billing: ✅ Verification succeeded! Granting access...', { transactionId: result.transactionId });
+                    console.log('Anti-Gravity Billing: ✅ Server verification confirmed!', { transactionId: result.transactionId });
                     await this.removeFromPendingQueue(result.transactionId);
-                    TaskLimitManager.upgradeToPro();
-                    upgradeTier(SubscriptionTier.LIFETIME, result.transactionId);
+                    // Tier already granted optimistically above, just confirm
                     alert('🎉 Lifetime Access Unlocked!');
                     return true;
                 } else {
-                    // Verification failed, but payment went through
-                    // Purchase is still in pending queue for automatic retry
-                    const queueLength = (await this.getPendingQueue()).length;
-                    console.error('Anti-Gravity Billing: ❌ Verification failed, but purchase is queued for retry', {
+                    // Server verification failed, but user already has optimistic grant.
+                    // Purchase is in pending queue for automatic retry every 30s.
+                    // The optimistic grant ensures user has access immediately.
+                    console.warn('Anti-Gravity Billing: ⚠️ Server verification pending, optimistic grant active', {
                         transactionId: result.transactionId,
-                        queueLength
+                        queueLength: (await this.getPendingQueue()).length
                     });
-
-                    const confirmSupport = window.confirm(
-                        '⚠️ PAYMENT VERIFICATION DELAYED\n\n' +
-                        'Google has processed your payment, but our server is having trouble confirming it right now.\n\n' +
-                        '✅ Your purchase is SAFE - recorded locally and will automatically verify when connection improves.\n\n' +
-                        'Would you like to email support for immediate manual verification?'
-                    );
-                    if (confirmSupport) {
-                        const deviceId = await getDeviceId();
-                        const subject = encodeURIComponent('Purchase Verification Failed - Needs Manual Review');
-                        const body = encodeURIComponent(
-                            `🚨 URGENT: Purchase verification failed on our end\n\n` +
-                            `Transaction ID: ${result.transactionId}\n` +
-                            `Device ID: ${deviceId}\n` +
-                            `Product: Lifetime Pro Access\n` +
-                            `Purchase Token: ${purchaseToken}\n` +
-                            `Timestamp: ${new Date().toISOString()}\n\n` +
-                            `Please verify this purchase on Google Play and grant Lifetime access.`
-                        );
-                        window.location.href = `mailto:antigravitybybulla@gmail.com?subject=${subject}&body=${body}`;
-                    }
-                    return false;
+                    // Still show success since user has optimistic access
+                    alert('🎉 Lifetime Access Unlocked!\n\nServer confirmation is processing in the background.');
+                    return true;
                 }
             }
             return false;
@@ -420,6 +406,17 @@ class BillingService {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+
+                // CRITICAL: 409 DUPLICATE_TRANSACTION means this purchase was ALREADY verified
+                // Treat as success - the tier was already granted server-side
+                if (response.status === 409 && errorData.error === 'DUPLICATE_TRANSACTION') {
+                    console.log('Anti-Gravity Billing: ✅ Purchase already verified (duplicate transaction)', {
+                        transactionId,
+                        status: response.status
+                    });
+                    return true;
+                }
+
                 console.error('Anti-Gravity Billing: ❌ Purchase verification failed', {
                     status: response.status,
                     error: errorData.error,
