@@ -928,7 +928,7 @@ export default async function handler(req, res) {
                         return res.status(200).json(newUser);
                     }
 
-                    return res.status(200).json(data);
+                    return res.status(200).json(data || { device_id: deviceId, tier: 'free', updated_at: new Date().toISOString() });
                 } catch (dbError) {
                     console.error("Database Proxy Error:", dbError.message);
                     return res.status(500).json({ error: "Database Sync Error" });

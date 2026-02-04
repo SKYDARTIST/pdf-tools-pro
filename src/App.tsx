@@ -65,11 +65,19 @@ const App: React.FC = () => {
 
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
-  // Catch Google OAuth redirect from the root
+  // Catch Google OAuth redirect from the root OR path
   React.useEffect(() => {
-    if (window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=')) {
+    const hasToken = window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=');
+    const hasCode = window.location.search.includes('code=');
+    const isAuthPath = window.location.pathname.includes('/auth-callback');
+
+    if (hasToken) {
       console.log('🔑 App: Found OAuth token in hash, pushing to callback processor');
       navigate('/auth-callback' + window.location.hash, { replace: true });
+    } else if (isAuthPath || hasCode) {
+      console.log('🔑 App: Found OAuth path/code, normalizing for HashRouter...');
+      const params = window.location.search;
+      navigate('/auth-callback' + params, { replace: true });
     }
   }, [location.pathname, navigate]);
 
