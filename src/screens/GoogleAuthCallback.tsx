@@ -75,8 +75,12 @@ const GoogleAuthCallback: React.FC = () => {
                         // Broadcast success to global listeners (like App.tsx to close modal)
                         window.dispatchEvent(new CustomEvent('neural-auth-success', { detail: { user } }));
 
-                        // Use navigate instead of location.href for smoother Capacitor transitions
-                        navigate('/workspace', { replace: true });
+                        // Redirect back to original destination if available, otherwise to workspace
+                        const search = new URLSearchParams(window.location.search);
+                        const stateFrom = localStorage.getItem('auth_redirect_path') || '/workspace';
+                        localStorage.removeItem('auth_redirect_path');
+
+                        navigate(stateFrom, { replace: true });
                     } else {
                         throw new Error('Supabase sync failed');
                     }
