@@ -239,6 +239,105 @@ const PricingScreen: React.FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
+          className="rounded-[48px] border border-gray-100 dark:border-white/10 bg-white/80 dark:bg-black/40 backdrop-blur-3xl p-8 sm:p-12 space-y-8 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-black dark:text-white group-hover:scale-110 transition-transform duration-700">
+            <Activity size={160} />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center space-y-6">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Support & Recovery</span>
+              <h4 className="text-2xl font-black uppercase tracking-tighter">Already a Lifetime Buyer?</h4>
+              <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest max-w-md">
+                If your badge hasn't appeared, use the tools below to sync your status or contact me directly.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg">
+              <button
+                onClick={async () => {
+                  setIsLoading(true);
+                  try {
+                    const { forceReconcileFromServer } = await import('@/services/subscriptionService');
+                    await forceReconcileFromServer();
+                    const updatedSub = getSubscription();
+                    alert(`🛰️ RECONCILIATION COMPLETE: Your current tier is now verified as [${updatedSub.tier.toUpperCase()}].`);
+                    setCurrentTier(updatedSub.tier);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                className="flex-1 px-8 py-4 rounded-3xl bg-[#00C896]/10 border border-[#00C896]/30 text-[10px] font-black uppercase tracking-[0.3em] text-[#00C896] hover:bg-[#00C896]/20 transition-all flex items-center justify-center gap-2"
+              >
+                <Activity size={14} className={isLoading ? 'animate-spin' : ''} />
+                {isLoading ? 'SYNCING...' : 'RECONCILE TIERS'}
+              </button>
+
+              <button
+                onClick={async () => {
+                  setIsLoading(true);
+                  try {
+                    const restored = await BillingService.restorePurchases();
+                    const { forceReconcileFromServer } = await import('@/services/subscriptionService');
+                    const updatedSub = await forceReconcileFromServer();
+
+                    if (restored) {
+                      alert(`✅ Success! Purchase restored. Your status is now [${updatedSub.tier.toUpperCase()}].`);
+                      setCurrentTier(updatedSub.tier);
+                    } else {
+                      alert('⚠️ No active purchases found in Google Play metadata.\n\nIf you already purchased, ensure you are signed in to the correct Google Play account.');
+                    }
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={isLoading}
+                className="flex-1 px-8 py-4 rounded-3xl border border-gray-200 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-[#00C896] hover:border-[#00C896]/30 transition-all flex items-center justify-center gap-2"
+              >
+                <Activity size={14} className={isLoading ? 'animate-spin' : ''} />
+                {isLoading ? 'HANDSHAKE STORE' : 'RESTORE PURCHASES'}
+              </button>
+            </div>
+
+            <div className="w-full h-px bg-black/5 dark:bg-white/5" />
+
+            <div className="flex flex-col items-center gap-4">
+              <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400">Direct Support Access</span>
+              <div className="flex gap-6">
+                <a
+                  href="mailto:antigravitybybulla@gmail.com?subject=Anti-Gravity Purchase Issue"
+                  className="flex items-center gap-3 text-gray-500 hover:text-[#00C896] transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Mail size={18} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Email Support</span>
+                </a>
+                <a
+                  href="https://x.com/cryptobullaaa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 text-gray-500 hover:text-[#00C896] transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Twitter size={18} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Message on X</span>
+                </a>
+              </div>
+              <p className="text-[9px] font-bold text-[#00C896]/60 uppercase tracking-widest">
+                Typical response time: Within 24 hours
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
           className="rounded-[48px] border border-gray-100 dark:border-white/5 bg-white/80 dark:bg-black/40 backdrop-blur-3xl p-8 sm:p-14 overflow-hidden relative"
         >
           <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-black dark:text-white">
@@ -433,103 +532,6 @@ const PricingScreen: React.FC = () => {
           </div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="rounded-[48px] border border-gray-100 dark:border-white/10 bg-white/80 dark:bg-black/40 backdrop-blur-3xl p-8 sm:p-12 space-y-8 relative overflow-hidden group"
-        >
-          <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-black dark:text-white group-hover:scale-110 transition-transform duration-700">
-            <Activity size={160} />
-          </div>
-
-          <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Support & Recovery</span>
-              <h4 className="text-2xl font-black uppercase tracking-tighter">Already a Lifetime Buyer?</h4>
-              <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest max-w-md">
-                If your badge hasn't appeared, use the tools below to sync your status or contact me directly.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg">
-              <button
-                onClick={async () => {
-                  setIsLoading(true);
-                  try {
-                    const { forceReconcileFromServer } = await import('@/services/subscriptionService');
-                    await forceReconcileFromServer();
-                    const updatedSub = getSubscription();
-                    alert(`🛰️ RECONCILIATION COMPLETE: Your current tier is now verified as [${updatedSub.tier.toUpperCase()}].`);
-                    setCurrentTier(updatedSub.tier);
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                className="flex-1 px-8 py-4 rounded-3xl bg-[#00C896]/10 border border-[#00C896]/30 text-[10px] font-black uppercase tracking-[0.3em] text-[#00C896] hover:bg-[#00C896]/20 transition-all flex items-center justify-center gap-2"
-              >
-                <Activity size={14} className={isLoading ? 'animate-spin' : ''} />
-                {isLoading ? 'SYNCING...' : 'RECONCILE TIERS'}
-              </button>
-
-              <button
-                onClick={async () => {
-                  setIsLoading(true);
-                  try {
-                    const restored = await BillingService.restorePurchases();
-                    const { forceReconcileFromServer } = await import('@/services/subscriptionService');
-                    const updatedSub = await forceReconcileFromServer();
-
-                    if (restored) {
-                      alert(`✅ Success! Purchase restored. Your status is now [${updatedSub.tier.toUpperCase()}].`);
-                      setCurrentTier(updatedSub.tier);
-                    } else {
-                      alert('⚠️ No active purchases found in Google Play metadata.\n\nIf you already purchased, ensure you are signed in to the correct Google Play account.');
-                    }
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-                disabled={isLoading}
-                className="flex-1 px-8 py-4 rounded-3xl border border-gray-200 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-[#00C896] hover:border-[#00C896]/30 transition-all flex items-center justify-center gap-2"
-              >
-                <Activity size={14} className={isLoading ? 'animate-spin' : ''} />
-                {isLoading ? 'HANDSHAKE STORE' : 'RESTORE PURCHASES'}
-              </button>
-            </div>
-
-            <div className="w-full h-px bg-black/5 dark:bg-white/5" />
-
-            <div className="flex flex-col items-center gap-4">
-              <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400">Direct Support Access</span>
-              <div className="flex gap-6">
-                <a
-                  href="mailto:antigravitybybulla@gmail.com?subject=Anti-Gravity Purchase Issue"
-                  className="flex items-center gap-3 text-gray-500 hover:text-[#00C896] transition-colors group"
-                >
-                  <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Mail size={18} />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest">Email Support</span>
-                </a>
-                <a
-                  href="https://x.com/cryptobullaaa"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-gray-500 hover:text-[#00C896] transition-colors group"
-                >
-                  <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Twitter size={18} />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest">Message on X</span>
-                </a>
-              </div>
-              <p className="text-[9px] font-bold text-[#00C896]/60 uppercase tracking-widest">
-                Typical response time: Within 24 hours
-              </p>
-            </div>
-          </div>
-        </motion.div>
       </div>
     </div >
   );
