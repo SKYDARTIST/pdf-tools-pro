@@ -226,7 +226,7 @@ const PricingScreen: React.FC = () => {
                       <span className="text-[9px] font-black uppercase tracking-widest text-[#00C896]">LIFETIME PRIORITY HANDSHAKE</span>
                     </div>
                     <p className="text-[8px] font-black uppercase tracking-widest leading-relaxed text-gray-500 dark:text-gray-400">
-                      IF BADGE DOESN'T APPEAR INSTANTLY, PLEASE WAIT 2-5 MINS. FOR IMMEDIATE ASSISTANCE, EMAIL <span className="text-gray-900 dark:text-white underline">ANTIGRAVITYBYBULLA@GMAIL.COM</span> WITH DETAILS. EXCLUSIVE **24/7 PRIORITY SUPPORT** FOR LIFETIME USERS ONLY.
+                      IF BADGE DOESN'T APPEAR INSTANTLY, PLEASE WAIT 2-5 MINS. FOR IMMEDIATE ASSISTANCE, EMAIL <a href="mailto:antigravitybybulla@gmail.com?subject=Anti-Gravity Lifetime Support" className="text-gray-900 dark:text-white underline decoration-[#00C896]/30 hover:decoration-[#00C896] transition-all">ANTIGRAVITYBYBULLA@GMAIL.COM</a> WITH DETAILS. EXCLUSIVE **24/7 PRIORITY SUPPORT** FOR LIFETIME USERS ONLY.
                     </p>
                   </motion.div>
                 )}
@@ -351,58 +351,6 @@ const PricingScreen: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Payment Intelligence Hub (FAQ) */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="space-y-8"
-        >
-          <div className="text-center space-y-2">
-            <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Encryption & Access</span>
-            <h4 className="text-3xl font-black uppercase tracking-tighter">Payment Intelligence Hub</h4>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {[
-              {
-                q: "What is Lifetime Access?",
-                a: "Unlimited everything. No expiration, no recurring monthly charges, and no hidden fees. Pay once, own the protocol forever."
-              },
-              {
-                q: "How long does it take to get access?",
-                a: "Instant in 99% of cases. Due to Google Play sync, it may occasionally take up to 5 minutes to propagate to your device."
-              },
-              {
-                q: "I paid but don't see access - what do I do?",
-                a: "Simply restart the app or use the 'Reconcile Tiers' button below. Ensure you have a stable connection during the first 5 minutes after purchase."
-              },
-              {
-                q: "Is my payment safe?",
-                a: "Absolutely. Google Play handles all transaction logic. Anti-Gravity never sees your card details or personal billings."
-              },
-              {
-                q: "Can I use my purchase on another device?",
-                a: "Yes. Your Lifetime status is tied to your Google Account. Just log in on any device to restore your full capacity."
-              }
-            ].map((faq, i) => (
-              <details
-                key={i}
-                className="group rounded-[32px] border border-black/5 dark:border-white/5 bg-white/40 dark:bg-black/20 backdrop-blur-xl overflow-hidden"
-              >
-                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
-                  <span className="text-[11px] font-black uppercase tracking-widest text-black dark:text-white">{faq.q}</span>
-                  <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center group-open:rotate-180 transition-transform">
-                    <ChevronDown size={14} className="text-gray-400" />
-                  </div>
-                </summary>
-                <div className="px-6 pb-6 text-[12px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight leading-relaxed">
-                  {faq.a}
-                </div>
-              </details>
-            ))}
-          </div>
-        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -452,7 +400,7 @@ const PricingScreen: React.FC = () => {
               {
                 id: 'support',
                 q: 'Still Having Issues?',
-                a: 'Email antigravitybybulla@gmail.com with your Device ID (in Settings) and transaction ID. We typically respond within 24 hours.'
+                a: <>Email <a href="mailto:antigravitybybulla@gmail.com?subject=Anti-Gravity Support Request" className="underline decoration-[#00C896]/30 text-[#00C896]">antigravitybybulla@gmail.com</a> with your Device ID (in Settings) and transaction ID. We typically respond within 24 hours.</>
               }
             ].map((item) => (
               <div key={item.id} className="border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden">
