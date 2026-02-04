@@ -216,9 +216,9 @@ const App: React.FC = () => {
       }
     };
 
-    CapApp.addListener('appStateChange', handleAppStateChange);
+    const listenerPromise = CapApp.addListener('appStateChange', handleAppStateChange);
     return () => {
-      CapApp.removeAllListeners();
+      listenerPromise.then(handle => handle.remove());
     };
   }, []);
 

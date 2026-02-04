@@ -52,7 +52,7 @@ export const initSubscription = async (user?: any): Promise<UserSubscription> =>
     // This ensures failed purchases from previous sessions are recovered
     try {
         const BillingService = (await import('./billingService')).default;
-        const pending = BillingService.getPendingQueue();
+        const pending = await BillingService.getPendingQueue();
         if (pending.length > 0) {
             console.log('Anti-Gravity Subscription: 🔐 Found pending purchases, triggering recovery...', {
                 count: pending.length
@@ -148,16 +148,11 @@ export const forceReconcileFromServer = async (): Promise<UserSubscription> => {
             saveSubscription(supabaseUsage);
             isHydrated = true;
 
-            // Sync TaskLimitManager
+            // Sync TaskLimitManager - server is source of truth
             if (supabaseUsage.tier === SubscriptionTier.LIFETIME) {
                 TaskLimitManager.upgradeToPro();
             } else {
-                if (TaskLimitManager.isPro()) {
-                    // Persistence buffer: if we were pro locally, keep it until proven otherwise
-                    supabaseUsage.tier = SubscriptionTier.LIFETIME;
-                } else {
-                    TaskLimitManager.resetToFree();
-                }
+                TaskLimitManager.resetToFree();
             }
 
             return supabaseUsage;
@@ -181,11 +176,6 @@ export const getSubscription = (): UserSubscription => {
                 subscription.tier = SubscriptionTier.LIFETIME;
             }
 
-            // Trust TaskLimitManager
-            if (TaskLimitManager.isPro()) {
-                subscription.tier = SubscriptionTier.LIFETIME;
-            }
-
             return subscription;
         } catch (e) {
             console.error('Anti-Gravity Subscription: Malformed localStorage data, wiping and resetting.', e);
@@ -197,9 +187,8 @@ export const getSubscription = (): UserSubscription => {
     }
 
     // Default: Free tier
-    const isProFromLimit = TaskLimitManager.isPro();
-    const defaultSubscription = {
-        tier: isProFromLimit ? SubscriptionTier.LIFETIME : SubscriptionTier.FREE
+    const defaultSubscription: UserSubscription = {
+        tier: SubscriptionTier.FREE
     };
     saveSubscription(defaultSubscription);
     return defaultSubscription;
@@ -305,7 +294,7 @@ export const getCurrentLimits = () => {
 export const checkPostPurchaseStatus = async (): Promise<void> => {
     try {
         const BillingService = (await import('./billingService')).default;
-        const pending = BillingService.getPendingQueue();
+        const pending = await BillingService.getPendingQueue();
 
         if (pending.length === 0) {
             console.log('Anti-Gravity Subscription: No pending purchases to check');

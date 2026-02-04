@@ -94,6 +94,8 @@ export const secureFetch = async (url: string, options: RequestInit = {}): Promi
         } catch (error: any) {
             console.error(`[${requestId}] 🚨 Network error:`, error.message);
             if (!isRetry) {
+                // Add 1-second backoff before network error retry
+                await new Promise(r => setTimeout(r, 1000));
                 return performRequest(true);
             }
             throw error;

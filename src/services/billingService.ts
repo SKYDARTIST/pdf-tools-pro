@@ -28,6 +28,7 @@ class BillingService {
     private isTestMode = AuthService.isTestAccount();
     private readonly PENDING_PURCHASES_STORE = 'pending-purchases';
     private readonly MAX_RETRIES = 10;
+    private isProcessingQueue = false; // Mutex to prevent concurrent queue processing
 
     async initialize() {
         try {
@@ -528,71 +529,80 @@ class BillingService {
     }
 
     private async processPendingPurchases(): Promise<void> {
-        const queue = await this.getPendingQueue();
-        if (queue.length === 0) {
-            console.log('Anti-Gravity Billing: No pending purchases to process');
+        // Mutex: prevent concurrent processing from interval + foreground listener
+        if (this.isProcessingQueue) {
+            console.log('Anti-Gravity Billing: Queue already being processed, skipping');
             return;
         }
+        this.isProcessingQueue = true;
 
-        console.log('Anti-Gravity Billing: 🔄 Processing pending purchases', {
-            count: queue.length,
-            timestamp: new Date().toISOString()
-        });
+        try {
+            const queue = await this.getPendingQueue();
+            if (queue.length === 0) {
+                console.log('Anti-Gravity Billing: No pending purchases to process');
+                return;
+            }
 
-        for (const purchase of queue) {
-            console.log('Anti-Gravity Billing: 🔐 Verifying pending purchase', {
-                transactionId: purchase.transactionId,
-                age: Date.now() - (purchase.addedAt || 0)
+            console.log('Anti-Gravity Billing: 🔄 Processing pending purchases', {
+                count: queue.length,
+                timestamp: new Date().toISOString()
             });
 
-            try {
-                const verified = await this.verifyPurchaseOnServer(
-                    purchase.purchaseToken,
-                    purchase.productId,
-                    purchase.transactionId
-                );
+            for (const purchase of queue) {
+                console.log('Anti-Gravity Billing: 🔐 Verifying pending purchase', {
+                    transactionId: purchase.transactionId,
+                    age: Date.now() - (purchase.addedAt || 0)
+                });
 
-                if (verified) {
-                    console.log('Anti-Gravity Billing: ✅ Pending purchase verified! Granting access...', {
-                        transactionId: purchase.transactionId
-                    });
-                    TaskLimitManager.upgradeToPro();
-                    upgradeTier(SubscriptionTier.LIFETIME, purchase.transactionId);
-                    await this.removeFromPendingQueue(purchase.transactionId);
-                } else {
-                    console.warn('Anti-Gravity Billing: ⏳ Pending purchase still failing, will retry later', {
+                try {
+                    const verified = await this.verifyPurchaseOnServer(
+                        purchase.purchaseToken,
+                        purchase.productId,
+                        purchase.transactionId
+                    );
+
+                    if (verified) {
+                        console.log('Anti-Gravity Billing: ✅ Pending purchase verified! Granting access...', {
+                            transactionId: purchase.transactionId
+                        });
+                        TaskLimitManager.upgradeToPro();
+                        upgradeTier(SubscriptionTier.LIFETIME, purchase.transactionId);
+                        await this.removeFromPendingQueue(purchase.transactionId);
+                    } else {
+                        console.warn('Anti-Gravity Billing: ⏳ Pending purchase still failing, will retry later', {
+                            transactionId: purchase.transactionId,
+                            age: Date.now() - (purchase.addedAt || 0)
+                        });
+                        try {
+                            await indexedDBQueue.incrementRetry(this.PENDING_PURCHASES_STORE, purchase.transactionId);
+                        } catch (e) {
+                            console.warn('Anti-Gravity Billing: Could not increment retry count:', e);
+                        }
+                    }
+                } catch (error: any) {
+                    console.error('Anti-Gravity Billing: ❌ Error processing pending purchase', {
                         transactionId: purchase.transactionId,
-                        age: Date.now() - (purchase.addedAt || 0)
+                        error: error.message
                     });
-                    // Track retry count for this purchase
                     try {
                         await indexedDBQueue.incrementRetry(this.PENDING_PURCHASES_STORE, purchase.transactionId);
                     } catch (e) {
                         console.warn('Anti-Gravity Billing: Could not increment retry count:', e);
                     }
                 }
-            } catch (error: any) {
-                console.error('Anti-Gravity Billing: ❌ Error processing pending purchase', {
-                    transactionId: purchase.transactionId,
-                    error: error.message
-                });
-                // Track retry count
-                try {
-                    await indexedDBQueue.incrementRetry(this.PENDING_PURCHASES_STORE, purchase.transactionId);
-                } catch (e) {
-                    console.warn('Anti-Gravity Billing: Could not increment retry count:', e);
-                }
             }
-        }
 
-        // Remove items that have exceeded max retries
-        try {
-            const removed = await indexedDBQueue.removeExceededRetries(this.PENDING_PURCHASES_STORE, this.MAX_RETRIES);
-            if (removed > 0) {
-                console.warn('Anti-Gravity Billing: Removed purchases that exceeded max retries', { removed });
+            // Remove items that have exceeded max retries
+            try {
+                const removed = await indexedDBQueue.removeExceededRetries(this.PENDING_PURCHASES_STORE, this.MAX_RETRIES);
+                if (removed > 0) {
+                    console.warn('Anti-Gravity Billing: Removed purchases that exceeded max retries', { removed });
+                }
+            } catch (e) {
+                console.error('Anti-Gravity Billing: Failed to clean up expired retries:', e);
             }
-        } catch (e) {
-            console.error('Anti-Gravity Billing: Failed to clean up expired retries:', e);
+        } finally {
+            this.isProcessingQueue = false;
         }
     }
 

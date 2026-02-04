@@ -459,8 +459,8 @@ export default async function handler(req, res) {
                     return res.status(429).json({ error: `Rate limit exceeded. Please wait ${ttl} seconds.` });
                 }
             } catch (kvError) {
-                // Fail-Open: Allow request if KV is down or unconfigured
-                console.error('Anti-Gravity Security: Rate Limit KV Error (Fail-Open):', kvError.message);
+                // Fail-Open for general requests (non-critical), but purchase endpoints are fail-closed below
+                console.error('Anti-Gravity Security: Rate Limit KV Error:', kvError.message);
             }
         }
 
@@ -545,7 +545,7 @@ export default async function handler(req, res) {
             } catch (e) { return null; }
         };
 
-        // Helper: Verify CSRF Token (Verified with Session Secret)
+        // Helper: Verify CSRF Token (Verified with Session Secret + purpose check)
         const verifyCsrfToken = (token) => {
             if (!token || typeof token !== 'string') return null;
             try {
@@ -563,6 +563,10 @@ export default async function handler(req, res) {
 
                 const payload = JSON.parse(payloadStr);
                 if (Date.now() > payload.exp) return null;
+
+                // SECURITY: Reject session tokens used as CSRF tokens
+                // Accept both new 'csrf' purpose tokens and legacy tokens (without purpose field) for backwards compat
+                if (payload.purpose && payload.purpose !== 'csrf') return null;
 
                 return payload;
             } catch (e) { return null; }
@@ -633,7 +637,19 @@ export default async function handler(req, res) {
 
             const targetUid = verifiedUid || deviceId;
             const sessionToken = await generateSessionToken(targetUid, !!verifiedUid, profile?.email);
-            const csrfToken = await generateSessionToken(targetUid, !!verifiedUid, profile?.email);
+
+            // SECURITY FIX: Generate CSRF token with distinct purpose to prevent session token reuse as CSRF
+            const csrfNow = Date.now();
+            const csrfExp = csrfNow + (60 * 60 * 1000);
+            const csrfPayloadStr = JSON.stringify({
+                uid: targetUid,
+                purpose: 'csrf',
+                iat: csrfNow,
+                exp: csrfExp,
+                jti: Buffer.from(`csrf-${targetUid}-${csrfNow}-${randomBytes(8).toString('hex')}`).toString('base64')
+            });
+            const csrfSig = createHmac('sha256', sessionSecret).update(csrfPayloadStr).digest('hex');
+            const csrfToken = Buffer.from(csrfPayloadStr).toString('base64') + '.' + csrfSig;
 
             return res.status(200).json({
                 sessionToken,
@@ -758,21 +774,32 @@ export default async function handler(req, res) {
                 }
 
                 // 1. TIERED RATE LIMITING (V6.0) - Burst (5/5min) and Sustain (10/hr)
-                if (kv && deviceId) {
+                // SECURITY: Fail-CLOSED for purchase endpoints - reject if KV unavailable
+                if (!kv) {
+                    console.error('🛡️ Anti-Gravity Security: KV unavailable - blocking purchase verification (fail-closed)');
+                    return res.status(503).json({ error: 'RATE_LIMIT_UNAVAILABLE', details: 'Security service temporarily unavailable. Please retry.' });
+                }
+
+                if (deviceId) {
                     const burstKey = `rl:purchase:burst:${deviceId}`;
                     const sustainKey = `rl:purchase:sustain:${deviceId}`;
 
-                    const [burstCount, sustainCount] = await Promise.all([
-                        kv.incr(burstKey),
-                        kv.incr(sustainKey)
-                    ]);
+                    try {
+                        const [burstCount, sustainCount] = await Promise.all([
+                            kv.incr(burstKey),
+                            kv.incr(sustainKey)
+                        ]);
 
-                    if (burstCount === 1) await kv.expire(burstKey, 300); // 5 mins
-                    if (sustainCount === 1) await kv.expire(sustainKey, 3600); // 1 hour
+                        if (burstCount === 1) await kv.expire(burstKey, 300); // 5 mins
+                        if (sustainCount === 1) await kv.expire(sustainKey, 3600); // 1 hour
 
-                    if (burstCount > 5 || sustainCount > 10) {
-                        console.warn(`🛡️ Anti-Gravity Security: Purchase Throttled for ${maskDeviceId(deviceId)} (Burst: ${burstCount}, Sustain: ${sustainCount})`);
-                        return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS', retryAfter: '60s' });
+                        if (burstCount > 5 || sustainCount > 10) {
+                            console.warn(`🛡️ Anti-Gravity Security: Purchase Throttled for ${maskDeviceId(deviceId)} (Burst: ${burstCount}, Sustain: ${sustainCount})`);
+                            return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS', retryAfter: '60s' });
+                        }
+                    } catch (kvError) {
+                        console.error('🛡️ Anti-Gravity Security: Purchase rate limit KV error (fail-closed):', kvError.message);
+                        return res.status(503).json({ error: 'RATE_LIMIT_ERROR', details: 'Security check failed. Please retry.' });
                     }
                 }
 
@@ -861,8 +888,7 @@ export default async function handler(req, res) {
                     userPreview: maskDeviceId(googleUid || deviceId)
                 });
 
-                const isReviewer = false;
-                const isVerified = isReviewer || await validateWithGooglePlay(productId, purchaseToken);
+                const isVerified = await validateWithGooglePlay(productId, purchaseToken);
 
                 if (!isVerified) {
                     console.error(`❌ api/index: Authoritative verification FAILED for purchase`, {
@@ -930,8 +956,6 @@ export default async function handler(req, res) {
                             product_id: productId,
                             purchase_token: purchaseToken,
                             status: 'success',
-                            amount: 29.99, // Standardized for summary
-                            currency: 'USD',
                             verified_at: new Date().toISOString()
                         }]);
 
@@ -981,7 +1005,10 @@ export default async function handler(req, res) {
                         console.log('✅ Device usage updated:', { error: usageUpdate.error });
 
                         if (session?.is_auth && session?.uid) {
-                            const accountUpdate = await supabase.from('user_accounts').update({ tier: targetTier }).eq('google_uid', session.uid);
+                            const accountUpdate = await supabase.from('user_accounts').update({
+                                tier: targetTier,
+                                active_purchase_token: purchaseToken
+                            }).eq('google_uid', session.uid);
                             console.log('✅ User account updated:', { error: accountUpdate.error });
                         }
                     }
@@ -1108,12 +1135,24 @@ export default async function handler(req, res) {
                 const { targetUid, targetDeviceId, targetTier } = req.body;
 
                 try {
+                    // AUDIT: Log admin grant action
+                    await supabase.from('purchase_transactions').insert([{
+                        transaction_id: `admin_grant_${Date.now()}_${targetUid || targetDeviceId}`,
+                        device_id: targetDeviceId || 'admin_grant',
+                        google_uid: targetUid || null,
+                        product_id: 'admin_manual_grant',
+                        purchase_token: `granted_by_${session.email}`,
+                        status: 'success',
+                        verified_at: new Date().toISOString()
+                    }]);
+
                     if (targetUid) {
                         await supabase.from('user_accounts').update({ tier: targetTier }).eq('google_uid', targetUid);
                     }
                     if (targetDeviceId) {
                         await supabase.from('ag_user_usage').upsert([{ device_id: targetDeviceId, tier: targetTier }], { onConflict: 'device_id' });
                     }
+                    console.log(`☢️ ADMIN GRANT: ${session.email} granted ${targetTier} to UID:${maskDeviceId(targetUid || '')} Device:${maskDeviceId(targetDeviceId || '')}`);
                     return res.status(200).json({ success: true });
                 } catch (grantError) {
                     return res.status(500).json({ error: "Manual grant failed" });

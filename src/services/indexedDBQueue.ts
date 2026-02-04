@@ -35,6 +35,7 @@ export class IndexedDBQueue {
 
             request.onerror = () => {
                 console.error('IndexedDBQueue: Failed to open database', request.error);
+                this.initPromise = null; // Allow retry on next call
                 reject(request.error);
             };
 
@@ -82,10 +83,11 @@ export class IndexedDBQueue {
         };
 
         return new Promise((resolve, reject) => {
-            const request = store.add(item);
+            // Use put() instead of add() to handle duplicates gracefully (upsert behavior)
+            const request = store.put(item);
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
-                console.log(`IndexedDBQueue: Added to ${storeName}`, { id });
+                console.log(`IndexedDBQueue: Added/updated in ${storeName}`, { id });
                 resolve();
             };
         });
