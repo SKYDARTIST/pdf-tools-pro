@@ -11,22 +11,55 @@ const GoogleAuthCallback: React.FC = () => {
     useEffect(() => {
         const handleCallback = async () => {
             try {
-                // Get code/token from URL (Google returns tokens in hash, codes in search or hash-query)
-                const getParam = (name: string) => {
-                    const search = new URLSearchParams(window.location.search);
-                    if (search.has(name)) return search.get(name);
+                console.log('🔍 GoogleAuthCallback: Starting auth flow', {
+                    href: window.location.href,
+                    search: window.location.search,
+                    hash: window.location.hash
+                });
 
+                // Get code/token from URL - Google OAuth can redirect to root with query params
+                // Then HashRouter moves them to hash, so we need to check both locations
+                const getParam = (name: string) => {
+                    // Priority 1: Standard query string (OAuth redirects here first)
+                    const search = new URLSearchParams(window.location.search);
+                    if (search.has(name)) {
+                        const value = search.get(name);
+                        if (value) {
+                            console.log(`✅ Found ${name} in window.location.search`);
+                            return value;
+                        }
+                    }
+
+                    // Priority 2: Hash fragment query (HashRouter might move params here)
                     const hashPart = window.location.hash;
                     const queryIndex = hashPart.indexOf('?');
                     if (queryIndex !== -1) {
                         const hashSearch = new URLSearchParams(hashPart.substring(queryIndex + 1));
-                        if (hashSearch.has(name)) return hashSearch.get(name);
+                        if (hashSearch.has(name)) {
+                            const value = hashSearch.get(name);
+                            if (value) {
+                                console.log(`✅ Found ${name} in hash fragment`);
+                                return value;
+                            }
+                        }
                     }
 
-                    // Also check if the hash ITSELF is just the query (fragment flow)
+                    // Priority 3: Implicit flow (access_token in fragment)
                     const fragmentSearch = new URLSearchParams(window.location.hash.substring(1));
-                    if (fragmentSearch.has(name)) return fragmentSearch.get(name);
+                    if (fragmentSearch.has(name)) {
+                        const value = fragmentSearch.get(name);
+                        if (value) {
+                            console.log(`✅ Found ${name} in implicit fragment flow`);
+                            return value;
+                        }
+                    }
 
+                    console.warn(`❌ Parameter "${name}" not found in URL`);
+                    console.log('🔍 Debug URL locations:', {
+                        'window.location.href': window.location.href,
+                        'window.location.search': window.location.search,
+                        'window.location.hash': window.location.hash
+                    });
                     return null;
                 };
 

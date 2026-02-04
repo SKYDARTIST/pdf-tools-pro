@@ -67,9 +67,17 @@ const App: React.FC = () => {
 
   // Catch Google OAuth redirect from the root OR path
   React.useEffect(() => {
+    console.log('🔍 App: OAuth detection check', {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash
+    });
+
     const hasToken = window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=');
     const hasCode = window.location.search.includes('code=');
     const isAuthPath = window.location.pathname.includes('/auth-callback');
+
+    console.log('🔑 App: OAuth state', { hasToken, hasCode, isAuthPath });
 
     if (hasToken) {
       console.log('🔑 App: Found OAuth token in hash, pushing to callback processor');
@@ -77,6 +85,7 @@ const App: React.FC = () => {
     } else if (isAuthPath || hasCode) {
       console.log('🔑 App: Found OAuth path/code, normalizing for HashRouter...');
       const params = window.location.search;
+      console.log('🔑 App: Navigating to auth-callback with params:', params);
       navigate('/auth-callback' + params, { replace: true });
     }
   }, [location.pathname, navigate]);
