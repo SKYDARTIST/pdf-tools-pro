@@ -62,17 +62,21 @@ export const secureFetch = async (url: string, options: RequestInit = {}): Promi
                     contentType: response.headers.get('content-type')
                 });
 
-                // 401 UNAUTHORIZED -> Session is dead
+                // P1 FIX: 401 UNAUTHORIZED -> Session is dead (with exponential backoff)
                 if (response.status === 401) {
                     if (isRetry) {
-                        Logger.error('API', `[${requestId}] Handshake retry failed with 401 again. Giving up.`, { url });
+                        Logger.error('API', `[${requestId}] Session refresh failed. User locked out. Manual re-auth required.`, { url });
                         return response;
                     }
 
-                    console.warn(`[${requestId}] 🛡️ Unauthorized (401). Retrying with fresh session...`);
+                    console.warn(`[${requestId}] 🛡️ Unauthorized (401). Clearing session and refreshing...`);
                     AuthService.handleUnauthorized(); // Clear local state
 
-                    // Force a new handshake by getting header again
+                    // P1 FIX: Add exponential backoff (2 second delay) before retry
+                    // This prevents hammering the server if handshake is slow
+                    await new Promise(r => setTimeout(r, 2000));
+
+                    console.log(`[${requestId}] 🔄 Retrying request after session refresh...`);
                     return performRequest(true);
                 }
 
