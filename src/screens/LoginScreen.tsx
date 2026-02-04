@@ -30,8 +30,8 @@ const LoginScreen: React.FC = () => {
             const codeChallenge = await generateCodeChallenge(codeVerifier);
             localStorage.setItem('google_code_verifier', codeVerifier);
 
-            const clientId = Config.GOOGLE_OAUTH_CLIENT_ID;
             const isNative = Capacitor.isNativePlatform();
+            const clientId = isNative ? Config.GOOGLE_ANDROID_CLIENT_ID : Config.GOOGLE_WEB_CLIENT_ID;
             const redirectUri = isNative
                 ? 'com.cryptobulla.antigravity:/auth-callback'
                 : window.location.origin + '/auth-callback';

@@ -52,11 +52,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             });
 
             // Use the dynamic Client ID from Config (Defaults to Mobile, Overrides with Web on Vercel)
-            const clientId = Config.GOOGLE_OAUTH_CLIENT_ID;
-
-            // If we are on a real device (Capacitor), use the custom scheme with double-slash
-            // This MUST match the android:host in AndroidManifest.xml
             const isNative = Capacitor.isNativePlatform();
+            const clientId = isNative ? Config.GOOGLE_ANDROID_CLIENT_ID : Config.GOOGLE_WEB_CLIENT_ID;
+
             const redirectUri = isNative
                 ? 'com.cryptobulla.antigravity:/auth-callback'
                 : window.location.origin + '/auth-callback';
