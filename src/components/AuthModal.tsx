@@ -57,6 +57,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             // If we are on a real device (Capacitor), use the custom scheme with double-slash
             // This MUST match the android:host in AndroidManifest.xml
             const isCapacitor = (window as any).Capacitor?.isNativePlatform();
+            const redirectUri = isCapacitor
+                ? 'com.cryptobulla.antigravity:/auth-callback'
+                : window.location.origin + '/auth-callback';
+
+            const scope = 'openid profile email';
+
             // response_type=code is MANDATORY for Native Client IDs (PKCE flow)
             // and now used for Web as well (exchanged via backend proxy)
             const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
