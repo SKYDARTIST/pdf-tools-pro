@@ -7,6 +7,7 @@ import AuthService from './authService';
 import Config from './configService';
 import TaskLimitManager from '@/utils/TaskLimitManager';
 import { STORAGE_KEYS } from '@/utils/constants';
+import { indexedDBQueue } from './indexedDBQueue';
 
 const LIFETIME_PRODUCT_ID = 'lifetime_pro_access';
 const LIFETIME_PRODUCT_ID_ALT = 'pro_access_lifetime'; // Legacy variant
@@ -25,18 +26,8 @@ class BillingService {
     private restoredPurchases: any[] = [];
     private transactionListener: any = null;
     private isTestMode = AuthService.isTestAccount();
-
-    // SAFETY: Parse localStorage with corruption protection
-    private safeParsePurchaseQueue(key: string): any[] {
-        try {
-            const value = localStorage.getItem(key);
-            return value ? JSON.parse(value) : [];
-        } catch (e) {
-            console.error(`Anti-Gravity Billing: Corrupted data in ${key}, clearing and resetting.`, e);
-            localStorage.removeItem(key);
-            return [];
-        }
-    }
+    private readonly PENDING_PURCHASES_STORE = 'pending-purchases';
+    private readonly MAX_RETRIES = 10;
 
     async initialize() {
         try {
@@ -197,9 +188,10 @@ class BillingService {
                 } else {
                     // Verification failed, but payment went through
                     // Purchase is still in pending queue for automatic retry
+                    const queueLength = (await this.getPendingQueue()).length;
                     console.error('Anti-Gravity Billing: ❌ Verification failed, but purchase is queued for retry', {
                         transactionId: result.transactionId,
-                        queueLength: this.getPendingQueue().length
+                        queueLength
                     });
 
                     const confirmSupport = window.confirm(
@@ -460,22 +452,53 @@ class BillingService {
     }
 
     private async addToPendingQueue(purchase: any): Promise<void> {
-        const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
-        queue.push({ ...purchase, addedAt: Date.now() });
-        localStorage.setItem('ag_pending_purchases', JSON.stringify(queue));
+        try {
+            await indexedDBQueue.add(this.PENDING_PURCHASES_STORE, purchase.transactionId, purchase);
+        } catch (error: any) {
+            console.error('Anti-Gravity Billing: Failed to add to IndexedDB queue, falling back to localStorage', error);
+            // Fallback to localStorage if IndexedDB fails
+            const queue = this.safeParsePurchaseQueueFallback();
+            queue.push({ ...purchase, addedAt: Date.now() });
+            localStorage.setItem('ag_pending_purchases', JSON.stringify(queue));
+        }
     }
 
     private async removeFromPendingQueue(transactionId: string): Promise<void> {
-        const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
-        localStorage.setItem('ag_pending_purchases', JSON.stringify(queue.filter((p: any) => p.transactionId !== transactionId)));
+        try {
+            await indexedDBQueue.remove(this.PENDING_PURCHASES_STORE, transactionId);
+        } catch (error: any) {
+            console.error('Anti-Gravity Billing: Failed to remove from IndexedDB queue, falling back to localStorage', error);
+            // Fallback to localStorage if IndexedDB fails
+            const queue = this.safeParsePurchaseQueueFallback();
+            localStorage.setItem('ag_pending_purchases', JSON.stringify(queue.filter((p: any) => p.transactionId !== transactionId)));
+        }
     }
 
-    public getPendingQueue(): any[] {
-        return this.safeParsePurchaseQueue('ag_pending_purchases');
+    public async getPendingQueue(): Promise<any[]> {
+        try {
+            const items = await indexedDBQueue.getAll(this.PENDING_PURCHASES_STORE);
+            return items.map(item => item.data);
+        } catch (error: any) {
+            console.error('Anti-Gravity Billing: Failed to get queue from IndexedDB, falling back to localStorage', error);
+            // Fallback to localStorage if IndexedDB fails
+            return this.safeParsePurchaseQueueFallback();
+        }
+    }
+
+    // SAFETY: Fallback localStorage parsing with corruption protection
+    private safeParsePurchaseQueueFallback(): any[] {
+        try {
+            const value = localStorage.getItem('ag_pending_purchases');
+            return value ? JSON.parse(value) : [];
+        } catch (e) {
+            console.error('Anti-Gravity Billing: Corrupted data in ag_pending_purchases, clearing and resetting.', e);
+            localStorage.removeItem('ag_pending_purchases');
+            return [];
+        }
     }
 
     private async processPendingPurchases(): Promise<void> {
-        const queue = this.safeParsePurchaseQueue('ag_pending_purchases');
+        const queue = await this.getPendingQueue();
         if (queue.length === 0) {
             console.log('Anti-Gravity Billing: No pending purchases to process');
             return;
@@ -511,13 +534,35 @@ class BillingService {
                         transactionId: purchase.transactionId,
                         age: Date.now() - (purchase.addedAt || 0)
                     });
+                    // Track retry count for this purchase
+                    try {
+                        await indexedDBQueue.incrementRetry(this.PENDING_PURCHASES_STORE, purchase.transactionId);
+                    } catch (e) {
+                        console.warn('Anti-Gravity Billing: Could not increment retry count:', e);
+                    }
                 }
             } catch (error: any) {
                 console.error('Anti-Gravity Billing: ❌ Error processing pending purchase', {
                     transactionId: purchase.transactionId,
                     error: error.message
                 });
+                // Track retry count
+                try {
+                    await indexedDBQueue.incrementRetry(this.PENDING_PURCHASES_STORE, purchase.transactionId);
+                } catch (e) {
+                    console.warn('Anti-Gravity Billing: Could not increment retry count:', e);
+                }
             }
+        }
+
+        // Remove items that have exceeded max retries
+        try {
+            const removed = await indexedDBQueue.removeExceededRetries(this.PENDING_PURCHASES_STORE, this.MAX_RETRIES);
+            if (removed > 0) {
+                console.warn('Anti-Gravity Billing: Removed purchases that exceeded max retries', { removed });
+            }
+        } catch (e) {
+            console.error('Anti-Gravity Billing: Failed to clean up expired retries:', e);
         }
     }
 
@@ -533,7 +578,7 @@ class BillingService {
 
         // Retry every 30 seconds while app is active
         setInterval(async () => {
-            const queue = this.getPendingQueue();
+            const queue = await this.getPendingQueue();
             if (queue.length > 0) {
                 console.log('Anti-Gravity Billing: ⏰ Background retry check', { pendingCount: queue.length });
                 await this.processPendingPurchases();
@@ -545,7 +590,7 @@ class BillingService {
             const { App } = await import('@capacitor/app');
             App.addListener('appStateChange', async (state) => {
                 if (state.isActive) {
-                    const queue = this.getPendingQueue();
+                    const queue = await this.getPendingQueue();
                     if (queue.length > 0) {
                         console.log('Anti-Gravity Billing: 📱 App came to foreground, retrying pending purchases');
                         await this.processPendingPurchases();
