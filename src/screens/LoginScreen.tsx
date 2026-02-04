@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Shield, Cpu, Loader2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { generateCodeVerifier, generateCodeChallenge } from '@/services/pkce';
 import { Browser } from '@capacitor/browser';
 import { getFriendlyErrorMessage } from '@/utils/errorMapping';
@@ -30,8 +31,8 @@ const LoginScreen: React.FC = () => {
             localStorage.setItem('google_code_verifier', codeVerifier);
 
             const clientId = Config.GOOGLE_OAUTH_CLIENT_ID;
-            const isCapacitor = (window as any).Capacitor?.isNativePlatform();
-            const redirectUri = isCapacitor
+            const isNative = Capacitor.isNativePlatform();
+            const redirectUri = isNative
                 ? 'com.cryptobulla.antigravity:/auth-callback'
                 : window.location.origin + '/auth-callback';
 
@@ -45,7 +46,7 @@ const LoginScreen: React.FC = () => {
                 `code_challenge=${codeChallenge}&` +
                 `code_challenge_method=S256`;
 
-            if (isCapacitor) {
+            if (isNative) {
                 await Browser.open({ url: googleAuthUrl, windowName: '_self' });
             } else {
                 window.location.href = googleAuthUrl;

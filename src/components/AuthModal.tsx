@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { Capacitor } from '@capacitor/core';
 import { signInWithGoogle } from '@/services/googleAuthService';
 import Config from '@/services/configService';
 import { getFriendlyErrorMessage } from '@/utils/errorMapping';
@@ -56,8 +56,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             // If we are on a real device (Capacitor), use the custom scheme with double-slash
             // This MUST match the android:host in AndroidManifest.xml
-            const isCapacitor = (window as any).Capacitor?.isNativePlatform();
-            const redirectUri = isCapacitor
+            const isNative = Capacitor.isNativePlatform();
+            const redirectUri = isNative
                 ? 'com.cryptobulla.antigravity:/auth-callback'
                 : window.location.origin + '/auth-callback';
 
@@ -75,7 +75,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             // THE TOP-CLASS SOLUTION: Chrome Custom Tabs / Safari View Controller
             // This makes the browser "vanish" after login and doesn't pollute history.
-            if (isCapacitor) {
+            if (isNative) {
                 try {
                     await Browser.open({ url: googleAuthUrl, windowName: '_self' });
                 } catch (browserError) {

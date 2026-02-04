@@ -1,6 +1,7 @@
 import React from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { signInWithGoogle } from '@/services/googleAuthService';
 import { SecurityLogger, maskEmail } from '@/utils/securityUtils';
 import Config from '@/services/configService';
@@ -78,14 +79,14 @@ const GoogleAuthCallback: React.FC = () => {
                     }
 
                     // Exchange code for tokens
-                    const isCapacitor = (window as any).Capacitor?.isNativePlatform();
-                    const redirectUri = isCapacitor
+                    const isNative = Capacitor.isNativePlatform();
+                    const redirectUri = isNative
                         ? 'com.cryptobulla.antigravity:/auth-callback'
                         : window.location.origin + '/auth-callback';
 
                     let tokens;
 
-                    if (isCapacitor) {
+                    if (isNative) {
                         // Mobile: Direct exchange with Google (Safe/PKCE)
                         console.log('📱 Mobile Auth: Direct exchange with Google');
                         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {

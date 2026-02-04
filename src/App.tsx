@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
 
 
 // Critical screens - loaded immediately
@@ -65,30 +66,24 @@ const App: React.FC = () => {
 
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
-  // Catch Google OAuth redirect from the root OR path
+  // SECURITY & ROUTING: Catch mobile deep links with OAuth credentials
+  // On web, HashRouter handles auth-callback route naturally
   React.useEffect(() => {
-    console.log('🔍 App: OAuth detection check', {
-      pathname: window.location.pathname,
-      search: window.location.search,
-      hash: window.location.hash
-    });
+    const isNative = Capacitor.isNativePlatform();
+    const currentLoc = window.location;
 
-    const hasToken = window.location.hash.includes('access_token=') || window.location.hash.includes('id_token=');
-    const hasCode = window.location.search.includes('code=');
-    const isAuthPath = window.location.pathname.includes('/auth-callback');
+    if (!isNative) return; // Skip on web - HashRouter handles it
 
-    console.log('🔑 App: OAuth state', { hasToken, hasCode, isAuthPath });
+    // Check if we have OAuth credentials in the URL (from deep link)
+    const hasToken = currentLoc.hash.includes('access_token=') || currentLoc.hash.includes('id_token=');
+    const hasCode = currentLoc.search.includes('code=');
 
-    if (hasToken) {
-      console.log('🔑 App: Found OAuth token in hash, pushing to callback processor');
-      navigate('/auth-callback' + window.location.hash, { replace: true });
-    } else if (isAuthPath || hasCode) {
-      console.log('🔑 App: Found OAuth path/code, normalizing for HashRouter...');
-      const params = window.location.search;
-      console.log('🔑 App: Navigating to auth-callback with params:', params);
-      navigate('/auth-callback' + params, { replace: true });
+    // MOBILE ONLY: Normalize deep link to HashRouter path
+    if ((hasToken || hasCode) && !currentLoc.hash.startsWith('#/auth-callback')) {
+      console.log('📱 App: Normalizing mobile OAuth deep link...');
+      navigate('/auth-callback' + currentLoc.search + currentLoc.hash.replace(/^#/, ''), { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [navigate]);
 
   const [isDataReady, setIsDataReady] = React.useState(false);
   const [bootAnimFinished, setBootAnimFinished] = React.useState(false);
@@ -188,7 +183,7 @@ const App: React.FC = () => {
     const handleAppUrl = (e: any) => handleUrl(e.detail?.url || e.url);
     window.addEventListener('appUrlOpen', handleAppUrl);
 
-    if ((window as any).Capacitor) {
+    if (Capacitor.isNativePlatform()) {
       const meta = document.createElement('meta');
       meta.name = 'google-signin-disable-fedcm';
       meta.content = 'true';
