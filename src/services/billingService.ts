@@ -26,7 +26,7 @@ class BillingService {
     private transactionListener: any = null;
     private isTestMode = AuthService.isTestAccount();
     private readonly PENDING_PURCHASES_STORE = 'pending-purchases';
-    private readonly MAX_RETRIES = 10;
+    private readonly MAX_RETRIES = 200; // ~100 minutes of retrying (200 × 30s). Purchases are valuable - don't give up easily.
     private isProcessingQueue = false; // Mutex to prevent concurrent queue processing
 
     async initialize() {
@@ -534,21 +534,38 @@ class BillingService {
         this.isProcessingQueue = true;
 
         try {
-            const queue = await this.getPendingQueue();
-            if (queue.length === 0) {
+            // Get full queue items (with retryCount) to skip stale ones
+            let queueItems: any[];
+            try {
+                queueItems = await indexedDBQueue.getAll(this.PENDING_PURCHASES_STORE);
+            } catch {
+                queueItems = [];
+            }
+
+            if (queueItems.length === 0) {
                 console.log('Anti-Gravity Billing: No pending purchases to process');
                 return;
             }
 
+            // Filter out items that exceeded max retries (keep them in DB for manual recovery)
+            const activeItems = queueItems.filter(item => item.retryCount < this.MAX_RETRIES);
+            if (activeItems.length === 0) {
+                console.log('Anti-Gravity Billing: All pending purchases exceeded max retries, skipping');
+                return;
+            }
+
             console.log('Anti-Gravity Billing: 🔄 Processing pending purchases', {
-                count: queue.length,
+                total: queueItems.length,
+                active: activeItems.length,
                 timestamp: new Date().toISOString()
             });
 
-            for (const purchase of queue) {
+            for (const item of activeItems) {
+                const purchase = item.data;
                 console.log('Anti-Gravity Billing: 🔐 Verifying pending purchase', {
                     transactionId: purchase.transactionId,
-                    age: Date.now() - (purchase.addedAt || 0)
+                    retryCount: item.retryCount,
+                    age: Date.now() - item.addedAt
                 });
 
                 try {
@@ -589,14 +606,20 @@ class BillingService {
                 }
             }
 
-            // Remove items that have exceeded max retries
+            // Stop retrying items that have exceeded max retries, but DON'T delete them.
+            // Purchases are too valuable to delete - user can always use "Restore Purchases".
+            // We just stop actively retrying to avoid wasting resources.
             try {
-                const removed = await indexedDBQueue.removeExceededRetries(this.PENDING_PURCHASES_STORE, this.MAX_RETRIES);
-                if (removed > 0) {
-                    console.warn('Anti-Gravity Billing: Removed purchases that exceeded max retries', { removed });
+                const allItems = await indexedDBQueue.getAll(this.PENDING_PURCHASES_STORE);
+                const staleCount = allItems.filter(item => item.retryCount >= this.MAX_RETRIES).length;
+                if (staleCount > 0) {
+                    console.warn('Anti-Gravity Billing: Purchases exceeded max retries (kept for manual recovery)', {
+                        staleCount,
+                        maxRetries: this.MAX_RETRIES
+                    });
                 }
             } catch (e) {
-                console.error('Anti-Gravity Billing: Failed to clean up expired retries:', e);
+                console.error('Anti-Gravity Billing: Failed to check stale retries:', e);
             }
         } finally {
             this.isProcessingQueue = false;

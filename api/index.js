@@ -1029,6 +1029,40 @@ export default async function handler(req, res) {
                                 active_purchase_token: purchaseToken
                             }).eq('google_uid', session.uid);
                             console.log('✅ User account updated:', { error: accountUpdate.error });
+                        } else if (deviceId) {
+                            // CRITICAL FIX: For anonymous/device-only sessions, try to find a user_account
+                            // linked to this device and update it too. This prevents drift reconciliation
+                            // from downgrading a user who purchased before logging in with Google.
+                            try {
+                                const { data: linkedAccount } = await supabase
+                                    .from('ag_user_usage')
+                                    .select('device_id')
+                                    .eq('device_id', deviceId)
+                                    .single();
+
+                                if (linkedAccount) {
+                                    // Find any user_accounts that have used this device
+                                    // Update ALL matching accounts to prevent drift on any linked Google account
+                                    const { data: linkedUsers } = await supabase
+                                        .from('sessions')
+                                        .select('user_uid')
+                                        .eq('device_id', deviceId)
+                                        .not('user_uid', 'eq', deviceId); // Exclude device-only sessions
+
+                                    if (linkedUsers && linkedUsers.length > 0) {
+                                        for (const linked of linkedUsers) {
+                                            await supabase.from('user_accounts').update({
+                                                tier: targetTier,
+                                                active_purchase_token: purchaseToken
+                                            }).eq('google_uid', linked.user_uid);
+                                        }
+                                        console.log('✅ Linked user accounts also updated:', { count: linkedUsers.length });
+                                    }
+                                }
+                            } catch (linkError) {
+                                console.warn('⚠️ Could not update linked user accounts:', linkError.message);
+                                // Non-blocking - device usage is already updated
+                            }
                         }
                     }
 
@@ -1106,12 +1140,29 @@ export default async function handler(req, res) {
                 }
 
                 try {
+                    const syncData = {
+                        device_id: deviceId,
+                        updated_at: new Date().toISOString()
+                    };
+
+                    // Include tier from request body if provided
+                    // SECURITY: Only allow upgrade syncs, never allow downgrade via this endpoint
+                    // Downgrades must go through verify_purchase or check_subscription_status
+                    const clientUsage = req.body.usage;
+                    if (clientUsage?.tier && clientUsage.tier !== 'free') {
+                        syncData.tier = clientUsage.tier;
+                    }
+
                     await supabase
                         .from('ag_user_usage')
-                        .upsert([{
-                            device_id: deviceId,
-                            updated_at: new Date().toISOString()
-                        }], { onConflict: 'device_id' });
+                        .upsert([syncData], { onConflict: 'device_id' });
+
+                    // Also sync to user_accounts if authenticated
+                    if (session?.is_auth && session?.uid && clientUsage?.tier) {
+                        await supabase.from('user_accounts').update({
+                            tier: clientUsage.tier
+                        }).eq('google_uid', session.uid);
+                    }
 
                     return res.status(200).json({ success: true });
                 } catch (syncError) {
