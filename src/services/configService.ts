@@ -40,9 +40,9 @@ export const Config: AppConfig = {
     IS_PRODUCTION: import.meta.env.PROD,
     GOOGLE_WEB_CLIENT_ID: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ||
         import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-        '577377406590-9jl373159h9a2bgr3i6fbngv18ndjf75.apps.googleusercontent.com',
+        '577377406590-rcr0l7607ok07odbb9787017en9nikqp.apps.googleusercontent.com',
     GOOGLE_ANDROID_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID_ANDROID ||
-        '577377406590-rcr0l7607ok07odbb9787017en9nikqp.apps.googleusercontent.com'
+        '577377406590-9jl373159h9a2bgr3i6fbngv18ndjf75.apps.googleusercontent.com'
 };
 
 export default Config;

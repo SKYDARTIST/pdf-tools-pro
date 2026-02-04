@@ -280,6 +280,25 @@ const AntiGravityWorkspace: React.FC = () => {
           )}
         </AnimatePresence>
 
+        {/* Support/Troubleshooting Message */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-6 rounded-[32px] bg-rose-500/5 border border-rose-500/20 space-y-2"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-rose-500/10 rounded-xl">
+              <Shield size={18} className="text-rose-500" />
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-rose-500">Neural Support Notice</div>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed text-gray-500 dark:text-gray-400">
+            Facing a <span className="text-rose-500">"Backend Error"</span> or blank page in Neural tools?
+            Simply <span className="text-gray-900 dark:text-white underline">Logout</span> and <span className="text-gray-900 dark:text-white underline">Login</span> again.
+            This refreshes your secure session handshake with our hardened servers to ensure your AI credits sync correctly.
+          </p>
+        </motion.div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { title: "Neural Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },

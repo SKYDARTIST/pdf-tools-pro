@@ -213,6 +213,23 @@ const PricingScreen: React.FC = () => {
                 >
                   {isLoading && tier.id === SubscriptionTier.LIFETIME ? 'ESTABLISHING HANDSHAKE...' : tier.cta}
                 </motion.button>
+
+                {/* Lifetime-specific Support Notice */}
+                {tier.id === SubscriptionTier.LIFETIME && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-6 p-4 rounded-2xl bg-[#00C896]/5 border border-[#00C896]/10 space-y-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] animate-pulse" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-[#00C896]">LIFETIME PRIORITY HANDSHAKE</span>
+                    </div>
+                    <p className="text-[8px] font-black uppercase tracking-widest leading-relaxed text-gray-500 dark:text-gray-400">
+                      IF BADGE DOESN'T APPEAR INSTANTLY, PLEASE WAIT 2-5 MINS. FOR IMMEDIATE ASSISTANCE, EMAIL <span className="text-gray-900 dark:text-white underline">ANTIGRAVITYBYBULLA@GMAIL.COM</span> WITH DETAILS. EXCLUSIVE **24/7 PRIORITY SUPPORT** FOR LIFETIME USERS ONLY.
+                    </p>
+                  </motion.div>
+                )}
               </motion.div>
             );
           })}
@@ -566,7 +583,7 @@ const PricingScreen: React.FC = () => {
           </div>
         </motion.div>
       </div>
-    </div>
+    </div >
   );
 };
 
