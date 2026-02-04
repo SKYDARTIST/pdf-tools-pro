@@ -612,6 +612,7 @@ export default async function handler(req, res) {
             'check_subscription_status', // Status check (read-only)
             'usage_fetch',               // Usage data fetch
             'usage_sync',                // Usage data sync
+            'exchange_google_code',      // Exchange OAuth code for tokens (Fixes client_secret error)
             'server_time'                // Server time (utility endpoint)
         ];
 
@@ -629,6 +630,44 @@ export default async function handler(req, res) {
         async function handleBackendLogic() {
             if (requestType === 'server_time') {
                 return res.status(200).json({ iso: new Date().toISOString() });
+            }
+
+            if (requestType === 'exchange_google_code') {
+                const { code, codeVerifier, redirectUri } = req.body;
+
+                if (!code) {
+                    return res.status(400).json({ error: 'Missing authorization code' });
+                }
+
+                try {
+                    // Use standard fetch if available, otherwise fallback (Vercel Node 18+ has global fetch)
+                    const response = await fetch('https://oauth2.googleapis.com/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            client_id: process.env.VITE_GOOGLE_OAUTH_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID,
+                            client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                            grant_type: 'authorization_code',
+                            code: code,
+                            redirect_uri: redirectUri,
+                            code_verifier: codeVerifier || '',
+                        }),
+                    });
+
+                    const tokens = await response.json();
+
+                    if (!response.ok || tokens.error) {
+                        console.error('Neural Auth: Google Token Exchange Failed:', tokens);
+                        return res.status(response.status).json({
+                            error: tokens.error_description || tokens.error || 'Exchange failed'
+                        });
+                    }
+
+                    return res.status(200).json(tokens);
+                } catch (error) {
+                    console.error("Neural Auth: Fatal Token Exchange Error:", error.message);
+                    return res.status(500).json({ error: "Inter-orbital Exchange Failed" });
+                }
             }
 
             // SECURITY: Critical Vulnerability Fix (P0) - Purchase Verification

@@ -31,18 +31,22 @@ const LoginScreen: React.FC = () => {
 
             const clientId = Config.GOOGLE_OAUTH_CLIENT_ID;
             const isCapacitor = (window as any).Capacitor?.isNativePlatform();
+            const responseType = isCapacitor ? 'code' : 'token id_token';
             const redirectUri = isCapacitor
                 ? 'com.cryptobulla.antigravity:/auth-callback'
                 : window.location.origin + '/auth-callback';
 
             const scope = 'openid profile email';
-            const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+
+            let googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                `response_type=code&` +
-                `scope=${encodeURIComponent(scope)}&` +
-                `code_challenge=${codeChallenge}&` +
-                `code_challenge_method=S256`;
+                `response_type=${encodeURIComponent(responseType)}&` +
+                `scope=${encodeURIComponent(scope)}`;
+
+            if (isCapacitor) {
+                googleAuthUrl += `&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+            }
 
             if (isCapacitor) {
                 await Browser.open({ url: googleAuthUrl, windowName: '_self' });

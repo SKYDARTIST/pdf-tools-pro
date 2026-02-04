@@ -45,24 +45,49 @@ const GoogleAuthCallback: React.FC = () => {
                     }
 
                     // Exchange code for tokens
-                    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        /* RESTORING CORRECT STRUCTURE */
-                        body: new URLSearchParams({
-                            client_id: Config.GOOGLE_OAUTH_CLIENT_ID,
-                            grant_type: 'authorization_code',
-                            code: code,
-                            redirect_uri: (window as any).Capacitor?.isNativePlatform()
-                                ? 'com.cryptobulla.antigravity:/auth-callback'
-                                : window.location.origin + '/auth-callback',
-                            code_verifier: codeVerifier,
-                        }),
-                    });
+                    const isCapacitor = (window as any).Capacitor?.isNativePlatform();
+                    const redirectUri = isCapacitor
+                        ? 'com.cryptobulla.antigravity:/auth-callback'
+                        : window.location.origin + '/auth-callback';
 
-                    const tokens = await tokenResponse.json();
-                    if (tokens.error) {
-                        throw new Error(`Token exchange failed: ${tokens.error_description || tokens.error}`);
+                    let tokens;
+
+                    if (isCapacitor) {
+                        // Mobile: Direct exchange with Google (Safe/PKCE)
+                        console.log('📱 Mobile Auth: Direct exchange with Google');
+                        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: new URLSearchParams({
+                                client_id: Config.GOOGLE_OAUTH_CLIENT_ID,
+                                grant_type: 'authorization_code',
+                                code: code,
+                                redirect_uri: redirectUri,
+                                code_verifier: codeVerifier,
+                            }),
+                        });
+                        tokens = await tokenResponse.json();
+                    } else {
+                        // Web: Proxy exchange via Backend (Safely uses GOOGLE_CLIENT_SECRET)
+                        console.log('🌐 Web Auth: Proxying exchange via Backend');
+                        const apiResponse = await fetch(Config.VITE_AG_API_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || ''
+                            },
+                            body: JSON.stringify({
+                                type: 'exchange_google_code',
+                                code: code,
+                                codeVerifier: codeVerifier,
+                                redirectUri: redirectUri
+                            }),
+                        });
+                        tokens = await apiResponse.json();
+                    }
+
+                    if (!tokens || tokens.error) {
+                        throw new Error(`Token exchange failed: ${tokens?.error_description || tokens?.error || 'Unknown error'}`);
                     }
                     credential = tokens.id_token;
                 }
