@@ -194,6 +194,34 @@ const App: React.FC = () => {
     };
   }, [navigate]);
 
+  // P1 FIX: Auto-reconcile subscription tier when app comes to foreground
+  React.useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return; // Skip on web
+
+    const handleAppStateChange = (state: any) => {
+      if (state.isActive) {
+        console.log('🔄 App: Resumed from background, reconciling subscription tier...');
+
+        // Dynamically import to avoid circular dependencies
+        import('@/services/subscriptionService')
+          .then(({ reconcileSubscriptionDrift }) => {
+            reconcileSubscriptionDrift()
+              .catch(error => {
+                console.warn('🔄 App: Subscription reconciliation failed:', error);
+              });
+          })
+          .catch(error => {
+            console.error('🔄 App: Failed to import subscription service:', error);
+          });
+      }
+    };
+
+    CapApp.addListener('appStateChange', handleAppStateChange);
+    return () => {
+      CapApp.removeAllListeners();
+    };
+  }, []);
+
 
 
 
