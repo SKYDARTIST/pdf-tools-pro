@@ -205,75 +205,6 @@ const VALID_PRODUCTS = new Set([
 let playDeveloperApi = null;
 
 /**
- * Send email notification for successful payment
- */
-async function sendPaymentSuccessEmail(productId, transactionId, deviceId, googleUid, userEmail = null) {
-    if (!resend) {
-        console.warn('⚠️ Email service not configured (RESEND_API_KEY missing)');
-        return;
-    }
-
-    try {
-        await resend.emails.send({
-            from: 'payments@antigravity.app',
-            to: OWNER_EMAIL,
-            subject: '✅ Payment Verification Successful - Anti-Gravity',
-            html: `
-                <h2>✅ Payment Verified Successfully</h2>
-                <p>A user has completed a purchase:</p>
-                <ul>
-                    <li><strong>Product:</strong> ${productId}</li>
-                    <li><strong>Transaction ID:</strong> ${transactionId}</li>
-                    <li><strong>Device ID:</strong> ${deviceId.substring(0, 16)}...</li>
-                    <li><strong>User UID:</strong> ${googleUid || 'Anonymous'}</li>
-                    <li><strong>User Email:</strong> ${userEmail || 'Not available'}</li>
-                    <li><strong>Timestamp:</strong> ${new Date().toISOString()}</li>
-                </ul>
-                <p><strong>Status:</strong> Lifetime access granted ✅</p>
-            `
-        });
-        console.log('📧 Payment success email sent to', OWNER_EMAIL);
-    } catch (error) {
-        console.error('❌ Failed to send payment success email:', error.message);
-    }
-}
-
-/**
- * Send email notification for failed payment verification
- */
-async function sendPaymentFailureEmail(productId, transactionId, deviceId, googleUid, errorReason, userEmail = null) {
-    if (!resend) {
-        console.warn('⚠️ Email service not configured (RESEND_API_KEY missing)');
-        return;
-    }
-
-    try {
-        await resend.emails.send({
-            from: 'payments@antigravity.app',
-            to: OWNER_EMAIL,
-            subject: '❌ Payment Verification Failed - Anti-Gravity',
-            html: `
-                <h2>❌ Payment Verification Failed</h2>
-                <p>A payment verification failed and requires investigation:</p>
-                <ul>
-                    <li><strong>Product:</strong> ${productId}</li>
-                    <li><strong>Transaction ID:</strong> ${transactionId}</li>
-                    <li><strong>Device ID:</strong> ${deviceId.substring(0, 16)}...</li>
-                    <li><strong>User UID:</strong> ${googleUid || 'Anonymous'}</li>
-                    <li><strong>User Email:</strong> ${userEmail || 'Not available'}</li>
-                    <li><strong>Error Reason:</strong> ${errorReason}</li>
-                    <li><strong>Timestamp:</strong> ${new Date().toISOString()}</li>
-                </ul>
-                <p><strong>Action Required:</strong> User purchase may be pending recovery. Review in Admin Dashboard.</p>
-            `
-        });
-        console.log('📧 Payment failure email sent to', OWNER_EMAIL);
-    } catch (error) {
-        console.error('❌ Failed to send payment failure email:', error.message);
-    }
-}
-
-/**
  * Initialize Google Play API client
  */
 const getPlayApi = async () => {
@@ -897,16 +828,6 @@ export default async function handler(req, res) {
                         timestamp: new Date().toISOString()
                     });
 
-<<<<<<< HEAD
-                    // Send failure notification email (non-blocking)
-                    sendPaymentFailureEmail(
-                        productId,
-                        transactionId,
-                        deviceId,
-                        googleUid || 'anonymous',
-                        'Google Play verification failed - Payment may be invalid or already used'
-                    ).catch(e => console.error('Email send failed:', e));
-=======
                     // Send payment failed notification email
                     await sendPaymentNotification('payment_failed', {
                         transactionId,
@@ -929,7 +850,6 @@ export default async function handler(req, res) {
                             verified_at: new Date().toISOString()
                         }]);
                     }
->>>>>>> origin/main
 
                     return res.status(402).json({
                         error: "PURCHASE_NOT_VALID",
@@ -1008,22 +928,12 @@ export default async function handler(req, res) {
                         timestamp: new Date().toISOString()
                     });
 
-<<<<<<< HEAD
-                    // Send success notification email (non-blocking)
-                    sendPaymentSuccessEmail(
-                        productId,
-                        transactionId,
-                        deviceId,
-                        googleUid || 'anonymous'
-                    ).catch(e => console.error('Email send failed:', e));
-=======
                     // Send payment success notification email
                     await sendPaymentNotification('payment_success', {
                         transactionId,
                         deviceId: maskDeviceId(deviceId),
                         googleUid: googleUid || 'Anonymous'
                     }).catch(e => console.warn('Failed to send success notification:', e));
->>>>>>> origin/main
 
                     return res.status(200).json({ success: true, verified: true, tier: targetTier, creditsAdded: creditsToAdd });
 
