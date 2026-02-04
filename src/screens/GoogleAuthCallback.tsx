@@ -70,11 +70,11 @@ const GoogleAuthCallback: React.FC = () => {
                     } else {
                         // Web: Proxy exchange via Backend (Safely uses GOOGLE_CLIENT_SECRET)
                         console.log('🌐 Web Auth: Proxying exchange via Backend');
-                        const apiResponse = await fetch(Config.VITE_AG_API_URL, {
+                        const apiResponse = await fetch(`${Config.VITE_AG_API_URL}/api/index`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || ''
+                                'x-ag-signature': import.meta.env.VITE_AG_PROTOCOL_SIGNATURE || import.meta.env.VITE_AG_SIGNATURE || ''
                             },
                             body: JSON.stringify({
                                 type: 'exchange_google_code',
