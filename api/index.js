@@ -251,41 +251,83 @@ async function validateWithGooglePlay(productId, purchaseToken) {
         const now = Date.now();
 
         if (isSubscription) {
-            const res = await api.purchases.subscriptions.get({
-                packageName: PACKAGE_NAME,
-                subscriptionId: productId,
-                token: purchaseToken,
-            });
+            // Add 5 second timeout to Google Play API call
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
 
-            // SECURITY (V4): Verify Acknowledgment + Payment + Expiry
+            let res;
+            try {
+                res = await api.purchases.subscriptions.get({
+                    packageName: PACKAGE_NAME,
+                    subscriptionId: productId,
+                    token: purchaseToken,
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timeout);
+            }
+
+            // SECURITY (V5): Verify Acknowledgment + Payment (ACTUAL PAYMENT ONLY) + Expiry
             const isAcknowledged = res.data.acknowledgementState === 1;
-            const isPaid = res.data.paymentState === 1 || res.data.paymentState === 2; // 1=Received, 2=Free Trial
+
+            // P0 FIX: REJECT free trials explicitly
+            // paymentState: 0=free trial, 1=paid, 2=free trial (legacy)
+            const paymentState = res.data.paymentState;
+            const purchaseState = res.data.purchaseState; // 0=purchased, 1=canceled
             const expiryTime = res.data.expiryTimeMillis ? parseInt(res.data.expiryTimeMillis) : 0;
             const isActive = expiryTime > now;
+
+            if (paymentState !== 1) {
+                console.warn(`🛡️ Anti-Gravity Security: Rejecting non-paid subscription (paymentState=${paymentState})`, {
+                    productId,
+                    isFreeTrial: paymentState === 0 || paymentState === 2
+                });
+                return false;
+            }
+
+            if (purchaseState !== 0) {
+                console.warn(`🛡️ Anti-Gravity Security: Rejecting cancelled subscription (purchaseState=${purchaseState})`);
+                return false;
+            }
 
             if (!isAcknowledged && IS_PRODUCTION) {
                 console.warn(`Anti-Gravity Security: Unacknowledged purchase detected for ${productId}`);
                 return false;
             }
 
-            return isPaid && isActive;
+            return isActive;
         } else {
-            const res = await api.purchases.products.get({
-                packageName: PACKAGE_NAME,
-                productId: productId,
-                token: purchaseToken,
-            });
+            // Add 5 second timeout to Google Play API call
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
 
-            // SECURITY (V4): Verify Acknowledgment for One-time products
+            let res;
+            try {
+                res = await api.purchases.products.get({
+                    packageName: PACKAGE_NAME,
+                    productId: productId,
+                    token: purchaseToken,
+                    signal: controller.signal
+                });
+            } finally {
+                clearTimeout(timeout);
+            }
+
+            // SECURITY (V5): Verify Acknowledgment + Purchased State only
             const isAcknowledged = res.data.acknowledgementState === 1;
-            const isPurchased = res.data.purchaseState === 0;
+            const isPurchased = res.data.purchaseState === 0; // 0=purchased, 1=canceled
 
             if (!isAcknowledged && IS_PRODUCTION) {
                 console.warn(`Anti-Gravity Security: Unacknowledged product detected for ${productId}`);
                 return false;
             }
 
-            return isPurchased;
+            if (!isPurchased) {
+                console.warn(`🛡️ Anti-Gravity Security: Product not purchased (purchaseState=${res.data.purchaseState})`);
+                return false;
+            }
+
+            return true;
         }
     } catch (err) {
         console.error(`Google Play Verification Failed for ${productId}:`, err.message);
@@ -792,19 +834,23 @@ export default async function handler(req, res) {
                     return res.status(200).json({ success: true, message: 'NUCLEAR_RESET_COMPLETE' });
                 }
 
-                // 3. DEDUPLICATION: Prevent Replay Attacks
-                if (transactionId) {
-                    const { data: existing } = await supabase
-                        .from('purchase_transactions')
-                        .select('transaction_id')
-                        .eq('transaction_id', transactionId)
-                        .maybeSingle();
+                // 3. DEDUPLICATION: P0 FIX - Use database constraint instead of SELECT+INSERT
+                // The following comment explains why we DON'T do SELECT before INSERT:
+                // Race condition: Thread1 selects(not found) -> Thread2 selects(not found) -> Thread1 inserts -> Thread2 inserts(ERROR)
+                // Solution: Let database constraint handle it, catch 23505 (unique violation)
+                // This atomic operation prevents the race condition entirely.
 
-                    if (existing) {
-                        console.log(`ℹ️ api/index: Blocking duplicate transaction ${transactionId}`);
-                        return res.status(409).json({ error: 'DUPLICATE_TRANSACTION', details: 'This purchase has already been verified.' });
-                    }
-                }
+                // We'll insert audit log FIRST (before granting tier) to ensure atomicity
+                // If insertion fails due to DUPLICATE, we know transaction was already processed
+                const auditLog = {
+                    transaction_id: transactionId,
+                    device_id: deviceId,
+                    google_uid: session?.uid || null,
+                    product_id: productId,
+                    purchase_token: purchaseToken,
+                    status: 'pending',  // Mark as pending initially
+                    verified_at: new Date().toISOString()
+                };
 
                 // 4. AUTHORITATIVE VERIFICATION: Google Play API
                 // SECURITY: Strict Mode - No fallback heuristics (Issue #2 Fix)
@@ -873,7 +919,53 @@ export default async function handler(req, res) {
                         targetTier = 'lifetime';
                     }
 
-                    // 6. ATOMIC UPDATES
+                    // P0 FIX: 6. INSERT AUDIT LOG FIRST (before granting tier)
+                    // This prevents the "tier granted but no audit record" scenario
+                    // Database constraint prevents duplicates (unique violation = already processed)
+                    if (transactionId) {
+                        const auditInsert = await supabase.from('purchase_transactions').insert([{
+                            transaction_id: transactionId,
+                            device_id: deviceId,
+                            google_uid: session?.uid || null,
+                            product_id: productId,
+                            purchase_token: purchaseToken,
+                            status: 'success',
+                            amount: 29.99, // Standardized for summary
+                            currency: 'USD',
+                            verified_at: new Date().toISOString()
+                        }]);
+
+                        // Check for unique constraint violation (means this transaction was already processed)
+                        if (auditInsert.error) {
+                            if (auditInsert.error.code === '23505') {
+                                // UNIQUE constraint violation - transaction already processed
+                                console.log(`ℹ️ Duplicate transaction detected (already processed): ${transactionId}`);
+                                return res.status(409).json({
+                                    error: 'DUPLICATE_TRANSACTION',
+                                    details: 'This purchase has already been verified.',
+                                    transactionId
+                                });
+                            } else {
+                                // Other database error
+                                console.error(`❌ CRITICAL: Audit log insertion failed:`, auditInsert.error);
+                                // Send critical alert
+                                await sendPaymentNotification('payment_failed', {
+                                    transactionId,
+                                    deviceId: maskDeviceId(deviceId),
+                                    googleUid: googleUid || 'Anonymous',
+                                    error: 'AUDIT_INSERT_FAILED',
+                                    details: `Database error: ${auditInsert.error.message}`
+                                }).catch(e => console.warn('Failed to send failure notification:', e));
+                                return res.status(500).json({
+                                    error: 'AUDIT_FAILED',
+                                    details: 'Failed to record transaction in audit log'
+                                });
+                            }
+                        }
+                        console.log('✅ Audit log recorded first');
+                    }
+
+                    // 7. NOW GRANT TIER (after audit is safely recorded)
                     if (targetTier) {
                         console.log(`🛡️ GRANTING ${targetTier.toUpperCase()} STATUS`, {
                             productId,
@@ -901,22 +993,6 @@ export default async function handler(req, res) {
                             p_google_uid: session?.uid || null,
                             p_amount: creditsToAdd
                         });
-                    }
-
-                    // 7. AUDIT LOGGING (Improved for Dashboard)
-                    if (transactionId) {
-                        const auditResult = await supabase.from('purchase_transactions').insert([{
-                            transaction_id: transactionId,
-                            device_id: deviceId,
-                            google_uid: session?.uid || null,
-                            product_id: productId,
-                            purchase_token: purchaseToken,
-                            status: 'success',
-                            amount: 29.99, // Standardized for summary
-                            currency: 'USD',
-                            verified_at: new Date().toISOString()
-                        }]);
-                        console.log('✅ Audit log recorded:', { error: auditResult.error });
                     }
 
                     console.log(`✅✅✅ PURCHASE COMPLETE AND GRANTED`, {
