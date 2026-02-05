@@ -19,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             const user = await getCurrentUser();
+            console.log('🔍 ProtectedRoute: Auth check result:', user ? { uid: user.google_uid, email: user.email } : 'NOT_LOGGED_IN');
             if (user) {
                 setIsAuthenticated(true);
             } else {

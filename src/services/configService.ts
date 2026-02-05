@@ -33,9 +33,10 @@ export const Config: AppConfig = {
     VITE_SUPABASE_URL: getEnvVar('VITE_SUPABASE_URL'),
     VITE_SUPABASE_ANON_KEY: getEnvVar('VITE_SUPABASE_ANON_KEY'),
     // REMOVED: VITE_AG_PROTOCOL_SIGNATURE (accessed directly from import.meta.env where needed)
-    VITE_AG_API_URL: import.meta.env.PROD
-        ? 'https://pdf-tools-pro-indol.vercel.app'
-        : 'http://localhost:3000',
+    VITE_AG_API_URL: 'https://pdf-tools-pro-indol.vercel.app', // Temporarily use production API for local testing
+    // VITE_AG_API_URL: import.meta.env.PROD
+    //     ? 'https://pdf-tools-pro-indol.vercel.app'
+    //     : 'http://localhost:3000',
     VITE_ADMIN_UIDS: (import.meta.env.VITE_ADMIN_UIDS || '').split(',').filter(Boolean),
     IS_PRODUCTION: import.meta.env.PROD,
     GOOGLE_WEB_CLIENT_ID: import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID ||

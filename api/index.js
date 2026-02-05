@@ -1099,6 +1099,83 @@ export default async function handler(req, res) {
                 }
             }
 
+            // ADMIN RECOVERY: Force sync a verified purchase without strict CSRF
+            // This is for cases where payment succeeded but sync failed due to session issues
+            if (requestType === 'admin_force_sync_purchase') {
+                const ADMIN_UIDS = (process.env.ADMIN_UIDS || '').split(',').filter(Boolean);
+                const isAdmin = ADMIN_UIDS.includes(session?.uid);
+
+                if (!isAdmin) {
+                    console.warn(`🛡️ Anti-Gravity Security: Unauthorized admin_force_sync attempt by ${maskDeviceId(session?.uid || deviceId)}`);
+                    return res.status(403).json({ error: 'UNAUTHORIZED', details: 'Admin privileges required.' });
+                }
+
+                const { targetDeviceId, targetGoogleUid, purchaseToken, productId, transactionId } = req.body;
+
+                if (!purchaseToken || !productId) {
+                    return res.status(400).json({ error: 'INVALID_REQUEST', details: 'Missing purchaseToken or productId' });
+                }
+
+                console.log(`☢️ ADMIN FORCE SYNC INITIATED by ${maskDeviceId(session.uid)}`, {
+                    targetDeviceId: maskDeviceId(targetDeviceId),
+                    targetGoogleUid: maskDeviceId(targetGoogleUid),
+                    productId,
+                    transactionId
+                });
+
+                // Step 1: Verify with Google Play (REQUIRED - we don't bypass this)
+                const isVerified = await validateWithGooglePlay(productId, purchaseToken);
+                if (!isVerified) {
+                    return res.status(402).json({ error: 'PURCHASE_NOT_VALID', details: 'Google Play verification failed' });
+                }
+
+                console.log(`✅ Admin Force Sync: Google Play verified purchase`);
+
+                // Step 2: Insert audit log
+                if (transactionId) {
+                    const auditInsert = await supabase.from('purchase_transactions').insert([{
+                        transaction_id: transactionId,
+                        device_id: targetDeviceId || deviceId,
+                        google_uid: targetGoogleUid || null,
+                        product_id: productId,
+                        purchase_token: purchaseToken,
+                        status: 'success_admin_recovery',
+                        verified_at: new Date().toISOString()
+                    }]);
+
+                    if (auditInsert.error && auditInsert.error.code !== '23505') {
+                        console.error('Admin Force Sync: Audit insert failed:', auditInsert.error);
+                    }
+                }
+
+                // Step 3: Grant tier
+                const targetTier = 'lifetime';
+
+                if (targetDeviceId) {
+                    await supabase.from('ag_user_usage').upsert(
+                        [{ device_id: targetDeviceId, tier: targetTier }],
+                        { onConflict: 'device_id' }
+                    );
+                    console.log(`✅ Admin Force Sync: Updated ag_user_usage for device ${maskDeviceId(targetDeviceId)}`);
+                }
+
+                if (targetGoogleUid) {
+                    await supabase.from('user_accounts').update({
+                        tier: targetTier,
+                        active_purchase_token: purchaseToken
+                    }).eq('google_uid', targetGoogleUid);
+                    console.log(`✅ Admin Force Sync: Updated user_accounts for ${maskDeviceId(targetGoogleUid)}`);
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'ADMIN_FORCE_SYNC_COMPLETE',
+                    tier: targetTier,
+                    targetDeviceId: maskDeviceId(targetDeviceId),
+                    targetGoogleUid: maskDeviceId(targetGoogleUid)
+                });
+            }
+
             if (requestType === 'usage_fetch') {
                 if (session?.is_auth) {
                     try {

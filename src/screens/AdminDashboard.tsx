@@ -81,8 +81,15 @@ const AdminDashboard: React.FC = () => {
     React.useEffect(() => {
         const checkAccess = async () => {
             const user = await getCurrentUser();
+            console.log('🔍 Admin Access Check:', {
+                user: user ? { uid: user.google_uid, email: user.email } : null,
+                allowedUIDs: Config.VITE_ADMIN_UIDS,
+                hasAccess: user && Config.VITE_ADMIN_UIDS.includes(user.google_uid)
+            });
             if (!user || !Config.VITE_ADMIN_UIDS.includes(user.google_uid)) {
-                console.warn('🛡️ Security: Unauthorized dashboard access attempt.');
+                console.warn('🛡️ Security: Unauthorized dashboard access attempt.', {
+                    reason: !user ? 'Not logged in' : 'UID not in VITE_ADMIN_UIDS'
+                });
                 navigate('/workspace');
                 return;
             }
@@ -331,6 +338,93 @@ const AdminDashboard: React.FC = () => {
                             </div>
                         </div>
                     )}
+                </div>
+
+                {/* Recovery Section */}
+                <div className="rounded-[40px] border border-red-500/20 bg-red-500/5 p-8 space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
+                            <AlertCircle size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black uppercase tracking-tight">Payment Recovery</h3>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold">Force sync purchase when normal verification failed</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input
+                            type="text"
+                            placeholder="PURCHASE TOKEN FROM GOOGLE PLAY..."
+                            id="recovery-token"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-red-500/30 rounded-2xl py-3 px-5 text-[10px] font-bold uppercase tracking-widest outline-none"
+                        />
+                        <input
+                            type="text"
+                            placeholder="TARGET GOOGLE UID..."
+                            id="recovery-uid"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-red-500/30 rounded-2xl py-3 px-5 text-[10px] font-bold uppercase tracking-widest outline-none"
+                        />
+                        <input
+                            type="text"
+                            placeholder="TARGET DEVICE ID..."
+                            id="recovery-device"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-red-500/30 rounded-2xl py-3 px-5 text-[10px] font-bold uppercase tracking-widest outline-none"
+                        />
+                        <input
+                            type="text"
+                            placeholder="TRANSACTION ID (OPTIONAL)..."
+                            id="recovery-transaction"
+                            className="w-full bg-black/5 dark:bg-white/5 border border-transparent focus:border-red-500/30 rounded-2xl py-3 px-5 text-[10px] font-bold uppercase tracking-widest outline-none"
+                        />
+                    </div>
+
+                    <button
+                        onClick={async () => {
+                            const purchaseToken = (document.getElementById('recovery-token') as HTMLInputElement)?.value;
+                            const targetGoogleUid = (document.getElementById('recovery-uid') as HTMLInputElement)?.value;
+                            const targetDeviceId = (document.getElementById('recovery-device') as HTMLInputElement)?.value;
+                            const transactionId = (document.getElementById('recovery-transaction') as HTMLInputElement)?.value;
+
+                            if (!purchaseToken) {
+                                alert('Purchase token is required');
+                                return;
+                            }
+                            if (!targetGoogleUid && !targetDeviceId) {
+                                alert('Either Google UID or Device ID is required');
+                                return;
+                            }
+
+                            if (!window.confirm(`Force sync Lifetime access?\n\nTarget: ${targetGoogleUid || targetDeviceId}\n\nThis will verify with Google Play first.`)) return;
+
+                            try {
+                                const res = await secureFetch(`${Config.VITE_AG_API_URL}/api/index`, {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        type: 'admin_force_sync_purchase',
+                                        purchaseToken,
+                                        productId: 'lifetime_pro_access',
+                                        targetGoogleUid: targetGoogleUid || null,
+                                        targetDeviceId: targetDeviceId || null,
+                                        transactionId: transactionId || `recovery_${Date.now()}`
+                                    })
+                                });
+
+                                const data = await res.json();
+                                if (res.ok) {
+                                    alert(`Recovery successful!\n\n${JSON.stringify(data, null, 2)}`);
+                                    fetchData();
+                                } else {
+                                    alert(`Recovery failed: ${data.error}\n\n${data.details || ''}`);
+                                }
+                            } catch (err: any) {
+                                alert(`Recovery error: ${err.message}`);
+                            }
+                        }}
+                        className="px-6 py-3 bg-red-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all active:scale-95"
+                    >
+                        Force Sync (Verifies with Google Play)
+                    </button>
                 </div>
 
                 {/* Footer */}

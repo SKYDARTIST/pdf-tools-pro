@@ -363,28 +363,28 @@ class BillingService {
                 timestamp: new Date().toISOString()
             });
 
-            // CRITICAL: Ensure session is valid with timeout protection
-            const sessionStatus = AuthService.getSessionStatus();
-            if (!sessionStatus.isValid) {
-                console.warn('Anti-Gravity Billing: Session invalid, attempting refresh with timeout...');
+            // CRITICAL FIX: ALWAYS force session refresh before purchase verification
+            // This ensures CSRF token UID matches the current session UID
+            // (Prevents CSRF_VALIDATION_FAILED when user logged in after initial session)
+            console.log('Anti-Gravity Billing: 🔄 Forcing session refresh to ensure CSRF sync...');
 
-                // Refresh session with 5-second timeout
-                const refreshPromise = AuthService.initializeSession();
-                const timeoutPromise = new Promise<{ success: boolean }>((_, reject) =>
-                    setTimeout(() => reject(new Error('Session refresh timeout after 5s')), 5000)
-                );
+            const refreshPromise = AuthService.initializeSession();
+            const timeoutPromise = new Promise<{ success: boolean }>((_, reject) =>
+                setTimeout(() => reject(new Error('Session refresh timeout after 8s')), 8000)
+            );
 
-                try {
-                    const result = await Promise.race([refreshPromise, timeoutPromise]);
-                    if (!result.success) {
-                        console.error('Anti-Gravity Billing: ❌ Session refresh failed');
-                        return false;
-                    }
-                    console.log('Anti-Gravity Billing: ✅ Session refreshed successfully');
-                } catch (refreshError: any) {
-                    console.error('Anti-Gravity Billing: ❌ Session refresh failed:', refreshError.message);
+            try {
+                const result = await Promise.race([refreshPromise, timeoutPromise]);
+                if (!result.success) {
+                    console.error('Anti-Gravity Billing: ❌ Session refresh failed - cannot verify purchase');
+                    alert('⚠️ Session error. Your payment was received but sync failed.\n\nPlease try "Restore Purchases" from Settings, or restart the app.');
                     return false;
                 }
+                console.log('Anti-Gravity Billing: ✅ Session and CSRF token refreshed');
+            } catch (refreshError: any) {
+                console.error('Anti-Gravity Billing: ❌ Session refresh timeout:', refreshError.message);
+                alert('⚠️ Connection timeout. Your payment was received but sync failed.\n\nPlease try "Restore Purchases" from Settings, or restart the app.');
+                return false;
             }
 
             // secureFetch automatically includes CSRF token and x-ag-timestamp
@@ -423,6 +423,19 @@ class BillingService {
                     details: errorData.details,
                     transactionId
                 });
+
+                // ENHANCED ERROR REPORTING: Show specific error to user for debugging
+                if (response.status === 403 && errorData.error === 'CSRF_VALIDATION_FAILED') {
+                    console.error('Anti-Gravity Billing: 🚨 CSRF mismatch - session/token sync issue');
+                    // Don't alert here - pending queue will retry after session refresh
+                } else if (response.status === 402) {
+                    console.error('Anti-Gravity Billing: 🚨 Google Play verification failed - receipt may be invalid');
+                } else if (response.status === 401) {
+                    console.error('Anti-Gravity Billing: 🚨 Unauthorized - session token rejected');
+                } else if (response.status === 429) {
+                    console.error('Anti-Gravity Billing: 🚨 Rate limited - too many verification attempts');
+                }
+
                 return false;
             }
 
