@@ -177,7 +177,7 @@ const DataExtractorScreen: React.FC = () => {
                             description="Automatically pull information from invoices, receipts, and handwritten notes. Our AI organizes it into a format you can use."
                             steps={[
                                 "Upload a PDF or an image (JPG/PNG).",
-                                "Select the format you want (JSON, CSV, or Markdown).",
+                                "Select the format you want (Excel, Word, or Text).",
                                 "Tap 'Start AI Extraction' to process the file.",
                                 "Download your data file."
                             ]}
@@ -222,7 +222,7 @@ const DataExtractorScreen: React.FC = () => {
                                             {f === 'json' && <FileJson size={14} />}
                                             {f === 'csv' && <FileSpreadsheet size={14} />}
                                             {f === 'markdown' && <PenTool size={14} />}
-                                            {f.toUpperCase()}
+                                            {f === 'json' ? 'Excel/Data' : f === 'csv' ? 'Table/Sheet' : 'Text/Doc'}
                                         </button>
                                     ))}
                                 </div>

@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Goal**: Simplify from 3 tiers (Free, Pro Monthly, Lifetime) to 2 tiers (Free, Lifetime $29.99)
+**Goal**: Simplify from 3 tiers (Free, Pro Monthly, Lifetime) to 2 tiers (Free, Lifetime $4.99)
 
 **Why**: Reduce complexity, eliminate credit counters, focus on simple value proposition
 
@@ -25,7 +25,7 @@
 3. Navigate: **Monetize** → **Products** → **In-app products**
 4. Find product: `lifetime_pro_access`
 5. Click **Edit**
-6. Change price: **$29.99 USD**
+6. Change price: **$4.99 USD**
 7. Click **Save**
 
 **Note**: Price changes propagate in 2-4 hours globally.
@@ -58,7 +58,7 @@ After changes, verify:
 
 ```
 Products Status:
-- lifetime_pro_access: Active, $29.99 ✅
+- lifetime_pro_access: Active, $4.99 ✅
 - monthly_pro_pass: Active (hidden) or Deactivated ✅
 ```
 
@@ -218,7 +218,7 @@ export type SubscriptionTier = 'free' | 'lifetime';
    - Center the two cards
 
 3. **Update Lifetime Card**
-   - Change price display to **$29.99**
+   - Change price display to **$4.99**
    - Update features list to emphasize "Ultimate" tier
    - Add "Most Popular" badge
 
@@ -665,7 +665,7 @@ if (subscription.tier !== 'lifetime') {
 <Text>Tier: {tier === 'lifetime' ? 'Lifetime Member' : 'Free'}</Text>
 {tier === 'free' && (
   <TouchableOpacity onPress={navigateToPricing}>
-    <Text>Upgrade to Lifetime for $29.99</Text>
+    <Text>Upgrade to Lifetime for $4.99</Text>
   </TouchableOpacity>
 )}
 ```
@@ -692,7 +692,7 @@ if (subscription.tier !== 'lifetime') {
 
 **Steps:**
 1. Fresh install
-2. Purchase Lifetime ($29.99)
+2. Purchase Lifetime ($4.99)
 3. Use AI Summarize 20 times
 
 **Expected:**
@@ -726,7 +726,7 @@ if (subscription.tier !== 'lifetime') {
 
 **Expected:**
 - ✅ Shows 2 cards: Free, Lifetime
-- ✅ Lifetime shows $29.99
+- ✅ Lifetime shows $4.99
 - ✅ No Monthly/Pro option visible
 
 ---
@@ -761,7 +761,7 @@ SELECT * FROM user_accounts LIMIT 1;
 1. **Push code changes to production**
    ```bash
    git add .
-   git commit -m "Simplify to 2-tier system (Free + Lifetime $29.99)"
+   git commit -m "Simplify to 2-tier system (Free + Lifetime $4.99)"
    git push origin main
    ```
 
@@ -839,7 +839,7 @@ ALTER TABLE user_accounts_backup RENAME TO user_accounts;
 ### What Changes
 
 **Google Play Console:**
-- ✅ Update Lifetime to $29.99
+- ✅ Update Lifetime to $4.99
 - ✅ Deactivate or hide Monthly Pass
 
 **Database:**

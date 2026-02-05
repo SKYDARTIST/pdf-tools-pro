@@ -138,11 +138,11 @@ const PricingScreen: React.FC = () => {
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-6 h-px bg-[#00C896]/30" />
-            <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Value Protocol</span>
+            <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Pricing Plans</span>
             <div className="w-6 h-px bg-[#00C896]/30" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-[#000000] dark:text-white uppercase tracking-tighter leading-none px-4">
-            Own Your Intelligence
+            One-Time Access
           </h1>
           <p className="text-[10px] sm:text-[11px] font-bold text-[#909090] dark:text-[#909090] uppercase tracking-[0.4em]">
             Zero Subscriptions • Perpetual Access • Local Privacy
@@ -190,7 +190,7 @@ const PricingScreen: React.FC = () => {
                           {tier.id === SubscriptionTier.LIFETIME ? 'LIFETIME' : 'LITE ACTIVE'}
                         </span>
                         <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                          {tier.id === SubscriptionTier.LIFETIME ? 'UTILITY UNLOCKED' : 'BASE CAPACITY'}
+                          {tier.id === SubscriptionTier.LIFETIME ? 'PRO FEATURES UNLOCKED' : 'FREE VERSION'}
                         </span>
                       </div>
                     ) : (
@@ -249,7 +249,7 @@ const PricingScreen: React.FC = () => {
                     : 'bg-[#00C896] text-white shadow-xl hover:brightness-110 active:scale-95'
                     }`}
                 >
-                  {isLoading && tier.id === SubscriptionTier.LIFETIME ? 'ESTABLISHING HANDSHAKE...' : tier.cta}
+                  {isLoading && tier.id === SubscriptionTier.LIFETIME ? 'CONNECTING SECURELY...' : tier.cta}
                 </motion.button>
 
                 {/* Lifetime-specific Support Notice */}
@@ -285,7 +285,7 @@ const PricingScreen: React.FC = () => {
 
           <div className="relative z-10 flex flex-col items-center text-center space-y-6">
             <div className="flex flex-col items-center gap-2">
-              <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Support & Recovery</span>
+              <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Support & Help</span>
               <h4 className="text-2xl font-black uppercase tracking-tighter">Already a Lifetime Buyer?</h4>
               <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest max-w-md">
                 If your badge hasn't appeared, use the tools below to sync your status or contact me directly.
@@ -309,7 +309,7 @@ const PricingScreen: React.FC = () => {
                 className="flex-1 px-8 py-4 rounded-3xl bg-[#00C896]/10 border border-[#00C896]/30 text-[10px] font-black uppercase tracking-[0.3em] text-[#00C896] hover:bg-[#00C896]/20 transition-all flex items-center justify-center gap-2"
               >
                 <Activity size={14} className={isLoading ? 'animate-spin' : ''} />
-                {isLoading ? 'SYNCING...' : 'RECONCILE TIERS'}
+                {isLoading ? 'SYNCING...' : 'SYNC MY PURCHASE'}
               </button>
 
               <button
@@ -334,7 +334,7 @@ const PricingScreen: React.FC = () => {
                 className="flex-1 px-8 py-4 rounded-3xl border border-gray-200 dark:border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-[#00C896] hover:border-[#00C896]/30 transition-all flex items-center justify-center gap-2"
               >
                 <Activity size={14} className={isLoading ? 'animate-spin' : ''} />
-                {isLoading ? 'HANDSHAKE STORE' : 'RESTORE PURCHASES'}
+                {isLoading ? 'CHECKING...' : 'CHECK STORE STATUS'}
               </button>
             </div>
 

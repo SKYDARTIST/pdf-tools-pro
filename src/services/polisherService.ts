@@ -43,7 +43,7 @@ export const getPolisherProtocol = async (sampleText?: string, imageBase64?: str
                     grayscale: 0,
                     sharpness: 115,
                     shadowPurge: false,
-                    reason: "Photo Boost: Clarified details with color preservation"
+                    reason: "Photo Boost: Clarified details and enhanced colors"
                 };
             }
 
@@ -89,7 +89,7 @@ export const getReconstructionProtocol = async (sampleText?: string, imageBase64
                 perspectiveCorrection: false,
                 autoCrop: false,
                 textEnhancement: true,
-                reason: "Neural Enhancement: High-Fidelity Color Restoration"
+                reason: "Quality Boost: Enhanced details and colors"
             };
         } catch (parseErr) {
             console.error("Reconstruction Parse Error:", parseErr);
@@ -107,7 +107,7 @@ const defaultFilters: ScanFilters = {
     grayscale: 0,
     sharpness: 120,
     shadowPurge: false,
-    reason: "Professional enhancement with color preservation"
+    reason: "Professional quality boost"
 };
 
 const reconstructionDefaults: ScanFilters = {
@@ -119,5 +119,5 @@ const reconstructionDefaults: ScanFilters = {
     perspectiveCorrection: false, // Disabled for now
     autoCrop: false, // Disabled for now
     textEnhancement: true, // Keep enabled
-    reason: "Neural Reconstruction: Optimized contrast + pro text sharpening"
+    reason: "Maximum Quality: Fixed lighting and sharpened text"
 };

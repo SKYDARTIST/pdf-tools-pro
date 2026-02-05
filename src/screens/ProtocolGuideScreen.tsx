@@ -46,7 +46,7 @@ const ProtocolGuideScreen: React.FC = () => {
                 },
                 {
                     title: 'Smart Reader',
-                    desc: 'Immersive reading environment with neural augmentation.',
+                    desc: 'Immersive reading environment with AI smart-scrolling.',
                     icon: BookOpen,
                     path: '/reader?protocol=read',
                     useCases: ['Academic Research', 'Technical Analysis', 'Mobile Reading'],
@@ -57,7 +57,7 @@ const ProtocolGuideScreen: React.FC = () => {
                     desc: 'Turn messy scans and handwriting into sharp data.',
                     icon: Database,
                     path: '/data-extractor',
-                    useCases: ['Invoice Processing', 'Medical OCR', 'Handwritten Notes'],
+                    useCases: ['Invoice Processing', 'Reading Forms', 'Handwritten Notes'],
                     isElite: true
                 },
                 {
@@ -69,7 +69,7 @@ const ProtocolGuideScreen: React.FC = () => {
                     isElite: true
                 },
                 {
-                    title: 'AI Diff',
+                    title: 'Compare Versions',
                     desc: 'Highlight every change between document versions.',
                     icon: GitMerge,
                     path: '/neural-diff',
@@ -182,7 +182,7 @@ const ProtocolGuideScreen: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500">Operation</span>
                                 <div className="w-4 h-px bg-gray-200 dark:bg-white/10" />
-                                <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500">Manual</span>
+                                <span className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-gray-400 dark:text-gray-500">User Manual</span>
                             </div>
                             <h1 className="text-5xl font-black tracking-tighter text-black dark:text-white uppercase leading-none">Guide</h1>
                         </div>
@@ -251,7 +251,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                                         {tool.isElite && (
                                                             <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#00C896]/10 border border-[#00C896]/20 rounded-lg">
                                                                 <Sparkles size={8} className="text-[#00C896]" />
-                                                                <span className="text-[7px] font-black text-[#00C896] uppercase tracking-widest">AI ELITE</span>
+                                                                <span className="text-[7px] font-black text-[#00C896] uppercase tracking-widest">AI FEATURE</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -275,7 +275,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                                     : 'bg-black dark:bg-white text-white dark:text-black'
                                                     }`}
                                             >
-                                                {tool.isElite ? 'Deploy Neural Link' : 'Open Core Tool'}
+                                                {tool.isElite ? 'Open AI Tool' : 'Open Tool'}
                                                 <ChevronRight size={14} />
                                             </motion.button>
                                         </motion.div>
@@ -288,7 +288,7 @@ const ProtocolGuideScreen: React.FC = () => {
                     {filteredSections.length === 0 && (
                         <div className="text-center py-20 opacity-30 text-black dark:text-white">
                             <Info size={40} className="mx-auto mb-4" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">Protocol Search Error: No Assets Found</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest">Guide Search Error: No Tools Found</p>
                         </div>
                     )}
 

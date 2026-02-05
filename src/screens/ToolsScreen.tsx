@@ -21,15 +21,15 @@ const ToolsScreen: React.FC = () => {
     ];
 
     const tools = [
-        { title: 'Scanner', desc: 'AI Document Scanner', icon: Zap, path: '/scanner', cat: 'popular', isPro: true },
+        { title: 'Scanner', desc: 'Scan Documents with AI', icon: Zap, path: '/scanner', cat: 'popular', isPro: true },
         { title: 'Merge', desc: 'Merge PDF Documents', icon: Combine, path: '/merge', cat: 'popular' },
         { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular' },
-        { title: 'Sign', desc: 'Sign PDF High-Security', icon: PenTool, path: '/sign', cat: 'security', isPro: true },
+        { title: 'Sign', desc: 'Securely Sign PDFs', icon: PenTool, path: '/sign', cat: 'security', isPro: true },
         { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
-        { title: 'To Text', desc: 'Extract PDF Text layer', icon: FileText, path: '/extract-text', cat: 'convert' },
+        { title: 'Extract Text', desc: 'Get text from your PDF', icon: FileText, path: '/extract-text', cat: 'convert' },
         { title: 'Rotate', desc: 'Rotate PDF Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
         { title: 'Watermark', desc: 'Add Secure Watermark', icon: Droplet, path: '/watermark', cat: 'security' },
-        { title: 'Get Images', desc: 'Extract PDF Images', icon: FileImage, path: '/extract-images', cat: 'convert' },
+        { title: 'Extract Images', desc: 'Save images from your PDF', icon: FileImage, path: '/extract-images', cat: 'convert' },
         { title: 'Remove', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
         { title: 'Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'popular' },
     ];
@@ -70,7 +70,7 @@ const ToolsScreen: React.FC = () => {
                                     transition={{ duration: 2, repeat: Infinity }}
                                     className="text-[6px] font-mono font-black bg-[#E6FAF5] text-[#00C896] px-2 py-0.5 rounded-full uppercase tracking-widest border border-[#00C896]/20 shadow-[0_0_10px_rgba(0,200,150,0.1)]"
                                 >
-                                    ELITE
+                                    PRO
                                 </motion.span>
                             )}
                         </div>
@@ -106,9 +106,9 @@ const ToolsScreen: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-4"
                 >
-                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Document Engine</div>
+                    <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">All PDF Tools</div>
                     <h1 className="text-5xl font-black tracking-tighter text-[#000000] dark:text-white uppercase leading-none">Tools</h1>
-                    <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-[0.4em]">Select an optimized tool for your workflow</p>
+                    <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-[0.4em]">Choose a tool to start</p>
                 </motion.div>
 
                 <TaskCounter variant="inline" />

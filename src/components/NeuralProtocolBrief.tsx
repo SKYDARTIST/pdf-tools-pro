@@ -13,41 +13,41 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
     const content = {
         audit: {
             title: "AI Audit Guide",
-            subtitle: "Structural & Financial Investigation",
-            description: "Advanced AI-driven analysis designed for High-Stakes assets (Contracts, Invoices, Legal Filings). It identifies hidden risks, math discrepancies, and strategic savings without modifying your original file.",
+            subtitle: "Review Structure & Math",
+            description: "AI analysis designed for important documents (Contracts, Invoices, Legal Filings). It identifies hidden risks, math errors, and ways to save without changing your original file.",
             icon: <Shield size={24} className="text-emerald-500" />,
             color: "emerald",
             features: [
-                "Target: Legal Contracts, Commercial Invoices, Expense Reports.",
-                "Risk Identification: Flag legal loopholes and dangerous clauses.",
+                "Target: Legal Contracts, Invoices, Expense Reports.",
+                "Risk Identification: Flag legal loopholes and concerning clauses.",
                 "Financial Audit: Detect math errors and inconsistent billing.",
-                "Logic Mapping: Identify structural gaps in business proposals."
+                "Review Structure: Identify gaps in business proposals."
             ]
         },
         briefing: {
             title: "Summary Guide",
-            subtitle: "Strategic Audio Download",
-            description: "Converts long-form PDF assets into high-end professional podcast scripts for hands-free intellectual consumption.",
+            subtitle: "Download Audio Summary",
+            description: "Converts long PDF documents into professional audio summaries you can listen to anywhere.",
             icon: <Headphones size={24} className="text-violet-500" />,
             color: "violet",
             features: [
-                "Host Simulation: Professional executive tone.",
-                "Summarization: Focuses on core strategic decisions.",
-                "Mobile Intake: Optimized for commuters and elite travelers.",
-                "Text-to-Insight: Transmutes data into narrative wisdom."
+                "AI Voice: Professional and clear voice.",
+                "Summarization: Focuses on the most important points.",
+                "Listen on Mobile: Perfect for listening while you travel.",
+                "Easy Listening: Turns complex text into clear stories."
             ]
         },
         reader: {
             title: "Reader Guide",
-            subtitle: "High-Fidelity Sequential Intake",
-            description: "A private place for deep reading with smart text layout.",
+            subtitle: "High-Quality Reading Mode",
+            description: "A private place for deep reading with an easy-to-read layout.",
             icon: <Zap size={24} className="text-amber-500" />,
             color: "amber",
             features: [
-                "Fluid Mode: Responsive document reflow for mobile.",
-                "Deep Focus: Zero-distraction reading environment.",
-                "Instant Sync: Map architecture as you read.",
-                "Local-Only: Your documents never leave your storage."
+                "Mobile Mode: Adjusts document text to fit your screen.",
+                "Deep Focus: Reading environment with no distractions.",
+                "Instant Sync: See document details as you read.",
+                "Private & Safe: Your documents never leave your phone."
             ]
         }
     };
@@ -101,7 +101,7 @@ const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClo
                             </p>
 
                             <div className="space-y-4">
-                                <h5 className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-400">Core Matrix Features</h5>
+                                <h5 className="text-[9px] font-black uppercase tracking-[0.4em] text-gray-400">Key Features</h5>
                                 <div className="grid grid-cols-1 gap-3">
                                     {current.features.map((feature, i) => (
                                         <motion.div

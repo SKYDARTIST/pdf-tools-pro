@@ -301,7 +301,7 @@ const ScannerScreen: React.FC = () => {
           <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
             <span className="text-emerald-500 font-black text-[7px] tracking-[0.2em] uppercase">100% Watermark Free</span>
           </div>
-          <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Scanner_v4.0_PRO</span>
+          <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Version 4.0 PRO</span>
         </div>
         <button onClick={() => setFlash(!flash)} className={`p-2 transition-all ${flash ? 'text-white' : 'text-white/30'}`}>
           <Zap size={22} fill={flash ? "currentColor" : "none"} />
@@ -452,7 +452,7 @@ const ScannerScreen: React.FC = () => {
                 className="absolute inset-0 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4"
               >
                 <Loader2 className="animate-spin text-white" size={32} />
-                <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Enhancing quality...</span>
+                <span className="text-white font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Fixing photo quality...</span>
               </motion.div>
             )}
           </div>

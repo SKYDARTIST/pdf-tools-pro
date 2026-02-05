@@ -177,7 +177,7 @@ const LandingPage: React.FC = () => {
                         </motion.h1>
 
                         <div className="text-[10px] font-black uppercase tracking-[0.6em] text-[#2D3748] dark:text-gray-400 opacity-60">
-                            Elite AI • Zero Cloud • Private
+                            Smart AI • 100% Private • Fast
                         </div>
                     </motion.div>
 
@@ -204,7 +204,7 @@ const LandingPage: React.FC = () => {
 
                         <div className="flex flex-col items-center gap-4">
                             <div className="text-[8px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-[0.8em]">
-                                v2.2.0 Stable Build
+                                Version 2.2 Stable
                             </div>
                         </div>
                     </motion.div>

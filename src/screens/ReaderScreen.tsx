@@ -306,9 +306,9 @@ Analyze the provided document text and return ONLY the indented list structure.`
                 {!file ? (
                     <div className="space-y-12 max-w-2xl mx-auto">
                         <div className="space-y-3">
-                            <div className="text-technical">Available Tools / Reader</div>
+                            <div className="text-technical">Tools / Reading Hub</div>
                             <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Reader</h1>
-                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">Immersive reading environment with neural augmentation</p>
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">Immersive reading environment with smart AI features</p>
                         </div>
 
                         <ToolGuide
@@ -334,8 +334,8 @@ Analyze the provided document text and return ONLY the indented list structure.`
                     <div className="space-y-6">
                         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                             <div className="space-y-3 max-w-2xl">
-                                <div className="text-technical">Neural Reader / Document Hub</div>
-                                <h1 className="text-4xl font-black tracking-tighter uppercase leading-none text-gray-900 dark:text-white">Neural Hub</h1>
+                                <div className="text-technical">AI Reader / Document Hub</div>
+                                <h1 className="text-4xl font-black tracking-tighter uppercase leading-none text-gray-900 dark:text-white">Reading Hub</h1>
                             </div>
 
                             {/* Unified 4-Function Nav */}
@@ -406,7 +406,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
                                         </div>
                                         <div className="mt-8 text-center space-y-2">
                                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black dark:text-white">
-                                                {isLoading ? "Reading Document..." : (isGeneratingMindMap || isGeneratingOutline || isGeneratingSummary) ? "Neural Processing..." : "Synchronizing..."}
+                                                {isLoading ? "Reading Document..." : (isGeneratingMindMap || isGeneratingOutline || isGeneratingSummary) ? "AI working..." : "Connecting..."}
                                             </p>
                                         </div>
                                     </motion.div>
@@ -429,7 +429,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
                                             {isAsking && <div className="flex justify-start"><div className="bg-black/5 p-4 rounded-full rounded-tl-none animate-pulse">...</div></div>}
                                         </div>
                                         <div className="p-6 border-t border-black/5 dark:border-white/5 flex gap-3">
-                                            <input type="text" placeholder="ASK NEURAL ENGINE..." value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAsk()} className="flex-1 bg-black/5 dark:bg-white/5 border-none rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-widest focus:outline-none dark:text-white" />
+                                            <input type="text" placeholder="ASK THE AI..." value={chatQuery} onChange={(e) => setChatQuery(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAsk()} className="flex-1 bg-black/5 dark:bg-white/5 border-none rounded-2xl px-6 py-4 text-[10px] font-black uppercase tracking-widest focus:outline-none dark:text-white" />
                                             <button onClick={handleAsk} className="w-12 h-12 bg-black dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center shadow-xl hover:scale-105 transition-all"><Zap size={18} fill="currentColor" /></button>
                                         </div>
                                     </motion.div>
@@ -445,7 +445,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
                                                 }}
                                                 onLoadError={(err) => {
                                                     console.error("PDF Load Error:", err);
-                                                    setPdfError("Neural link failed to stabilize. Possible document corruption.");
+                                                    setPdfError("AI failed to open file. Possible document corruption.");
                                                 }}
                                                 loading={
                                                     <div className="flex flex-col items-center justify-center p-20 space-y-4">

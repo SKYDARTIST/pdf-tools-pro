@@ -6,6 +6,7 @@ import { Resend } from 'resend';
 
 // Email notification service
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'antigravitybybulla@gmail.com';
+const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 const EMAIL_SERVICE = process.env.EMAIL_SERVICE || 'resend'; // 'resend' or 'sendgrid'
 
 /**
@@ -112,7 +113,7 @@ async function sendViaResend(to, subject, htmlContent) {
                 'Authorization': `Bearer ${resendApiKey}`
             },
             body: JSON.stringify({
-                from: 'payments@antigravity.app',
+                from: RESEND_FROM_EMAIL,
                 to: to,
                 subject: subject,
                 html: htmlContent
@@ -121,6 +122,7 @@ async function sendViaResend(to, subject, htmlContent) {
 
         if (!response.ok) {
             const error = await response.json();
+            console.error('❌ Resend API Error Details:', JSON.stringify(error, null, 2));
             throw new Error(error.message || 'Resend API error');
         }
     } catch (error) {

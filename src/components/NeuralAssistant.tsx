@@ -22,7 +22,7 @@ const NeuralAssistant: React.FC = () => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<{ role: 'bot' | 'user', text: string, action?: { name: string; path: string } }[]>([
-        { role: 'bot', text: 'Assistant online. How can I help?' }
+        { role: 'bot', text: 'AI Assistant online. How can I help?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -59,11 +59,11 @@ const NeuralAssistant: React.FC = () => {
         const query = customQuery || input;
         if (!query.trim() || isLoading) return;
 
-        // ALL ASSISTANT INTERACTIONS ARE FREE (Protocol Transparency)
+        // ALL ASSISTANT INTERACTIONS ARE FREE
         const type = AiOperationType.GUIDANCE;
         const check = canUseAI(type);
         if (!check.allowed) {
-            setMessages(prev => [...prev, { role: 'bot', text: `Authorization Failed: ${check.reason}` }]);
+            setMessages(prev => [...prev, { role: 'bot', text: `Connection Failed: ${check.reason}` }]);
             return;
         }
 
@@ -83,7 +83,7 @@ const NeuralAssistant: React.FC = () => {
         
         KNOWLEDGE BASE:
         1. Workspace (/ag-workspace): Chat with PDFs, summarize.
-        2. AI Audit (/reader?protocol=audit): Risk and savings analysis.
+        2. Smart Audit (/reader?protocol=audit): Risk and savings analysis.
         3. Data Extractor (/data-extractor): Extract info from images/PDFs.
         4. AI Redact (/smart-redact): Hide sensitive info.
         5. Compare Files (/neural-diff): See what changed between documents.
@@ -242,7 +242,7 @@ const NeuralAssistant: React.FC = () => {
                             </div>
                             <div className="mt-4 flex items-center justify-center gap-2 opacity-20">
                                 <ShieldAlert size={10} />
-                                <span className="text-[8px] font-black uppercase tracking-widest">Private Local AI Active</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest">Secure Local AI Active</span>
                             </div>
                         </div>
                     </motion.div>

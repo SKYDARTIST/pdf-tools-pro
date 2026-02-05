@@ -149,7 +149,7 @@ const NeuralDiffScreen: React.FC = () => {
         >
             <div className="space-y-12">
                 <div className="space-y-3">
-                    <div className="text-technical">AI Tools / Compare Documents</div>
+                    <div className="text-technical">AI Tools / Compare Versions</div>
                     <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Compare</h1>
                     <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">
                         Find key differences and changes between two document versions with AI
@@ -176,7 +176,7 @@ const NeuralDiffScreen: React.FC = () => {
                             {file1 ? <Check size={24} /> : <FileUp size={24} />}
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center">
-                            {file1 ? "Active Document A" : "Version 1 (Base)"}
+                            {file1 ? "First Document Selected" : "Original Version"}
                         </span>
                         <input type="file" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 1)} />
                     </label>
@@ -186,7 +186,7 @@ const NeuralDiffScreen: React.FC = () => {
                             {file2 ? <Check size={24} /> : <FileUp size={24} />}
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-center">
-                            {file2 ? "Active Document B" : "Version 2 (Modified)"}
+                            {file2 ? "Second Document Selected" : "Revised Version"}
                         </span>
                         <input type="file" accept=".pdf" className="hidden" onChange={(e) => handleFileChange(e, 2)} />
                     </label>

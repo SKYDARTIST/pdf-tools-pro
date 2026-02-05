@@ -1,0 +1,9 @@
+[main 717b8ce] feat(monetization): implement .99 Founder Pack UI with limited-time badges and scarcity
+ 1 file changed, 51 insertions(+), 19 deletions(-)
+To https://github.com/SKYDARTIST/pdf-tools-pro.git
+   8cbb59c..717b8ce  main -> main
+commit 717b8ce280827451ecb1b8d3a4401d88576a69b5
+Author: cryptobulla <skydartist@users.noreply.github.com>
+Date:   Thu Feb 5 19:19:40 2026 +0530
+
+    feat(monetization): implement .99 Founder Pack UI with limited-time badges and scarcity

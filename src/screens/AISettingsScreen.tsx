@@ -114,7 +114,7 @@ const AISettingsScreen: React.FC = () => {
               <div className="pt-4 border-t border-black/5 dark:border-white/5 flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-emerald-500">
                   <Shield size={14} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Neural Link Secure</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">AI Connection Secure</span>
                 </div>
 
                 <motion.button

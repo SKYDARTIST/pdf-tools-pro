@@ -58,10 +58,10 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
       if (errorData.error === 'SERVICE_UNAVAILABLE') {
         return {
           success: false,
-          error: "BACKEND_ERROR: Neural Link Syncing. The system is balancing load, please try again in a moment."
+          error: "Server Error: The AI is currently busy. Please try again in a moment."
         };
       }
-      throw new Error(`Neural system failure (500). ${errorData.details || 'Synapse Overload Detected'}`);
+      throw new Error(`AI system failure (500). The AI is currently at maximum capacity.`);
     }
 
     if (!response.ok) {
@@ -98,7 +98,7 @@ export const askGemini = async (prompt: string, documentText?: string, type: 'ch
     const details = err.message || 'Security proxy is unreachable.';
     return {
       success: false,
-      error: `BACKEND_ERROR: ${details} (Access via secure edge protocol failed)`
+      error: `Server Connection Error: ${details}`
     };
   }
 };

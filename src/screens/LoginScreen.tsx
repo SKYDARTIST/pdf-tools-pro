@@ -86,7 +86,7 @@ const LoginScreen: React.FC = () => {
                     </motion.div>
                     <div className="space-y-2">
                         <h1 className="text-4xl font-black text-white uppercase tracking-tighter">Secure Link</h1>
-                        <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-[0.4em]">Initialize Neural Session</p>
+                        <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-[0.4em]">Setting up secure session</p>
                     </div>
                 </div>
 
@@ -149,7 +149,7 @@ const LoginScreen: React.FC = () => {
                 <div className="text-center space-y-4">
                     <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
                         By initializing, you agree to the <br />
-                        <span onClick={() => navigate('/legal/privacy')} className="text-emerald-500 cursor-pointer">Privacy Protocol</span> & <span onClick={() => navigate('/legal/tos')} className="text-emerald-500 cursor-pointer">Terms of Service</span>
+                        <span onClick={() => navigate('/legal/privacy')} className="text-emerald-500 cursor-pointer">Privacy Policy</span> & <span onClick={() => navigate('/legal/tos')} className="text-emerald-500 cursor-pointer">Terms of Service</span>
                     </p>
                     <button
                         onClick={() => navigate('/')}

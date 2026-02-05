@@ -56,7 +56,7 @@ const HomeScreen: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60 ml-1">Daily Tools</div>
+          <div className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60 ml-1">Quick Tools</div>
 
           {/* Anti-Gravity Hero Card - Pro Obsidian Style */}
           <motion.div
@@ -91,7 +91,7 @@ const HomeScreen: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { icon: LayoutGrid, label: 'All Tools', path: '/tools', desc: 'PDF Toolbox' },
-              { icon: HelpCircle, label: 'Help Guide', path: '/protocol-guide', desc: 'How to use' }
+              { icon: HelpCircle, label: 'How to Use', path: '/protocol-guide', desc: 'Simple Guide' }
             ].map((action, i) => (
               <motion.div
                 key={action.label}
@@ -119,7 +119,7 @@ const HomeScreen: React.FC = () => {
       {/* Data Feed */}
       <div className="space-y-8">
         <div className="flex items-center justify-between px-2">
-          <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Recent Files</div>
+          <div className="text-[11px] font-mono font-black uppercase tracking-[0.4em] text-[#718096]">Recent Activity</div>
           <motion.button
             whileHover={{ scale: 1.05 }}
             onClick={() => navigate('/my-files')}
@@ -160,7 +160,7 @@ const HomeScreen: React.FC = () => {
                   {file.neuralSignature && (
                     <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                       <Sparkles size={8} className="text-emerald-500" />
-                      <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">AI TAG</span>
+                      <span className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">AI Summary</span>
                     </div>
                   )}
                   <CheckCircle size={16} className="text-gray-900 dark:text-white opacity-20" />

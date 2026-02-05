@@ -136,7 +136,7 @@ const AntiGravityWorkspace: React.FC = () => {
         error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       });
-      setError(getFriendlyErrorMessage(error) || "Neural link failed. Please try a different document.");
+      setError(getFriendlyErrorMessage(error) || "Connection failed. Please try a different document.");
       setStatus('idle');
     } finally {
       setIsImporting(false);
@@ -211,16 +211,16 @@ const AntiGravityWorkspace: React.FC = () => {
           {status === 'idle' && (
             <motion.div key="idle" className="space-y-12 w-full">
               <ToolGuide
-                title="Neural Ecosystem Guide"
-                description="The Anti-Gravity Workspace is a high-performance environment optimized for document intelligence. Access specialized neural engines to analyze, compare, extract, and secure your files with maximum precision and privacy."
+                title="How to Use Your AI Tools"
+                description="The Anti-Gravity Workspace is a powerful place to work with your documents. Use smart AI tools to analyze, compare, and extract information from your files with total privacy."
                 steps={[
-                  "Neural Reader: A unified 4-in-1 workstation for viewing, chatting, outlining, and mapping document intelligence.",
-                  "Neural Compare: Advanced difference engine to highlight critical changes and version discrepancies automatically.",
-                  "Intelligence Extractor: Premium vision OCR to transform unstructured scans into clean, actionable digital data.",
-                  "AI Redact: Smart security filter that detects and hides PII and sensitive information to ensure document compliance."
+                  "Smart Reader: Read, chat, and summarize your documents in one place.",
+                  "Smart Compare: Automatically see the main differences between two file versions.",
+                  "Data Extractor: Convert photos of documents and scans into clean text and data.",
+                  "AI Redact: Automatically hide private information to keep your files safe."
                 ]}
                 useCases={[
-                  "Deep Analysis", "Version Auditing", "Data Extraction", "Privacy Guard"
+                  "Deep Analysis", "Check Version Changes", "Get Data from Photos", "Privacy Protect"
                 ]}
               />
             </motion.div>
@@ -245,7 +245,7 @@ const AntiGravityWorkspace: React.FC = () => {
                       <MessageSquare size={18} className="text-emerald-400" />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[9px] font-mono tracking-[0.4em] text-emerald-400 uppercase">Neural Workspace</div>
+                      <div className="text-[9px] font-mono tracking-[0.4em] text-emerald-400 uppercase">Smart Workspace</div>
                       {suggestedName && <div className="text-[10px] font-black uppercase tracking-tighter truncate opacity-60">{suggestedName}.pdf</div>}
                     </div>
                   </div>
@@ -290,20 +290,20 @@ const AntiGravityWorkspace: React.FC = () => {
             <div className="p-2 bg-rose-500/10 rounded-xl">
               <Shield size={18} className="text-rose-500" />
             </div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-rose-500">Neural Support Notice</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-rose-500">AI Support Notice</div>
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed text-gray-500 dark:text-gray-400">
-            Facing a <span className="text-rose-500">"Backend Error"</span> or blank page in Neural tools?
+            Facing a <span className="text-rose-500">"Connection Error"</span> or blank page?
             Simply <span className="text-gray-900 dark:text-white underline">Logout</span> and <span className="text-gray-900 dark:text-white underline">Login</span> again.
-            This refreshes your secure session handshake with our hardened servers to ensure your AI credits sync correctly.
+            This refreshes your secure connection with our servers to ensure your AI credits sync correctly.
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { title: "Neural Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },
-            { title: "Neural Compare", desc: "AI Document Diff", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
-            { title: "Intelligence Extractor", desc: "Premium Vision OCR", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
+            { title: "Smart Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },
+            { title: "Smart Compare", desc: "AI Document Changes", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
+            { title: "Data Extractor", desc: "Analyze Photos & Scans", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
             { title: "AI Redact", desc: "Automated PII Filter", icon: EyeOff, path: "/smart-redact", color: "text-rose-500", tag: "SECURITY" },
           ].map((tool, i) => (
             <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(tool.path)} className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4">
