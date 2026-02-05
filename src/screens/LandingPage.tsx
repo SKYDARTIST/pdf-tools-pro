@@ -9,14 +9,9 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
 
+    // NOTE: Auto-redirect removed - Landing page now always shows first
+    // Users click "Launch Workspace" to proceed
 
-    // Auto-redirect if already logged in
-    React.useEffect(() => {
-        if (localStorage.getItem('google_uid')) {
-            console.log('🛡️ Landing: User authenticated, auto-moving to workspace');
-            navigate('/workspace', { replace: true });
-        }
-    }, [navigate]);
 
     const handleLaunch = () => {
         const uid = localStorage.getItem('google_uid');
