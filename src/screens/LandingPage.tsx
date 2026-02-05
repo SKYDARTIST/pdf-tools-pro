@@ -204,7 +204,7 @@ const LandingPage: React.FC = () => {
 
                         <div className="flex flex-col items-center gap-4">
                             <div className="text-[8px] font-black text-gray-300 dark:text-gray-700 uppercase tracking-[0.8em]">
-                                Version 2.2 Stable
+                                Version 3.0.8
                             </div>
                         </div>
                     </motion.div>
