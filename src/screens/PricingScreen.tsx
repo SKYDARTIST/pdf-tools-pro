@@ -88,17 +88,17 @@ const PricingScreen: React.FC = () => {
     },
     {
       id: SubscriptionTier.LIFETIME,
-      name: 'Lifetime Protocol',
+      name: 'Lifetime Founder Access',
       price: lifetimePrice,
-      period: 'ONE-TIME',
-      badge: 'BEST VALUE',
+      period: 'ONE-TIME PAYMENT',
+      badge: 'FOUNDER PACK',
       features: [
-        { text: 'UNLIMITED EVERYTHING', icon: Zap },
-        { text: 'UNLIMITED AI UTILITIES', icon: Sparkles },
-        { text: 'Own It Forever', icon: Shield },
-        { text: 'Permanent Neural Hub', icon: Cpu }
+        { text: 'Unlimited Premium AI Tools Forever', icon: Sparkles },
+        { text: 'Lifetime Updates & Features', icon: Zap },
+        { text: 'Priority Email Support', icon: Shield },
+        { text: 'Zero Subscriptions, Ever', icon: Cpu }
       ],
-      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'SECURE ACCESS',
+      cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'CLAIM FOUNDER PACK',
       disabled: currentTier === SubscriptionTier.LIFETIME || isLoading,
       recommended: true
     }
@@ -116,11 +116,25 @@ const PricingScreen: React.FC = () => {
         }}
       />
 
-      <div className="pt-[160px] p-4 sm:p-6 space-y-[100px] relative z-[1] max-w-4xl mx-auto">
+      <div className="pt-[140px] p-4 sm:p-6 space-y-[40px] relative z-[1] max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-auto max-w-2xl"
+        >
+          <div className="rounded-2xl bg-gradient-to-r from-[#00C896]/10 via-[#00C896]/5 to-[#00C896]/10 border border-[#00C896]/20 p-4 backdrop-blur-sm">
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#00C896]">FLASH OFFER:</span>
+              <span className="text-[11px] font-black uppercase tracking-tight text-black dark:text-white">Founder Lifetime Access at 83% OFF</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">• Only for the first 500 early adopters</span>
+            </div>
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="pt-40 text-center space-y-4"
+          className="text-center space-y-4"
         >
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="w-6 h-px bg-[#00C896]/30" />
@@ -180,16 +194,34 @@ const PricingScreen: React.FC = () => {
                         </span>
                       </div>
                     ) : (
-                      <>
-                        <span className="text-5xl font-black text-black dark:text-white">
-                          {tier.price}
-                        </span>
-                        <div className="flex flex-col">
+                      <div className="flex flex-col gap-2">
+                        {tier.id === SubscriptionTier.LIFETIME && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-black text-gray-400 line-through decoration-2">
+                              $29.99
+                            </span>
+                            <span className="text-[9px] font-black uppercase px-2 py-1 rounded-md bg-[#00C896]/10 text-[#00C896] animate-pulse">
+                              83% OFF
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-5xl font-black text-black dark:text-white">
+                            {tier.price}
+                          </span>
                           <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
                             {tier.period}
                           </span>
                         </div>
-                      </>
+                        {tier.id === SubscriptionTier.LIFETIME && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] animate-pulse" />
+                            <span className="text-[9px] font-black uppercase tracking-wider text-[#00C896]">
+                              First 500 users • Limited spots remaining
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -268,7 +300,7 @@ const PricingScreen: React.FC = () => {
                     const { forceReconcileFromServer } = await import('@/services/subscriptionService');
                     await forceReconcileFromServer();
                     const updatedSub = getSubscription();
-                    alert(`🛰️ RECONCILIATION COMPLETE: Your current tier is now verified as [${updatedSub.tier.toUpperCase()}].`);
+                    alert(`RECONCILIATION COMPLETE: Your current tier is now verified as [${updatedSub.tier.toUpperCase()}].`);
                     setCurrentTier(updatedSub.tier);
                   } finally {
                     setIsLoading(false);
@@ -289,10 +321,10 @@ const PricingScreen: React.FC = () => {
                     const updatedSub = await forceReconcileFromServer();
 
                     if (restored) {
-                      alert(`✅ Success! Purchase restored. Your status is now [${updatedSub.tier.toUpperCase()}].`);
+                      alert(`SUCCESS: Purchase restored. Your status is now [${updatedSub.tier.toUpperCase()}].`);
                       setCurrentTier(updatedSub.tier);
                     } else {
-                      alert('⚠️ No active purchases found in Google Play metadata.\n\nIf you already purchased, ensure you are signed in to the correct Google Play account.');
+                      alert('NOTICE: No active purchases found in Google Play metadata.\n\nIf you already purchased, ensure you are signed in to the correct Google Play account.');
                     }
                   } finally {
                     setIsLoading(false);
