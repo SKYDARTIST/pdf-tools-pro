@@ -80,9 +80,9 @@ const PricingScreen: React.FC = () => {
       period: 'FOREVER',
       features: [
         { text: 'Unlimited Essentials 5', icon: Zap },
-        { text: 'Scanner & PDF Reader', icon: BookOpen },
-        { text: 'Basic Secure Storage', icon: Shield },
-        { text: 'Privacy-First Tools', icon: Activity }
+        { text: 'Free AI Hub: Unlimited Reader', icon: Bot },
+        { text: 'Scanner & PDF Essentials', icon: BookOpen },
+        { text: 'Local Security & Privacy', icon: Shield }
       ],
       cta: (currentTier === SubscriptionTier.FREE || !currentTier) ? 'CURRENT PLAN' : 'ACTIVE',
       disabled: true,
