@@ -511,8 +511,28 @@ Analyze the provided document text and return ONLY the indented list structure.`
                                 )}
                             </AnimatePresence>
                         </div>
+
+                        {/* AI Support Notice Integration */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="p-6 rounded-[32px] bg-rose-500/5 border border-rose-500/20 space-y-2"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-rose-500/10 rounded-xl">
+                                    <Shield size={18} className="text-rose-500" />
+                                </div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-rose-500">AI Support Notice</div>
+                            </div>
+                            <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed text-gray-500 dark:text-gray-400">
+                                Facing a <span className="text-rose-500">"Connection Error"</span> or blank page?
+                                Simply <span className="text-gray-900 dark:text-white underline">Logout</span> and <span className="text-gray-900 dark:text-white underline">Login</span> again.
+                                This refreshes your secure connection with our servers to ensure your AI credits sync correctly.
+                            </p>
+                        </motion.div>
                     </div>
                 )}
+
             </div>
             <AIOptInModal isOpen={showConsent} onClose={() => setShowConsent(false)} onAccept={() => { localStorage.setItem('ai_neural_consent', 'true'); setHasConsent(true); setShowConsent(false); }} />
             <AIReportModal isOpen={showReport} onClose={() => setShowReport(false)} />
