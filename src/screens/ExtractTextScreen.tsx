@@ -4,11 +4,11 @@ import { FileSearch, Copy, Check, Loader2, Edit3, Share2, RefreshCcw } from 'luc
 import * as pdfjsLib from 'pdfjs-dist';
 import { replaceTextInPdf } from '@/utils/pdfEditor';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
+import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
-import { useNavigate } from 'react-router-dom';
 import { downloadFile } from '@/services/downloadService';
 
 // Configure PDF.js worker - versioned local file
@@ -28,6 +28,7 @@ const ExtractTextScreen: React.FC = () => {
   const [replaceText, setReplaceText] = useState('');
   const [isApplyingEdit, setIsApplyingEdit] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
   const navigate = useNavigate();
 
@@ -51,7 +52,9 @@ const ExtractTextScreen: React.FC = () => {
   const handleExtract = async () => {
     if (!file || !originalBuffer) return;
 
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('extract-text');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -83,7 +86,6 @@ const ExtractTextScreen: React.FC = () => {
         pages: numPages
       });
 
-      TaskLimitManager.incrementTask();
 
       FileHistoryManager.addEntry({
         fileName: file.name,
@@ -103,7 +105,9 @@ const ExtractTextScreen: React.FC = () => {
   const handleApplyEdit = async () => {
     if (!originalBuffer || !findText || !replaceText || !file) return;
 
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('extract-text');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -297,10 +301,10 @@ const ExtractTextScreen: React.FC = () => {
         )}
       </div>
 
-      <UpgradeModal
+      <AiLimitModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        reason="limit_reached"
+        blockMode={blockMode}
       />
 
       <SuccessModal

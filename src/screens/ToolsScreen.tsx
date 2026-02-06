@@ -33,6 +33,11 @@ const ToolsScreen: React.FC = () => {
 
 
     const handleToolClick = (tool: any) => {
+        const check = canUseTool(tool.id);
+        if (!check.allowed) {
+            setShowUpgrade(true);
+            return;
+        }
         navigate(tool.path);
     };
 

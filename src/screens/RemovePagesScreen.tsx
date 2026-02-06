@@ -7,10 +7,10 @@ import { FileItem } from '@/types';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import { PDFDocument } from 'pdf-lib';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
 
 const RemovePagesScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -27,6 +27,7 @@ const RemovePagesScreen: React.FC = () => {
         pagesRemoved: number;
     } | null>(null);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -89,7 +90,9 @@ const RemovePagesScreen: React.FC = () => {
             return;
         }
 
-        if (!TaskLimitManager.canUseTask()) {
+        const check = canUseTool('remove-pages');
+        if (!check.allowed) {
+            setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
             setShowUpgradeModal(true);
             return;
         }
@@ -112,7 +115,6 @@ const RemovePagesScreen: React.FC = () => {
             });
 
             // Increment task counter
-            TaskLimitManager.incrementTask();
 
             // Show success modal
             setSuccessData({
@@ -284,10 +286,10 @@ const RemovePagesScreen: React.FC = () => {
                     />
                 )}
 
-                <UpgradeModal
+                <AiLimitModal
                     isOpen={showUpgradeModal}
                     onClose={() => setShowUpgradeModal(false)}
-                    reason="limit_reached"
+                    blockMode={blockMode}
                 />
             </div>
         </motion.div>

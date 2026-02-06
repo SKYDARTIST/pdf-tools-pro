@@ -80,6 +80,24 @@ export const secureFetch = async (url: string, options: RequestInit = {}): Promi
                     return performRequest(true);
                 }
 
+                // P0 DIAGNOSTIC: 403 FORBIDDEN -> Signature, CSRF, or Origin issues
+                if (response.status === 403) {
+                    const signature = headers[HEADERS.SIGNATURE];
+                    const csrf = headers[HEADERS.CSRF_TOKEN];
+
+                    // Try to get response body for deeper insight (e.g., NEURAL_LINK_EXHAUSTED)
+                    const errorClone = response.clone();
+                    const errorJson = await errorClone.json().catch(() => ({}));
+
+                    console.error(`[${requestId}] 🚫 Forbidden (403): Access Denied. Diagnostic Info:`, {
+                        url,
+                        errorBody: errorJson,
+                        hasSignature: !!signature,
+                        hasCsrf: !!csrf,
+                        headersPresent: Object.keys(headers)
+                    });
+                }
+
                 return response;
             } catch (fetchError: any) {
                 clearTimeout(timeoutId);

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon } from 'lucide-react';
 
 import { askGemini } from '@/services/aiService';
-import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '@/services/subscriptionService';
+import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType, canUseTool } from '@/services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
 import AIOptInModal from '@/components/AIOptInModal';
 import AIReportModal from '@/components/AIReportModal';
@@ -38,6 +38,18 @@ const AntiGravityWorkspace: React.FC = () => {
   const showToast = (message: string) => {
     setError(message);
     setTimeout(() => setError(null), 3000);
+  };
+
+  const handleToolClick = (toolPath: string, toolId: string) => {
+    const check = canUseTool(toolId);
+    if (!check.allowed) {
+      setAiLimitInfo({
+        blockMode: check.blockMode,
+      });
+      setShowAiLimit(true);
+      return;
+    }
+    navigate(toolPath);
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -309,12 +321,12 @@ const AntiGravityWorkspace: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { title: "Smart Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },
-              { title: "Smart Compare", desc: "AI Document Changes", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
-              { title: "Data Extractor", desc: "Analyze Photos & Scans", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
-              { title: "AI Redact", desc: "Automated PII Filter", icon: EyeOff, path: "/smart-redact", color: "text-rose-500", tag: "SECURITY" },
+              { id: 'view', title: "Smart Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },
+              { id: 'neural-diff', title: "Smart Compare", desc: "AI Document Changes", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
+              { id: 'data-extractor', title: "Data Extractor", desc: "Analyze Photos & Scans", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
+              { id: 'smart-redact', title: "AI Redact", desc: "Automated PII Filter", icon: EyeOff, path: "/smart-redact", color: "text-rose-500", tag: "SECURITY" },
             ].map((tool, i) => (
-              <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(tool.path)} className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4">
+              <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => handleToolClick(tool.path, tool.id)} className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4">
                 <div className="text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 uppercase tracking-widest bg-emerald-500/5">{tool.tag}</div>
                 <div className={`p-6 bg-black/5 rounded-2xl ${tool.color}`}><tool.icon size={24} /></div>
                 <div>
@@ -334,19 +346,19 @@ const AntiGravityWorkspace: React.FC = () => {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-              { title: 'Sign', desc: 'Secure Sign', icon: PenTool, path: '/sign' },
-              { title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text' },
-              { title: 'Rotate', desc: 'Fix Pages', icon: RotateCw, path: '/rotate' },
-              { title: 'Watermark', desc: 'Secure Files', icon: Droplet, path: '/watermark' },
-              { title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
-              { title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
-              { title: 'Numbers', desc: 'Add Pages', icon: Hash, path: '/page-numbers' },
+              { id: 'sign', title: 'Sign', desc: 'Secure Sign', icon: PenTool, path: '/sign' },
+              { id: 'extract-text', title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text' },
+              { id: 'rotate', title: 'Rotate', desc: 'Fix Pages', icon: RotateCw, path: '/rotate' },
+              { id: 'watermark', title: 'Watermark', desc: 'Secure Files', icon: Droplet, path: '/watermark' },
+              { id: 'extract-images', title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
+              { id: 'remove-pages', title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
+              { id: 'page-numbers', title: 'Numbers', desc: 'Add Pages', icon: Hash, path: '/page-numbers' },
             ].map((tool, i) => (
               <motion.button
                 key={i}
                 whileHover={{ y: -4, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => navigate(tool.path)}
+                onClick={() => handleToolClick(tool.path, tool.id)}
                 className="monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3"
               >
                 <div className="p-4 bg-[#00C896]/10 rounded-2xl text-[#00C896]"><tool.icon size={20} /></div>

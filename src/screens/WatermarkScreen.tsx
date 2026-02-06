@@ -6,11 +6,11 @@ import { addWatermark } from '@/services/pdfService';
 import { downloadFile } from '@/services/downloadService';
 import { FileItem } from '@/types';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 
 const WatermarkScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ const WatermarkScreen: React.FC = () => {
   const [text, setText] = useState('CONFIDENTIAL');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,7 +41,9 @@ const WatermarkScreen: React.FC = () => {
   const handleApply = async () => {
     if (!file || !text.trim()) return;
 
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('watermark');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -50,9 +53,6 @@ const WatermarkScreen: React.FC = () => {
       const result = await addWatermark(file.file, text);
       const blob = new Blob([result as any], { type: 'application/pdf' });
       await downloadFile(blob, `stamped_${file.name}`);
-
-      // Increment task counter
-      TaskLimitManager.incrementTask();
 
       // Add to history
       FileHistoryManager.addEntry({
@@ -206,10 +206,10 @@ const WatermarkScreen: React.FC = () => {
         )}
       </button>
 
-      <UpgradeModal
+      <AiLimitModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        reason="limit_reached"
+        blockMode={blockMode}
       />
 
       {successData && (

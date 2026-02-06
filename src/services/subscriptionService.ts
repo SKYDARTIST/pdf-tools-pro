@@ -29,7 +29,8 @@ export const FREE_TOOLS = ['scanner', 'merge', 'split', 'image-to-pdf', 'view'];
 
 export enum AiOperationType {
     HEAVY = 'heavy',
-    GUIDANCE = 'guidance'
+    GUIDANCE = 'guidance',
+    SAMPLER = 'sampler'
 }
 
 export enum AiBlockMode {
@@ -231,7 +232,7 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
     warning?: boolean;
     blockMode?: AiBlockMode;
 } => {
-    if (operationType === AiOperationType.GUIDANCE) {
+    if (operationType === AiOperationType.GUIDANCE || operationType === AiOperationType.SAMPLER) {
         return { allowed: true, blockMode: AiBlockMode.NONE };
     }
 

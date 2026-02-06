@@ -1,6 +1,6 @@
 import * as pdfjs from 'pdfjs-dist';
 
-// Configure PDF.js worker - pinned versioned local file
+// Configure PDF.js worker - LOCAL file for Android WebView compatibility
 pdfjs.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
 
 export const extractTextFromPdf = async (arrayBuffer: ArrayBuffer, startPage?: number, endPage?: number, onProgress?: (percent: number) => void): Promise<string> => {

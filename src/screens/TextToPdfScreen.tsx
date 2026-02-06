@@ -4,12 +4,12 @@ import { motion } from 'framer-motion';
 import { Type, Share2, Loader2, AlignLeft, Bold } from 'lucide-react';
 import { createPdfFromText } from '@/services/pdfService';
 import { downloadFile } from '@/services/downloadService';
-import ToolGuide from '@/components/ToolGuide';
-import UpgradeModal from '@/components/UpgradeModal';
+import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
-import { useNavigate } from 'react-router-dom';
-import TaskLimitManager from '@/utils/TaskLimitManager';
+import ToolGuide from '@/components/ToolGuide';
 
 const TextToPdfScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -17,12 +17,15 @@ const TextToPdfScreen: React.FC = () => {
   const [content, setContent] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleGenerate = async () => {
     if (!title || !content) return;
 
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('text-to-pdf');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -43,7 +46,6 @@ const TextToPdfScreen: React.FC = () => {
       });
 
       // Increment task count
-      TaskLimitManager.incrementTask();
 
       // Record in history
       FileHistoryManager.addEntry({
@@ -141,10 +143,10 @@ const TextToPdfScreen: React.FC = () => {
         </div>
       </div>
 
-      <UpgradeModal
+      <AiLimitModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        reason="limit_reached"
+        blockMode={blockMode}
       />
 
       {successData && (

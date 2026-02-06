@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { PenTool, Share2, Loader2, FileUp, Eraser, CheckCircle2, Bookmark, Stamp as StampIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
@@ -27,6 +27,7 @@ const SignScreen: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,7 +93,9 @@ const SignScreen: React.FC = () => {
   const handleSign = async () => {
     if (!file || !canvasRef.current) return;
 
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('sign');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -181,9 +184,6 @@ const SignScreen: React.FC = () => {
       const fileName = `signed_${file.name}`;
       const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
       await downloadFile(blob, fileName);
-
-      // Increment task counter
-      TaskLimitManager.incrementTask();
 
       // Add to history
       FileHistoryManager.addEntry({
@@ -358,10 +358,10 @@ const SignScreen: React.FC = () => {
         )}
       </button>
 
-      <UpgradeModal
+      <AiLimitModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        reason="limit_reached"
+        blockMode={blockMode}
       />
 
       {successData && (

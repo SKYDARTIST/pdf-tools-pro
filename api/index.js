@@ -1359,7 +1359,16 @@ export default async function handler(req, res) {
                 usageRecord = usage;
                 const isPaidTier = ['pro', 'premium', 'lifetime'].includes(usage.tier);
 
-                if (!isPaidTier) {
+                // P0 FIX: Allow Reader AI types, guidance, and public actions to bypass paid check
+                // Reader Hub uses 'chat', 'mindmap', 'outline' which are now free for everyone
+                const FREE_REQUEST_TYPES = [
+                    'sampler', 'guidance',                       // Client-side bypass types
+                    'chat', 'mindmap', 'outline',                // Reader Hub AI features (FREE)
+                    'usage_sync', 'usage_fetch', 'check_subscription_status' // Public actions
+                ];
+                const isFreeAction = FREE_REQUEST_TYPES.includes(requestType);
+
+                if (!isPaidTier && !isFreeAction) {
                     return res.status(403).json({
                         error: "NEURAL_LINK_EXHAUSTED",
                         details: "Lifetime Access is required for AI features."

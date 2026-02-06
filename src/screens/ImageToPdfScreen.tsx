@@ -6,17 +6,18 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { imageToPdf } from '@/services/pdfService';
 import { downloadFile } from '@/services/downloadService';
 import { FileItem } from '@/types';
-import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
+import ToolGuide from '@/components/ToolGuide';
 
 const ImageToPdfScreen: React.FC = () => {
   const location = useLocation();
   const [items, setItems] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
   const navigate = useNavigate();
 
@@ -94,7 +95,9 @@ const ImageToPdfScreen: React.FC = () => {
     if (items.length === 0) return;
 
     // Check task limit
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('image-to-pdf');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -119,8 +122,6 @@ const ImageToPdfScreen: React.FC = () => {
         });
       });
 
-      // Increment task count
-      TaskLimitManager.incrementTask();
 
       // Record in history
       FileHistoryManager.addEntry({
@@ -234,10 +235,10 @@ const ImageToPdfScreen: React.FC = () => {
         )}
       </button>
 
-      <UpgradeModal
+      <AiLimitModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        reason="limit_reached"
+        blockMode={blockMode}
       />
 
       {successData && (

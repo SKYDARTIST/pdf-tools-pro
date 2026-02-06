@@ -4,11 +4,11 @@ import { motion } from 'framer-motion';
 import { Plus, Trash2, FileText, Share2, Loader2, ChevronUp, ChevronDown, Shield } from 'lucide-react';
 import { mergePdfs } from '@/services/pdfService';
 import { downloadFile } from '@/services/downloadService';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
+import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import SuccessModal from '@/components/SuccessModal';
 import ProgressIndicator from '@/components/ProgressIndicator';
-import { useNavigate } from 'react-router-dom';
 import { FileItem } from '@/types';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import ToolGuide from '@/components/ToolGuide';
@@ -18,6 +18,7 @@ const MergeScreen: React.FC = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successData, setSuccessData] = useState<{
     fileName: string;
@@ -74,7 +75,9 @@ const MergeScreen: React.FC = () => {
     if (files.length < 2) return;
 
     // Check task limit
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('merge');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -125,9 +128,6 @@ const MergeScreen: React.FC = () => {
         finalSize: result.length,
         status: 'success'
       });
-
-      // Increment task counter
-      TaskLimitManager.incrementTask();
 
       // Clear files deferred
     } catch (err) {
@@ -296,10 +296,10 @@ const MergeScreen: React.FC = () => {
         )}
 
         {/* Upgrade Modal */}
-        <UpgradeModal
+        <AiLimitModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          reason="limit_reached"
+          blockMode={blockMode}
         />
       </div>
     </motion.div>

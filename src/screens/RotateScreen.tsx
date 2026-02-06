@@ -7,9 +7,9 @@ import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import ShareModal from '@/components/ShareModal';
 import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
 
 const RotateScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -24,6 +24,7 @@ const RotateScreen: React.FC = () => {
         size: number;
     } | null>(null);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -45,7 +46,9 @@ const RotateScreen: React.FC = () => {
     const handleRotate = async (angle: number) => {
         if (!file) return;
 
-        if (!TaskLimitManager.canUseTask()) {
+        const check = canUseTool('rotate');
+        if (!check.allowed) {
+            setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
             setShowUpgradeModal(true);
             return;
         }
@@ -80,7 +83,6 @@ const RotateScreen: React.FC = () => {
                 status: 'success'
             });
 
-            TaskLimitManager.incrementTask();
             setShowSuccessModal(true);
         } catch (err) {
             alert('Error rotating PDF: ' + (err instanceof Error ? err.message : 'Unknown error'));
@@ -251,10 +253,10 @@ const RotateScreen: React.FC = () => {
                 </>
             )}
 
-            <UpgradeModal
+            <AiLimitModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
-                reason="limit_reached"
+                blockMode={blockMode}
             />
         </motion.div>
     );

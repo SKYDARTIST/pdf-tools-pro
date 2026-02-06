@@ -6,17 +6,18 @@ import { renderPageToImage } from '@/utils/pdfExtractor';
 import { downloadFile } from '@/services/downloadService';
 import { FileItem } from '@/types';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 
 const SplitScreen: React.FC = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState<FileItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +47,9 @@ const SplitScreen: React.FC = () => {
     if (!file) return;
 
     // Check task limit
-    if (!TaskLimitManager.canUseTask()) {
+    const check = canUseTool('split');
+    if (!check.allowed) {
+      setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
       setShowUpgradeModal(true);
       return;
     }
@@ -103,9 +106,6 @@ const SplitScreen: React.FC = () => {
 
       console.log(`📡 Dispatching ${Math.round(zipBlob.size / 1024 / 1024)}MB ZIP to Neural Share...`);
       await downloadFile(zipBlob, `${baseName}_split_pages.zip`);
-
-      // Increment task counter
-      TaskLimitManager.incrementTask();
 
       // Add to history
       FileHistoryManager.addEntry({
@@ -226,10 +226,10 @@ const SplitScreen: React.FC = () => {
         )}
       </div>
 
-      <UpgradeModal
+      <AiLimitModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        reason="limit_reached"
+        blockMode={blockMode}
       />
 
       {successData && (

@@ -8,9 +8,9 @@ import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import ShareModal from '@/components/ShareModal';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
 
 const PageNumbersScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -27,6 +27,7 @@ const PageNumbersScreen: React.FC = () => {
         size: number;
     } | null>(null);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -48,7 +49,9 @@ const PageNumbersScreen: React.FC = () => {
     const handleApply = async () => {
         if (!file) return;
 
-        if (!TaskLimitManager.canUseTask()) {
+        const check = canUseTool('page-numbers');
+        if (!check.allowed) {
+            setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
             setShowUpgradeModal(true);
             return;
         }
@@ -109,7 +112,6 @@ const PageNumbersScreen: React.FC = () => {
             });
 
             setShowSuccessModal(true);
-            TaskLimitManager.incrementTask();
         } catch (err) {
             alert('Error adding page numbers: ' + (err instanceof Error ? err.message : 'Unknown error'));
             FileHistoryManager.addEntry({
@@ -300,10 +302,10 @@ const PageNumbersScreen: React.FC = () => {
                 </>
             )}
 
-            <UpgradeModal
+            <AiLimitModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
-                reason="limit_reached"
+                blockMode={blockMode}
             />
         </motion.div>
     );

@@ -19,8 +19,7 @@ import ToolGuide from '@/components/ToolGuide';
 import MindMapSettingsModal from '@/components/MindMapSettingsModal';
 
 // Configure PDF.js worker
-// Use versioned local file with origin to force cache bust and correct resolution on Android
-pdfjs.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
 
 const ReaderScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -70,9 +69,14 @@ const ReaderScreen: React.FC = () => {
     };
 
     const pdfOptions = useMemo(() => ({
+        // Use LOCAL worker for Android WebView compatibility (CDN worker has WASM issues)
         workerSrc: window.location.origin + '/pdf.worker.v5.4.296.min.mjs',
+        // CDN fallbacks for CMaps and Fonts
         cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/cmaps/',
         cMapPacked: true,
+        standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/standard_fonts/',
+        // Disable OffscreenCanvas to fix WebView rendering issues
+        isOffscreenCanvasSupported: false,
     }), []);
 
     const docFile = useMemo(() => pdfData ? { data: pdfData } : null, [pdfData]);
@@ -123,7 +127,7 @@ const ReaderScreen: React.FC = () => {
         if (!file || isGeneratingSummary || chatHistory.length > 0) return;
 
         // AI CREDIT CHECK - Add this block
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        const aiCheck = canUseAI(AiOperationType.SAMPLER);
         if (!aiCheck.allowed) {
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
@@ -147,7 +151,7 @@ const ReaderScreen: React.FC = () => {
 
             if (response.success && response.data) {
                 setChatHistory([{ role: 'bot', text: response.data }]);
-                await recordAIUsage(AiOperationType.HEAVY);
+                await recordAIUsage(AiOperationType.SAMPLER);
             }
         } catch (err) {
             console.error('Summary Error:', err);
@@ -161,7 +165,7 @@ const ReaderScreen: React.FC = () => {
         if (!chatQuery.trim() || isAsking || !documentContext) return;
 
         // AI CREDIT CHECK - Add this block
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        const aiCheck = canUseAI(AiOperationType.SAMPLER);
         if (!aiCheck.allowed) {
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
@@ -178,7 +182,7 @@ const ReaderScreen: React.FC = () => {
             const response = await askGemini(currentQuery, documentContext, 'chat');
             if (response.success && response.data) {
                 setChatHistory(prev => [...prev, { role: 'bot', text: response.data! }]);
-                await recordAIUsage(AiOperationType.HEAVY);
+                await recordAIUsage(AiOperationType.SAMPLER);
             }
         } catch (err) {
             console.error('Chat Error:', err);
@@ -196,7 +200,7 @@ const ReaderScreen: React.FC = () => {
         if (!settings && !mindMapData) { setShowMindMapSettings(true); return; }
 
         // AI CREDIT CHECK - Add this block
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        const aiCheck = canUseAI(AiOperationType.SAMPLER);
         if (!aiCheck.allowed) {
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
@@ -259,7 +263,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
             const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
             if (response.success && response.data) {
                 setMindMapData(response.data);
-                await recordAIUsage(AiOperationType.HEAVY);
+                await recordAIUsage(AiOperationType.SAMPLER);
             }
         } catch (error) { console.error(error); } finally {
             setIsGeneratingMindMap(false);
@@ -271,7 +275,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
         if (!file || isGeneratingOutline) return;
         if (!hasConsent) { setShowConsent(true); return; }
 
-        const aiCheck = canUseAI(AiOperationType.HEAVY);
+        const aiCheck = canUseAI(AiOperationType.SAMPLER);
         if (!aiCheck.allowed) {
             setAiLimitInfo({ blockMode: aiCheck.blockMode });
             setShowAiLimit(true);
@@ -290,7 +294,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
             const response = await askGemini(prompt, text, "outline");
             if (response.success && response.data) {
                 setOutlineData(response.data);
-                await recordAIUsage(AiOperationType.HEAVY);
+                await recordAIUsage(AiOperationType.SAMPLER);
             }
         } catch (error) { console.error(error); } finally {
             setIsGeneratingOutline(false);

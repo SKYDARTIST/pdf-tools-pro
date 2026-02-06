@@ -5,9 +5,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
+import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
+import AiLimitModal from '@/components/AiLimitModal';
 import ToolGuide from '@/components/ToolGuide';
-import TaskLimitManager from '@/utils/TaskLimitManager';
-import UpgradeModal from '@/components/UpgradeModal';
 import { saveBase64ToCache } from '@/services/downloadService';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -21,6 +21,7 @@ const ExtractImagesScreen: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [extractedAssets, setExtractedAssets] = useState<{ uri: string; displayUrl: string }[]>([]);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,7 +43,9 @@ const ExtractImagesScreen: React.FC = () => {
     const handleExtractImages = async () => {
         if (!file) return;
 
-        if (!TaskLimitManager.canUseTask()) {
+        const check = canUseTool('extract-images');
+        if (!check.allowed) {
+            setBlockMode(check.blockMode || AiBlockMode.BUY_PRO);
             setShowUpgradeModal(true);
             return;
         }
@@ -86,7 +89,6 @@ const ExtractImagesScreen: React.FC = () => {
                 status: 'success'
             });
 
-            TaskLimitManager.incrementTask();
 
             setSuccessData({
                 isOpen: true,
@@ -283,10 +285,10 @@ const ExtractImagesScreen: React.FC = () => {
                 />
             )}
 
-            <UpgradeModal
+            <AiLimitModal
                 isOpen={showUpgradeModal}
                 onClose={() => setShowUpgradeModal(false)}
-                reason="limit_reached"
+                blockMode={blockMode}
             />
         </motion.div>
     );
