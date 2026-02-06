@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge } from 'lucide-react';
+import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon } from 'lucide-react';
+
 import { askGemini } from '@/services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType } from '@/services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
@@ -199,7 +200,7 @@ const AntiGravityWorkspace: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center shadow-2xl shrink-0"><Sparkles size={20} className="text-white dark:text-black" /></div>
             <div className="space-y-0.5 min-w-0">
-              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-gray-500 truncate">AI Assistant</div>
+              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-emerald-500 truncate">Pro & Neural</div>
               <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Workspace</h2>
             </div>
           </div>
@@ -211,20 +212,21 @@ const AntiGravityWorkspace: React.FC = () => {
           {status === 'idle' && (
             <motion.div key="idle" className="space-y-12 w-full">
               <ToolGuide
-                title="How to Use Your AI Tools"
-                description="The Anti-Gravity Workspace is a powerful place to work with your documents. Use smart AI tools to analyze, compare, and extract information from your files with total privacy."
+                title="Pro & Neural Operation Guide"
+                description="The Pro & Neural Workspace is an elite suite for your most important documents. From heavy-duty AI analysis to secure professional utilities, everything happens with zero-cloud privacy."
                 steps={[
-                  "Smart Reader: Read, chat, and summarize your documents in one place.",
-                  "Smart Compare: Automatically see the main differences between two file versions.",
-                  "Data Extractor: Convert photos of documents and scans into clean text and data.",
-                  "AI Redact: Automatically hide private information to keep your files safe."
+                  "AI Neural Suite: Chat, compare, and extract structured data using local-first intelligence.",
+                  "Pro Utilities: Securely sign, watermark, and manage pages in professional PDF documents.",
+                  "Neural Pulse: Your operations are accelerated by on-device processing for maximum speed.",
+                  "Privacy First: Files never leave your device. All Pro tools run in your private workspace."
                 ]}
                 useCases={[
-                  "Deep Analysis", "Check Version Changes", "Get Data from Photos", "Privacy Protect"
+                  "Deep AI Analysis", "Secure Signing", "Privacy Watermarking", "Data Extraction"
                 ]}
               />
             </motion.div>
           )}
+
 
           {status === 'lifting' && (
             <motion.div key="lifting" className="flex-1 flex flex-col items-center justify-center space-y-16 py-20">
@@ -299,29 +301,70 @@ const AntiGravityWorkspace: React.FC = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { title: "Smart Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },
-            { title: "Smart Compare", desc: "AI Document Changes", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
-            { title: "Data Extractor", desc: "Analyze Photos & Scans", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
-            { title: "AI Redact", desc: "Automated PII Filter", icon: EyeOff, path: "/smart-redact", color: "text-rose-500", tag: "SECURITY" },
-          ].map((tool, i) => (
-            <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(tool.path)} className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4">
-              <div className="text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 uppercase tracking-widest bg-emerald-500/5">{tool.tag}</div>
-              <div className={`p-6 bg-black/5 rounded-2xl ${tool.color}`}><tool.icon size={24} /></div>
-              <div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-900 mb-1">{tool.title}</div>
-                <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{tool.desc}</div>
-              </div>
-            </motion.button>
-          ))}
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 ml-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
+            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">AI Neural Suite</h2>
+            <div className="flex-1 h-px bg-black/5 dark:bg-white/5" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { title: "Smart Reader Hub", desc: "View • Chat • Outline • Map", icon: BookOpen, path: "/reader", color: "text-emerald-500", tag: "4-IN-1 HUB" },
+              { title: "Smart Compare", desc: "AI Document Changes", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
+              { title: "Data Extractor", desc: "Analyze Photos & Scans", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
+              { title: "AI Redact", desc: "Automated PII Filter", icon: EyeOff, path: "/smart-redact", color: "text-rose-500", tag: "SECURITY" },
+            ].map((tool, i) => (
+              <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => navigate(tool.path)} className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4">
+                <div className="text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 uppercase tracking-widest bg-emerald-500/5">{tool.tag}</div>
+                <div className={`p-6 bg-black/5 rounded-2xl ${tool.color}`}><tool.icon size={24} /></div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white mb-1">{tool.title}</div>
+                  <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{tool.desc}</div>
+                </div>
+              </motion.button>
+            ))}
+          </div>
         </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 ml-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
+            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">Pro Power Utilities</h2>
+            <div className="flex-1 h-px bg-black/5 dark:bg-white/5" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { title: 'Sign', desc: 'Secure Sign', icon: PenTool, path: '/sign' },
+              { title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text' },
+              { title: 'Rotate', desc: 'Fix Pages', icon: RotateCw, path: '/rotate' },
+              { title: 'Watermark', desc: 'Secure Files', icon: Droplet, path: '/watermark' },
+              { title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
+              { title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
+              { title: 'Numbers', desc: 'Add Pages', icon: Hash, path: '/page-numbers' },
+            ].map((tool, i) => (
+              <motion.button
+                key={i}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate(tool.path)}
+                className="monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3"
+              >
+                <div className="p-4 bg-[#00C896]/10 rounded-2xl text-[#00C896]"><tool.icon size={20} /></div>
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none mb-1">{tool.title}</div>
+                  <div className="text-[7px] font-bold text-gray-400 uppercase tracking-tight">{tool.desc}</div>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
 
         <AIOptInModal isOpen={showConsent} onClose={() => setShowConsent(false)} onAccept={() => { localStorage.setItem('ai_neural_consent', 'true'); setHasConsent(true); setShowConsent(false); }} />
         <AIReportModal isOpen={showReport} onClose={() => setShowReport(false)} />
         <AiLimitModal isOpen={showAiLimit} onClose={() => setShowAiLimit(false)} blockMode={aiLimitInfo.blockMode} used={aiLimitInfo.used} limit={aiLimitInfo.limit} />
       </div>
-    </motion.div>
+    </motion.div >
   );
 };
 

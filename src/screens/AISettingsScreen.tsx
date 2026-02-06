@@ -28,10 +28,10 @@ const AISettingsScreen: React.FC = () => {
         <div className="space-y-3 text-center sm:text-left">
           <div className="text-technical">App Settings</div>
           <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Security</h1>
-          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Manage your privacy and AI assistant settings</p>
+          <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest leading-relaxed">Manage your privacy and Neural Workspace settings</p>
         </div>
 
-        {/* AI Assistant Toggle Control */}
+        {/* Neural Hub Token Control */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -52,7 +52,7 @@ const AISettingsScreen: React.FC = () => {
                 <Sparkles size={28} className={isAiEnabled ? 'text-white dark:text-black' : 'text-gray-400'} />
               </motion.div>
               <div className="space-y-1">
-                <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">AI Assistant</h4>
+                <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Neural Hub</h4>
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">Gemini AI Engine Integration</p>
               </div>
             </div>
@@ -82,7 +82,7 @@ const AISettingsScreen: React.FC = () => {
             <p className="text-xs font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
               The assistant reads your document text directly on your device.
               Information is only sent to our secure AI server when you ask a question.
-              Turning this off will disable all AI features like chat and summaries.
+              Turning this off will disable all Neural Suite tools like chat and summaries.
             </p>
           </motion.div>
         </motion.div>

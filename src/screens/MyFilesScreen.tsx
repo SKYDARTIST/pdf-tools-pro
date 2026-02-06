@@ -257,7 +257,7 @@ const MyFilesScreen: React.FC = () => {
                                 <div className="text-center space-y-4 max-w-[280px] mx-auto">
                                     <h3 className="text-sm font-black uppercase tracking-[0.4em] text-[#000000] dark:text-white">PROJECT STUDIO EMPTY</h3>
                                     <p className="text-[10px] font-bold text-[#718096] dark:text-gray-500 uppercase tracking-[0.4em] leading-relaxed">
-                                        Deploy AI assistants or use core tools to begin indexing documents in your local vault.
+                                        Unlock the Neural Workspace or use core tools to begin indexing documents in your local vault.
                                     </p>
                                     <div className="flex flex-col gap-3 mt-8">
                                         <motion.button

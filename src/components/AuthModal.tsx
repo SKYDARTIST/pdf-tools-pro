@@ -19,8 +19,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     isOpen,
     onClose,
     onSuccess,
-    title = 'Sign In to Use AI Features',
-    message = 'Your AI credits and subscription sync across devices when you sign in'
+    title = 'Sign In for Pro & Neural Access',
+    message = 'Your Pro tools and subscription sync across devices when you sign in'
 }) => {
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);

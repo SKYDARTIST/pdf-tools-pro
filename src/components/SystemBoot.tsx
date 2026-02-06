@@ -8,7 +8,7 @@ const SystemBoot: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
     const stages = [
         { label: 'LOADING TOOLS', icon: Cpu },
         { label: 'SECURITY READY', icon: Shield },
-        { label: 'AI ASSISTANT READY', icon: Sparkles },
+        { label: 'PRO & NEURAL READY', icon: Sparkles },
         { label: 'SYSTEM READY', icon: Zap },
     ];
 

@@ -308,7 +308,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
                         <div className="space-y-3">
                             <div className="text-technical">Tools / Reading Hub</div>
                             <h1 className="text-5xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Reader</h1>
-                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">Immersive reading environment with smart AI features</p>
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest leading-relaxed">Immersive reading environment with Pro & Neural tools</p>
                         </div>
 
                         <ToolGuide

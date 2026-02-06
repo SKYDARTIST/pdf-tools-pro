@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   Check, Zap, Sparkles, Shield, Lock, Globe,
   Cpu, ZapOff, CreditCard, ChevronRight, Info,
-  Star, ArrowRight, Activity, Mail, Twitter, ChevronDown
+  Star, ArrowRight, Activity, Mail, Twitter, ChevronDown,
+  BookOpen, Bot
 } from 'lucide-react';
 import { getSubscription, upgradeTier, SubscriptionTier } from '@/services/subscriptionService';
 import BillingService from '@/services/billingService';
@@ -78,9 +79,10 @@ const PricingScreen: React.FC = () => {
       price: '$0',
       period: 'FOREVER',
       features: [
-        { text: 'Unlimited PDF Operations', icon: Zap },
+        { text: 'Unlimited Essentials 5', icon: Zap },
+        { text: 'Scanner & PDF Reader', icon: BookOpen },
         { text: 'Basic Secure Storage', icon: Shield },
-        { text: 'Interactive Viewing', icon: Activity }
+        { text: 'Privacy-First Tools', icon: Activity }
       ],
       cta: (currentTier === SubscriptionTier.FREE || !currentTier) ? 'CURRENT PLAN' : 'ACTIVE',
       disabled: true,
@@ -93,10 +95,10 @@ const PricingScreen: React.FC = () => {
       period: 'ONE-TIME PAYMENT',
       badge: 'FOUNDER PACK',
       features: [
-        { text: 'Unlimited Premium AI Tools Forever', icon: Sparkles },
-        { text: 'Lifetime Updates & Features', icon: Zap },
-        { text: 'Priority Email Support', icon: Shield },
-        { text: 'Zero Subscriptions, Ever', icon: Cpu }
+        { text: '20+ Pro & Neural Tools', icon: Sparkles },
+        { text: 'Full AI Neural Suite Access', icon: Bot },
+        { text: 'Pro Power Utilities Hub', icon: Zap },
+        { text: 'Lifetime Founder Status', icon: Star }
       ],
       cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'CLAIM FOUNDER PACK',
       disabled: currentTier === SubscriptionTier.LIFETIME || isLoading,
@@ -484,7 +486,7 @@ const PricingScreen: React.FC = () => {
           </div>
           <p className="text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
             Anti-Gravity processes all neural computations locally on your hardware.
-            We've simplified our model: Start for free with base tools, or secure permanent access with our Lifetime Protocol.
+            We've simplified our model: Start for free with the Essentials 5 tools, or secure permanent access with our Lifetime Protocol.
           </p>
         </motion.div>
 
@@ -522,7 +524,7 @@ const PricingScreen: React.FC = () => {
               {
                 id: 'refund',
                 q: 'Can I Get A Refund?',
-                a: 'Google Play allows refunds within 48 hours of purchase. After that, we can manually process refund requests. Email support@antigravity.app with your transaction ID.'
+                a: 'Google Play allows refunds within 48 hours of purchase. After that, we can manually process refund requests. Email antigravitybybulla@gmail.com with your transaction ID.'
               },
               {
                 id: 'restore',
@@ -532,7 +534,7 @@ const PricingScreen: React.FC = () => {
               {
                 id: 'trial',
                 q: 'Is There A Trial Period?',
-                a: 'No, but the Free tier gives you unlimited access to all PDF tools forever. Upgrade to Lifetime Protocol to unlock AI features.'
+                a: 'No, but the Free tier gives you unlimited access to the Essentials 5 tools forever (Scanner, Merge, Split, etc.). Upgrade to Lifetime Protocol to unlock the Pro & Neural Workspace (20+ tools).'
               },
               {
                 id: 'support',

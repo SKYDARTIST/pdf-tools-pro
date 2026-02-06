@@ -6,11 +6,16 @@ import {
 } from 'lucide-react';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import UsageStats from '@/components/UsageStats.tsx';
+import { canUseTool } from '@/services/subscriptionService';
+import UpgradeModal from '@/components/UpgradeModal';
+
 
 
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
 
   useEffect(() => {
     setRecentFiles(FileHistoryManager.getRecent(10));
@@ -65,7 +70,14 @@ const HomeScreen: React.FC = () => {
             transition={{ delay: 0.2 }}
             whileHover={{ y: -4, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => navigate('/ag-workspace')}
+            onClick={() => {
+              const { allowed } = canUseTool('ai-workspace');
+              if (allowed) {
+                navigate('/ag-workspace');
+              } else {
+                setShowUpgrade(true);
+              }
+            }}
             className="monolith-glass p-10 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-[#0c0c0c] to-[#1a1a1a] text-white border border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[40px]"
           >
             <div className="absolute top-1/2 -translate-y-1/2 -right-10 opacity-[0.05] group-hover:opacity-10 group-hover:-right-5 transition-all duration-700">
@@ -75,10 +87,10 @@ const HomeScreen: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#00C896] animate-pulse shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
-                  <h3 className="text-2xl font-black uppercase tracking-tighter">Anti-Gravity AI</h3>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter">Pro & Neural</h3>
                 </div>
                 <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-80 text-emerald-400">
-                  Smart AI analysis
+                  AI Workspace
                 </p>
               </div>
               <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner group-hover:scale-110 transition-transform">
@@ -86,6 +98,7 @@ const HomeScreen: React.FC = () => {
               </div>
             </div>
           </motion.div>
+
 
           {/* Secondary Actions Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -175,8 +188,15 @@ const HomeScreen: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
+
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        featureName="Pro & Neural Workspace"
+      />
     </motion.div>
   );
 };
+
 
 export default HomeScreen;

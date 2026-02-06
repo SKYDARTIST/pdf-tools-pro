@@ -14,7 +14,7 @@ const TOOL_MAPPING: Record<string, { name: string; path: string }> = {
     'SCAN': { name: 'Document Scanner', path: '/scanner' },
     'SIGN': { name: 'Sign PDFs', path: '/sign' },
     'WATERMARK': { name: 'Add Watermark', path: '/watermark' },
-    'WORKSPACE': { name: 'AI Assistant', path: '/ag-workspace' },
+    'WORKSPACE': { name: 'Neural Hub', path: '/ag-workspace' },
     'DIFF': { name: 'Compare PDFs', path: '/neural-diff' }
 };
 
@@ -22,7 +22,7 @@ const NeuralAssistant: React.FC = () => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<{ role: 'bot' | 'user', text: string, action?: { name: string; path: string } }[]>([
-        { role: 'bot', text: 'AI Assistant online. How can I help?' }
+        { role: 'bot', text: 'Neural Hub online. How can I help?' }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +73,7 @@ const NeuralAssistant: React.FC = () => {
         setIsLoading(true);
 
         const systemPrompt = `
-        You are the "Anti-Gravity AI Assistant". You are helpful, professional, and efficient.
+        You are the "Anti-Gravity Neural Hub". You are helpful, professional, and efficient.
         
         IDENTITY: Professional, helpful, and concise. Avoid overly technical jargon when possible.
         
@@ -116,8 +116,7 @@ const NeuralAssistant: React.FC = () => {
             }
 
             setMessages(prev => [...prev, { role: 'bot', text: cleanText, action }]);
-            const stats = await recordAIUsage(type);
-            if (stats?.message) alert(stats.message);
+            await recordAIUsage(type);
         } catch (error) {
             setMessages(prev => [...prev, { role: 'bot', text: "Sorry, I had trouble processing that request. Please try again." }]);
         } finally {
@@ -151,7 +150,7 @@ const NeuralAssistant: React.FC = () => {
                                     <Sparkles size={16} className="text-emerald-500" />
                                 </motion.div>
                                 <div>
-                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">AI Assistant</div>
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Neural Hub</div>
                                     <div className="text-sm font-black uppercase tracking-tighter">Ready to help</div>
                                 </div>
                             </div>

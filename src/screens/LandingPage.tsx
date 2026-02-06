@@ -176,9 +176,6 @@ const LandingPage: React.FC = () => {
                             ANTI<br />GRAVITY
                         </motion.h1>
 
-                        <div className="text-[10px] font-black uppercase tracking-[0.6em] text-[#2D3748] dark:text-gray-400 opacity-60">
-                            Smart AI • 100% Private • Fast
-                        </div>
                     </motion.div>
 
                     {/* Entry CTA - Boosted Spacing */}

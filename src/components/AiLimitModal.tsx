@@ -30,7 +30,7 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
             icon: Sparkles,
             title: 'Lifetime Required',
             subtitle: 'NEURAL HUB LOCKED',
-            description: "Advanced AI features like Mind Mapping, Outlining, and Neural Chat require Lifetime Access.",
+            description: "The Pro & Neural Workspace (20+ Professional Tools) requires Lifetime Access.",
             primaryAction: {
                 label: 'Unlock Forever',
                 onClick: handleNavigateToPricing,
@@ -107,7 +107,7 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                                         Lifetime Perks:
                                     </h3>
                                     <div className="grid gap-3">
-                                        <InfoItem icon={Zap} text="Unlimited AI Documents" />
+                                        <InfoItem icon={Zap} text="Unlock 20+ Pro Tools" />
                                         <InfoItem icon={Star} text="Priority Neural Engine" />
                                         <InfoItem icon={Shield} text="One-Time Payment Only" />
                                     </div>

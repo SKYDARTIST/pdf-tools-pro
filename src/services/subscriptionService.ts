@@ -24,6 +24,9 @@ export enum SubscriptionTier {
     PREMIUM = 'premium'
 }
 
+export const FREE_TOOLS = ['scanner', 'merge', 'split', 'image-to-pdf', 'view'];
+
+
 export enum AiOperationType {
     HEAVY = 'heavy',
     GUIDANCE = 'guidance'
@@ -240,10 +243,40 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
 
     return {
         allowed: false,
-        reason: "AI features require Lifetime Access. Upgrade now for unlimited AI usage!",
+        reason: "Pro & Neural features require Lifetime Access. Upgrade now for unlimited AI and Pro tools!",
         blockMode: AiBlockMode.BUY_PRO
     };
 };
+
+/**
+ * Feature Gate: Check if a tool is accessible by the current tier
+ */
+export const canUseTool = (toolId: string): {
+    allowed: boolean;
+    reason?: string;
+    blockMode?: AiBlockMode;
+} => {
+    const subscription = getSubscription();
+
+    // Lifetime gets everything
+    if (subscription.tier === SubscriptionTier.LIFETIME) {
+        return { allowed: true, blockMode: AiBlockMode.NONE };
+    }
+
+    // Check if it's in the free list
+    const toolIdLower = toolId.toLowerCase();
+    if (FREE_TOOLS.includes(toolIdLower)) {
+        return { allowed: true, blockMode: AiBlockMode.NONE };
+    }
+
+    // Otherwise, it's a Pro feature
+    return {
+        allowed: false,
+        reason: "This tool is part of the Pro & Neural Workspace. Upgrade to Lifetime for access!",
+        blockMode: AiBlockMode.BUY_PRO
+    };
+};
+
 
 // NO-OP: Counters removed
 export const recordOperation = (): void => {

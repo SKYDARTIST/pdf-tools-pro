@@ -34,7 +34,7 @@ const ProtocolGuideScreen: React.FC = () => {
         {
             id: 'ai',
             title: 'AI Tools',
-            desc: 'Powerful AI assistants for your documents',
+            desc: 'Powerful Neural tools for your documents',
             tools: [
                 {
                     title: 'Anti-Gravity Workspace',
@@ -200,7 +200,7 @@ const ProtocolGuideScreen: React.FC = () => {
                                         : 'bg-white/80 dark:bg-white/5 text-gray-500 border-gray-100 dark:border-white/10 hover:border-[#00C896]/30'
                                         }`}
                                 >
-                                    {tab === 'ai' ? 'AI Assistant' : tab === 'core' ? 'Core' : tab}
+                                    {tab === 'ai' ? 'Pro & Neural' : tab === 'core' ? 'Core' : tab}
                                 </button>
                             ))}
                         </div>

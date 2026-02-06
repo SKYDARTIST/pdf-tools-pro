@@ -98,7 +98,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                                 {/* Features */}
                                 <div className="space-y-3 sm:space-y-4">
                                     <Feature icon={Zap} text="Unlimited Neural Operations" />
-                                    <Feature icon={Sparkles} text="Full AI-Powered Toolset" />
+                                    <Feature icon={Sparkles} text="20+ Pro & Neural Tools" />
                                     <Feature icon={Check} text="One-Time License • Own Forever" />
                                     <Feature icon={Shield} text="Private On-Device Privacy" />
                                 </div>

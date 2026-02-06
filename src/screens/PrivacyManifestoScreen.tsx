@@ -45,7 +45,7 @@ const PrivacyManifestoScreen: React.FC = () => {
                         {
                             icon: EyeOff,
                             title: "Secure AI Assistance",
-                            desc: "Our AI assistant uses secure, private connections. We never use your documents to train AI models, and all data is deleted immediately after you get your answer."
+                            desc: "Our Neural Hub uses secure, private connections. We never use your documents to train AI models, and all data is deleted immediately after you get your answer."
                         },
                         {
                             icon: Lock,

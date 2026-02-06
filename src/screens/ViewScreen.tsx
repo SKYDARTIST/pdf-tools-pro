@@ -45,11 +45,11 @@ const ViewScreen: React.FC = () => {
 
         <ToolGuide
           title="How to view your PDF"
-          description="Read any PDF document privately. You can zoom in, navigate pages, and ask our AI assistant questions about the content."
+          description="Read any PDF document privately. You can zoom in, navigate pages, and ask our Neural Hub questions about the content."
           steps={[
             "Upload the PDF you want to view.",
             "We'll show your document in our secure viewer.",
-            "Ask the AI assistant for a summary or to explain specific parts.",
+            "Ask the Neural Hub for a summary or to explain specific parts.",
             "Use the controls at the bottom to flip through pages."
           ]}
           useCases={[
@@ -109,7 +109,7 @@ const ViewScreen: React.FC = () => {
 
         {pdfUrl && (
           <div className="space-y-6">
-            <div className="text-technical ml-1">AI Assistant</div>
+            <div className="text-technical ml-1">Neural Hub</div>
             <AIAssistant contextText={extractedText} />
           </div>
         )}

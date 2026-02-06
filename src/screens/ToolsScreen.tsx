@@ -7,12 +7,15 @@ import {
 } from 'lucide-react';
 
 import TaskCounter from '@/components/TaskCounter';
+import { canUseTool } from '@/services/subscriptionService';
+import UpgradeModal from '@/components/UpgradeModal';
 
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
+    const [showUpgrade, setShowUpgrade] = useState(false);
 
     const toolCategories = [
         { id: 'popular', label: 'MOST POPULAR' },
@@ -21,18 +24,17 @@ const ToolsScreen: React.FC = () => {
     ];
 
     const tools = [
-        { title: 'Scanner', desc: 'Scan Documents with AI', icon: Zap, path: '/scanner', cat: 'popular', isPro: true },
-        { title: 'Merge', desc: 'Merge PDF Documents', icon: Combine, path: '/merge', cat: 'popular' },
-        { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular' },
-        { title: 'Sign', desc: 'Securely Sign PDFs', icon: PenTool, path: '/sign', cat: 'security', isPro: true },
-        { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'convert' },
-        { title: 'Extract Text', desc: 'Get text from your PDF', icon: FileText, path: '/extract-text', cat: 'convert' },
-        { title: 'Rotate', desc: 'Rotate PDF Pages', icon: RotateCw, path: '/rotate', cat: 'popular' },
-        { title: 'Watermark', desc: 'Add Secure Watermark', icon: Droplet, path: '/watermark', cat: 'security' },
-        { title: 'Extract Images', desc: 'Save images from your PDF', icon: FileImage, path: '/extract-images', cat: 'convert' },
-        { title: 'Remove', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'popular' },
-        { title: 'Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'popular' },
+        { title: 'Scanner', desc: 'Scan Documents with AI', icon: Zap, path: '/scanner', cat: 'popular', id: 'scanner' },
+        { title: 'Merge', desc: 'Merge PDF Documents', icon: Combine, path: '/merge', cat: 'popular', id: 'merge' },
+        { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular', id: 'split' },
+        { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'popular', id: 'image-to-pdf' },
+        { title: 'Reader', desc: 'AI-Powered PDF Hub', icon: BookOpen, path: '/reader', cat: 'convert', id: 'view', isAI: true },
     ];
+
+
+    const handleToolClick = (tool: any) => {
+        navigate(tool.path);
+    };
 
     const filtered = tools.filter(tool => {
         const matchesSearch = tool.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -51,52 +53,41 @@ const ToolsScreen: React.FC = () => {
                     transition={{ delay: i * 0.05 }}
                     whileHover={{ y: -6, scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => navigate(tool.path)}
-                    className="monolith-card rounded-[40px] cursor-pointer p-6 flex flex-col items-center text-center gap-3 border border-[#E2E8F0] dark:border-white/5 shadow-sm hover:shadow-2xl hover:border-[#00C896]/30 transition-all group relative overflow-hidden"
+                    onClick={() => handleToolClick(tool)}
+                    className={`monolith-card rounded-[40px] cursor-pointer p-6 flex flex-col items-center text-center gap-3 shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden ${tool.isAI
+                        ? 'border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent hover:border-emerald-500/50'
+                        : 'border border-[#E2E8F0] dark:border-white/5 hover:border-[#00C896]/30'
+                        }`}
                 >
+                    {tool.isAI && (
+                        <div className="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
+                            AI
+                        </div>
+                    )}
                     <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#00C896]/5 rounded-full blur-2xl group-hover:bg-[#00C896]/10 transition-colors" />
 
-                    <div className="w-14 h-14 bg-[#E6FAF5] dark:bg-white/5 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
-                        <tool.icon size={20} className="text-[#00C896] dark:text-white" strokeWidth={2.5} />
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform ${tool.isAI ? 'bg-emerald-500/10' : 'bg-[#E6FAF5] dark:bg-white/5'
+                        }`}>
+                        <tool.icon size={20} className={tool.isAI ? 'text-emerald-500' : 'text-[#00C896] dark:text-white'} strokeWidth={2.5} />
                     </div>
 
                     <div className="min-w-0 px-1">
                         <div className="flex flex-col items-center gap-2 mb-1.5">
                             <h3 className="text-[10px] font-black uppercase tracking-wider text-[#000000] dark:text-white leading-none">{tool.title}</h3>
-                            {tool.isPro && (
-                                <motion.span
-                                    initial={{ opacity: 0.8 }}
-                                    animate={{ opacity: [0.8, 1, 0.8] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="text-[6px] font-mono font-black bg-[#E6FAF5] text-[#00C896] px-2 py-0.5 rounded-full uppercase tracking-widest border border-[#00C896]/20 shadow-[0_0_10px_rgba(0,200,150,0.1)]"
-                                >
-                                    PRO
-                                </motion.span>
-                            )}
                         </div>
                         <p className="text-[9px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-tight leading-relaxed line-clamp-2 max-w-[120px]">{tool.desc}</p>
+                        {tool.isAI && (
+                            <div className="mt-2 text-[7px] font-black text-emerald-500 uppercase tracking-widest">
+                                Free AI Sampler
+                            </div>
+                        )}
                     </div>
-
-                    <motion.button
-                        whileHover={{ scale: 1.2, rotate: 15 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            window.dispatchEvent(new CustomEvent('neural-assistant-sync', {
-                                detail: {
-                                    query: `Tell me about the ${tool.title} tool. What are its use cases and how do I use it?`,
-                                    guidance: true
-                                }
-                            }));
-                        }}
-                        className="absolute top-3 right-3 p-1.5 rounded-lg bg-[#00C896]/10 text-[#00C896] hover:bg-[#00C896] hover:text-white transition-all opacity-40 group-hover:opacity-100 z-20"
-                    >
-                        <Sparkles size={8} />
-                    </motion.button>
                 </motion.div>
             ))}
         </div>
     );
+
+
 
     return (
         <div className="min-h-screen bg-transparent pb-32 pt-40 max-w-md mx-auto px-6">
@@ -180,6 +171,34 @@ const ToolsScreen: React.FC = () => {
                     </motion.div>
                 </AnimatePresence>
 
+                {/* Pro Teaser Card - Placed once at the bottom */}
+                {activeCategory === 'all' && !searchQuery && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -4 }}
+                        onClick={() => navigate('/ag-workspace')}
+                        className="monolith-glass p-8 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-[#0c0c0c] to-[#1a1a1a] text-white border border-emerald-500/20 shadow-2xl rounded-[40px] flex items-center justify-between"
+                    >
+                        <div className="absolute top-1/2 -translate-y-1/2 -right-6 opacity-[0.05] group-hover:opacity-10 transition-all duration-700">
+                            <Sparkles size={120} />
+                        </div>
+                        <div className="space-y-2 relative z-10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
+                                <h3 className="text-lg font-black uppercase tracking-tighter">Pro & Neural Workspace</h3>
+                            </div>
+                            <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400 opacity-80">
+                                Unlock 20+ Pro & Neural Tools
+                            </p>
+                        </div>
+                        <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 group-hover:scale-110 transition-transform relative z-10">
+                            <Sparkles size={20} className="text-[#00C896]" />
+                        </div>
+                    </motion.div>
+                )}
+
+
                 {filtered.length === 0 && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -191,8 +210,15 @@ const ToolsScreen: React.FC = () => {
                     </motion.div>
                 )}
             </div>
+
+            <UpgradeModal
+                isOpen={showUpgrade}
+                onClose={() => setShowUpgrade(false)}
+                featureName="Pro & Neural Workspace"
+            />
         </div>
     );
 };
 
 export default ToolsScreen;
+
