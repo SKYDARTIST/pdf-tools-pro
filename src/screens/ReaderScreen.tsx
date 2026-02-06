@@ -62,6 +62,10 @@ const ReaderScreen: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [loadProgress, setLoadProgress] = useState(0);
 
+    // PERFORMANCE: Pre-extracted text cache to avoid re-processing
+    const [extractedText, setExtractedText] = useState<string | null>(null);
+    const [isPreExtracting, setIsPreExtracting] = useState(false);
+
     // Helper to check for auth barriers
     const checkAuthBarrier = (response: string) => {
         // GLOBAL PRO OVERRIDE: Ignore backend auth errors on frontend
@@ -86,12 +90,25 @@ const ReaderScreen: React.FC = () => {
             setPdfError(null);
             setIsLoading(true);
             const reader = new FileReader();
-            reader.onload = () => {
+            reader.onload = async () => {
                 const arrayBuffer = reader.result as ArrayBuffer;
                 setPdfData(new Uint8Array(arrayBuffer));
-                // We clear isLoading here, but Document might still be loading pages.
-                // However, this prevents the 'Neural processing' overlay from being stuck.
                 setIsLoading(false);
+
+                // PERFORMANCE: Pre-extract text in background for instant AI
+                if (file.type === 'application/pdf' && !extractedText) {
+                    setIsPreExtracting(true);
+                    try {
+                        const text = await extractTextFromPdf(arrayBuffer.slice(0), undefined, undefined);
+                        setExtractedText(text);
+                        setDocumentContext(`FILENAME: ${file.name}\nCONTENT: ${text || "[SCANNED]"}`);
+                        console.log('📄 Pre-extraction complete, AI features ready');
+                    } catch (err) {
+                        console.warn('Pre-extraction failed:', err);
+                    } finally {
+                        setIsPreExtracting(false);
+                    }
+                }
             };
             reader.onerror = () => {
                 setPdfError("Could not read file data.");
@@ -119,6 +136,7 @@ const ReaderScreen: React.FC = () => {
         setOutlineData(null);
         setChatHistory([]);
         setDocumentContext(null);
+        setExtractedText(null); // Clear cached text
         setPageNumber(1);
         window.speechSynthesis?.cancel();
     };
@@ -138,12 +156,14 @@ const ReaderScreen: React.FC = () => {
 
         setIsGeneratingSummary(true);
         try {
-            let extractedText = forceText;
-            if (!extractedText) {
+            // PERFORMANCE: Use cached text if available
+            let text = forceText || extractedText;
+            if (!text) {
                 const buffer = await file.arrayBuffer();
-                extractedText = await extractTextFromPdf(buffer.slice(0), undefined, undefined, (p) => setLoadProgress(p));
+                text = await extractTextFromPdf(buffer.slice(0), undefined, undefined, (p) => setLoadProgress(p));
+                setExtractedText(text); // Cache for future use
             }
-            const context = `FILENAME: ${file.name}\nCONTENT: ${extractedText || "[SCANNED]"}`;
+            const context = `FILENAME: ${file.name}\nCONTENT: ${text || "[SCANNED]"}`;
             setDocumentContext(context);
 
             const prompt = `Analyze this document and summarize it. Respond in a professional tone.`;
@@ -234,9 +254,18 @@ const ReaderScreen: React.FC = () => {
             }
 
             if (file.type === "application/pdf") {
-                const buffer = await file.arrayBuffer();
-                text = await extractTextFromPdf(buffer.slice(0), startPage, endPage, (p) => setLoadProgress(p));
+                // PERFORMANCE: Use cached text when using full document (no custom range)
+                const isFullDocument = startPage === 1 && endPage === numPages;
+                if (isFullDocument && extractedText) {
+                    text = extractedText;
+                } else {
+                    const buffer = await file.arrayBuffer();
+                    text = await extractTextFromPdf(buffer.slice(0), startPage, endPage, (p) => setLoadProgress(p));
+                    // Cache full document text for future use
+                    if (isFullDocument) setExtractedText(text);
+                }
                 if (!text || text.trim() === '') {
+                    const buffer = await file.arrayBuffer();
                     imageBase64 = await renderPageToImage(buffer.slice(0), startPage);
                     fileMime = 'image/jpeg';
                     text = "[SCANNED]";
@@ -287,8 +316,13 @@ Analyze the provided document text and return ONLY the indented list structure.`
         if (outlineData) return;
         setIsGeneratingOutline(true);
         try {
-            const buffer = await file.arrayBuffer();
-            const text = await extractTextFromPdf(buffer.slice(0), undefined, undefined, (p) => setLoadProgress(p));
+            // PERFORMANCE: Use cached text if available
+            let text = extractedText;
+            if (!text) {
+                const buffer = await file.arrayBuffer();
+                text = await extractTextFromPdf(buffer.slice(0), undefined, undefined, (p) => setLoadProgress(p));
+                setExtractedText(text); // Cache for future use
+            }
             if (!documentContext) setDocumentContext(`FILENAME: ${file.name}\nCONTENT: ${text}`);
             const prompt = `Provide a structured outline of this document.`;
             const response = await askGemini(prompt, text, "outline");
