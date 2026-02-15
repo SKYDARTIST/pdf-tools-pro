@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { getSubscription, upgradeTier, SubscriptionTier } from '@/services/subscriptionService';
 import BillingService from '@/services/billingService';
+import { getCurrentUser } from '@/services/googleAuthService';
 
 const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -57,6 +58,22 @@ const PricingScreen: React.FC = () => {
   }, []);
 
   const handleLifetimePurchase = async () => {
+    // GATE: Require Google Sign-In before purchase
+    // This ensures every purchase is linked to an email for support & account recovery
+    const user = await getCurrentUser();
+    if (!user || !user.google_uid) {
+      const shouldSignIn = confirm(
+        '🔐 Sign in with Google to purchase\n\n' +
+        'This ensures your Lifetime Access is saved to your account ' +
+        'and can be restored on any device.\n\n' +
+        'Click OK to sign in.'
+      );
+      if (shouldSignIn) {
+        navigate('/login');
+      }
+      return;
+    }
+
     setIsLoading(true);
     try {
       const success = await BillingService.purchaseLifetime();

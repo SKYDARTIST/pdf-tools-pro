@@ -41,6 +41,7 @@ const ReaderScreen: React.FC = () => {
     const [isGeneratingMindMap, setIsGeneratingMindMap] = useState<boolean>(false);
     const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
     const [outlineData, setOutlineData] = useState<string | null>(null);
+    const [outlineError, setOutlineError] = useState<string | null>(null);
 
     // Chat Logic
     const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'bot', text: string }[]>([]);
@@ -134,6 +135,7 @@ const ReaderScreen: React.FC = () => {
     const resetAllStates = () => {
         setMindMapData('');
         setOutlineData(null);
+        setOutlineError(null);
         setChatHistory([]);
         setDocumentContext(null);
         setExtractedText(null); // Clear cached text
@@ -313,8 +315,9 @@ Analyze the provided document text and return ONLY the indented list structure.`
 
         setActiveHubMode(2);
 
-        if (outlineData) return;
+        if (outlineData && !outlineError) return;
         setIsGeneratingOutline(true);
+        setOutlineError(null); // Clear any previous errors
         try {
             // PERFORMANCE: Use cached text if available
             let text = extractedText;
@@ -329,8 +332,16 @@ Analyze the provided document text and return ONLY the indented list structure.`
             if (response.success && response.data) {
                 setOutlineData(response.data);
                 await recordAIUsage(AiOperationType.SAMPLER);
+            } else {
+                // API returned error
+                setOutlineError(response.error || 'Failed to generate outline');
+                setOutlineData(null);
             }
-        } catch (error) { console.error(error); } finally {
+        } catch (error: any) {
+            console.error('Outline Generation Error:', error);
+            setOutlineError(error.message || 'Connection error. Please try again.');
+            setOutlineData(null);
+        } finally {
             setIsGeneratingOutline(false);
             setLoadProgress(0);
         }
@@ -453,7 +464,32 @@ Analyze the provided document text and return ONLY the indented list structure.`
                                 {activeHubMode === 3 ? (
                                     <motion.div key="mm" className="p-8 h-full"><MindMapComponent data={mindMapData} /></motion.div>
                                 ) : activeHubMode === 2 ? (
-                                    <motion.div key="ot" className="p-8 h-full overflow-y-auto font-mono text-xs leading-relaxed whitespace-pre-wrap">{outlineData}</motion.div>
+                                    <motion.div key="ot" className="p-8 h-full overflow-y-auto">
+                                        {outlineError ? (
+                                            <div className="flex flex-col items-center justify-center h-full space-y-4">
+                                                <div className="p-4 bg-rose-500/10 rounded-2xl">
+                                                    <X size={32} className="text-rose-500" />
+                                                </div>
+                                                <p className="text-xs font-bold text-rose-500 uppercase tracking-widest text-center max-w-md">{outlineError}</p>
+                                                <button
+                                                    onClick={() => {
+                                                        setOutlineData(null);
+                                                        setOutlineError(null);
+                                                        generateOutline();
+                                                    }}
+                                                    className="px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all"
+                                                >
+                                                    Retry
+                                                </button>
+                                            </div>
+                                        ) : outlineData ? (
+                                            <div className="font-mono text-xs leading-relaxed whitespace-pre-wrap">{outlineData}</div>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400">Generating outline...</p>
+                                            </div>
+                                        )}
+                                    </motion.div>
                                 ) : activeHubMode === 1 ? (
                                     <motion.div key="chat" className="flex flex-col h-[600px]">
                                         <div className="flex-1 overflow-y-auto p-8 space-y-6">

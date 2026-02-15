@@ -1,3 +1,9 @@
+What's New in v3.1.1 (Security & Account Protection):
+
+- **Purchase Security:** Google Sign-In is now required before purchasing Lifetime Access. This ensures your purchase is securely linked to your account for better recovery and support. 
+- **Auto-Reconciliation:** Added an intelligent handshake fix that automatically syncs device-level lifetime grants to your Google account identity on sign-in.
+- **Backend Guard:** Enhanced server-side validation to block anonymous/device-only purchase verification attempts.
+
 What's New in v2.8.1 (Critical Security & Stability Patch):
 
 - **CRITICAL FIX:** Resolved an app crash on startup affecting specific Android devices.

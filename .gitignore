@@ -60,3 +60,21 @@ frontend_pid.txt
 backend_log.txt
 backend_pid.txt
 
+# Local debug/utility scripts (contain DB queries, keep local only)
+check_usage_status.py
+check_user_status.py
+check_user.js
+execute_grant.py
+get_columns.py
+list_pro_users.py
+list_recent_users.py
+list_sessions.py
+list_transactions.py
+list_transactions_no_order.py
+list_usage.py
+list_users.py
+search_partial_user.py
+
+# Gemini agent files
+.agent/
+

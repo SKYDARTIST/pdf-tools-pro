@@ -633,6 +633,21 @@ export default async function handler(req, res) {
                             ...profile,
                             last_login: new Date().toISOString(),
                         }], { onConflict: 'google_uid' });
+
+                        // RECONCILIATION: Check if this device has LIFETIME status
+                        // and sync it to the new user account if needed.
+                        const { data: usage } = await supabase
+                            .from('ag_user_usage')
+                            .select('tier')
+                            .eq('device_id', deviceId)
+                            .single();
+
+                        if (usage?.tier === 'lifetime') {
+                            await supabase.from('user_accounts')
+                                .update({ tier: 'lifetime' })
+                                .eq('google_uid', profile.google_uid);
+                            console.log(`🛡️ Handshake Reconciliation: Auto-granted lifetime to ${maskDeviceId(profile.google_uid)}`);
+                        }
                     }
                 } catch (e) {
                     console.error('Handshake Error:', e);
@@ -787,6 +802,16 @@ export default async function handler(req, res) {
 
             if (requestType === 'verify_purchase') {
                 const { purchaseToken, productId, transactionId, timestamp } = req.body;
+
+                // SECURITY: Require authenticated Google session for purchases
+                // This prevents anonymous device-only users from purchasing without sign-in
+                if (!session?.is_auth || !session?.uid) {
+                    console.warn(`🛡️ Anti-Gravity Security: Anonymous purchase attempt blocked from ${maskDeviceId(deviceId)}`);
+                    return res.status(403).json({
+                        error: 'SIGN_IN_REQUIRED',
+                        details: 'Google Sign-In required before purchasing. Please sign in and try again.'
+                    });
+                }
 
                 // 0. WHITELIST CHECK (V6.0)
                 if (!VALID_PRODUCTS.has(productId)) {
