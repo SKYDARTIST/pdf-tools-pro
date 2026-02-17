@@ -820,13 +820,9 @@ export default async function handler(req, res) {
                 }
 
                 // 1. TIERED RATE LIMITING (V6.0) - Burst (5/5min) and Sustain (10/hr)
-                // SECURITY: Fail-CLOSED for purchase endpoints - reject if KV unavailable
-                if (!kv) {
-                    console.error('🛡️ Anti-Gravity Security: KV unavailable - blocking purchase verification (fail-closed)');
-                    return res.status(503).json({ error: 'RATE_LIMIT_UNAVAILABLE', details: 'Security service temporarily unavailable. Please retry.' });
-                }
-
-                if (deviceId) {
+                // SECURITY: Fail-OPEN for rate limiting - Google Play API is the real security gate.
+                // A missing rate limiter should never block a paying customer.
+                if (kv && deviceId) {
                     const burstKey = `rl:purchase:burst:${deviceId}`;
                     const sustainKey = `rl:purchase:sustain:${deviceId}`;
 
@@ -844,9 +840,12 @@ export default async function handler(req, res) {
                             return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS', retryAfter: '60s' });
                         }
                     } catch (kvError) {
-                        console.error('🛡️ Anti-Gravity Security: Purchase rate limit KV error (fail-closed):', kvError.message);
-                        return res.status(503).json({ error: 'RATE_LIMIT_ERROR', details: 'Security check failed. Please retry.' });
+                        // Fail-OPEN: KV error should not block legitimate purchases.
+                        // Google Play API verification below is the authoritative security check.
+                        console.warn('🛡️ Anti-Gravity Security: Purchase rate limit KV error (fail-open, proceeding):', kvError.message);
                     }
+                } else if (!kv) {
+                    console.warn('🛡️ Anti-Gravity Security: KV unavailable - proceeding without rate limiting (fail-open). Google Play API is authoritative.');
                 }
 
                 // 2. STRICT CSRF: No device ID fallback for purchase endpoints (V5.0/V6.0)

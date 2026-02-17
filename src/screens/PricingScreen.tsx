@@ -10,6 +10,7 @@ import {
 import { getSubscription, upgradeTier, SubscriptionTier } from '@/services/subscriptionService';
 import BillingService from '@/services/billingService';
 import { getCurrentUser } from '@/services/googleAuthService';
+import AuthService from '@/services/authService';
 
 const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -58,8 +59,7 @@ const PricingScreen: React.FC = () => {
   }, []);
 
   const handleLifetimePurchase = async () => {
-    // GATE: Require Google Sign-In before purchase
-    // This ensures every purchase is linked to an email for support & account recovery
+    // GATE 1: Require Google Sign-In (profile must exist)
     const user = await getCurrentUser();
     if (!user || !user.google_uid) {
       const shouldSignIn = confirm(
@@ -69,9 +69,31 @@ const PricingScreen: React.FC = () => {
         'Click OK to sign in.'
       );
       if (shouldSignIn) {
+        localStorage.setItem('auth_redirect_path', '/pricing');
         navigate('/login');
       }
       return;
+    }
+
+    // GATE 2: Ensure session is actually LIVE (not just a stale profile in localStorage)
+    // This catches users who signed in hours/days ago — their idToken is dead.
+    const sessionStatus = AuthService.getSessionStatus();
+    if (!sessionStatus.isValid) {
+      console.log('Anti-Gravity Billing: Session expired before purchase, attempting refresh...');
+      const refreshResult = await AuthService.initializeSession();
+      if (!refreshResult.success) {
+        const shouldSignIn = confirm(
+          '🔐 Your session has expired.\n\n' +
+          'Please sign in again to complete your purchase.\n' +
+          'This takes just a moment.\n\n' +
+          'Click OK to sign in.'
+        );
+        if (shouldSignIn) {
+          localStorage.setItem('auth_redirect_path', '/pricing');
+          navigate('/login');
+        }
+        return;
+      }
     }
 
     setIsLoading(true);

@@ -515,6 +515,14 @@ class BillingService {
         }
     }
 
+    /**
+     * Public entry point to trigger pending purchase processing.
+     * Called after user re-authenticates to immediately verify stuck purchases.
+     */
+    public async processPendingPurchasesPublic(): Promise<void> {
+        return this.processPendingPurchases();
+    }
+
     public async getPendingQueue(): Promise<any[]> {
         try {
             const items = await indexedDBQueue.getAll(this.PENDING_PURCHASES_STORE);
@@ -558,6 +566,21 @@ class BillingService {
             if (queueItems.length === 0) {
                 console.log('Anti-Gravity Billing: No pending purchases to process');
                 return;
+            }
+
+            // PRE-CHECK: Don't waste retries if session is dead.
+            // If the user's Google idToken is expired and session is invalid,
+            // retrying will always fail. Wait for user to re-authenticate.
+            const sessionStatus = AuthService.getSessionStatus();
+            if (!sessionStatus.isValid) {
+                console.log('Anti-Gravity Billing: Session invalid, attempting refresh before retry...');
+                const refreshResult = await AuthService.initializeSession();
+                if (!refreshResult.success) {
+                    console.warn('Anti-Gravity Billing: ⏸️ Session dead (expired credential). Skipping retries until user re-authenticates.', {
+                        pendingCount: queueItems.length
+                    });
+                    return; // Don't increment retry counts — not the purchase's fault
+                }
             }
 
             // Filter out items that exceeded max retries (keep them in DB for manual recovery)

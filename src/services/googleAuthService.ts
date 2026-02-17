@@ -5,6 +5,7 @@ import { clearLogs } from './persistentLogService';
 import AuthService from './authService';
 import { getDeviceId } from './deviceService';
 import { initSubscription } from './subscriptionService';
+import BillingService from './billingService';
 
 export interface GoogleUser {
     google_uid: string;
@@ -67,6 +68,13 @@ export const signInWithGoogle = async (credential: string): Promise<GoogleUser |
             console.warn('Google Auth: Background subscription sync failed', subErr);
         }
 
+        // CRITICAL: Process any pending purchases now that we have a fresh session.
+        // If a user bought while their token was expired, the purchase is stuck in the queue.
+        // Re-authenticating gives us a valid session — verify those purchases immediately.
+        BillingService.processPendingPurchasesPublic().catch(e => {
+            console.warn('Google Auth: Background pending purchase sync failed', e);
+        });
+
         return cachedUser;
     } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -108,11 +116,32 @@ export const getCurrentUser = async (): Promise<GoogleUser | null> => {
 };
 
 /**
- * Get the raw Google credential for handshake
+ * Check if a JWT token is expired
+ */
+const isTokenExpired = (token: string): boolean => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // Expired if less than 60 seconds remaining
+        return !payload.exp || (payload.exp * 1000) < (Date.now() + 60000);
+    } catch {
+        return true;
+    }
+};
+
+/**
+ * Get the raw Google credential for handshake.
+ * Returns null if the stored idToken is expired — caller must trigger re-auth.
  */
 export const getGoogleAuthCredential = async (): Promise<string | null> => {
     const user = await getCurrentUser();
-    return user?.idToken || null;
+    if (!user?.idToken) return null;
+
+    if (isTokenExpired(user.idToken)) {
+        console.warn('Google Auth: Stored idToken is expired, discarding. User needs to re-authenticate.');
+        return null;
+    }
+
+    return user.idToken;
 };
 
 /**
