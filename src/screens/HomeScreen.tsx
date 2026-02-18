@@ -6,8 +6,6 @@ import {
 } from 'lucide-react';
 import { Browser } from '@capacitor/browser';
 import FileHistoryManager from '@/utils/FileHistoryManager';
-import { canUseTool } from '@/services/subscriptionService';
-import UpgradeModal from '@/components/UpgradeModal';
 
 const DEVLOG_URL = import.meta.env.PROD
   ? 'https://pdf-tools-pro-indol.vercel.app/devlog.json'
@@ -20,7 +18,6 @@ const DEVLOG_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
-  const [showUpgrade, setShowUpgrade] = useState(false);
   const [devLog, setDevLog] = useState<{ title: string; body: string; date: string } | null>(null);
 
   useEffect(() => {
@@ -122,14 +119,7 @@ const HomeScreen: React.FC = () => {
             transition={{ delay: 0.2 }}
             whileHover={{ y: -4, scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              const { allowed } = canUseTool('ai-workspace');
-              if (allowed) {
-                navigate('/ag-workspace');
-              } else {
-                setShowUpgrade(true);
-              }
-            }}
+            onClick={() => navigate('/ag-workspace')}
             className="monolith-glass p-10 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-[#0c0c0c] to-[#1a1a1a] text-white border border-emerald-500/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[40px]"
           >
             <div className="absolute top-1/2 -translate-y-1/2 -right-10 opacity-[0.05] group-hover:opacity-10 group-hover:-right-5 transition-all duration-700">
@@ -241,11 +231,6 @@ const HomeScreen: React.FC = () => {
         </div>
       </div>
 
-      <UpgradeModal
-        isOpen={showUpgrade}
-        onClose={() => setShowUpgrade(false)}
-        featureName="Pro & Neural Workspace"
-      />
     </motion.div>
   );
 };
