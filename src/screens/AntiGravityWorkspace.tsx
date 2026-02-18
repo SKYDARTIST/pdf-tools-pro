@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon } from 'lucide-react';
+import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon, Layers } from 'lucide-react';
 
 import { askGemini } from '@/services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType, canUseTool } from '@/services/subscriptionService';
@@ -228,12 +228,12 @@ const AntiGravityWorkspace: React.FC = () => {
                 description="The Pro & Neural Workspace is an elite suite for your most important documents. From heavy-duty AI analysis to secure professional utilities, everything happens with zero-cloud privacy."
                 steps={[
                   "AI Neural Suite: Chat, compare, and extract structured data using local-first intelligence.",
-                  "Pro Utilities: Securely sign, watermark, and manage pages in professional PDF documents.",
-                  "Neural Pulse: Your operations are accelerated by on-device processing for maximum speed.",
+                  "Pro Utilities: Sign, watermark, reorder pages, and export PDFs as images — all on-device.",
+                  "New Tools: PDF→Images exports every page as JPG/PNG. Reorder rearranges pages instantly.",
                   "Privacy First: Files never leave your device. All Pro tools run in your private workspace."
                 ]}
                 useCases={[
-                  "Deep AI Analysis", "Secure Signing", "Privacy Watermarking", "Data Extraction"
+                  "Deep AI Analysis", "Secure Signing", "Privacy Watermarking", "Data Extraction", "PDF to Images", "Reorder Pages"
                 ]}
               />
             </motion.div>
@@ -350,7 +350,9 @@ const AntiGravityWorkspace: React.FC = () => {
               { id: 'extract-text', title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text' },
               { id: 'rotate', title: 'Rotate', desc: 'Fix Pages', icon: RotateCw, path: '/rotate' },
               { id: 'watermark', title: 'Watermark', desc: 'Secure Files', icon: Droplet, path: '/watermark' },
-              { id: 'extract-images', title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
+{ id: 'extract-images', title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
+              { id: 'pdf-to-images', title: 'PDF→Images', desc: 'Export as JPG/PNG', icon: FileImage, path: '/pdf-to-images', isNew: true },
+              { id: 'reorder-pages', title: 'Reorder', desc: 'Rearrange Pages', icon: Layers, path: '/reorder-pages', isNew: true },
               { id: 'remove-pages', title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
               { id: 'page-numbers', title: 'Numbers', desc: 'Add Pages', icon: Hash, path: '/page-numbers' },
             ].map((tool, i) => (
@@ -359,8 +361,13 @@ const AntiGravityWorkspace: React.FC = () => {
                 whileHover={{ y: -4, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleToolClick(tool.path, tool.id)}
-                className="monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3"
+                className="monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3 relative overflow-hidden"
               >
+                {(tool as any).isNew && (
+                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
+                    New
+                  </div>
+                )}
                 <div className="p-4 bg-[#00C896]/10 rounded-2xl text-[#00C896]"><tool.icon size={20} /></div>
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none mb-1">{tool.title}</div>

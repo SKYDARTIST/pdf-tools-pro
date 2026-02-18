@@ -14,8 +14,20 @@ const TOOL_MAPPING: Record<string, { name: string; path: string }> = {
     'SCAN': { name: 'Document Scanner', path: '/scanner' },
     'SIGN': { name: 'Sign PDFs', path: '/sign' },
     'WATERMARK': { name: 'Add Watermark', path: '/watermark' },
+    'PDF TO IMAGES': { name: 'PDF to Images', path: '/pdf-to-images' },
+    'EXPORT IMAGES': { name: 'PDF to Images', path: '/pdf-to-images' },
+    'REORDER': { name: 'Reorder Pages', path: '/reorder-pages' },
+    'REARRANGE': { name: 'Reorder Pages', path: '/reorder-pages' },
     'WORKSPACE': { name: 'Neural Hub', path: '/ag-workspace' },
-    'DIFF': { name: 'Compare PDFs', path: '/neural-diff' }
+    'DIFF': { name: 'Compare PDFs', path: '/neural-diff' },
+    'ROTATE': { name: 'Rotate Pages', path: '/rotate' },
+    'REMOVE': { name: 'Remove Pages', path: '/remove-pages' },
+    'PAGE NUMBERS': { name: 'Add Page Numbers', path: '/page-numbers' },
+    'EXTRACT TEXT': { name: 'Extract Text', path: '/extract-text' },
+    'EXTRACT IMAGES': { name: 'Extract Images', path: '/extract-images' },
+    'IMAGE TO PDF': { name: 'Image to PDF', path: '/image-to-pdf' },
+    'TEXT TO PDF': { name: 'Text to PDF', path: '/text-to-pdf' },
+    'READER': { name: 'Smart Reader Hub', path: '/reader' },
 };
 
 const NeuralAssistant: React.FC = () => {
@@ -82,15 +94,29 @@ const NeuralAssistant: React.FC = () => {
         PRIVATE & SECURE: All document processing happens locally on the device. We do not store data in the cloud.
         
         KNOWLEDGE BASE:
-        1. Workspace (/ag-workspace): Chat with PDFs, summarize.
-        2. Smart Audit (/reader?protocol=audit): Risk and savings analysis.
-        3. Data Extractor (/data-extractor): Extract info from images/PDFs.
-        4. AI Redact (/smart-redact): Hide sensitive info.
-        5. Compare Files (/neural-diff): See what changed between documents.
-        6. Basic Tools: Merge (/merge), Split (/split), Rotate (/rotate), Sign (/sign), Watermark (/watermark), Scanner (/scanner), Image to PDF (/image-to-pdf).
-        
+        1. Workspace (/ag-workspace): Chat with PDFs, summarize documents with AI.
+        2. Smart Audit (/reader?protocol=audit): Risk and savings analysis on documents.
+        3. Data Extractor (/data-extractor): Extract structured data from images and scanned PDFs.
+        4. AI Redact (/smart-redact): Automatically hide sensitive/PII information.
+        5. Compare Files (/neural-diff): See what changed between two document versions.
+        6. Smart Reader Hub (/reader): View, chat, outline and map any PDF.
+        7. Merge (/merge): Combine multiple PDFs into one.
+        8. Split (/split): Split a PDF into separate pages or ranges.
+        9. Scanner (/scanner): Scan documents with AI enhancement.
+        10. Image to PDF (/image-to-pdf): Convert photos/images to PDF.
+        11. Text to PDF (/text-to-pdf): Convert plain text to PDF.
+        12. Sign (/sign): Digitally sign PDF documents.
+        13. Watermark (/watermark): Add watermark text to PDFs.
+        14. Rotate (/rotate): Fix rotated pages in a PDF.
+        15. Remove Pages (/remove-pages): Delete unwanted pages from a PDF.
+        16. Reorder Pages (/reorder-pages): Rearrange the order of pages in a PDF.
+        17. PDF to Images (/pdf-to-images): Export every PDF page as JPG or PNG images.
+        18. Extract Text (/extract-text): Pull all text out of a PDF.
+        19. Extract Images (/extract-images): Save embedded images from a PDF.
+        20. Page Numbers (/page-numbers): Add page numbers to a PDF.
+
         ACTION TRIGGER: If you suggest a specific tool, you MUST include the signal "ACTION_REQUIRED: [TOOL_KEY]" at the end of your message.
-        TOOL_KEYS: MERGE, SPLIT, AUDIT, EXTRACT, REDACT, SCAN, SIGN, WATERMARK, WORKSPACE, DIFF.
+        TOOL_KEYS: MERGE, SPLIT, AUDIT, EXTRACT, REDACT, SCAN, SIGN, WATERMARK, WORKSPACE, DIFF, ROTATE, REMOVE, PAGE NUMBERS, EXTRACT TEXT, EXTRACT IMAGES, IMAGE TO PDF, TEXT TO PDF, READER, PDF TO IMAGES, REORDER.
         `.trim();
 
         try {

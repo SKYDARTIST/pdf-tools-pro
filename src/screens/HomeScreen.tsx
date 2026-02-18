@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, FolderOpen, Sparkles, LayoutGrid, Zap, CheckCircle, HelpCircle
+  FileText, FolderOpen, Sparkles, LayoutGrid, CheckCircle, HelpCircle, Hammer
 } from 'lucide-react';
 import FileHistoryManager from '@/utils/FileHistoryManager';
-import UsageStats from '@/components/UsageStats.tsx';
 import { canUseTool } from '@/services/subscriptionService';
 import UpgradeModal from '@/components/UpgradeModal';
+
+const DEVLOG_URL = import.meta.env.PROD
+  ? 'https://pdf-tools-pro-indol.vercel.app/devlog.json'
+  : '/devlog.json';
+const DEVLOG_CACHE_KEY = 'ag_devlog_cache';
+const DEVLOG_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 
 
@@ -15,10 +20,29 @@ const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
   const [showUpgrade, setShowUpgrade] = useState(false);
-
+  const [devLog, setDevLog] = useState<{ emoji: string; title: string; body: string; date: string } | null>(null);
 
   useEffect(() => {
     setRecentFiles(FileHistoryManager.getRecent(10));
+
+    const loadDevLog = async () => {
+      try {
+        const cached = localStorage.getItem(DEVLOG_CACHE_KEY);
+        if (cached) {
+          const { data, ts } = JSON.parse(cached);
+          if (Date.now() - ts < DEVLOG_CACHE_TTL) { setDevLog(data); return; }
+        }
+        const res = await fetch(DEVLOG_URL);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.latest) {
+            setDevLog(json.latest);
+            localStorage.setItem(DEVLOG_CACHE_KEY, JSON.stringify({ data: json.latest, ts: Date.now() }));
+          }
+        }
+      } catch { /* non-critical */ }
+    };
+    loadDevLog();
   }, []);
 
   return (
@@ -56,9 +80,30 @@ const HomeScreen: React.FC = () => {
 
       {/* Hub Core */}
       <div className="space-y-6">
-        <div className="w-full">
-          <UsageStats />
-        </div>
+        {devLog && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="monolith-card rounded-[32px] p-5 flex items-start gap-4 border border-emerald-500/15 bg-emerald-500/[0.02]"
+          >
+            <div className="w-9 h-9 bg-emerald-500/10 rounded-2xl flex items-center justify-center shrink-0 mt-0.5">
+              <Hammer size={14} className="text-emerald-500" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-emerald-600 dark:text-emerald-500">From the Builder</div>
+                <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                  {new Date(devLog.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm">{devLog.emoji}</span>
+                <h4 className="text-[11px] font-black uppercase tracking-tight text-[#000000] dark:text-white">{devLog.title}</h4>
+              </div>
+              <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 leading-relaxed line-clamp-2">{devLog.body}</p>
+            </div>
+          </motion.div>
+        )}
 
         <div className="space-y-4">
           <div className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60 ml-1">Quick Tools</div>

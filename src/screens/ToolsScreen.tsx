@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     Search, Combine, Scissors, PenTool, Image, FileText, Droplet, Zap,
-    RotateCw, FileImage, Trash2, Hash, BookOpen, GitMerge, Sparkles
+    RotateCw, Trash2, Hash, BookOpen, GitMerge, Sparkles
 } from 'lucide-react';
 
 import TaskCounter from '@/components/TaskCounter';
@@ -67,6 +67,11 @@ const ToolsScreen: React.FC = () => {
                     {tool.isAI && (
                         <div className="absolute top-2 right-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
                             AI
+                        </div>
+                    )}
+                    {(tool as any).isNew && (
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
+                            New
                         </div>
                     )}
                     <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#00C896]/5 rounded-full blur-2xl group-hover:bg-[#00C896]/10 transition-colors" />

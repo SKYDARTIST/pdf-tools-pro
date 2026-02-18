@@ -18,6 +18,8 @@ const TextToPdfScreen = lazy(() => import('@/screens/TextToPdfScreen'));
 const ScannerScreen = lazy(() => import('@/screens/ScannerScreen'));
 const WatermarkScreen = lazy(() => import('@/screens/WatermarkScreen'));
 const SignScreen = lazy(() => import('@/screens/SignScreen'));
+const PdfToImagesScreen = lazy(() => import('@/screens/PdfToImagesScreen'));
+const ReorderPagesScreen = lazy(() => import('@/screens/ReorderPagesScreen'));
 const ViewScreen = lazy(() => import('@/screens/ViewScreen'));
 const ExtractTextScreen = lazy(() => import('@/screens/ExtractTextScreen'));
 const AISettingsScreen = lazy(() => import('@/screens/AISettingsScreen'));
@@ -149,7 +151,7 @@ const App: React.FC = () => {
           'page-numbers', 'extract-images', 'ai-settings',
           'ag-workspace', 'table-extractor', 'my-files',
           'smart-redact', 'neural-diff', 'data-extractor',
-          'auth-callback'
+          'pdf-to-images', 'reorder-pages', 'auth-callback'
         ];
 
         // SPLIT STRATEGY: Handle both 'com.cryptobulla.antigravity:/' and 'com.cryptobulla.antigravity://'
@@ -357,6 +359,8 @@ const App: React.FC = () => {
                   <Route path="/scanner" element={<ProtectedRoute><ScannerScreen /></ProtectedRoute>} />
                   <Route path="/watermark" element={<ProtectedRoute><WatermarkScreen /></ProtectedRoute>} />
                   <Route path="/sign" element={<ProtectedRoute><SignScreen /></ProtectedRoute>} />
+                  <Route path="/pdf-to-images" element={<ProtectedRoute><PdfToImagesScreen /></ProtectedRoute>} />
+                  <Route path="/reorder-pages" element={<ProtectedRoute><ReorderPagesScreen /></ProtectedRoute>} />
                   <Route path="/view" element={<ProtectedRoute><ViewScreen /></ProtectedRoute>} />
                   <Route path="/extract-text" element={<ProtectedRoute><ExtractTextScreen /></ProtectedRoute>} />
                   <Route path="/reader" element={<ProtectedRoute><ReaderScreen /></ProtectedRoute>} />

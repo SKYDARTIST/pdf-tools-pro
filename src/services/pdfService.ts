@@ -265,6 +265,18 @@ export const removePagesFromPdf = async (file: File, pageIndicesToRemove: number
 };
 
 
+export const reorderPdfPages = async (file: File, pageOrder: number[]): Promise<Uint8Array> => {
+  return safeExecute(async () => {
+    const { PDFDocument } = await import('pdf-lib');
+    const arrayBuffer = await file.arrayBuffer();
+    const sourcePdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    const newPdf = await PDFDocument.create();
+    const pages = await newPdf.copyPages(sourcePdf, pageOrder);
+    pages.forEach(page => newPdf.addPage(page));
+    return await newPdf.save();
+  });
+};
+
 export const repairPdf = async (file: File): Promise<Uint8Array> => {
   return safeExecute(async () => {
     const { PDFDocument } = await import('pdf-lib');
@@ -277,6 +289,4 @@ export const repairPdf = async (file: File): Promise<Uint8Array> => {
     return await pdfDoc.save();
   });
 };
-
-
 

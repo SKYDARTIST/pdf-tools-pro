@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, TrendingDown, FileText, X, FolderOpen, Share2, Zap, Download } from 'lucide-react';
 import { formatFileSize } from '@/utils/formatters';
+import { maybeRequestReview } from '@/services/reviewService';
 
 interface SuccessModalProps {
     isOpen: boolean;
@@ -30,11 +31,16 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
     metadata,
     onDownload
 }) => {
+    const handleClose = () => {
+        onClose();
+        maybeRequestReview();
+    };
+
     // Auto-dismiss after 5 seconds
     useEffect(() => {
         if (isOpen) {
             const timer = setTimeout(() => {
-                onClose();
+                handleClose();
             }, 5000);
             return () => clearTimeout(timer);
         }
@@ -55,7 +61,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
                     >
                         {/* Modal */}
@@ -95,7 +101,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
                             {/* Close button */}
                             <button
-                                onClick={onClose}
+                                onClick={handleClose}
                                 className="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-[#0a0a0a] rounded-full transition-colors"
                             >
                                 <X size={20} className="text-slate-400 dark:text-slate-500" />
@@ -208,7 +214,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                         </button>
                                     )}
                                     <button
-                                        onClick={onClose}
+                                        onClick={handleClose}
                                         className="flex-1 py-4 px-6 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 rounded-full font-black text-[10px] uppercase tracking-widest transition-all"
                                     >
                                         DONE
