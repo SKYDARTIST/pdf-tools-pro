@@ -20,7 +20,7 @@ const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [devLog, setDevLog] = useState<{ emoji: string; title: string; body: string; date: string } | null>(null);
+  const [devLog, setDevLog] = useState<{ title: string; body: string; date: string } | null>(null);
 
   useEffect(() => {
     setRecentFiles(FileHistoryManager.getRecent(10));
@@ -96,10 +96,7 @@ const HomeScreen: React.FC = () => {
                   {new Date(devLog.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm">{devLog.emoji}</span>
-                <h4 className="text-[11px] font-black uppercase tracking-tight text-[#000000] dark:text-white">{devLog.title}</h4>
-              </div>
+              <h4 className="text-[11px] font-black uppercase tracking-tight text-[#000000] dark:text-white">{devLog.title}</h4>
               <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 leading-relaxed line-clamp-2">{devLog.body}</p>
             </div>
           </motion.div>
