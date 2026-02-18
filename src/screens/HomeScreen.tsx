@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, FolderOpen, Sparkles, LayoutGrid, CheckCircle, HelpCircle, Hammer
+  FileText, FolderOpen, Sparkles, LayoutGrid, CheckCircle, HelpCircle, Hammer, Twitter
 } from 'lucide-react';
+import { Browser } from '@capacitor/browser';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import { canUseTool } from '@/services/subscriptionService';
 import UpgradeModal from '@/components/UpgradeModal';
@@ -99,6 +100,15 @@ const HomeScreen: React.FC = () => {
               <h4 className="text-[11px] font-black uppercase tracking-tight text-[#000000] dark:text-white">{devLog.title}</h4>
               <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 leading-relaxed line-clamp-2">{devLog.body}</p>
             </div>
+            <button
+              onClick={() => Browser.open({ url: 'https://x.com/Cryptobullaaa' })}
+              className="flex flex-col items-center gap-1.5 shrink-0 group/x"
+            >
+              <div className="w-9 h-9 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center group-hover/x:bg-black/10 dark:group-hover/x:bg-white/10 transition-colors">
+                <Twitter size={14} className="text-gray-900 dark:text-white" />
+              </div>
+              <span className="text-[7px] font-black uppercase tracking-widest text-gray-400 text-center leading-tight">Building<br/>In Public</span>
+            </button>
           </motion.div>
         )}
 
