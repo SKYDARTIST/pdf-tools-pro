@@ -14,13 +14,7 @@ const LandingPage: React.FC = () => {
 
 
     const handleLaunch = () => {
-        const uid = localStorage.getItem('google_uid');
-        if (uid) {
-            navigate('/workspace');
-        } else {
-            console.log('🛡️ Landing: User not authenticated, showing Login Screen');
-            navigate('/login');
-        }
+        navigate('/workspace');
     };
 
     const [tapCount, setTapCount] = React.useState(0);

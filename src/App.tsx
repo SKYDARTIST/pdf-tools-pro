@@ -349,29 +349,31 @@ const App: React.FC = () => {
                 <Routes location={location}>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginScreen />} />
-                  <Route path="/workspace" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
-                  <Route path="/tools" element={<ProtectedRoute><ToolsScreen /></ProtectedRoute>} />
-                  <Route path="/merge" element={<ProtectedRoute><MergeScreen /></ProtectedRoute>} />
-                  <Route path="/split" element={<ProtectedRoute><SplitScreen /></ProtectedRoute>} />
+                  {/* Free tools — no login required */}
+                  <Route path="/workspace" element={<HomeScreen />} />
+                  <Route path="/tools" element={<ToolsScreen />} />
+                  <Route path="/merge" element={<MergeScreen />} />
+                  <Route path="/split" element={<SplitScreen />} />
+                  <Route path="/image-to-pdf" element={<ImageToPdfScreen />} />
+                  <Route path="/scanner" element={<ScannerScreen />} />
+                  <Route path="/view" element={<ViewScreen />} />
+                  <Route path="/my-files" element={<MyFilesScreen />} />
+
+                  {/* AI & Pro tools — sign in required */}
+                  <Route path="/reader" element={<ProtectedRoute><ReaderScreen /></ProtectedRoute>} />
                   <Route path="/remove-pages" element={<ProtectedRoute><RemovePagesScreen /></ProtectedRoute>} />
-                  <Route path="/image-to-pdf" element={<ProtectedRoute><ImageToPdfScreen /></ProtectedRoute>} />
                   <Route path="/text-to-pdf" element={<ProtectedRoute><TextToPdfScreen /></ProtectedRoute>} />
-                  <Route path="/scanner" element={<ProtectedRoute><ScannerScreen /></ProtectedRoute>} />
                   <Route path="/watermark" element={<ProtectedRoute><WatermarkScreen /></ProtectedRoute>} />
                   <Route path="/sign" element={<ProtectedRoute><SignScreen /></ProtectedRoute>} />
                   <Route path="/pdf-to-images" element={<ProtectedRoute><PdfToImagesScreen /></ProtectedRoute>} />
                   <Route path="/reorder-pages" element={<ProtectedRoute><ReorderPagesScreen /></ProtectedRoute>} />
-                  <Route path="/view" element={<ProtectedRoute><ViewScreen /></ProtectedRoute>} />
                   <Route path="/extract-text" element={<ProtectedRoute><ExtractTextScreen /></ProtectedRoute>} />
-                  <Route path="/reader" element={<ProtectedRoute><ReaderScreen /></ProtectedRoute>} />
                   <Route path="/rotate" element={<ProtectedRoute><RotateScreen /></ProtectedRoute>} />
                   <Route path="/page-numbers" element={<ProtectedRoute><PageNumbersScreen /></ProtectedRoute>} />
                   <Route path="/extract-images" element={<ProtectedRoute><ExtractImagesScreen /></ProtectedRoute>} />
-
                   <Route path="/ai-settings" element={<ProtectedRoute><AISettingsScreen /></ProtectedRoute>} />
                   <Route path="/ag-workspace" element={<ProtectedRoute><AntiGravityWorkspace /></ProtectedRoute>} />
                   <Route path="/table-extractor" element={<ProtectedRoute><TableExtractorScreen /></ProtectedRoute>} />
-                  <Route path="/my-files" element={<ProtectedRoute><MyFilesScreen /></ProtectedRoute>} />
                   <Route path="/smart-redact" element={<ProtectedRoute><SmartRedactScreen /></ProtectedRoute>} />
                   <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
                   <Route path="/neural-diff" element={<ProtectedRoute><NeuralDiffScreen /></ProtectedRoute>} />
