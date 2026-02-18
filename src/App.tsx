@@ -372,7 +372,7 @@ const App: React.FC = () => {
                   <Route path="/page-numbers" element={<ProtectedRoute><PageNumbersScreen /></ProtectedRoute>} />
                   <Route path="/extract-images" element={<ProtectedRoute><ExtractImagesScreen /></ProtectedRoute>} />
                   <Route path="/ai-settings" element={<ProtectedRoute><AISettingsScreen /></ProtectedRoute>} />
-                  <Route path="/ag-workspace" element={<ProtectedRoute><AntiGravityWorkspace /></ProtectedRoute>} />
+                  <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
                   <Route path="/table-extractor" element={<ProtectedRoute><TableExtractorScreen /></ProtectedRoute>} />
                   <Route path="/smart-redact" element={<ProtectedRoute><SmartRedactScreen /></ProtectedRoute>} />
                   <Route path="/manifesto" element={<PrivacyManifestoScreen />} />
