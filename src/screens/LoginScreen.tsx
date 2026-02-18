@@ -14,9 +14,10 @@ const LoginScreen: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // If user is already logged in, push to workspace
+    // If user is already logged in AND wasn't sent here to re-authenticate, push to workspace
     useEffect(() => {
-        if (localStorage.getItem('google_uid')) {
+        const pendingRedirect = localStorage.getItem('auth_redirect_path');
+        if (localStorage.getItem('google_uid') && !pendingRedirect) {
             navigate('/workspace', { replace: true });
         }
     }, [navigate]);

@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Crown, Zap, Moon, Sun, Sparkles, User } from 'lucide-react';
+import { ArrowLeft, Zap, Moon, Sun, User } from 'lucide-react';
 import TaskCounter from './TaskCounter';
-import UpgradeModal from './UpgradeModal';
 import { getCurrentUser, GoogleUser } from '@/services/googleAuthService';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const [user, setUser] = useState<GoogleUser | null>(null);
   const isHome = location.pathname === '/' || location.pathname === '/workspace';
-
-  useEffect(() => {
-    setShowUpgradeModal(false);
-  }, [location]);
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
@@ -106,7 +100,7 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-1 sm:gap-2 shrink-1 min-w-0">
         <TaskCounter
           variant="header"
-          onUpgradeClick={() => setShowUpgradeModal(true)}
+          onUpgradeClick={() => navigate('/pricing')}
         />
 
         <div className="w-[1px] h-5 bg-gray-900/10 dark:bg-white/10 mx-0.5 hidden xs:block" />
@@ -157,28 +151,8 @@ const Header: React.FC = () => {
           </AnimatePresence>
         </motion.button>
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/pricing')}
-          aria-label="Upgrade to Pro"
-          className="flex items-center justify-center h-8 sm:h-10 w-8 sm:w-auto sm:px-4 bg-black dark:bg-white text-white dark:text-black rounded-full text-[9px] sm:text-[11px] font-black shadow-xl hover:brightness-110 transition-all shrink-0 relative overflow-hidden group"
-        >
-          {/* Shimmer Effect */}
-          <motion.div
-            animate={{ x: ['-200%', '200%'] }}
-            transition={{ repeat: Infinity, duration: 3, ease: "linear", repeatDelay: 1 }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 dark:via-black/10 to-transparent skew-x-12"
-          />
-          <Crown size={15} fill="currentColor" className="sm:mr-1.5 relative z-10" />
-          <span className="hidden sm:inline uppercase tracking-widest relative z-10">Upgrade</span>
-        </motion.button>
       </div>
 
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-      />
     </header>
   );
 };

@@ -24,7 +24,7 @@ const BottomNav: React.FC = () => {
 
     return (
         <div
-            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 16px) + 1.5rem)' }}
             className="fixed left-1/2 -translate-x-1/2 z-[90] w-[calc(100%-3rem)] max-w-sm pointer-events-none"
         >
             <motion.nav

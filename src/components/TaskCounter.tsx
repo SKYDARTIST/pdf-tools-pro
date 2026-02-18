@@ -28,10 +28,7 @@ const TaskCounter: React.FC<TaskCounterProps> = ({ variant = 'inline', onUpgrade
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         whileTap={{ scale: 0.95 }}
-                        onClick={async () => {
-                            const { forceReconcileFromServer } = await import('@/services/subscriptionService');
-                            await forceReconcileFromServer();
-                        }}
+                        onClick={onUpgradeClick}
                         className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full shrink-0 cursor-pointer hover:bg-emerald-500/20 transition-all"
                     >
                         <Crown size={12} fill="currentColor" className="text-emerald-500" />
