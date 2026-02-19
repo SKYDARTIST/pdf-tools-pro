@@ -60,6 +60,7 @@ import { useNavigate } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { getCurrentUser } from '@/services/googleAuthService';
 import { App as CapApp } from '@capacitor/app';
+import Analytics from '@/services/analyticsService';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -67,6 +68,17 @@ const App: React.FC = () => {
   const [isBooting, setIsBooting] = React.useState(!sessionStorage.getItem('boot_complete'));
 
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
+
+  // Auto-flush analytics when app goes to background
+  React.useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        Analytics.flush();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   // SECURITY & ROUTING: Catch mobile deep links with OAuth credentials
   // On web, HashRouter handles auth-callback route naturally

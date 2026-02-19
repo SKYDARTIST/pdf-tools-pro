@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, TrendingDown, FileText, X, FolderOpen, Share2, Zap, Download } from 'lucide-react';
 import { formatFileSize } from '@/utils/formatters';
 import { maybeRequestReview } from '@/services/reviewService';
+import ProNudgeBanner from '@/components/ProNudgeBanner';
 
 interface SuccessModalProps {
     isOpen: boolean;
@@ -221,6 +222,9 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Soft upgrade nudge for free users */}
+                            <ProNudgeBanner variant="success" />
                         </motion.div>
                     </motion.div>
                 </>

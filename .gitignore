@@ -78,3 +78,9 @@ search_partial_user.py
 # Gemini agent files
 .agent/
 
+check_failures.js
+query_db.js
+query_device.py
+query_failures.py
+query_failures_to_file.py
+verify_theory.py

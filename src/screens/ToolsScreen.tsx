@@ -9,6 +9,7 @@ import {
 import TaskCounter from '@/components/TaskCounter';
 import { canUseTool } from '@/services/subscriptionService';
 import UpgradeModal from '@/components/UpgradeModal';
+import Analytics from '@/services/analyticsService';
 
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -39,6 +40,7 @@ const ToolsScreen: React.FC = () => {
             return;
         }
         navigate(tool.path);
+        Analytics.track('tool_open', { tool: tool.title });
     };
 
     const filtered = tools.filter(tool => {

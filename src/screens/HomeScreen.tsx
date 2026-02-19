@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { Browser } from '@capacitor/browser';
 import FileHistoryManager from '@/utils/FileHistoryManager';
+import Analytics from '@/services/analyticsService';
+import ProNudgeBanner from '@/components/ProNudgeBanner';
 
 const DEVLOG_URL = import.meta.env.PROD
   ? 'https://pdf-tools-pro-indol.vercel.app/devlog.json'
@@ -21,6 +23,7 @@ const HomeScreen: React.FC = () => {
   const [devLog, setDevLog] = useState<{ title: string; body: string; date: string } | null>(null);
 
   useEffect(() => {
+    Analytics.track('screen_view', { screen: 'home' });
     setRecentFiles(FileHistoryManager.getRecent(10));
 
     const loadDevLog = async () => {
@@ -50,6 +53,9 @@ const HomeScreen: React.FC = () => {
       exit={{ opacity: 0 }}
       className="px-6 pb-32 pt-40 max-w-2xl mx-auto space-y-20"
     >
+      {/* Retention nudge — shows after 7 days for free users */}
+      <ProNudgeBanner variant="retention" />
+
       {/* Hero Section */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
@@ -104,7 +110,7 @@ const HomeScreen: React.FC = () => {
               <div className="w-9 h-9 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center group-hover/x:bg-black/10 dark:group-hover/x:bg-white/10 transition-colors">
                 <Twitter size={14} className="text-gray-900 dark:text-white" />
               </div>
-              <span className="text-[7px] font-black uppercase tracking-widest text-gray-400 text-center leading-tight">Building<br/>In Public</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-gray-400 text-center leading-tight">Building<br />In Public</span>
             </button>
           </motion.div>
         )}

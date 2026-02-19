@@ -14,6 +14,8 @@ import ToolGuide from '@/components/ToolGuide';
 import { PDFDocument } from 'pdf-lib';
 import { extractTextFromPdf, renderMultiplePagesToImages } from '@/utils/pdfExtractor';
 import { getFriendlyErrorMessage } from '@/utils/errorMapping';
+import Analytics from '@/services/analyticsService';
+import ProNudgeBanner from '@/components/ProNudgeBanner';
 
 const AntiGravityWorkspace: React.FC = () => {
   const navigate = useNavigate();
@@ -274,6 +276,9 @@ const AntiGravityWorkspace: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {chatHistory.length === 1 && (
+                    <ProNudgeBanner variant="ai" />
+                  )}
                   {isAsking && (
                     <div className="flex justify-start">
                       <div className="bg-white/50 dark:bg-zinc-800/50 p-6 rounded-full rounded-tl-none flex gap-1">
@@ -350,7 +355,7 @@ const AntiGravityWorkspace: React.FC = () => {
               { id: 'extract-text', title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text' },
               { id: 'rotate', title: 'Rotate', desc: 'Fix Pages', icon: RotateCw, path: '/rotate' },
               { id: 'watermark', title: 'Watermark', desc: 'Secure Files', icon: Droplet, path: '/watermark' },
-{ id: 'extract-images', title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
+              { id: 'extract-images', title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
               { id: 'pdf-to-images', title: 'PDF→Images', desc: 'Export as JPG/PNG', icon: FileImage, path: '/pdf-to-images', isNew: true },
               { id: 'reorder-pages', title: 'Reorder', desc: 'Rearrange Pages', icon: Layers, path: '/reorder-pages', isNew: true },
               { id: 'remove-pages', title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
