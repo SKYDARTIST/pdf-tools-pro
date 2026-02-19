@@ -454,7 +454,7 @@ const PricingScreen: React.FC = () => {
               <tbody className="text-[10px] font-black uppercase">
                 {[
                   { f: "Data Privacy", c: "Cloud (Risk)", l: "Isolated Disk" },
-                  { f: "Pricing", c: "Yearly Subscription", l: `${lifetimePrice} One-Time` },
+                  { f: "Pricing", c: "Yearly Subscription", l: "One-Time" },
                   { f: "Watermarks", c: "Paid Only", l: "Never" },
                 ].map((row, i) => (
                   <tr key={i} className="border-b border-black/5 dark:border-white/5 last:border-0">

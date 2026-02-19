@@ -118,7 +118,8 @@ class BillingService {
             // SECURITY: Require sign-in before purchase to ensure verification works
             const googleUid = localStorage.getItem('google_uid');
             if (!googleUid) {
-                alert('Please sign in first to complete your purchase.');
+                localStorage.setItem('auth_redirect_path', '/pricing');
+                window.location.hash = '/login';
                 return false;
             }
 
