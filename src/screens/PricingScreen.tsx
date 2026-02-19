@@ -166,7 +166,7 @@ const PricingScreen: React.FC = () => {
           <div className="rounded-2xl bg-gradient-to-r from-[#00C896]/10 via-[#00C896]/5 to-[#00C896]/10 border border-[#00C896]/20 p-4 backdrop-blur-sm">
             <div className="flex items-center justify-center gap-2 flex-wrap">
               <span className="text-[11px] font-black uppercase tracking-[0.3em] text-[#00C896]">FLASH OFFER:</span>
-              <span className="text-[11px] font-black uppercase tracking-tight text-black dark:text-white">Founder Lifetime Access at 83% OFF</span>
+              <span className="text-[11px] font-black uppercase tracking-tight text-black dark:text-white">Lifetime Access at Founder Price</span>
               <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">• Only for the first 500 early adopters</span>
             </div>
           </div>
@@ -238,11 +238,8 @@ const PricingScreen: React.FC = () => {
                       <div className="flex flex-col gap-2">
                         {tier.id === SubscriptionTier.LIFETIME && (
                           <div className="flex items-center gap-2">
-                            <span className="text-lg font-black text-gray-400 line-through decoration-2">
-                              $29.99
-                            </span>
                             <span className="text-[9px] font-black uppercase px-2 py-1 rounded-md bg-[#00C896]/10 text-[#00C896] animate-pulse">
-                              83% OFF
+                              FOUNDER PRICE
                             </span>
                           </div>
                         )}
