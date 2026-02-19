@@ -8,12 +8,13 @@
  * - 'retention': After 7+ days of usage (HomeScreen)
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
 import Analytics from '@/services/analyticsService';
+import billingService from '@/services/billingService';
 
 type NudgeVariant = 'success' | 'ai' | 'retention';
 
@@ -22,19 +23,10 @@ interface ProNudgeBannerProps {
     onDismiss?: () => void;
 }
 
-const NUDGE_COPY: Record<NudgeVariant, { text: string; cta: string }> = {
-    success: {
-        text: 'Pro users also get Sign, Scanner, AI Reader & 12 more tools',
-        cta: 'See Pro — $4.99 forever',
-    },
-    ai: {
-        text: 'Pro Pack unlocks Neural Reader with unlimited AI chat, outlines & mind maps',
-        cta: 'Unlock Pro — $4.99',
-    },
-    retention: {
-        text: 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.',
-        cta: 'Get Pro — $4.99',
-    },
+const NUDGE_TEXT: Record<NudgeVariant, string> = {
+    success: 'Pro users also get Sign, Scanner, AI Reader & 12 more tools',
+    ai: 'Pro Pack unlocks Neural Reader with unlimited AI chat, outlines & mind maps',
+    retention: 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.',
 };
 
 const DISMISS_KEY = 'ag_nudge_dismissed';
@@ -42,6 +34,16 @@ const DISMISS_KEY = 'ag_nudge_dismissed';
 const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) => {
     const navigate = useNavigate();
     const subscription = getSubscription();
+    const [localPrice, setLocalPrice] = useState<string>('$4.99');
+
+    useEffect(() => {
+        billingService.getProducts().then(products => {
+            const lifetime = products.find(p =>
+                p.identifier === 'lifetime_pro_access' || p.identifier === 'pro_access_lifetime'
+            );
+            if (lifetime?.price) setLocalPrice(lifetime.price);
+        }).catch(() => {/* keep fallback $4.99 */});
+    }, []);
 
     // Never show to paying users
     if (subscription.tier !== SubscriptionTier.FREE && subscription.tier) {
@@ -62,7 +64,12 @@ const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) =
         if (daysSinceInstall < 7) return null;
     }
 
-    const copy = NUDGE_COPY[variant];
+    const nudgeText = NUDGE_TEXT[variant];
+    const ctaLabel = {
+        success: `See Pro — ${localPrice} forever`,
+        ai: `Unlock Pro — ${localPrice}`,
+        retention: `Get Pro — ${localPrice}`,
+    }[variant];
 
     const handleCTA = () => {
         Analytics.track('nudge_tap', { variant });
@@ -85,14 +92,14 @@ const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) =
             className="mt-4 rounded-2xl border border-[#00C896]/20 bg-[#00C896]/5 dark:bg-[#00C896]/10 p-4"
         >
             <p className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide leading-relaxed mb-3">
-                {copy.text}
+                {nudgeText}
             </p>
             <div className="flex items-center gap-2">
                 <button
                     onClick={handleCTA}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#00C896] text-white rounded-full text-[9px] font-black uppercase tracking-[0.15em] hover:brightness-110 active:scale-95 transition-all"
                 >
-                    {copy.cta}
+                    {ctaLabel}
                     <ArrowRight size={10} />
                 </button>
                 {variant === 'retention' && (
