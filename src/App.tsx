@@ -70,10 +70,8 @@ const App: React.FC = () => {
 
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
-  // Check onboarding status early to prevent landing page flash
-  const [shouldShowOnboarding] = React.useState(() => {
-    return !localStorage.getItem('ag_onboarding_shown');
-  });
+  // Check onboarding status - always check localStorage directly to stay in sync
+  const shouldShowOnboarding = !localStorage.getItem('ag_onboarding_shown');
 
   // Auto-flush analytics when app goes to background
   React.useEffect(() => {
