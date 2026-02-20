@@ -40,6 +40,7 @@ const ProtocolGuideScreen = lazy(() => import('@/screens/ProtocolGuideScreen'));
 const GoogleAuthCallback = lazy(() => import('@/screens/GoogleAuthCallback'));
 const LoginScreen = lazy(() => import('@/screens/LoginScreen'));
 const AdminDashboard = lazy(() => import('@/screens/AdminDashboard'));
+const OnboardingScreen = lazy(() => import('@/screens/OnboardingScreen'));
 import Header from '@/components/Header';
 import BottomNav from '@/components/BottomNav';
 import SystemBoot from '@/components/SystemBoot';
@@ -147,9 +148,16 @@ const App: React.FC = () => {
         import('@/services/subscriptionService').then(({ checkPostPurchaseStatus }) => {
           checkPostPurchaseStatus();
         });
+
+        // ONBOARDING CHECK: Redirect to onboarding if first-time user
+        const hasSeenOnboarding = localStorage.getItem('ag_onboarding_shown');
+        if (!hasSeenOnboarding && location.pathname === '/') {
+          console.log('🎯 App: First-time user detected, showing onboarding...');
+          navigate('/onboarding');
+        }
       }
     }
-  }, [isDataReady, bootAnimFinished, isBooting]);
+  }, [isDataReady, bootAnimFinished, isBooting, navigate, location.pathname]);
 
   // Mobile Compatibility: Handle Custom Scheme Deep Links
   React.useEffect(() => {
@@ -360,6 +368,7 @@ const App: React.FC = () => {
               <Suspense fallback={null}>
                 <Routes location={location}>
                   <Route path="/" element={<LandingPage />} />
+                  <Route path="/onboarding" element={<OnboardingScreen />} />
                   <Route path="/login" element={<LoginScreen />} />
                   {/* Free tools — no login required */}
                   <Route path="/workspace" element={<HomeScreen />} />

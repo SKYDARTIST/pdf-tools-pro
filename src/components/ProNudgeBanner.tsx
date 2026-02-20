@@ -23,14 +23,53 @@ interface ProNudgeBannerProps {
     onDismiss?: () => void;
 }
 
-const NUDGE_TEXT: Record<NudgeVariant, string> = {
-    success: 'Pro users also get Sign, Scanner, AI Reader & 12 more tools',
-    ai: 'Pro Pack unlocks Neural Reader with unlimited AI chat, outlines & mind maps',
-    retention: 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.',
-};
-
 const DISMISS_KEY = 'ag_nudge_dismissed';
 const PRICE_CACHE_KEY = 'ag_lifetime_price_cache';
+const TOOL_USAGE_KEY = 'ag_tool_usage_stats';
+
+// Helper: Get most-used tool from analytics queue
+const getMostUsedTool = (): { tool: string; count: number } | null => {
+    try {
+        const queue = JSON.parse(localStorage.getItem('ag_analytics_queue') || '[]');
+        const toolOpens = queue.filter((e: any) => e.event === 'tool_open');
+
+        if (toolOpens.length === 0) return null;
+
+        // Count tool usage
+        const counts: Record<string, number> = {};
+        toolOpens.forEach((e: any) => {
+            const tool = e.data?.tool || 'Unknown';
+            counts[tool] = (counts[tool] || 0) + 1;
+        });
+
+        // Find most used
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        if (sorted.length > 0) {
+            return { tool: sorted[0][0], count: sorted[0][1] };
+        }
+    } catch {
+        return null;
+    }
+    return null;
+};
+
+const getNudgeText = (variant: NudgeVariant): string => {
+    if (variant === 'retention') {
+        const mostUsed = getMostUsedTool();
+        if (mostUsed && mostUsed.count >= 3) {
+            return `You've used ${mostUsed.tool} ${mostUsed.count} times. Unlock Sign, Watermark & 15 more tools.`;
+        }
+        return 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.';
+    }
+
+    const DEFAULT_TEXT: Record<NudgeVariant, string> = {
+        success: 'Pro users also get Sign, Scanner, AI Reader & 12 more tools',
+        ai: 'Pro Pack unlocks Neural Reader with unlimited AI chat, outlines & mind maps',
+        retention: 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.',
+    };
+
+    return DEFAULT_TEXT[variant];
+};
 
 const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) => {
     const navigate = useNavigate();
@@ -69,7 +108,7 @@ const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) =
         if (daysSinceInstall < 7) return null;
     }
 
-    const nudgeText = NUDGE_TEXT[variant];
+    const nudgeText = getNudgeText(variant);
     const ctaLabel = {
         success: localPrice ? `See Pro — ${localPrice} forever` : 'See Pro Plans',
         ai: localPrice ? `Unlock Pro — ${localPrice}` : 'Unlock Pro',

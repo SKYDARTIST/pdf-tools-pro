@@ -218,6 +218,28 @@ const ScannerScreen: React.FC = () => {
       return;
     }
 
+    // FIX: Check if user is logged in before calling AI
+    // This prevents 5-second delay for non-logged users (401 → retry loop)
+    const { getCurrentUser } = await import('@/services/googleAuthService');
+    const user = await getCurrentUser();
+
+    if (!user) {
+      setError("AI Enhance requires sign-in. Sign in to get smart filters & filename suggestions.");
+      // Fall back to default filters without AI
+      const defaultFilters: ScanFilters = {
+        brightness: 110,
+        contrast: 120,
+        grayscale: 0,
+        sharpness: 1.5,
+        reason: "Default filters applied (user not signed in)",
+        perspectiveCorrection: false,
+        autoCrop: false,
+        textEnhancement: false
+      };
+      setAppliedFilters(defaultFilters);
+      setSuggestedName('scanned_document');
+      return;
+    }
 
     // GUIDANCE AI Operation - Scanner guidance is FREE for all users
     // No need to check limits, GUIDANCE is always allowed
