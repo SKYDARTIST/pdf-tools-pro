@@ -70,6 +70,11 @@ const App: React.FC = () => {
 
   const [debugPanelOpen, setDebugPanelOpen] = React.useState(false);
 
+  // Check onboarding status early to prevent landing page flash
+  const [shouldShowOnboarding] = React.useState(() => {
+    return !localStorage.getItem('ag_onboarding_shown');
+  });
+
   // Auto-flush analytics when app goes to background
   React.useEffect(() => {
     const handleVisibility = () => {
@@ -148,13 +153,6 @@ const App: React.FC = () => {
         import('@/services/subscriptionService').then(({ checkPostPurchaseStatus }) => {
           checkPostPurchaseStatus();
         });
-
-        // ONBOARDING CHECK: Redirect to onboarding if first-time user
-        const hasSeenOnboarding = localStorage.getItem('ag_onboarding_shown');
-        if (!hasSeenOnboarding && location.pathname === '/') {
-          console.log('🎯 App: First-time user detected, showing onboarding...');
-          navigate('/onboarding');
-        }
       }
     }
   }, [isDataReady, bootAnimFinished, isBooting, navigate, location.pathname]);
@@ -367,7 +365,7 @@ const App: React.FC = () => {
             >
               <Suspense fallback={null}>
                 <Routes location={location}>
-                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/" element={shouldShowOnboarding ? <OnboardingScreen /> : <LandingPage />} />
                   <Route path="/onboarding" element={<OnboardingScreen />} />
                   <Route path="/login" element={<LoginScreen />} />
                   {/* Free tools — no login required */}
