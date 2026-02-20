@@ -105,10 +105,11 @@ const Header: React.FC = () => {
 
         <div className="w-[1px] h-5 bg-gray-900/10 dark:bg-white/10 mx-0.5 hidden xs:block" />
 
-        {/* User Profile Avatar */}
-        <AnimatePresence>
-          {user && (
+        {/* User Profile Avatar or Login Button */}
+        <AnimatePresence mode="wait">
+          {user ? (
             <motion.div
+              key="profile"
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
@@ -123,6 +124,20 @@ const Header: React.FC = () => {
                 </div>
               )}
             </motion.div>
+          ) : (
+            <motion.button
+              key="login"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate('/login')}
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-900/5 dark:bg-white/5 hover:bg-gray-900/10 dark:hover:bg-white/10 flex items-center justify-center cursor-pointer shrink-0 transition-all"
+              aria-label="Login"
+            >
+              <User size={14} className="text-gray-600 dark:text-gray-400" />
+            </motion.button>
           )}
         </AnimatePresence>
 
