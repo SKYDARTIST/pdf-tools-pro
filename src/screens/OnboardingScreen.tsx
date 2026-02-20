@@ -30,7 +30,7 @@ const OnboardingScreen: React.FC = () => {
 
   const handleComplete = () => {
     localStorage.setItem('ag_onboarding_shown', 'true');
-    navigate('/'); // Go to Landing Page
+    navigate('/ag-workspace'); // Go to Pro & Neural Workspace
   };
 
   const handleSkip = () => {
