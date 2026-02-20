@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,9 +7,12 @@ import {
 } from 'lucide-react';
 
 import TaskCounter from '@/components/TaskCounter';
-import { canUseTool } from '@/services/subscriptionService';
+import { canUseTool, getSubscription, SubscriptionTier } from '@/services/subscriptionService';
 import UpgradeModal from '@/components/UpgradeModal';
 import Analytics from '@/services/analyticsService';
+import billingService from '@/services/billingService';
+
+const PRICE_CACHE_KEY = 'ag_lifetime_price_cache';
 
 const ToolsScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -17,6 +20,22 @@ const ToolsScreen: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'popular' | 'security' | 'convert'>('all');
     const [showUpgrade, setShowUpgrade] = useState(false);
+    const cachedPrice = localStorage.getItem(PRICE_CACHE_KEY);
+    const [localPrice, setLocalPrice] = useState<string | null>(cachedPrice);
+    const subscription = getSubscription();
+
+    useEffect(() => {
+        // Fetch regional pricing
+        billingService.getProducts().then(products => {
+            const lifetime = products.find(p =>
+                p.identifier === 'lifetime_pro_access' || p.identifier === 'pro_access_lifetime'
+            );
+            if (lifetime?.price) {
+                setLocalPrice(lifetime.price);
+                localStorage.setItem(PRICE_CACHE_KEY, lifetime.price);
+            }
+        }).catch(() => {/* keep cached or fallback price */});
+    }, []);
 
     const toolCategories = [
         { id: 'popular', label: 'MOST POPULAR' },
@@ -50,8 +69,44 @@ const ToolsScreen: React.FC = () => {
         return matchesSearch && matchesCategory;
     });
 
-    const renderGrid = (items: typeof tools) => (
+    const renderGrid = (items: typeof tools, categoryId?: string) => (
         <div className="grid grid-cols-2 gap-x-4 gap-y-12">
+            {/* Pricing Tile - Only show for FREE users in popular category */}
+            {categoryId === 'popular' && subscription.tier === SubscriptionTier.FREE && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0 }}
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                        Analytics.track('pricing_tile_tap', { source: 'tools' });
+                        navigate('/pricing');
+                    }}
+                    className="monolith-card rounded-[40px] cursor-pointer p-6 flex flex-col items-center text-center gap-3 shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden border-2 border-[#00C896]/30 bg-gradient-to-br from-[#00C896]/5 to-transparent hover:border-[#00C896]/50"
+                >
+                    <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#00C896] text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
+                        PRO
+                    </div>
+                    <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#00C896]/10 rounded-full blur-2xl group-hover:bg-[#00C896]/20 transition-colors" />
+
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform bg-[#00C896]/10">
+                        <Sparkles size={20} className="text-[#00C896]" strokeWidth={2.5} />
+                    </div>
+
+                    <div className="min-w-0 px-1">
+                        <div className="flex flex-col items-center gap-2 mb-1.5">
+                            <h3 className="text-[10px] font-black uppercase tracking-wider text-[#000000] dark:text-white leading-none">Unlock Pro</h3>
+                        </div>
+                        <p className="text-[9px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-tight leading-relaxed line-clamp-2 max-w-[120px]">
+                            {localPrice ? `${localPrice} One-Time` : 'One-Time Access'}
+                        </p>
+                        <div className="mt-2 text-[7px] font-black text-[#00C896] uppercase tracking-widest">
+                            20+ Pro Tools
+                        </div>
+                    </div>
+                </motion.div>
+            )}
             {items.map((tool, i) => (
                 <motion.div
                     key={tool.title}
@@ -173,12 +228,12 @@ const ToolsScreen: React.FC = () => {
                                             <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#000000] dark:text-gray-100">{meta.label}</h2>
                                             <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-white/5" />
                                         </div>
-                                        {renderGrid(toolsInCat)}
+                                        {renderGrid(toolsInCat, meta.id)}
                                     </div>
                                 );
                             })
                         ) : (
-                            renderGrid(filtered)
+                            renderGrid(filtered, activeCategory)
                         )}
                     </motion.div>
                 </AnimatePresence>

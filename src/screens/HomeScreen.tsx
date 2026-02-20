@@ -8,12 +8,15 @@ import { Browser } from '@capacitor/browser';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import Analytics from '@/services/analyticsService';
 import ProNudgeBanner from '@/components/ProNudgeBanner';
+import billingService from '@/services/billingService';
+import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
 
 const DEVLOG_URL = import.meta.env.PROD
   ? 'https://pdf-tools-pro-indol.vercel.app/devlog.json'
   : '/devlog.json';
 const DEVLOG_CACHE_KEY = 'ag_devlog_cache';
 const DEVLOG_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+const PRICE_CACHE_KEY = 'ag_lifetime_price_cache';
 
 
 
@@ -21,6 +24,9 @@ const HomeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [recentFiles, setRecentFiles] = useState<any[]>([]);
   const [devLog, setDevLog] = useState<{ title: string; body: string; date: string } | null>(null);
+  const cachedPrice = localStorage.getItem(PRICE_CACHE_KEY);
+  const [localPrice, setLocalPrice] = useState<string | null>(cachedPrice);
+  const subscription = getSubscription();
 
   useEffect(() => {
     Analytics.track('screen_view', { screen: 'home' });
@@ -44,6 +50,24 @@ const HomeScreen: React.FC = () => {
       } catch { /* non-critical */ }
     };
     loadDevLog();
+
+    // Fetch regional pricing
+    billingService.getProducts().then(products => {
+      console.log('[HomeScreen] Products fetched:', products);
+      const lifetime = products.find(p =>
+        p.identifier === 'lifetime_pro_access' || p.identifier === 'pro_access_lifetime'
+      );
+      if (lifetime?.price) {
+        console.log('[HomeScreen] Regional price found:', lifetime.price);
+        setLocalPrice(lifetime.price);
+        localStorage.setItem(PRICE_CACHE_KEY, lifetime.price);
+      } else {
+        console.warn('[HomeScreen] No lifetime product found in:', products);
+      }
+    }).catch(err => {
+      console.error('[HomeScreen] Failed to fetch products:', err);
+      /* keep cached or fallback price */
+    });
   }, []);
 
   return (
@@ -117,6 +141,41 @@ const HomeScreen: React.FC = () => {
 
         <div className="space-y-4">
           <div className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-500/60 ml-1">Quick Tools</div>
+
+          {/* Pricing Banner - Only for free users */}
+          {subscription.tier === SubscriptionTier.FREE && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => {
+                Analytics.track('pricing_banner_tap', { source: 'home' });
+                navigate('/pricing');
+              }}
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="monolith-card cursor-pointer p-4 rounded-2xl flex items-center justify-between border border-emerald-500/20 bg-gradient-to-r from-emerald-500/5 to-transparent relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-colors" />
+
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                  <Sparkles size={14} className="text-emerald-500" />
+                </div>
+                <div>
+                  <h4 className="text-[11px] font-black uppercase tracking-tight text-[#000000] dark:text-white">
+                    Lifetime Pro
+                  </h4>
+                  <p className="text-[9px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-widest mt-0.5">
+                    {localPrice ? `No Subscriptions. Just ${localPrice}.` : 'One-Time Payment. No Subscriptions.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-3 py-1.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm relative z-10 group-hover:scale-105 transition-transform">
+                View
+              </div>
+            </motion.div>
+          )}
 
           {/* Anti-Gravity Hero Card - Pro Obsidian Style */}
           <motion.div

@@ -12,11 +12,14 @@ import BillingService from '@/services/billingService';
 import { getCurrentUser } from '@/services/googleAuthService';
 import AuthService from '@/services/authService';
 
+const PRICE_CACHE_KEY = 'ag_lifetime_price_cache';
+
 const PricingScreen: React.FC = () => {
   const navigate = useNavigate();
   const [currentTier, setCurrentTier] = React.useState(getSubscription().tier);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [lifetimePrice, setLifetimePrice] = React.useState('...');
+  const cachedPrice = localStorage.getItem(PRICE_CACHE_KEY);
+  const [lifetimePrice, setLifetimePrice] = React.useState(cachedPrice || '');
   const [expandedFaq, setExpandedFaq] = React.useState<string | null>(null);
 
 
@@ -32,6 +35,7 @@ const PricingScreen: React.FC = () => {
 
         if (life) {
           setLifetimePrice(life.price);
+          localStorage.setItem(PRICE_CACHE_KEY, life.price);
         }
       } catch (err) {
         console.warn('Failed to fetch localized prices:', err);
@@ -245,10 +249,10 @@ const PricingScreen: React.FC = () => {
                         )}
                         <div className="flex items-baseline gap-2">
                           <span className="text-5xl font-black text-black dark:text-white">
-                            {tier.price}
+                            {tier.price || 'One-Time'}
                           </span>
                           <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                            {tier.period}
+                            {tier.price ? tier.period : 'PAYMENT'}
                           </span>
                         </div>
                         {tier.id === SubscriptionTier.LIFETIME && (

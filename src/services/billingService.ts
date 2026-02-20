@@ -22,14 +22,31 @@ export interface ProductInfo {
 
 class BillingService {
     private isInitialized = false;
+    private initPromise: Promise<boolean> | null = null; // Prevent concurrent init
+    private productsCache: ProductInfo[] | null = null;
+    private productsCacheTs = 0;
+    private productsFetchPromise: Promise<ProductInfo[]> | null = null; // Dedupe concurrent fetches
     private restoredPurchases: any[] = [];
     private transactionListener: any = null;
     private isTestMode = AuthService.isTestAccount();
     private readonly PENDING_PURCHASES_STORE = 'pending-purchases';
     private readonly MAX_RETRIES = 200; // ~100 minutes of retrying (200 × 30s). Purchases are valuable - don't give up easily.
     private isProcessingQueue = false; // Mutex to prevent concurrent queue processing
+    private readonly PRODUCTS_CACHE_TTL = 5 * 60 * 1000; // 5 min cache
 
     async initialize() {
+        // Deduplicate concurrent init calls - return existing promise if already initializing
+        if (this.initPromise) return this.initPromise;
+
+        this.initPromise = this._doInitialize();
+        try {
+            return await this.initPromise;
+        } finally {
+            this.initPromise = null;
+        }
+    }
+
+    private async _doInitialize(): Promise<boolean> {
         try {
             console.log('Anti-Gravity Billing: 🔧 Initializing...', {
                 timestamp: new Date().toISOString()
@@ -82,6 +99,23 @@ class BillingService {
     }
 
     async getProducts(): Promise<ProductInfo[]> {
+        // Return cached products if still fresh (prevents multiple native bridge calls)
+        if (this.productsCache && (Date.now() - this.productsCacheTs < this.PRODUCTS_CACHE_TTL)) {
+            return this.productsCache;
+        }
+
+        // Deduplicate concurrent fetches - share one in-flight promise
+        if (this.productsFetchPromise) return this.productsFetchPromise;
+
+        this.productsFetchPromise = this._doGetProducts();
+        try {
+            return await this.productsFetchPromise;
+        } finally {
+            this.productsFetchPromise = null;
+        }
+    }
+
+    private async _doGetProducts(): Promise<ProductInfo[]> {
         try {
             if (!this.isInitialized) {
                 const ok = await this.initialize();
@@ -94,13 +128,19 @@ class BillingService {
                 productType: PURCHASE_TYPE.INAPP
             });
 
-            return inAppResult.products.map(p => ({
+            const products = inAppResult.products.map(p => ({
                 identifier: p.identifier,
                 description: p.description,
                 title: p.title,
                 price: p.priceString,
                 currencyCode: p.currencyCode
             }));
+
+            // Cache results
+            this.productsCache = products;
+            this.productsCacheTs = Date.now();
+
+            return products;
         } catch (error) {
             console.error('Anti-Gravity Billing: Product Error:', error);
             return [];

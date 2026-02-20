@@ -30,19 +30,24 @@ const NUDGE_TEXT: Record<NudgeVariant, string> = {
 };
 
 const DISMISS_KEY = 'ag_nudge_dismissed';
+const PRICE_CACHE_KEY = 'ag_lifetime_price_cache';
 
 const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) => {
     const navigate = useNavigate();
     const subscription = getSubscription();
-    const [localPrice, setLocalPrice] = useState<string>('$4.99');
+    const cachedPrice = localStorage.getItem(PRICE_CACHE_KEY);
+    const [localPrice, setLocalPrice] = useState<string | null>(cachedPrice);
 
     useEffect(() => {
         billingService.getProducts().then(products => {
             const lifetime = products.find(p =>
                 p.identifier === 'lifetime_pro_access' || p.identifier === 'pro_access_lifetime'
             );
-            if (lifetime?.price) setLocalPrice(lifetime.price);
-        }).catch(() => {/* keep fallback $4.99 */});
+            if (lifetime?.price) {
+                setLocalPrice(lifetime.price);
+                localStorage.setItem(PRICE_CACHE_KEY, lifetime.price);
+            }
+        }).catch(() => {/* keep cached or fallback price */});
     }, []);
 
     // Never show to paying users
@@ -66,9 +71,9 @@ const ProNudgeBanner: React.FC<ProNudgeBannerProps> = ({ variant, onDismiss }) =
 
     const nudgeText = NUDGE_TEXT[variant];
     const ctaLabel = {
-        success: `See Pro — ${localPrice} forever`,
-        ai: `Unlock Pro — ${localPrice}`,
-        retention: `Get Pro — ${localPrice}`,
+        success: localPrice ? `See Pro — ${localPrice} forever` : 'See Pro Plans',
+        ai: localPrice ? `Unlock Pro — ${localPrice}` : 'Unlock Pro',
+        retention: localPrice ? `Get Pro — ${localPrice}` : 'Get Pro Access',
     }[variant];
 
     const handleCTA = () => {
