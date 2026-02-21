@@ -224,7 +224,7 @@ const MergeScreen: React.FC = () => {
                 </div>
 
                 <div className="flex-1 min-w-0 z-10">
-                  <p className="text-[11px] font-black uppercase tracking-tight truncate text-gray-900 dark:text-white">Document {index + 1}</p>
+                  <p className="text-[11px] font-black uppercase tracking-tight truncate text-gray-900 dark:text-white">{item.name || `Document ${index + 1}`}</p>
                   <p className="text-[9px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">{(item.size / 1024 / 1024).toFixed(2)} MB ARCHIVE</p>
                 </div>
 

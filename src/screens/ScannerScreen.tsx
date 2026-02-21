@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, X, Zap, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Share2 } from 'lucide-react';
+import { Camera, X, RefreshCw, FileCheck, Loader2, Sparkles, Wand2, Share2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getReconstructionProtocol, getPolisherProtocol, ScanFilters } from '@/services/polisherService';
 import { askGemini } from '@/services/aiService';
@@ -17,10 +17,10 @@ import { compressImage } from '@/utils/imageProcessor';
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [flash, setFlash] = useState(false);
   const [isPolishing, setIsPolishing] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<ScanFilters | null>(null);
   const [suggestedName, setSuggestedName] = useState<string>('');
@@ -37,6 +37,7 @@ const ScannerScreen: React.FC = () => {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' }
         });
+        streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -47,8 +48,8 @@ const ScannerScreen: React.FC = () => {
     }
     setupCamera();
     return () => {
-      const stream = videoRef.current?.srcObject as MediaStream;
-      stream?.getTracks().forEach(track => track.stop());
+      streamRef.current?.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     };
   }, []);
 
@@ -325,9 +326,7 @@ const ScannerScreen: React.FC = () => {
           </div>
           <span className="text-white font-black text-xs tracking-widest uppercase opacity-40">Version 4.0 PRO</span>
         </div>
-        <button onClick={() => setFlash(!flash)} className={`p-2 transition-all ${flash ? 'text-white' : 'text-white/30'}`}>
-          <Zap size={22} fill={flash ? "currentColor" : "none"} />
-        </button>
+        <div className="w-10" />
       </div>
 
       {/* Viewport */}
