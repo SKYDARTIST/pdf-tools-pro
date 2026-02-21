@@ -244,7 +244,7 @@ async function validateWithGooglePlay(productId, purchaseToken) {
     // SECURITY: Fail-CLOSED in production
     if (!api) {
         console.error('🛡️ Anti-Gravity Security: Google Play API not available. Critical Failure.');
-        return false;
+        return { valid: false, reason: 'Google Play API not initialized. Check GOOGLE_SERVICE_ACCOUNT_JSON env var.' };
     }
 
     try {
@@ -253,20 +253,21 @@ async function validateWithGooglePlay(productId, purchaseToken) {
         const now = Date.now();
 
         if (isSubscription) {
-            // Add 5 second timeout to Google Play API call
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
+            // Use Promise.race for timeout instead of signal (signal in params object causes Google API errors)
+            const apiCall = api.purchases.subscriptions.get({
+                packageName: PACKAGE_NAME,
+                subscriptionId: productId,
+                token: purchaseToken
+            });
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+            );
 
             let res;
             try {
-                res = await api.purchases.subscriptions.get({
-                    packageName: PACKAGE_NAME,
-                    subscriptionId: productId,
-                    token: purchaseToken,
-                    signal: controller.signal
-                });
-            } finally {
-                clearTimeout(timeout);
+                res = await Promise.race([apiCall, timeoutPromise]);
+            } catch (raceErr) {
+                throw raceErr;
             }
 
             // SECURITY (V5): Verify Acknowledgment + Payment (ACTUAL PAYMENT ONLY) + Expiry
@@ -284,35 +285,36 @@ async function validateWithGooglePlay(productId, purchaseToken) {
                     productId,
                     isFreeTrial: paymentState === 0 || paymentState === 2
                 });
-                return false;
+                return { valid: false, reason: `Subscription not paid (paymentState=${paymentState}, isFreeTrial=${paymentState === 0 || paymentState === 2})` };
             }
 
             if (purchaseState !== 0) {
                 console.warn(`🛡️ Anti-Gravity Security: Rejecting cancelled subscription (purchaseState=${purchaseState})`);
-                return false;
+                return { valid: false, reason: `Subscription cancelled (purchaseState=${purchaseState})` };
             }
 
             if (!isAcknowledged && IS_PRODUCTION) {
                 console.warn(`Anti-Gravity Security: Unacknowledged purchase detected for ${productId}`);
-                return false;
+                return { valid: false, reason: 'Subscription not acknowledged in production' };
             }
 
-            return isActive;
+            return { valid: isActive, reason: isActive ? 'OK' : `Subscription expired (expiry=${new Date(expiryTime).toISOString()})` };
         } else {
-            // Add 5 second timeout to Google Play API call
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
+            // Use Promise.race for timeout instead of signal (signal in params object causes Google API errors)
+            const apiCall = api.purchases.products.get({
+                packageName: PACKAGE_NAME,
+                productId: productId,
+                token: purchaseToken
+            });
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+            );
 
             let res;
             try {
-                res = await api.purchases.products.get({
-                    packageName: PACKAGE_NAME,
-                    productId: productId,
-                    token: purchaseToken,
-                    signal: controller.signal
-                });
-            } finally {
-                clearTimeout(timeout);
+                res = await Promise.race([apiCall, timeoutPromise]);
+            } catch (raceErr) {
+                throw raceErr; // Let outer catch handle it
             }
 
             // Verify purchase state (0=purchased, 1=canceled)
@@ -329,14 +331,18 @@ async function validateWithGooglePlay(productId, purchaseToken) {
 
             if (!isPurchased) {
                 console.warn(`🛡️ Anti-Gravity Security: Product not purchased (purchaseState=${res.data.purchaseState})`);
-                return false;
+                return { valid: false, reason: `Product not purchased (purchaseState=${res.data.purchaseState})` };
             }
 
-            return true;
+            return { valid: true, reason: 'OK' };
         }
     } catch (err) {
-        console.error(`Google Play Verification Failed for ${productId}:`, err.message);
-        return false;
+        const isTimeout = err.message === 'TIMEOUT' || err.name === 'AbortError';
+        const errorDetail = isTimeout
+            ? 'TIMEOUT: Google Play API did not respond within 15s (Vercel cold start?)'
+            : `API_ERROR: ${err.message} | Code: ${err.code || 'none'} | Status: ${err.status || 'none'} | Stack: ${(err.stack || '').split('\n')[1]?.trim() || 'none'}`;
+        console.error(`Google Play Verification Failed for ${productId}:`, errorDetail);
+        return { valid: false, reason: errorDetail };
     }
 }
 
@@ -775,9 +781,9 @@ export default async function handler(req, res) {
                             await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
                         } else {
                             const productId = user.tier === 'lifetime' ? 'lifetime_pro_access' : 'monthly_pro_pass';
-                            const isStillActive = await validateWithGooglePlay(productId, user.active_purchase_token);
+                            const playResult = await validateWithGooglePlay(productId, user.active_purchase_token);
 
-                            if (!isStillActive) {
+                            if (!playResult.valid) {
                                 // Only downgrade subscriptions, not lifetime purchases
                                 // Lifetime INAPP purchases never expire - Google Play may return false
                                 // if the token format doesn't match a subscription lookup
@@ -933,28 +939,30 @@ export default async function handler(req, res) {
                     userPreview: maskDeviceId(googleUid || deviceId)
                 });
 
-                const isVerified = await validateWithGooglePlay(productId, purchaseToken);
+                const playResult = await validateWithGooglePlay(productId, purchaseToken);
 
-                if (!isVerified) {
+                if (!playResult.valid) {
+                    const failReason = playResult.reason || 'Unknown';
                     console.error(`❌ api/index: Authoritative verification FAILED for purchase`, {
                         productId,
                         transactionId,
                         device: maskDeviceId(deviceId),
                         user: maskDeviceId(googleUid || 'anonymous'),
                         purchaseTokenPreview: purchaseToken ? purchaseToken.substring(0, 16) + '...' : 'none',
+                        failReason,
                         timestamp: new Date().toISOString()
                     });
 
-                    // Send payment failed notification email
+                    // Send payment failed notification email with EXACT reason
                     await sendPaymentNotification('payment_failed', {
                         transactionId,
                         deviceId: maskDeviceId(deviceId),
                         googleUid: googleUid || 'Anonymous',
                         error: 'PURCHASE_NOT_VALID',
-                        details: 'Authoritative verification with Google Play failed'
+                        details: `Google Play verification failed: ${failReason}`
                     }).catch(e => console.warn('Failed to send failure notification:', e));
 
-                    // LOG FAILURE TO DB
+                    // LOG FAILURE TO DB with exact reason
                     if (transactionId) {
                         await supabase.from('purchase_transactions').insert([{
                             transaction_id: transactionId,
@@ -963,14 +971,14 @@ export default async function handler(req, res) {
                             product_id: productId,
                             purchase_token: purchaseToken,
                             status: 'failed',
-                            error_message: 'Authoritative verification with Google Play failed.',
+                            error_message: `Google Play verification failed: ${failReason}`,
                             verified_at: new Date().toISOString()
                         }]);
                     }
 
                     return res.status(402).json({
                         error: "PURCHASE_NOT_VALID",
-                        details: "Authoritative verification with Google Play failed.",
+                        details: `Google Play verification failed: ${failReason}`,
                         transactionId
                     });
                 }
@@ -1150,9 +1158,9 @@ export default async function handler(req, res) {
                 });
 
                 // Step 1: Verify with Google Play (REQUIRED - we don't bypass this)
-                const isVerified = await validateWithGooglePlay(productId, purchaseToken);
-                if (!isVerified) {
-                    return res.status(402).json({ error: 'PURCHASE_NOT_VALID', details: 'Google Play verification failed' });
+                const adminPlayResult = await validateWithGooglePlay(productId, purchaseToken);
+                if (!adminPlayResult.valid) {
+                    return res.status(402).json({ error: 'PURCHASE_NOT_VALID', details: `Google Play verification failed: ${adminPlayResult.reason}` });
                 }
 
                 console.log(`✅ Admin Force Sync: Google Play verified purchase`);
