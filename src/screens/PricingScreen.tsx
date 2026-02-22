@@ -11,6 +11,7 @@ import { getSubscription, upgradeTier, SubscriptionTier } from '@/services/subsc
 import BillingService from '@/services/billingService';
 import { getCurrentUser } from '@/services/googleAuthService';
 import AuthService from '@/services/authService';
+import Analytics from '@/services/analyticsService';
 
 const PRICE_CACHE_KEY = 'ag_lifetime_price_cache';
 
@@ -24,6 +25,9 @@ const PricingScreen: React.FC = () => {
 
 
   React.useEffect(() => {
+    // Track screen view
+    Analytics.track('screen_view', { screen: 'pricing' });
+
     const fetchPrices = async () => {
       try {
         const products = await BillingService.getProducts();

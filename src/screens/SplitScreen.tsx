@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Scissors, FileText, Share2, Loader2, FileUp, Package } from 'lucide-react';
 import { renderPageToImage } from '@/utils/pdfExtractor';
@@ -11,6 +11,7 @@ import SuccessModal from '@/components/SuccessModal';
 import { useNavigate } from 'react-router-dom';
 import { canUseTool, AiBlockMode } from '@/services/subscriptionService';
 import AiLimitModal from '@/components/AiLimitModal';
+import Analytics from '@/services/analyticsService';
 
 const SplitScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +19,11 @@ const SplitScreen: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
+
+  // Track screen view
+  useEffect(() => {
+    Analytics.track('screen_view', { screen: 'split' });
+  }, []);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,6 +121,14 @@ const SplitScreen: React.FC = () => {
         status: 'success'
       });
 
+      // Track successful split
+      Analytics.track('tool_success', {
+        tool: 'split',
+        page_count: pageCount,
+        original_size_mb: (file.size / 1024 / 1024).toFixed(2),
+        final_size_mb: (zipBlob.size / 1024 / 1024).toFixed(2)
+      });
+
       setSuccessData({
         isOpen: true,
         fileName: `${baseName}_split_pages.zip`,
@@ -124,6 +138,12 @@ const SplitScreen: React.FC = () => {
     } catch (err) {
       console.error('Split/Zip Failure:', err);
       alert('Error splitting PDF: ' + (err instanceof Error ? err.message : 'Resource exhaustion'));
+
+      // Track error
+      Analytics.track('tool_error', {
+        tool: 'split',
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
 
       FileHistoryManager.addEntry({
         fileName: `split_failed_${file.name}`,

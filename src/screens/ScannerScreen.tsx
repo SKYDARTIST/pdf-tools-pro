@@ -13,11 +13,17 @@ import { Flag } from 'lucide-react';
 import ToolGuide from '@/components/ToolGuide';
 import NeuralPulse from '@/components/NeuralPulse';
 import { compressImage } from '@/utils/imageProcessor';
+import Analytics from '@/services/analyticsService';
 
 const ScannerScreen: React.FC = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Track screen view
+  useEffect(() => {
+    Analytics.track('screen_view', { screen: 'scanner' });
+  }, []);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -296,8 +302,22 @@ const ScannerScreen: React.FC = () => {
       const finalName = suggestedName ? `${suggestedName}.jpg` : `scan_${Date.now()}.jpg`;
       const blob = dataURLToBlob(baked);
       await downloadFile(blob, finalName);
+
+      // Track successful scan
+      Analytics.track('tool_success', {
+        tool: 'scanner',
+        format: 'jpg',
+        filters_applied: appliedFilters ? Object.keys(appliedFilters).length : 0
+      });
     } catch (err) {
       console.error("Share failed", err);
+
+      // Track error
+      Analytics.track('tool_error', {
+        tool: 'scanner',
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
+
       setError("Share failed. Please try again.");
     } finally {
       setIsSharing(false);

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, FileText, Share2, Loader2, ChevronUp, ChevronDown, Shield } from 'lucide-react';
 import { mergePdfs } from '@/services/pdfService';
@@ -12,10 +12,16 @@ import ProgressIndicator from '@/components/ProgressIndicator';
 import { FileItem } from '@/types';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import ToolGuide from '@/components/ToolGuide';
+import Analytics from '@/services/analyticsService';
 
 const MergeScreen: React.FC = () => {
   const navigate = useNavigate();
   const [files, setFiles] = useState<FileItem[]>([]);
+
+  // Track screen view
+  useEffect(() => {
+    Analytics.track('screen_view', { screen: 'merge' });
+  }, []);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
@@ -31,6 +37,13 @@ const MergeScreen: React.FC = () => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
+
+      // Track file addition
+      Analytics.track('user_action', {
+        screen: 'merge',
+        action: 'files_added',
+        file_count: filesArray.length
+      });
 
       // Read file data immediately to prevent Android permission expiration
       const newFiles = await Promise.all(
@@ -60,6 +73,12 @@ const MergeScreen: React.FC = () => {
   };
 
   const removeFile = (id: string) => {
+    // Track file removal
+    Analytics.track('user_action', {
+      screen: 'merge',
+      action: 'file_removed'
+    });
+
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
@@ -67,6 +86,14 @@ const MergeScreen: React.FC = () => {
     const newFiles = [...files];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= files.length) return;
+
+    // Track file reorder
+    Analytics.track('user_action', {
+      screen: 'merge',
+      action: 'file_reordered',
+      direction
+    });
+
     [newFiles[index], newFiles[targetIndex]] = [newFiles[targetIndex], newFiles[index]];
     setFiles(newFiles);
   };
@@ -129,9 +156,24 @@ const MergeScreen: React.FC = () => {
         status: 'success'
       });
 
+      // Track successful merge
+      Analytics.track('tool_success', {
+        tool: 'merge',
+        file_count: files.length,
+        original_size_mb: (originalSize / 1024 / 1024).toFixed(2),
+        final_size_mb: (result.length / 1024 / 1024).toFixed(2)
+      });
+
       // Clear files deferred
     } catch (err) {
       alert('Error merging PDFs: ' + (err instanceof Error ? err.message : 'Unknown error'));
+
+      // Track error
+      Analytics.track('tool_error', {
+        tool: 'merge',
+        error: err instanceof Error ? err.message : 'Unknown error',
+        file_count: files.length
+      });
 
       // Add error to history
       FileHistoryManager.addEntry({
@@ -288,6 +330,11 @@ const MergeScreen: React.FC = () => {
             originalSize={successData.originalSize}
             finalSize={successData.finalSize}
             onViewFiles={() => {
+              Analytics.track('navigation', {
+                from: 'merge',
+                to: 'my-files',
+                trigger: 'success_modal'
+              });
               setShowSuccessModal(false);
               setFiles([]);
               navigate('/my-files');

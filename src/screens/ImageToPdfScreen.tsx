@@ -11,6 +11,7 @@ import AiLimitModal from '@/components/AiLimitModal';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import SuccessModal from '@/components/SuccessModal';
 import ToolGuide from '@/components/ToolGuide';
+import Analytics from '@/services/analyticsService';
 
 const ImageToPdfScreen: React.FC = () => {
   const location = useLocation();
@@ -18,6 +19,11 @@ const ImageToPdfScreen: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
+
+  // Track screen view
+  useEffect(() => {
+    Analytics.track('screen_view', { screen: 'image-to-pdf' });
+  }, []);
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
   const navigate = useNavigate();
 
@@ -132,9 +138,25 @@ const ImageToPdfScreen: React.FC = () => {
         status: 'success'
       });
 
+      // Track successful conversion
+      Analytics.track('tool_success', {
+        tool: 'image-to-pdf',
+        image_count: items.length,
+        original_size_mb: (originalSize / 1024 / 1024).toFixed(2),
+        final_size_mb: (finalSize / 1024 / 1024).toFixed(2)
+      });
+
       // Clear deferred
     } catch (err) {
       console.error('❌ Conversion error:', err);
+
+      // Track error
+      Analytics.track('tool_error', {
+        tool: 'image-to-pdf',
+        error: err instanceof Error ? err.message : 'Unknown error',
+        image_count: items.length
+      });
+
       alert(err instanceof Error ? `ERROR: ${err.message}` : 'Error converting images to PDF. Your device might be out of memory.');
     } finally {
       setIsProcessing(false);

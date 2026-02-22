@@ -25,6 +25,9 @@ const ToolsScreen: React.FC = () => {
     const subscription = getSubscription();
 
     useEffect(() => {
+        // Track screen view
+        Analytics.track('screen_view', { screen: 'tools' });
+
         // Fetch regional pricing
         billingService.getProducts().then(products => {
             const lifetime = products.find(p =>

@@ -17,12 +17,18 @@ import AIReportModal from '@/components/AIReportModal';
 import NeuralPulse from '@/components/NeuralPulse';
 import ToolGuide from '@/components/ToolGuide';
 import MindMapSettingsModal from '@/components/MindMapSettingsModal';
+import Analytics from '@/services/analyticsService';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.4.296/build/pdf.worker.min.mjs`;
 
 const ReaderScreen: React.FC = () => {
     const navigate = useNavigate();
+
+    // Track screen view
+    useEffect(() => {
+        Analytics.track('screen_view', { screen: 'smart-reader' });
+    }, []);
     const [searchParams] = useSearchParams();
     const location = useLocation();
 
@@ -174,6 +180,13 @@ const ReaderScreen: React.FC = () => {
             if (response.success && response.data) {
                 setChatHistory([{ role: 'bot', text: response.data }]);
                 await recordAIUsage(AiOperationType.SAMPLER);
+
+                // Track successful summary
+                Analytics.track('ai_tool_success', {
+                    tool: 'smart-reader',
+                    feature: 'summary',
+                    ai_operation: 'sampler'
+                });
             }
         } catch (err) {
             console.error('Summary Error:', err);
@@ -205,6 +218,13 @@ const ReaderScreen: React.FC = () => {
             if (response.success && response.data) {
                 setChatHistory(prev => [...prev, { role: 'bot', text: response.data! }]);
                 await recordAIUsage(AiOperationType.SAMPLER);
+
+                // Track successful chat question
+                Analytics.track('ai_tool_success', {
+                    tool: 'smart-reader',
+                    feature: 'chat',
+                    ai_operation: 'sampler'
+                });
             }
         } catch (err) {
             console.error('Chat Error:', err);
@@ -295,6 +315,13 @@ Analyze the provided document text and return ONLY the indented list structure.`
             if (response.success && response.data) {
                 setMindMapData(response.data);
                 await recordAIUsage(AiOperationType.SAMPLER);
+
+                // Track successful mind map
+                Analytics.track('ai_tool_success', {
+                    tool: 'smart-reader',
+                    feature: 'mindmap',
+                    ai_operation: 'sampler'
+                });
             }
         } catch (error) { console.error(error); } finally {
             setIsGeneratingMindMap(false);
@@ -332,6 +359,13 @@ Analyze the provided document text and return ONLY the indented list structure.`
             if (response.success && response.data) {
                 setOutlineData(response.data);
                 await recordAIUsage(AiOperationType.SAMPLER);
+
+                // Track successful outline
+                Analytics.track('ai_tool_success', {
+                    tool: 'smart-reader',
+                    feature: 'outline',
+                    ai_operation: 'sampler'
+                });
             } else {
                 // API returned error
                 setOutlineError(response.error || 'Failed to generate outline');

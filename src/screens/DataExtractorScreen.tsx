@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, Table, Database, Loader2, Sparkles, Check, X, AlertCircle, Share2, FileJson, FileSpreadsheet, PenTool, Flag } from 'lucide-react';
 import { extractTextFromPdf } from '@/utils/pdfExtractor';
@@ -13,11 +13,17 @@ import { downloadFile } from '@/services/downloadService';
 import ToolGuide from '@/components/ToolGuide';
 import SuccessModal from '@/components/SuccessModal';
 import { compressImage } from '@/utils/imageProcessor';
+import Analytics from '@/services/analyticsService';
 
 const DataExtractorScreen: React.FC = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [isExtracting, setIsExtracting] = useState(false);
+
+    // Track screen view
+    useEffect(() => {
+        Analytics.track('screen_view', { screen: 'data-extractor' });
+    }, []);
     const [extractedData, setExtractedData] = useState<string>('');
     const [format, setFormat] = useState<'json' | 'csv' | 'markdown'>('json');
     const [error, setError] = useState<string>('');
@@ -128,8 +134,23 @@ const DataExtractorScreen: React.FC = () => {
 
             setExtractedData(cleanedResponse);
             await recordAIUsage(AiOperationType.HEAVY);
+
+            // Track successful AI extraction
+            Analytics.track('ai_tool_success', {
+                tool: 'data-extractor',
+                data_type: selectedDataType,
+                ai_operation: 'heavy'
+            });
         } catch (err: any) {
             const friendlyMsg = err.message || "Extraction failed. Check your connection or file size.";
+
+            // Track AI error
+            Analytics.track('ai_tool_error', {
+                tool: 'data-extractor',
+                data_type: selectedDataType,
+                error: friendlyMsg
+            });
+
             setError(friendlyMsg);
             console.error('DataExtractor Error:', {
                 message: err.message,

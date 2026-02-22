@@ -4,6 +4,7 @@ import { CheckCircle, TrendingDown, FileText, X, FolderOpen, Share2, Zap, Downlo
 import { formatFileSize } from '@/utils/formatters';
 import { maybeRequestReview } from '@/services/reviewService';
 import ProNudgeBanner from '@/components/ProNudgeBanner';
+import Analytics from '@/services/analyticsService';
 
 interface SuccessModalProps {
     isOpen: boolean;
@@ -207,7 +208,13 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                 <div className="flex gap-3">
                                     {onViewFiles && (
                                         <button
-                                            onClick={onViewFiles}
+                                            onClick={() => {
+                                                Analytics.track('button_click', {
+                                                    button: 'view_files',
+                                                    source: operation.toLowerCase().replace(' ', '_')
+                                                });
+                                                onViewFiles();
+                                            }}
                                             className="flex-1 flex items-center justify-center gap-3 py-4 px-6 bg-black dark:bg-white text-white dark:text-black rounded-full font-black text-[10px] uppercase tracking-widest transition-all shadow-xl hover:scale-105 active:scale-95"
                                         >
                                             <FolderOpen size={16} />

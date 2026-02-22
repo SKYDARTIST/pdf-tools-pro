@@ -16,6 +16,9 @@ const MyFilesScreen: React.FC = () => {
     const [history, setHistory] = useState<FileHistoryEntry[]>([]);
 
     useEffect(() => {
+        // Track screen view
+        Analytics.track('screen_view', { screen: 'my-files' });
+
         setHistory(FileHistoryManager.getHistory());
     }, []);
 
