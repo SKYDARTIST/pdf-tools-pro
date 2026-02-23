@@ -434,7 +434,7 @@ const PricingScreen: React.FC = () => {
             <div className="flex-1 space-y-3 text-center sm:text-left">
               <h4 className="text-xs font-black uppercase tracking-widest text-black dark:text-white">PRIVACY MANIFESTO</h4>
               <p className="text-[13px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-tight leading-relaxed">
-                ANTI-GRAVITY PROCESSES ALL NEURAL COMPUTATIONS LOCALLY ON YOUR HARDWARE.<br />
+                CORE PDF TOOLS PROCESS LOCALLY. AI FEATURES USE SECURE CLOUD PROCESSING (NO DATA RETENTION).<br />
                 YOUR DATA IS NEVER USED TO TRAIN AI.
               </p>
             </div>
@@ -489,15 +489,15 @@ const PricingScreen: React.FC = () => {
                   <Sparkles size={20} className="text-[#00C896]" />
                   <h3 className="text-3xl font-black uppercase tracking-tighter text-black dark:text-white">PURE INTELLIGENCE</h3>
                 </div>
-                <p className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">On-Device Neural Engine</p>
+                <p className="text-[9px] font-mono font-black uppercase tracking-[0.4em] text-[#00C896]">Hybrid Architecture: Local PDF + Cloud AI</p>
               </div>
 
               <div className="space-y-4">
                 {[
                   'Advanced OCR & Data Extraction',
                   'Smart Context Awareness',
-                  'Privacy-First Local Processing',
-                  'Zero Cloud Latency'
+                  'Privacy-First PDF Processing',
+                  'Instant Local PDF Processing'
                 ].map((bullet, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full bg-[#00C896]" />
@@ -510,7 +510,7 @@ const PricingScreen: React.FC = () => {
             <div className="w-full md:w-64 space-y-6 text-center md:text-right">
               <div className="flex flex-col items-center md:items-end gap-2">
                 <Cpu size={48} className="text-[#00C896] opacity-80" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">Powered by<br />Anti-Gravity Neural Core</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-2">Powered by<br />Gemini AI + Local Processing</span>
               </div>
             </div>
           </div>
@@ -529,7 +529,7 @@ const PricingScreen: React.FC = () => {
             <h5 className="text-xl font-black uppercase tracking-widest text-black dark:text-white">Mission Transparency</h5>
           </div>
           <p className="text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
-            Anti-Gravity processes all neural computations locally on your hardware.
+            Anti-Gravity uses hybrid processing: Core PDF tools run locally on your device for maximum privacy. AI features use Gemini API with transient processing (no data retention or training).
             We've simplified our model: Start for free with the Essentials 5 tools, or secure permanent access with our Lifetime Protocol.
           </p>
         </motion.div>

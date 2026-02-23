@@ -91,7 +91,7 @@ const NeuralAssistant: React.FC = () => {
         
         FREE GUIDANCE: Inform users that questions about how the app works are ALWAYS FREE.
         
-        PRIVATE & SECURE: All document processing happens locally on the device. We do not store data in the cloud.
+        PRIVATE & SECURE: Core PDF tools process locally on the device. AI features use Gemini API with transient processing (no permanent storage).
         
         KNOWLEDGE BASE:
         1. Workspace (/ag-workspace): Chat with PDFs, summarize documents with AI.
@@ -267,7 +267,7 @@ const NeuralAssistant: React.FC = () => {
                             </div>
                             <div className="mt-4 flex items-center justify-center gap-2 opacity-20">
                                 <ShieldAlert size={10} />
-                                <span className="text-[8px] font-black uppercase tracking-widest">Secure Local AI Active</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest">Secure Hybrid Processing Active</span>
                             </div>
                         </div>
                     </motion.div>

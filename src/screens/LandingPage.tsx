@@ -211,8 +211,8 @@ const LandingPage: React.FC = () => {
 
                         <div className="flex justify-between items-center gap-2">
                             {[
-                                { title: "LOCAL", desc: "GEMINI AI" },
-                                { title: "ZERO", desc: "Cloud" },
+                                { title: "HYBRID", desc: "PROCESSING" },
+                                { title: "OFFLINE", desc: "PDF Tools" },
                                 { title: "100%", desc: "Private" }
                             ].map((badge, i) => (
                                 <React.Fragment key={i}>
@@ -240,13 +240,13 @@ const LandingPage: React.FC = () => {
                                     Our Privacy<br className="hidden sm:block" /> Promise.
                                 </h2>
                                 <p className="text-sm sm:text-base text-[#2D3748] dark:text-gray-400 font-bold leading-relaxed tracking-tight max-w-lg">
-                                    We believe your data belongs to you. Anti-Gravity processes everything locally on your device, ensuring total privacy without any cloud storage.
+                                    We believe your data belongs to you. Anti-Gravity processes core PDF operations locally on your device. AI features use secure cloud processing with no permanent storage.
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6 sm:gap-10">
                                     {[
                                         { title: "ABS-OLUTE PRIVACY", desc: "Your data stays with you." },
                                         { title: "ZERO STORAGE", desc: "Nothing is saved on our end." },
-                                        { title: "LOCAL AI", desc: "Private on-device intelligence." }
+                                        { title: "HYBRID AI", desc: "Core tools local, AI cloud-based." }
                                     ].map((item, i) => (
                                         <div key={i} className="flex items-start gap-5">
                                             <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] mt-2 shrink-0 shadow-[0_0_8px_rgba(0,200,150,0.4)]" />
@@ -266,7 +266,7 @@ const LandingPage: React.FC = () => {
                                     <div className="text-[10px] font-black uppercase tracking-[0.4em] text-[#718096] opacity-60">OUR ADVANTAGE</div>
                                     <h3 className="text-2xl sm:text-3xl font-black tracking-tighter uppercase leading-none text-[#000000] dark:text-white">INSTANT SPEED.<br />ZERO RISK.</h3>
                                     <p className="text-xs sm:text-sm font-bold text-[#4A5568] dark:text-gray-400 leading-relaxed uppercase tracking-tight max-w-md">
-                                        By using local processing, we skip the slow uploads. Your documents are analyzed privately on your device. This is the future of secure document tools.
+                                        Core PDF tools process locally, skipping uploads for merge, split, and compress operations. AI analysis uses secure cloud processing with transient, non-retained data. This is the future of hybrid document tools.
                                     </p>
                                 </div>
                             </div>

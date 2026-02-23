@@ -10,7 +10,7 @@ const LEGAL_CONTENT = {
         icon: Shield,
         subtitle: 'Privacy',
         content: [
-            "ZERO-KNOWLEDGE: Anti-Gravity processes your document content locally. We never upload, store, or see your files. This is the core of our local-first intelligence.",
+            "HYBRID PROCESSING: Anti-Gravity processes core PDF tools locally on your device. AI features use Gemini API with transient processing (no permanent storage). We never permanently store your files.",
             "IDENTITY SYNC: If you sign in with Google, we securely store your email and profile info only to synchronize your subscription and credits across devices.",
             "DATA MINIMIZATION: we do NOT track your behavior, use analytics, or share data with third parties. We collect only what is necessary for security and limits.",
             "SOVEREIGNTY: Your data belongs to you. You can permanently delete your account or download your account metadata at any time from your settings.",

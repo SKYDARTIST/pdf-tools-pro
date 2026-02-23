@@ -269,12 +269,12 @@ const AntiGravityWorkspace: React.FC = () => {
             <motion.div key="idle" className="space-y-12 w-full">
               <ToolGuide
                 title="Pro & Neural Operation Guide"
-                description="The Pro & Neural Workspace is an elite suite for your most important documents. From heavy-duty AI analysis to secure professional utilities, everything happens with zero-cloud privacy."
+                description="The Pro & Neural Workspace is an elite suite for your most important documents. From heavy-duty AI analysis to secure professional utilities, hybrid processing ensures both power and privacy."
                 steps={[
-                  "AI Neural Suite: Chat, compare, and extract structured data using local-first intelligence.",
-                  "Pro Utilities: Sign, watermark, reorder pages, and export PDFs as images — all on-device.",
+                  "AI Neural Suite: Chat, compare, and extract structured data using Gemini AI (transient cloud processing).",
+                  "Pro Utilities: Sign, watermark, reorder pages, and export PDFs as images — all processed locally.",
                   "New Tools: PDF→Images exports every page as JPG/PNG. Reorder rearranges pages instantly.",
-                  "Privacy First: Files never leave your device. All Pro tools run in your private workspace."
+                  "Hybrid Architecture: Core PDF tools run locally. AI features use secure cloud processing (no data retention)."
                 ]}
                 useCases={[
                   "Deep AI Analysis", "Secure Signing", "Privacy Watermarking", "Data Extraction", "PDF to Images", "Reorder Pages"

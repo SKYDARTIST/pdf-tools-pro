@@ -210,7 +210,7 @@ const OnboardingScreen: React.FC = () => {
               >
                 <Shield size={20} className="text-[#00C896]" />
                 <p className="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                  All processing happens on your device • Zero uploads
+                  Core PDF tools process locally • AI features use cloud
                 </p>
               </motion.div>
             </div>
