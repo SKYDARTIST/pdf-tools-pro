@@ -210,46 +210,6 @@ const ToolsScreen: React.FC = () => {
                     </motion.div>
                 )}
 
-                <TaskCounter variant="inline" />
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="relative group"
-                >
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#718096] dark:text-gray-400 group-focus-within:text-[#00C896] transition-colors" size={20} />
-                    <input
-                        type="search"
-                        placeholder="Search for a tool..."
-                        className="w-full bg-[#FFFFFF] dark:bg-white/5 border border-[#E2E8F0] dark:border-white/5 rounded-full py-5 pl-16 pr-6 text-sm font-black uppercase tracking-widest text-[#000000] dark:text-white focus:outline-none focus:border-[#00C896]/30 focus:shadow-[0_0_20px_rgba(0,200,150,0.05)] transition-all shadow-sm"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="flex gap-3 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6"
-                >
-                    {['all', 'popular', 'security', 'convert'].map((cat) => (
-                        <motion.button
-                            key={cat}
-                            whileHover={{ y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setActiveCategory(cat as any)}
-                            className={`px-6 py-3 rounded-full text-[9px] font-mono font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all border ${activeCategory === cat
-                                ? 'bg-[#000000] dark:bg-white text-white dark:text-black shadow-2xl ring-4 ring-black/5 dark:ring-white/5 border-transparent'
-                                : 'bg-[#FFFFFF] dark:bg-white/5 text-[#718096] border-[#E2E8F0] dark:border-white/10 hover:border-[#00C896]/30 hover:text-[#00C896]'
-                                }`}
-                        >
-                            {cat === 'all' ? 'All' : cat}
-                        </motion.button>
-                    ))}
-                </motion.div>
-
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeCategory + searchQuery}
