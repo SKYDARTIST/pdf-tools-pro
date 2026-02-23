@@ -253,14 +253,24 @@ const ToolsScreen: React.FC = () => {
                         <div className="absolute top-1/2 -translate-y-1/2 -right-6 opacity-[0.05] group-hover:opacity-10 transition-all duration-700">
                             <Sparkles size={120} />
                         </div>
-                        <div className="space-y-2 relative z-10">
+                        <div className="space-y-3 relative z-10">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
-                                <h3 className="text-lg font-black uppercase tracking-tighter">Pro & Neural Workspace</h3>
+                                <h3 className="text-lg font-black uppercase tracking-tighter">15+ Pro Tools Available</h3>
                             </div>
                             <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400 opacity-80">
-                                Unlock 20+ Pro & Neural Tools
+                                Sign • Rotate • Watermark • Extract • Redact + More
                             </p>
+
+                            {/* Tool Counter */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                                <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">
+                                    Your Access:
+                                </span>
+                                <span className="text-sm font-black text-[#00C896]">
+                                    5/18+ Tools
+                                </span>
+                            </div>
                         </div>
                         <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 group-hover:scale-110 transition-transform relative z-10">
                             <Sparkles size={20} className="text-[#00C896]" />

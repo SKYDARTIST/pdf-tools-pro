@@ -142,7 +142,7 @@ const PricingScreen: React.FC = () => {
       period: 'ONE-TIME PAYMENT',
       badge: 'FOUNDER PACK',
       features: [
-        { text: '20+ Pro & Neural Tools', icon: Sparkles },
+        { text: '18 Total Tools (13 Pro + 5 Free)', icon: Sparkles },
         { text: 'Full AI Neural Suite Access', icon: Bot },
         { text: 'Pro Power Utilities Hub', icon: Zap },
         { text: 'Lifetime Founder Status', icon: Star }
@@ -578,7 +578,7 @@ const PricingScreen: React.FC = () => {
               {
                 id: 'trial',
                 q: 'Is There A Trial Period?',
-                a: 'No, but the Free tier gives you unlimited access to the Essentials 5 tools forever (Scanner, Merge, Split, etc.). Upgrade to Lifetime Protocol to unlock the Pro & Neural Workspace (20+ tools).'
+                a: 'No, but the Free tier gives you unlimited access to the Essentials 5 tools forever (Scanner, Merge, Split, etc.). Upgrade to Lifetime Protocol to unlock 13 Pro Tools (18 tools total).'
               },
               {
                 id: 'support',
