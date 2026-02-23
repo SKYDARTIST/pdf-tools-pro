@@ -210,6 +210,44 @@ const ToolsScreen: React.FC = () => {
                     </motion.div>
                 )}
 
+                {/* Neural Workspace Bar - TOP PLACEMENT (Pro users only) */}
+                {subscription.tier === SubscriptionTier.LIFETIME && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        whileHover={{ y: -4 }}
+                        onClick={() => navigate('/ag-workspace')}
+                        className="monolith-glass p-8 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-emerald-500/10 to-violet-500/10 border border-emerald-500/30 shadow-2xl rounded-[40px] flex items-center justify-between"
+                    >
+                        <div className="absolute top-1/2 -translate-y-1/2 -right-6 opacity-[0.05] group-hover:opacity-10 transition-all duration-700">
+                            <Sparkles size={120} className="text-emerald-500" />
+                        </div>
+                        <div className="space-y-3 relative z-10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <h3 className="text-lg font-black uppercase tracking-tighter text-gray-900 dark:text-white">Neural Workspace</h3>
+                            </div>
+                            <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 opacity-80">
+                                Access All 18 Pro & Neural Tools
+                            </p>
+
+                            {/* Pro Status */}
+                            <div className="flex items-center gap-2 pt-2 border-t border-emerald-500/20">
+                                <span className="text-[9px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest">
+                                    Pro Status:
+                                </span>
+                                <span className="text-sm font-black text-emerald-500">
+                                    Full Access
+                                </span>
+                            </div>
+                        </div>
+                        <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center backdrop-blur-md border border-emerald-500/30 group-hover:scale-110 transition-transform relative z-10">
+                            <Sparkles size={20} className="text-emerald-500" />
+                        </div>
+                    </motion.div>
+                )}
+
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeCategory + searchQuery}

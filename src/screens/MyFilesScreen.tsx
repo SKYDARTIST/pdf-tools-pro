@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search, FileText, Trash2, Database, ChevronRight, SortDesc, Calendar, ArrowUpDown,
+    FileText, Trash2, Database, ChevronRight,
     Sparkles, Shield, Zap, Combine, Scissors, Image as ImageIcon, PenTool, Droplet,
     RotateCw, BookOpen
 } from 'lucide-react';
@@ -13,9 +13,6 @@ import { getSubscription, SubscriptionTier } from '@/services/subscriptionServic
 
 const MyFilesScreen: React.FC = () => {
     const navigate = useNavigate();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterOperation, setFilterOperation] = useState<string>('all');
-    const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'name' | 'size'>('newest');
     const [history, setHistory] = useState<FileHistoryEntry[]>([]);
     const subscription = getSubscription();
 
@@ -30,37 +27,9 @@ const MyFilesScreen: React.FC = () => {
 
     const filteredHistory = useMemo(() => {
         if (!Array.isArray(history)) return [];
-        let filtered = [...history];
-
-        // Search
-        if (searchQuery) {
-            const lowerQuery = searchQuery.toLowerCase();
-            filtered = filtered.filter(entry =>
-                (entry.fileName || '').toLowerCase().includes(lowerQuery) ||
-                (entry.operation || '').toLowerCase().includes(lowerQuery)
-            );
-        }
-
-        // Filter by Operation
-        if (filterOperation !== 'all') {
-            filtered = filtered.filter(entry => entry.operation === filterOperation);
-        }
-
-        // Sort
-        filtered.sort((a, b) => {
-            if (sortOrder === 'newest') return (b.timestamp || 0) - (a.timestamp || 0);
-            if (sortOrder === 'oldest') return (a.timestamp || 0) - (b.timestamp || 0);
-            if (sortOrder === 'name') return (a.fileName || '').localeCompare(b.fileName || '');
-            if (sortOrder === 'size') {
-                const sizeA = a.finalSize || a.originalSize || 0;
-                const sizeB = b.finalSize || b.originalSize || 0;
-                return sizeB - sizeA;
-            }
-            return 0;
-        });
-
-        return filtered;
-    }, [history, searchQuery, filterOperation, sortOrder]);
+        // Sort by newest first
+        return [...history].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }, [history]);
 
     const handleDelete = (id: string) => {
         if (window.confirm('Delete this entry?')) {
@@ -76,7 +45,6 @@ const MyFilesScreen: React.FC = () => {
         }
     };
 
-    const operations = ['all', 'merge', 'split', 'sign', 'watermark', 'image-to-pdf'];
 
     return (
         <motion.div
@@ -102,7 +70,7 @@ const MyFilesScreen: React.FC = () => {
                     {[
                         { label: 'Total', value: stats.totalFiles, icon: FileText },
                         { label: 'Saved', value: stats.totalSaved > 0 ? formatFileSize(stats.totalSaved) : '0', icon: Database },
-                        { label: 'Success', value: stats.successCount, icon: Calendar }
+                        { label: 'Success', value: stats.successCount, icon: Shield }
                     ].map((stat) => (
                         <div key={stat.label} className="monolith-card rounded-3xl p-4 flex flex-col items-center gap-2 border border-[#E2E8F0] dark:border-white/5 bg-[#FFFFFF] dark:bg-white/5 shadow-sm hover:shadow-md transition-all">
                             <stat.icon size={12} className="text-[#00C896] mb-1" />
@@ -155,64 +123,6 @@ const MyFilesScreen: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* Search Interface */}
-                <div className="relative group">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#718096] dark:text-gray-400 group-focus-within:text-[#00C896] transition-colors" size={20} />
-                    <input
-                        type="text"
-                        placeholder="SEARCH YOUR FILES..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#FFFFFF] dark:bg-white/5 border border-[#E2E8F0] dark:border-white/10 rounded-full py-5 pl-16 pr-12 text-sm font-black uppercase tracking-widest text-[#000000] dark:text-white placeholder:text-[#A0AEC0] focus:outline-none focus:border-[#00C896]/30 focus:shadow-[0_0_20px_rgba(0,200,150,0.05)] transition-all shadow-sm"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-6 top-1/2 -translate-y-1/2 text-[#A0AEC0] hover:text-[#718096]"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    )}
-                </div>
-
-                <div className="space-y-6">
-                    <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar mx-[-24px] px-6">
-                        {operations.map(op => (
-                            <motion.button
-                                key={op}
-                                whileHover={{ y: -2 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setFilterOperation(op)}
-                                className={`px-6 py-3 rounded-full text-[10px] font-mono font-black uppercase tracking-widest whitespace-nowrap transition-all border ${filterOperation === op
-                                    ? 'bg-[#000000] dark:bg-white text-white dark:text-black border-transparent shadow-xl ring-4 ring-black/5 dark:ring-white/5'
-                                    : 'bg-[#FFFFFF] dark:bg-white/5 text-[#718096] border-[#E2E8F0] dark:border-white/10 hover:border-[#00C896]/30 hover:text-[#00C896]'
-                                    }`}
-                            >
-                                {op === 'all' ? 'All' : op}
-                            </motion.button>
-                        ))}
-                    </div>
-
-                    <div className="flex gap-3 overflow-x-auto pb-6 no-scrollbar mx-[-24px] px-6 border-b border-[#E2E8F0] dark:border-white/5">
-                        {[
-                            { id: 'newest', label: 'Recent', icon: Calendar },
-                            { id: 'name', label: 'A-Z', icon: ArrowUpDown },
-                            { id: 'size', label: 'Size', icon: SortDesc }
-                        ].map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => setSortOrder(s.id as any)}
-                                className={`flex items-center gap-2.5 px-4 py-2 rounded-lg text-[9px] font-mono font-black uppercase tracking-widest transition-all ${sortOrder === s.id
-                                    ? 'text-[#00C896] bg-[#00C896]/10 border border-[#00C896]/20'
-                                    : 'text-[#718096] border border-transparent hover:text-[#4A5568]'
-                                    }`}
-                            >
-                                <s.icon size={12} />
-                                {s.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
 
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2">
