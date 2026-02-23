@@ -5,6 +5,8 @@ import { formatFileSize } from '@/utils/formatters';
 import { maybeRequestReview } from '@/services/reviewService';
 import ProNudgeBanner from '@/components/ProNudgeBanner';
 import Analytics from '@/services/analyticsService';
+import FileHistoryManager from '@/utils/FileHistoryManager';
+import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
 
 interface SuccessModalProps {
     isOpen: boolean;
@@ -33,6 +35,10 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
     metadata,
     onDownload
 }) => {
+    const subscription = getSubscription();
+    const uniqueToolsUsed = FileHistoryManager.getUniqueToolsUsedCount();
+    const showProgressNudge = subscription.tier === SubscriptionTier.FREE && uniqueToolsUsed >= 3;
+
     const handleClose = () => {
         onClose();
         maybeRequestReview();
@@ -230,8 +236,31 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                 </div>
                             </div>
 
-                            {/* Soft upgrade nudge for free users */}
-                            <ProNudgeBanner variant="success" />
+                            {/* Conversion nudge: Progress-based or standard */}
+                            {showProgressNudge ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-violet-500/10 border border-emerald-500/20"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Zap size={12} className="text-emerald-500" fill="currentColor" />
+                                                <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">
+                                                    {uniqueToolsUsed} Tools Explored
+                                                </span>
+                                            </div>
+                                            <p className="text-[9px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed">
+                                                You've tried {uniqueToolsUsed} free tools. Unlock 13 more Pro tools to maximize your workflow.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <ProNudgeBanner variant="success" />
+                            )}
                         </motion.div>
                     </motion.div>
                 </>

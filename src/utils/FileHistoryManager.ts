@@ -123,6 +123,18 @@ class FileHistoryManager {
             totalSaved,
         };
     }
+
+    // Get count of unique tools used (for conversion optimization)
+    getUniqueToolsUsedCount(): number {
+        const history = this.getHistory();
+        const uniqueTools = new Set(history.map(entry => entry.operation));
+        return uniqueTools.size;
+    }
+
+    // Check if user should see tool usage progress nudge
+    shouldShowToolUsageNudge(): boolean {
+        return this.getUniqueToolsUsedCount() >= 3;
+    }
 }
 
 export default FileHistoryManager.getInstance();

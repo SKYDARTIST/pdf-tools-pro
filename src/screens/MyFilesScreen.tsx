@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     Search, FileText, Trash2, Database, ChevronRight, SortDesc, Calendar, ArrowUpDown,
-    Sparkles, Shield
+    Sparkles, Shield, Zap, Combine, Scissors, Image as ImageIcon, PenTool, Droplet,
+    RotateCw, BookOpen
 } from 'lucide-react';
 import FileHistoryManager, { FileHistoryEntry } from '@/utils/FileHistoryManager';
 import { formatRelativeTime, formatFileSize } from '@/utils/formatters';
+import Analytics from '@/services/analyticsService';
+import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
 
 const MyFilesScreen: React.FC = () => {
     const navigate = useNavigate();
@@ -14,6 +17,7 @@ const MyFilesScreen: React.FC = () => {
     const [filterOperation, setFilterOperation] = useState<string>('all');
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'name' | 'size'>('newest');
     const [history, setHistory] = useState<FileHistoryEntry[]>([]);
+    const subscription = getSubscription();
 
     useEffect(() => {
         // Track screen view
@@ -111,6 +115,45 @@ const MyFilesScreen: React.FC = () => {
                         </div>
                     ))}
                 </div>
+
+                {/* Pro Upgrade Banner - FREE users only */}
+                {subscription.tier === SubscriptionTier.FREE && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        whileHover={{ y: -4 }}
+                        onClick={() => {
+                            Analytics.track('button_click', {
+                                button: 'upgrade_banner',
+                                source: 'my_files_screen'
+                            });
+                            navigate('/ag-workspace');
+                        }}
+                        className="monolith-glass p-6 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-[#0c0c0c] to-[#1a1a1a] text-white border border-emerald-500/20 shadow-2xl rounded-[40px]"
+                    >
+                        <div className="absolute top-1/2 -translate-y-1/2 -right-6 opacity-[0.05] group-hover:opacity-10 transition-all duration-700">
+                            <Sparkles size={100} />
+                        </div>
+                        <div className="space-y-3 relative z-10">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
+                                <h3 className="text-base font-black uppercase tracking-tighter">Unlock 13 Pro Tools</h3>
+                            </div>
+                            <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400 opacity-80">
+                                Sign • Watermark • Extract • Redact • Compare + More
+                            </p>
+                            <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                                <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">
+                                    Your Access:
+                                </span>
+                                <span className="text-sm font-black text-[#00C896]">
+                                    5/18 Tools
+                                </span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Search Interface */}
                 <div className="relative group">
@@ -246,34 +289,82 @@ const MyFilesScreen: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="monolith-card rounded-[40px] p-16 flex flex-col items-center justify-center border-dashed border-2 border-[#E2E8F0] bg-black/5 dark:bg-white/5">
-                                <motion.div
-                                    initial={{ scale: 0.8, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="w-24 h-24 rounded-3xl bg-[#E6FAF5] dark:bg-white/5 flex items-center justify-center mb-8 border border-[#00C896]/10 shadow-inner"
-                                >
-                                    <div className="relative">
-                                        <Database size={40} className="text-[#00C896] opacity-60" />
-                                        <Sparkles size={20} className="absolute -top-2 -right-2 text-[#00C896] animate-pulse" />
-                                    </div>
-                                </motion.div>
-                                <div className="text-center space-y-4 max-w-[280px] mx-auto">
-                                    <h3 className="text-sm font-black uppercase tracking-[0.4em] text-[#000000] dark:text-white">PROJECT STUDIO EMPTY</h3>
-                                    <p className="text-[10px] font-bold text-[#718096] dark:text-gray-500 uppercase tracking-[0.4em] leading-relaxed">
-                                        Unlock the Neural Workspace or use core tools to begin indexing documents in your local vault.
+                            <div className="space-y-10">
+                                {/* Empty State Header */}
+                                <div className="text-center space-y-3 px-6">
+                                    <h3 className="text-2xl font-black uppercase tracking-tighter text-[#000000] dark:text-white">No Files Yet</h3>
+                                    <p className="text-[10px] font-bold text-[#718096] dark:text-gray-500 uppercase tracking-[0.3em]">
+                                        Get started with these tools
                                     </p>
-                                    <div className="flex flex-col gap-3 mt-8">
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => navigate('/tools')}
-                                            className="px-8 py-4 bg-[#000000] dark:bg-white text-white dark:text-black rounded-full text-[10px] font-mono font-black uppercase tracking-widest shadow-2xl flex items-center justify-center gap-2"
-                                        >
-                                            <Sparkles size={14} />
-                                            Start New Project
-                                        </motion.button>
-                                    </div>
                                 </div>
+
+                                {/* Quick Start Tiles - FREE Users */}
+                                {subscription.tier === SubscriptionTier.FREE && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 px-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#00C896]" />
+                                            <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#000000] dark:text-white">Free Tools</h4>
+                                            <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-white/5" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {[
+                                                { icon: Combine, label: 'Merge PDFs', path: '/merge' },
+                                                { icon: Scissors, label: 'Split PDF', path: '/split' },
+                                                { icon: Zap, label: 'Scan Doc', path: '/scanner' },
+                                                { icon: ImageIcon, label: 'Image→PDF', path: '/image-to-pdf' }
+                                            ].map((tool, i) => (
+                                                <motion.button
+                                                    key={tool.label}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.1 }}
+                                                    whileHover={{ y: -4, scale: 1.02 }}
+                                                    whileTap={{ scale: 0.98 }}
+                                                    onClick={() => navigate(tool.path)}
+                                                    className="p-6 rounded-[32px] border border-[#E2E8F0] dark:border-white/10 bg-white dark:bg-white/5 flex flex-col items-center gap-3 hover:border-[#00C896]/30 dark:hover:border-[#00C896]/30 transition-all shadow-sm hover:shadow-md"
+                                                >
+                                                    <tool.icon size={28} className="text-[#00C896]" />
+                                                    <span className="text-[10px] font-black uppercase tracking-tight text-[#000000] dark:text-white">{tool.label}</span>
+                                                </motion.button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Quick Start Tiles - PRO Users */}
+                                {subscription.tier === SubscriptionTier.LIFETIME && (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-3 px-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                            <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#000000] dark:text-white">Pro Tools Ready</h4>
+                                            <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-white/5" />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {[
+                                                { icon: PenTool, label: 'Sign', path: '/sign' },
+                                                { icon: Droplet, label: 'Watermark', path: '/watermark' },
+                                                { icon: RotateCw, label: 'Rotate', path: '/rotate' },
+                                                { icon: FileText, label: 'Extract', path: '/extract-text' },
+                                                { icon: Trash2, label: 'Remove', path: '/remove-pages' },
+                                                { icon: BookOpen, label: 'AI Reader', path: '/reader' }
+                                            ].map((tool, i) => (
+                                                <motion.button
+                                                    key={tool.label}
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: i * 0.08 }}
+                                                    whileHover={{ y: -4, scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => navigate(tool.path)}
+                                                    className="p-5 rounded-[24px] border border-emerald-500/20 bg-emerald-500/5 flex flex-col items-center gap-2 hover:bg-emerald-500/10 transition-all"
+                                                >
+                                                    <tool.icon size={24} className="text-emerald-500" />
+                                                    <span className="text-[8px] font-black uppercase tracking-tight text-[#000000] dark:text-white">{tool.label}</span>
+                                                </motion.button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </AnimatePresence>

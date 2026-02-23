@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon, Layers } from 'lucide-react';
+import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon, Layers, Lock } from 'lucide-react';
 
 import { askGemini } from '@/services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType, canUseTool } from '@/services/subscriptionService';
@@ -36,6 +36,7 @@ const AntiGravityWorkspace: React.FC = () => {
   const [aiLimitInfo, setAiLimitInfo] = useState<{ blockMode: any }>({ blockMode: null });
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const subscription = getSubscription();
 
   const showToast = (message: string) => {
     setError(message);
@@ -221,6 +222,47 @@ const AntiGravityWorkspace: React.FC = () => {
         </div>
       </div>
 
+      {/* Top Upgrade Banner - FREE users only */}
+      {subscription.tier === SubscriptionTier.FREE && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          whileHover={{ y: -4 }}
+          onClick={() => navigate('/pricing')}
+          className="monolith-glass p-8 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-emerald-500/10 via-violet-500/10 to-transparent border border-emerald-500/30 shadow-2xl rounded-[40px]"
+        >
+          <div className="absolute top-1/2 -translate-y-1/2 -right-6 opacity-[0.05] group-hover:opacity-10 transition-all duration-700">
+            <Lock size={100} />
+          </div>
+          <div className="space-y-4 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">18 Pro & Neural Tools</h3>
+            </div>
+            <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-gray-600 dark:text-gray-400">
+              You're viewing all 18 tools below. Unlock lifetime access to use them.
+            </p>
+            <div className="flex items-center justify-between pt-3 border-t border-black/10 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest">
+                  Currently Locked:
+                </span>
+                <span className="text-base font-black text-emerald-500">
+                  13 Tools
+                </span>
+              </div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                className="px-6 py-2 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg"
+              >
+                Unlock Now
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="space-y-12">
         <AnimatePresence mode="wait">
           {status === 'idle' && (
@@ -330,16 +372,33 @@ const AntiGravityWorkspace: React.FC = () => {
               { id: 'neural-diff', title: "Smart Compare", desc: "AI Document Changes", icon: GitMerge, path: "/neural-diff", color: "text-indigo-500", tag: "VERSIONS" },
               { id: 'data-extractor', title: "Data Extractor", desc: "Analyze Photos & Scans", icon: Database, path: "/data-extractor", color: "text-purple-500", tag: "VISION" },
               { id: 'smart-redact', title: "AI Redact", desc: "Automated PII Filter", icon: EyeOff, path: "/smart-redact", color: "text-rose-500", tag: "SECURITY" },
-            ].map((tool, i) => (
-              <motion.button key={i} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => handleToolClick(tool.path, tool.id)} className="monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4">
-                <div className="text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 uppercase tracking-widest bg-emerald-500/5">{tool.tag}</div>
-                <div className={`p-6 bg-black/5 rounded-2xl ${tool.color}`}><tool.icon size={24} /></div>
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white mb-1">{tool.title}</div>
-                  <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{tool.desc}</div>
-                </div>
-              </motion.button>
-            ))}
+            ].map((tool, i) => {
+              const isLocked = subscription.tier === SubscriptionTier.FREE && !canUseTool(tool.id).allowed;
+              return (
+                <motion.button
+                  key={i}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleToolClick(tool.path, tool.id)}
+                  className={`monolith-card rounded-[40px] p-6 flex flex-col items-start text-left space-y-4 relative ${isLocked ? 'opacity-60 border-2 border-emerald-500/30' : ''}`}
+                >
+                  {isLocked && (
+                    <div className="absolute top-3 right-3 w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <Lock size={14} className="text-emerald-500" />
+                    </div>
+                  )}
+                  <div className="text-[7px] font-black px-2 py-0.5 rounded-full border border-emerald-500/20 text-emerald-500 uppercase tracking-widest bg-emerald-500/5">{tool.tag}</div>
+                  <div className={`p-6 bg-black/5 rounded-2xl ${tool.color}`}><tool.icon size={24} /></div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white mb-1">{tool.title}</div>
+                      {isLocked && <span className="text-[7px] font-black text-emerald-500 uppercase">PRO</span>}
+                    </div>
+                    <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{tool.desc}</div>
+                  </div>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 
@@ -360,26 +419,37 @@ const AntiGravityWorkspace: React.FC = () => {
               { id: 'reorder-pages', title: 'Reorder', desc: 'Rearrange Pages', icon: Layers, path: '/reorder-pages', isNew: true },
               { id: 'remove-pages', title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
               { id: 'page-numbers', title: 'Numbers', desc: 'Add Pages', icon: Hash, path: '/page-numbers' },
-            ].map((tool, i) => (
-              <motion.button
-                key={i}
-                whileHover={{ y: -4, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleToolClick(tool.path, tool.id)}
-                className="monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3 relative overflow-hidden"
-              >
-                {(tool as any).isNew && (
-                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
-                    New
+            ].map((tool, i) => {
+              const isLocked = subscription.tier === SubscriptionTier.FREE && !canUseTool(tool.id).allowed;
+              return (
+                <motion.button
+                  key={i}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleToolClick(tool.path, tool.id)}
+                  className={`monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3 relative overflow-hidden ${isLocked ? 'opacity-60 border-2 border-[#00C896]/30' : ''}`}
+                >
+                  {(tool as any).isNew && !isLocked && (
+                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
+                      New
+                    </div>
+                  )}
+                  {isLocked && (
+                    <div className="absolute top-2 right-2 w-7 h-7 bg-[#00C896]/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <Lock size={12} className="text-[#00C896]" />
+                    </div>
+                  )}
+                  <div className={`p-4 bg-[#00C896]/10 rounded-2xl text-[#00C896] ${isLocked ? 'opacity-70' : ''}`}><tool.icon size={20} /></div>
+                  <div>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none mb-1">{tool.title}</div>
+                      {isLocked && <Lock size={8} className="text-[#00C896] mb-1" />}
+                    </div>
+                    <div className="text-[7px] font-bold text-gray-400 uppercase tracking-tight">{tool.desc}</div>
                   </div>
-                )}
-                <div className="p-4 bg-[#00C896]/10 rounded-2xl text-[#00C896]"><tool.icon size={20} /></div>
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none mb-1">{tool.title}</div>
-                  <div className="text-[7px] font-bold text-gray-400 uppercase tracking-tight">{tool.desc}</div>
-                </div>
-              </motion.button>
-            ))}
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 

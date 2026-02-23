@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut, FileText, Bot, CreditCard, Activity, ChevronRight, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, GoogleUser } from '@/services/googleAuthService';
+import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
 
 const AISettingsScreen: React.FC = () => {
   const [isAiEnabled, setIsAiEnabled] = useState(true);
   const [user, setUser] = useState<GoogleUser | null>(null);
   const navigate = useNavigate();
+  const subscription = getSubscription();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -133,6 +135,44 @@ const AISettingsScreen: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Subscription Status Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="monolith-card p-8 space-y-6 border-none"
+        >
+          <div className="flex items-center gap-6">
+            <div className={`w-12 h-12 flex items-center justify-center rounded-2xl ${
+              subscription.tier === SubscriptionTier.FREE
+                ? 'bg-gray-500/10 text-gray-500'
+                : 'bg-emerald-500/10 text-emerald-500'
+            }`}>
+              <Sparkles size={20} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">
+                {subscription.tier === SubscriptionTier.FREE ? 'Free Tier' : 'Lifetime Pro'}
+              </h4>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                {subscription.tier === SubscriptionTier.FREE ? '5/18 Tools Unlocked' : 'All 18 Tools Unlocked'}
+              </p>
+            </div>
+          </div>
+
+          {subscription.tier === SubscriptionTier.FREE && (
+            <button
+              onClick={() => navigate('/pricing')}
+              className="w-full flex items-center justify-between p-5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 transition-all group"
+            >
+              <span className="text-sm font-black uppercase tracking-wider text-white">
+                Unlock 13 Pro Tools
+              </span>
+              <ChevronRight size={18} className="text-white" />
+            </button>
+          )}
+        </motion.div>
 
         {/* Billing & Support Section */}
         <motion.div
