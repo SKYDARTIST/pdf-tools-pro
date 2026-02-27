@@ -48,7 +48,7 @@ app.post('/api/ai/ask', async (req, res) => {
 
     try {
         // RESILIENT FALLBACK: Try several modern models in order of priority (Free Tier compatible)
-        const modelsToTry = ["gemini-2.0-flash-lite", "gemini-2.0-flash", "gemini-flash-lite-latest"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash-8b"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
