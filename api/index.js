@@ -189,13 +189,8 @@ const supabase = supabaseUrl && supabaseKey
 let cachedModels = null;
 let lastDiscovery = 0;
 
-import { kv } from '@vercel/kv';
-
-// RATE LIMITING (Distributed Vercel KV)
-// SECURITY: Stricter limits for production readiness
-const RATE_LIMIT_WINDOW = 60; // 1 Minute
-const MAX_REQUESTS = 15; // 15 reqs/min - purchase flow needs ~4-5 calls (handshake + verify + status + usage)
-const PURCHASE_MAX_REQUESTS = 2; // Strict limit for payment attempts
+// KV removed — was never connected (env vars never set), causing 500s for all users.
+// Security is handled by: tier check (Supabase) + Google Play verification + JWT session.
 
 // GOOGLE PLAY CONFIGURATION
 const PACKAGE_NAME = 'com.cryptobulla.antigravity';
@@ -446,34 +441,6 @@ export default async function handler(req, res) {
             hasIntegrityToken: !!integrityToken,
             timestamp: new Date().toISOString()
         });
-
-        // STAGE -1: Rate Limiting (early, before session validation)
-        // Rate limit all requests to prevent abuse
-        const rateLimitKey = deviceId || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const rateNow = Date.now();
-
-        if (rateLimitKey) {
-            const key = `rate:${rateLimitKey}`;
-            try {
-                // Atomic increment
-                const count = await kv.incr(key);
-
-                // Set expiry on first request
-                if (count === 1) {
-                    await kv.expire(key, RATE_LIMIT_WINDOW);
-                }
-
-                if (count > MAX_REQUESTS) {
-                    const ttl = await kv.ttl(key);
-                    console.warn(`Anti-Gravity Security: Global Rate limit exceeded for ${maskDeviceId(rateLimitKey)}`);
-                    res.setHeader('Retry-After', ttl);
-                    return res.status(429).json({ error: `Rate limit exceeded. Please wait ${ttl} seconds.` });
-                }
-            } catch (kvError) {
-                // Fail-Open for general requests (non-critical), but purchase endpoints are fail-closed below
-                console.error('Anti-Gravity Security: Rate Limit KV Error:', kvError.message);
-            }
-        }
 
         // STAGE 0: Session Authentication & Integrity
         // --------------------------------------------------------------------------------
@@ -1057,7 +1024,9 @@ export default async function handler(req, res) {
                         );
                         console.log('✅ Device usage updated:', { error: usageUpdate.error });
 
-                        if (session?.is_auth && session?.uid) {
+                        if (session?.uid) {
+                            // FIX: Use session.uid regardless of is_auth — google_uid is present
+                            // even when session isn't fully authenticated yet (timing issue at purchase moment)
                             const accountUpdate = await supabase.from('user_accounts').update({
                                 tier: targetTier,
                                 active_purchase_token: purchaseToken
@@ -1412,24 +1381,6 @@ export default async function handler(req, res) {
             }
         }
 
-        // DAILY AI LIMIT: Check before calling Gemini (protects against key leak abuse)
-        const DAILY_AI_LIMIT = 50;
-        const aiToday = new Date().toISOString().split('T')[0];
-        const dailyAiKey = `daily_ai:${deviceId}:${aiToday}`;
-        try {
-            const callsToday = (await kv.get(dailyAiKey)) || 0;
-            if (callsToday >= DAILY_AI_LIMIT) {
-                console.warn(`🛡️ Daily AI limit hit for device ${maskDeviceId(deviceId)}: ${callsToday} calls`);
-                return res.status(429).json({
-                    error: "DAILY_AI_LIMIT_REACHED",
-                    details: "Daily AI limit reached. Resets at midnight."
-                });
-            }
-        } catch (kvError) {
-            // fail-open — never block real users if KV is down
-            console.warn('Daily AI limit check KV error (fail-open):', kvError.message);
-        }
-
         const genAI = new GoogleGenerativeAI(apiKey);
 
         // Rate-limited discovery (once every 10 mins)
@@ -1664,11 +1615,6 @@ ${wrapDoc(documentText || "No text content - analyzing image only.")}`;
                             return res.status(400).json({ error: "Safety Violation: Asset discarded by Neural Guard." });
                         }
                     }
-
-                    // Increment daily AI call counter (non-blocking)
-                    kv.incr(dailyAiKey).then(count => {
-                        if (count === 1) kv.expire(dailyAiKey, 86400);
-                    }).catch(() => {});
 
                     return res.status(200).json({ text: text });
 
