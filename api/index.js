@@ -1412,6 +1412,24 @@ export default async function handler(req, res) {
             }
         }
 
+        // DAILY AI LIMIT: Check before calling Gemini (protects against key leak abuse)
+        const DAILY_AI_LIMIT = 50;
+        const aiToday = new Date().toISOString().split('T')[0];
+        const dailyAiKey = `daily_ai:${deviceId}:${aiToday}`;
+        try {
+            const callsToday = (await kv.get(dailyAiKey)) || 0;
+            if (callsToday >= DAILY_AI_LIMIT) {
+                console.warn(`🛡️ Daily AI limit hit for device ${maskDeviceId(deviceId)}: ${callsToday} calls`);
+                return res.status(429).json({
+                    error: "DAILY_AI_LIMIT_REACHED",
+                    details: "Daily AI limit reached. Resets at midnight."
+                });
+            }
+        } catch (kvError) {
+            // fail-open — never block real users if KV is down
+            console.warn('Daily AI limit check KV error (fail-open):', kvError.message);
+        }
+
         const genAI = new GoogleGenerativeAI(apiKey);
 
         // Rate-limited discovery (once every 10 mins)
@@ -1647,7 +1665,10 @@ ${wrapDoc(documentText || "No text content - analyzing image only.")}`;
                         }
                     }
 
-                    // AI usage tracking removed - unlimited for lifetime tiers.
+                    // Increment daily AI call counter (non-blocking)
+                    kv.incr(dailyAiKey).then(count => {
+                        if (count === 1) kv.expire(dailyAiKey, 86400);
+                    }).catch(() => {});
 
                     return res.status(200).json({ text: text });
 
