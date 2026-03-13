@@ -399,7 +399,7 @@ const PricingScreen: React.FC = () => {
                   <span className="text-[10px] font-black uppercase tracking-widest">Email Support</span>
                 </a>
                 <a
-                  href="https://x.com/cryptobullaaa"
+                  href="https://x.com/AakashBuild"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 text-gray-500 hover:text-[#00C896] transition-colors group"

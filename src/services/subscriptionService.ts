@@ -68,10 +68,8 @@ export const initSubscription = async (user?: any): Promise<UserSubscription> =>
         console.warn('Anti-Gravity Subscription: Could not check pending purchases:', e);
     }
 
-    // Run drift reconciliation in the background - don't block boot
-    reconcileSubscriptionDrift().catch(e => console.warn('Background drift sync failed:', e));
-
     // Force reconcile with a hard timeout to prevent hanging the app boot
+    // This already calls fetchUserUsage which syncs tier from server — no separate drift call needed
     // If it fails or times out, we'll just use the cached version from getSubscription()
     try {
         console.log('Anti-Gravity Subscription: ⏱️ Attempting server sync with 2.5s timeout...');
@@ -122,6 +120,13 @@ export const reconcileSubscriptionDrift = async (): Promise<void> => {
             if (data.tier) {
                 const sub = getSubscription();
                 if (sub.tier !== data.tier) {
+                    // SAFETY: Never downgrade a locally-paid user from drift alone.
+                    // If user has lifetime locally but server says free, it could be a network/sync issue.
+                    // Only upgrade or confirm — downgrades require forceReconcileFromServer.
+                    if (sub.tier === SubscriptionTier.LIFETIME && data.tier === SubscriptionTier.FREE) {
+                        console.warn('🛡️ Anti-Gravity Subscription: Drift wants to downgrade LIFETIME→FREE, ignoring (use forceReconcile for downgrades)');
+                        return;
+                    }
                     console.log(`🛡️ Anti-Gravity Subscription: Drift detected! Updating local tier ${sub.tier} -> ${data.tier}`);
                     upgradeTier(data.tier as SubscriptionTier, undefined);
                 } else {

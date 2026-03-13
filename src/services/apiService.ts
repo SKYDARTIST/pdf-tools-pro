@@ -66,7 +66,7 @@ export const secureFetch = async (url: string, options: RequestInit = {}): Promi
                 if (response.status === 401) {
                     if (isRetry) {
                         Logger.error('API', `[${requestId}] Session refresh failed. User locked out. Manual re-auth required.`, { url });
-                        return response;
+                        throw new Error(`Unauthorized after session refresh retry. Manual re-auth required.`);
                     }
 
                     console.warn(`[${requestId}] 🛡️ Unauthorized (401). Clearing session and refreshing...`);

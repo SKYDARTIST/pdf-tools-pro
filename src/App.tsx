@@ -86,6 +86,7 @@ const App: React.FC = () => {
 
   // SECURITY & ROUTING: Catch mobile deep links with OAuth credentials
   // On web, HashRouter handles auth-callback route naturally
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     const isNative = Capacitor.isNativePlatform();
     const currentLoc = window.location;
@@ -101,7 +102,7 @@ const App: React.FC = () => {
       console.log('📱 App: Normalizing mobile OAuth deep link...');
       navigate('/auth-callback' + currentLoc.search + currentLoc.hash.replace(/^#/, ''), { replace: true });
     }
-  }, [navigate]);
+  }, []); // Run once on mount — deep link normalization only needed at app startup
 
   const [isDataReady, setIsDataReady] = React.useState(false);
   const [bootAnimFinished, setBootAnimFinished] = React.useState(false);
@@ -236,7 +237,9 @@ const App: React.FC = () => {
 
     const listenerPromise = CapApp.addListener('appStateChange', handleAppStateChange);
     return () => {
-      listenerPromise.then(handle => handle.remove());
+      listenerPromise
+        .then(handle => handle.remove())
+        .catch(e => console.warn('App: Failed to remove appStateChange listener:', e));
     };
   }, []);
 

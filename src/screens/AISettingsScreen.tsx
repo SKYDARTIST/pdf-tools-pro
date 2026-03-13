@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut, FileText, Bot, CreditCard, Activity, ChevronRight, Mail } from 'lucide-react';
+import { Sparkles, Shield, Zap, Info, ArrowLeft, Twitter, ExternalLink, Globe, User, LogOut, FileText, Bot, CreditCard, Activity, ChevronRight, Mail, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, GoogleUser } from '@/services/googleAuthService';
 import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
@@ -8,8 +8,25 @@ import { getSubscription, SubscriptionTier } from '@/services/subscriptionServic
 const AISettingsScreen: React.FC = () => {
   const [isAiEnabled, setIsAiEnabled] = useState(true);
   const [user, setUser] = useState<GoogleUser | null>(null);
+  const [isDark, setIsDark] = useState(false);
   const navigate = useNavigate();
   const subscription = getSubscription();
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    if (newIsDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -87,6 +104,39 @@ const AISettingsScreen: React.FC = () => {
               Turning this off will disable all Neural Suite tools like chat and summaries.
             </p>
           </motion.div>
+        </motion.div>
+
+        {/* Appearance */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="monolith-card p-8 border-none"
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-6">
+              <div className="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center">
+                {isDark ? <Moon size={20} className="text-gray-900 dark:text-white" /> : <Sun size={20} className="text-gray-900 dark:text-white" />}
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">
+                  {isDark ? 'Dark Mode' : 'Light Mode'}
+                </h4>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400">App Appearance</p>
+              </div>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={toggleDarkMode}
+              className={`relative w-20 h-10 rounded-full transition-all duration-300 shadow-xl ${isDark ? 'bg-black dark:bg-white' : 'bg-gray-100 dark:bg-white/10'}`}
+            >
+              <motion.div
+                animate={{ x: isDark ? 44 : 4 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className={`absolute top-1 w-8 h-8 rounded-full shadow-lg ${isDark ? 'bg-white dark:bg-black' : 'bg-white dark:bg-gray-400'}`}
+              />
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* User Profile Section - Integrated Design */}

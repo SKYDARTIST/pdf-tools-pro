@@ -142,14 +142,14 @@ const OnboardingScreen: React.FC = () => {
     {
       id: 'pricing',
       component: (
-        <div className="flex flex-col items-center justify-center h-full space-y-12 px-8">
+        <div className="flex flex-col items-center justify-center h-full space-y-6 px-8 pb-16">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="text-center space-y-3"
           >
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center gap-3 mb-2">
               <Sparkles size={32} className="text-[#00C896]" />
               <h2 className="text-4xl font-black tracking-tighter uppercase text-gray-900 dark:text-white">
                 Pro & Neural
@@ -164,9 +164,9 @@ const OnboardingScreen: React.FC = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="max-w-md w-full p-8 rounded-[40px] border-2 border-[#00C896]/30 bg-gradient-to-br from-[#00C896]/5 to-transparent"
+            className="max-w-md w-full p-6 rounded-[40px] border-2 border-[#00C896]/30 bg-gradient-to-br from-[#00C896]/5 to-transparent"
           >
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="text-center space-y-2">
                 <div className="text-5xl font-black text-gray-900 dark:text-white">
                   {localPrice || '...'}
@@ -248,7 +248,7 @@ const OnboardingScreen: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-white dark:bg-black flex flex-col relative overflow-hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#00C896]/5 via-transparent to-transparent pointer-events-none" />
 
@@ -269,7 +269,7 @@ const OnboardingScreen: React.FC = () => {
       </div>
 
       {/* Slide indicators */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         {slides.map((_, index) => (
           <button
             key={index}

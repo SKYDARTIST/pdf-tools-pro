@@ -15,11 +15,13 @@ import AiLimitModal from '@/components/AiLimitModal';
 pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
 
 type Format = 'jpg' | 'png';
+type Quality = 'standard' | 'high';
 
 const PdfToImagesScreen: React.FC = () => {
   const navigate = useNavigate();
   const [file, setFile] = useState<FileItem | null>(null);
   const [format, setFormat] = useState<Format>('jpg');
+  const [quality, setQuality] = useState<Quality>('high');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -62,39 +64,58 @@ const PdfToImagesScreen: React.FC = () => {
 
       const zip = new JSZip();
       const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
-      const quality = format === 'jpg' ? 0.92 : undefined;
+      const jpgQuality = format === 'jpg' ? 0.95 : undefined;
       const ext = format === 'jpg' ? 'jpg' : 'png';
+      const scale = quality === 'high' ? 3.0 : 2.0;
+      const paddingLen = String(totalPages).length;
 
       for (let i = 1; i <= totalPages; i++) {
         setProgress({ current: i, total: totalPages });
 
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 2.0 });
+        const viewport = page.getViewport({ scale });
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        if (!ctx) continue;
+        if (!ctx) {
+          page.cleanup();
+          canvas.width = 0;
+          canvas.height = 0;
+          continue;
+        }
 
         await page.render({ canvasContext: ctx, viewport } as any).promise;
+        page.cleanup(); // Release PDF.js internal page resources
 
-        const base64 = format === 'jpg'
-          ? canvas.toDataURL(mimeType, quality).split(',')[1]
-          : canvas.toDataURL(mimeType).split(',')[1];
+        // Use Blob → Uint8Array instead of base64 (33% less memory)
+        const blob = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob(
+            (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+            mimeType,
+            jpgQuality
+          )
+        );
+        const uint8 = new Uint8Array(await blob.arrayBuffer());
 
-        const pageNum = String(i).padStart(totalPages > 9 ? 2 : 1, '0');
-        zip.file(`page_${pageNum}.${ext}`, base64, { base64: true });
+        const pageNum = String(i).padStart(paddingLen, '0');
+        zip.file(`page_${pageNum}.${ext}`, uint8);
 
         // Free canvas memory immediately
         canvas.width = 0;
         canvas.height = 0;
+
+        // Yield to browser every 20 pages — prevents ANR crash on Android
+        if (i % 20 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
       }
 
       const baseName = file.name.replace(/\.pdf$/i, '');
       const outputName = `${baseName}_images.zip`;
 
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 4 } });
       await downloadFile(zipBlob, outputName);
 
       FileHistoryManager.addEntry({
@@ -158,6 +179,23 @@ const PdfToImagesScreen: React.FC = () => {
             >
               <ImageIcon size={14} />
               {f === 'jpg' ? 'JPG — Smaller Size' : 'PNG — Lossless'}
+            </button>
+          ))}
+        </div>
+
+        {/* Quality Toggle */}
+        <div className="flex gap-2 p-1 bg-black/5 dark:bg-white/5 rounded-2xl">
+          {(['standard', 'high'] as Quality[]).map((q) => (
+            <button
+              key={q}
+              onClick={() => setQuality(q)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                quality === q
+                  ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {q === 'standard' ? '2× — Standard' : '3× — High Quality'}
             </button>
           ))}
         </div>

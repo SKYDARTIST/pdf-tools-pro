@@ -128,7 +128,7 @@ const HomeScreen: React.FC = () => {
               <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 leading-relaxed line-clamp-2">{devLog.body}</p>
             </div>
             <button
-              onClick={() => Browser.open({ url: 'https://x.com/Cryptobullaaa' })}
+              onClick={() => Browser.open({ url: 'https://x.com/AakashBuild' })}
               className="flex flex-col items-center gap-1.5 shrink-0 group/x"
             >
               <div className="w-9 h-9 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center group-hover/x:bg-black/10 dark:group-hover/x:bg-white/10 transition-colors">

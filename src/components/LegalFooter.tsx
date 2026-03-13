@@ -9,7 +9,7 @@ const LegalFooter: React.FC = () => {
         { name: 'Privacy Manifesto', path: '/manifesto' },
         { name: 'Privacy Policy', path: '/legal/privacy' },
         { name: 'Terms of Service', path: '/legal/terms' },
-        { name: 'Contact Lead', path: 'https://x.com/Cryptobullaaa', external: true }
+        { name: 'Contact Lead', path: 'https://x.com/AakashBuild', external: true }
     ];
 
     return (
@@ -49,12 +49,12 @@ const LegalFooter: React.FC = () => {
                         </span>
                     </div>
                     <a
-                        href="https://x.com/Cryptobullaaa"
+                        href="https://x.com/AakashBuild"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[8px] font-black uppercase tracking-[0.5em] text-gray-500 px-4 py-1 border border-black/5 dark:border-white/5 rounded-full hover:border-emerald-500/30 hover:text-emerald-500 transition-all"
                     >
-                        © {currentYear} Built By Cryptobulla
+                        © {currentYear} Built By Aakash
                     </a>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { getCurrentUser } from '@/services/googleAuthService';
+import AuthService from '@/services/authService';
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -19,12 +20,32 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             const user = await getCurrentUser();
-            console.log('🔍 ProtectedRoute: Auth check result:', user ? { uid: user.google_uid, email: user.email } : 'NOT_LOGGED_IN');
-            if (user) {
-                setIsAuthenticated(true);
-            } else {
+            if (!user) {
+                console.log('🔍 ProtectedRoute: No user found, redirecting to login');
                 setIsAuthenticated(false);
+                setIsVerifying(false);
+                return;
             }
+
+            // Check if session token is still valid
+            let sessionStatus = AuthService.getSessionStatus();
+
+            // If expired, attempt silent refresh before kicking user out
+            // initializeSession() silently re-authenticates using stored Google identity
+            if (!sessionStatus.isValid) {
+                console.log('🔍 ProtectedRoute: Session expired, attempting silent refresh...');
+                try {
+                    const refreshed = await AuthService.initializeSession();
+                    sessionStatus = AuthService.getSessionStatus();
+                    console.log('🔍 ProtectedRoute: Silent refresh result:', refreshed.success, 'valid:', sessionStatus.isValid);
+                } catch (e) {
+                    console.warn('🔍 ProtectedRoute: Silent refresh failed:', e);
+                }
+            }
+
+            const isValid = !!sessionStatus.isValid;
+            console.log('🔍 ProtectedRoute: Auth check result:', { uid: user.google_uid, email: user.email, sessionValid: isValid });
+            setIsAuthenticated(isValid);
             setIsVerifying(false);
         };
         checkAuth();

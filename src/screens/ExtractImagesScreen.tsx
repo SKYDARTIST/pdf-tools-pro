@@ -22,6 +22,7 @@ const ExtractImagesScreen: React.FC = () => {
     const [extractedAssets, setExtractedAssets] = useState<{ uri: string; displayUrl: string }[]>([]);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [blockMode, setBlockMode] = useState<AiBlockMode>(AiBlockMode.NONE);
+    const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,13 +52,18 @@ const ExtractImagesScreen: React.FC = () => {
         }
 
         setIsProcessing(true);
+        setProgress({ current: 0, total: 0 });
 
         try {
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             const assets: { uri: string; displayUrl: string }[] = [];
 
+            setProgress({ current: 0, total: pdf.numPages });
+
             for (let i = 1; i <= pdf.numPages; i++) {
+                setProgress({ current: i, total: pdf.numPages });
+
                 const page = await pdf.getPage(i);
                 const viewport = page.getViewport({ scale: 1.5 });
                 const canvas = document.createElement('canvas');
@@ -67,6 +73,7 @@ const ExtractImagesScreen: React.FC = () => {
 
                 if (context) {
                     await page.render({ canvasContext: context, viewport, canvasFactory: undefined } as any).promise;
+                    page.cleanup();
                     const base64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
                     canvas.width = 0;
                     canvas.height = 0;
@@ -76,6 +83,13 @@ const ExtractImagesScreen: React.FC = () => {
                         uri,
                         displayUrl: Capacitor.convertFileSrc(uri)
                     });
+                } else {
+                    page.cleanup();
+                }
+
+                // Yield to browser every 20 pages
+                if (i % 20 === 0) {
+                    await new Promise((resolve) => setTimeout(resolve, 0));
                 }
             }
 
@@ -105,6 +119,7 @@ const ExtractImagesScreen: React.FC = () => {
             });
         } finally {
             setIsProcessing(false);
+            setProgress({ current: 0, total: 0 });
         }
     };
 
@@ -193,8 +208,21 @@ const ExtractImagesScreen: React.FC = () => {
                         <div className="flex-1 min-w-0">
                             <h3 className="text-sm font-black uppercase tracking-tighter truncate text-gray-900 dark:text-white">Active Document</h3>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                {extractedAssets.length > 0 ? `${extractedAssets.length} IMAGES FOUND` : 'AWAITING SCAN'}
+                                {isProcessing && progress.total > 0
+                                    ? `Scanning page ${progress.current} of ${progress.total}...`
+                                    : extractedAssets.length > 0
+                                    ? `${extractedAssets.length} IMAGES FOUND`
+                                    : 'AWAITING SCAN'}
                             </p>
+                            {isProcessing && progress.total > 0 && (
+                                <div className="mt-3 w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
+                                    <motion.div
+                                        className="h-full bg-black dark:bg-white rounded-full"
+                                        animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                                        transition={{ ease: 'linear' }}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <button onClick={() => {
                             setFile(null);

@@ -98,13 +98,13 @@ const LandingPage: React.FC = () => {
                     </div>
                 </div>
                 <a
-                    href="https://x.com/Cryptobullaaa"
+                    href="https://x.com/AakashBuild"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-right ml-auto group transition-transform hover:scale-105"
                 >
                     <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 group-hover:text-emerald-500 group-hover:opacity-100 transition-all">CONNECT WITH ME</div>
-                    <div className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap group-hover:text-emerald-500 transition-colors">BUILT BY CRYPTOBULLA</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest whitespace-nowrap group-hover:text-emerald-500 transition-colors">BUILT BY AAKASH</div>
                 </a>
             </header>
 
@@ -286,12 +286,12 @@ const LandingPage: React.FC = () => {
                                             <MessageSquare size={24} />
                                         </div>
                                     </div>
-                                    <h3 className="text-xl font-black uppercase tracking-tighter text-[#00C896]">Built By Cryptobulla</h3>
+                                    <h3 className="text-xl font-black uppercase tracking-tighter text-[#00C896]">Built By Aakash</h3>
                                     <p className="text-[10px] font-bold text-[#4A5568] uppercase tracking-widest leading-relaxed">
                                         Connect with the developer for collaborations and latest app updates.
                                     </p>
                                     <a
-                                        href="https://x.com/Cryptobullaaa"
+                                        href="https://x.com/AakashBuild"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-[#00D9A3] to-[#00C896] text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:scale-105 transition-all shadow-xl shadow-[#00C896]/30"

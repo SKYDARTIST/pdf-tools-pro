@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Scissors, FileText, Share2, Loader2, FileUp, Package } from 'lucide-react';
-import { renderPageToImage } from '@/utils/pdfExtractor';
+import * as pdfjsLib from 'pdfjs-dist';
 import { downloadFile } from '@/services/downloadService';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = window.location.origin + '/pdf.worker.v5.4.296.min.mjs';
 import { FileItem } from '@/types';
 import ToolGuide from '@/components/ToolGuide';
 import FileHistoryManager from '@/utils/FileHistoryManager';
@@ -24,6 +26,7 @@ const SplitScreen: React.FC = () => {
   useEffect(() => {
     Analytics.track('screen_view', { screen: 'split' });
   }, []);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [successData, setSuccessData] = useState<{ isOpen: boolean; fileName: string; originalSize: number; finalSize: number } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,56 +64,62 @@ const SplitScreen: React.FC = () => {
     }
 
     setIsProcessing(true);
+    setProgress({ current: 0, total: 0 });
     try {
-      console.log('✂️ Neural Split: Initializing streaming document fragmentation...');
-
       const arrayBuffer = await file.file.arrayBuffer();
-
-      // DEFERRED ENGINE LOADING: Only load heavy libraries when processing starts
-      const { PDFDocument } = await import('pdf-lib');
       const JSZip = (await import('jszip')).default;
 
-      // Load with robust options to prevent crashes on complex documents
-      const pdfDoc = await PDFDocument.load(arrayBuffer, {
-        ignoreEncryption: true,
-        throwOnInvalidObject: false
-      });
-      const pageCount = pdfDoc.getPageCount();
-      const baseName = file.name.replace('.pdf', '');
-
-      // Bundle all pages into a single ZIP file
+      // Load PDF ONCE — not per page (old approach caused OOM on large docs)
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pageCount = pdf.numPages;
+      const baseName = file.name.replace(/\.pdf$/i, '');
+      const paddingLen = String(pageCount).length;
       const zip = new JSZip();
 
-      const CONCURRENCY = 8; // Render 8 pages in parallel for hyper-speed splitting
-      for (let i = 0; i < pageCount; i += CONCURRENCY) {
-        const batch = [];
-        for (let j = i; j < Math.min(i + CONCURRENCY, pageCount); j++) {
-          batch.push(
-            renderPageToImage(arrayBuffer, j + 1).then(imageData => ({
-              index: j,
-              data: imageData.split(',')[1]
-            }))
-          );
-        }
-        const results = await Promise.all(batch);
-        results.forEach(({ index, data }) => {
-          zip.file(`page_${index + 1}_${baseName}.jpg`, data, { base64: true });
-        });
+      setProgress({ current: 0, total: pageCount });
 
-        if (i % 25 === 0 || i + CONCURRENCY >= pageCount) {
-          console.log(`🧬 Fragmenting (Image Mode): ${Math.min(i + CONCURRENCY, pageCount)}/${pageCount}`);
+      for (let i = 1; i <= pageCount; i++) {
+        setProgress({ current: i, total: pageCount });
+
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        if (!ctx) {
+          page.cleanup();
+          canvas.width = 0;
+          canvas.height = 0;
+          continue;
+        }
+
+        await page.render({ canvasContext: ctx, viewport } as any).promise;
+        page.cleanup(); // Release PDF.js internal page resources
+
+        // Use Uint8Array instead of base64 — 33% less memory in JSZip
+        const blob = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob(
+            (b) => (b ? resolve(b) : reject(new Error('toBlob failed'))),
+            'image/jpeg',
+            0.85
+          )
+        );
+        const uint8 = new Uint8Array(await blob.arrayBuffer());
+        const pageNum = String(i).padStart(paddingLen, '0');
+        zip.file(`page_${pageNum}_${baseName}.jpg`, uint8);
+
+        canvas.width = 0;
+        canvas.height = 0;
+
+        // Yield to browser every 20 pages — prevents ANR crash on Android
+        if (i % 20 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0));
         }
       }
 
-      console.log('📦 Finalizing Neural ZIP container (Export Path)...');
-      // Generate ZIP and download as single file
-      const zipBlob = await zip.generateAsync({
-        type: 'blob',
-        compression: 'DEFLATE',
-        compressionOptions: { level: 6 }
-      });
-
-      console.log(`📡 Dispatching ${Math.round(zipBlob.size / 1024 / 1024)}MB ZIP to Neural Share...`);
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 4 } });
       await downloadFile(zipBlob, `${baseName}_split_pages.zip`);
 
       // Add to history
@@ -152,6 +161,7 @@ const SplitScreen: React.FC = () => {
       });
     } finally {
       setIsProcessing(false);
+      setProgress({ current: 0, total: 0 });
     }
   };
 
@@ -213,7 +223,20 @@ const SplitScreen: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-sm font-black uppercase tracking-tighter truncate">Active Document</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{(file.size / 1024 / 1024).toFixed(2)} MB FILE</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  {isProcessing && progress.total > 0
+                    ? `Rendering page ${progress.current} of ${progress.total}...`
+                    : `${(file.size / 1024 / 1024).toFixed(2)} MB FILE`}
+                </p>
+                {isProcessing && progress.total > 0 && (
+                  <div className="mt-3 w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-black dark:bg-white rounded-full"
+                      animate={{ width: `${(progress.current / progress.total) * 100}%` }}
+                      transition={{ ease: 'linear' }}
+                    />
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setFile(null)}

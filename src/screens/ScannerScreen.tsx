@@ -90,6 +90,8 @@ const ScannerScreen: React.FC = () => {
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 1.0); // MAX FIDELITY SOURCE
+      canvas.width = 0;
+      canvas.height = 0;
 
       // Simulate premium processing delay
       setTimeout(() => {

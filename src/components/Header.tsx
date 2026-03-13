@@ -1,26 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Zap, Moon, Sun, User } from 'lucide-react';
+import { ArrowLeft, Zap, User } from 'lucide-react';
 import TaskCounter from './TaskCounter';
 import { getCurrentUser, GoogleUser } from '@/services/googleAuthService';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isDark, setIsDark] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
   const [user, setUser] = useState<GoogleUser | null>(null);
   const isHome = location.pathname === '/' || location.pathname === '/workspace';
 
   // Initialize dark mode from localStorage or system preference
   useEffect(() => {
-    // Detect Android WebView
+    // Detect Android WebView and add class for CSS-level optimizations
     const ua = navigator.userAgent.toLowerCase();
     const isAndroidDevice = ua.includes('android') || ua.includes('wv');
-    setIsAndroid(isAndroidDevice);
-
-    // Add Android class for CSS-level optimizations
     if (isAndroidDevice) {
       document.documentElement.classList.add('is-android');
     }
@@ -29,26 +24,12 @@ const Header: React.FC = () => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
 
-    setIsDark(shouldBeDark);
     if (shouldBeDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   }, []);
-
-  const toggleDarkMode = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   // Auth Sync
   useEffect(() => {
@@ -140,32 +121,6 @@ const Header: React.FC = () => {
             </motion.button>
           )}
         </AnimatePresence>
-
-        {/* Dark Mode Toggle */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ scale: 1.1 }}
-          onClick={toggleDarkMode}
-          className="w-8 h-8 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all"
-          aria-label="Toggle dark mode"
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={isDark ? 'dark' : 'light'}
-              initial={isAndroid ? false : { rotate: -90, opacity: 0, scale: 0.5 }}
-              animate={{ rotate: 0, opacity: 1, scale: 1 }}
-              exit={isAndroid ? { opacity: 0 } : { rotate: 90, opacity: 0, scale: 0.5 }}
-              transition={{ duration: isAndroid ? 0 : 0.2, ease: "circOut" }}
-            >
-              {isDark ? (
-                <Sun size={15} className="text-white" />
-              ) : (
-                <Moon size={15} className="text-gray-900" />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </motion.button>
-
       </div>
 
     </header>

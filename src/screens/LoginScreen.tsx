@@ -49,6 +49,7 @@ const LoginScreen: React.FC = () => {
 
             if (isNative) {
                 await Browser.open({ url: googleAuthUrl, windowName: '_self' });
+                setIsLoading(false); // Browser opened — reset so user can retry if they cancel
             } else {
                 window.location.href = googleAuthUrl;
             }

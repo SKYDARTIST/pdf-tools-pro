@@ -792,34 +792,7 @@ export default async function handler(req, res) {
                     return res.status(400).json({ error: 'INVALID_PRODUCT_ID' });
                 }
 
-                // 1. TIERED RATE LIMITING (V6.0) - Burst (5/5min) and Sustain (10/hr)
-                // SECURITY: Fail-OPEN for rate limiting - Google Play API is the real security gate.
-                // A missing rate limiter should never block a paying customer.
-                if (kv && deviceId) {
-                    const burstKey = `rl:purchase:burst:${deviceId}`;
-                    const sustainKey = `rl:purchase:sustain:${deviceId}`;
-
-                    try {
-                        const [burstCount, sustainCount] = await Promise.all([
-                            kv.incr(burstKey),
-                            kv.incr(sustainKey)
-                        ]);
-
-                        if (burstCount === 1) await kv.expire(burstKey, 300); // 5 mins
-                        if (sustainCount === 1) await kv.expire(sustainKey, 3600); // 1 hour
-
-                        if (burstCount > 5 || sustainCount > 10) {
-                            console.warn(`🛡️ Anti-Gravity Security: Purchase Throttled for ${maskDeviceId(deviceId)} (Burst: ${burstCount}, Sustain: ${sustainCount})`);
-                            return res.status(429).json({ error: 'TOO_MANY_PURCHASE_ATTEMPTS', retryAfter: '60s' });
-                        }
-                    } catch (kvError) {
-                        // Fail-OPEN: KV error should not block legitimate purchases.
-                        // Google Play API verification below is the authoritative security check.
-                        console.warn('🛡️ Anti-Gravity Security: Purchase rate limit KV error (fail-open, proceeding):', kvError.message);
-                    }
-                } else if (!kv) {
-                    console.warn('🛡️ Anti-Gravity Security: KV unavailable - proceeding without rate limiting (fail-open). Google Play API is authoritative.');
-                }
+                // Rate limiting: KV was removed (never connected). Google Play API is the authoritative security gate.
 
                 // 2. STRICT CSRF: No device ID fallback for purchase endpoints (V5.0/V6.0)
                 const csrfHeader = req.headers['x-csrf-token'];

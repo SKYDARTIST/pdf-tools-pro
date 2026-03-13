@@ -65,7 +65,7 @@ export const renderPageToImage = async (arrayBuffer: ArrayBuffer, pageNumber: nu
         const page = await pdf.getPage(pageNumber);
         console.log("📄 Page loaded for rendering");
 
-        const viewport = page.getViewport({ scale: 0.8 }); // Further reduced for maximum split speed
+        const viewport = page.getViewport({ scale: 1.5 });
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
 
@@ -74,15 +74,16 @@ export const renderPageToImage = async (arrayBuffer: ArrayBuffer, pageNumber: nu
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        console.log(`🎨 Rendering page to canvas: ${canvas.width}x${canvas.height}`);
         await page.render({
             canvasContext: context,
             viewport: viewport,
             canvas: canvas
         } as any).promise;
 
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.75); // Reduced quality for 40% smaller size and faster export
-        console.log("✅ Rendering complete. Base64 snapshot generated.");
+        page.cleanup();
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        canvas.width = 0;
+        canvas.height = 0;
         return dataUrl;
     } catch (error) {
         console.error("❌ Neural Rendering Failure:", error);

@@ -28,6 +28,7 @@ class BillingService {
     private productsFetchPromise: Promise<ProductInfo[]> | null = null; // Dedupe concurrent fetches
     private restoredPurchases: any[] = [];
     private transactionListener: any = null;
+    private retryIntervalId: ReturnType<typeof setInterval> | null = null;
     private isTestMode = AuthService.isTestAccount();
     private readonly PENDING_PURCHASES_STORE = 'pending-purchases';
     private readonly MAX_RETRIES = 200; // ~100 minutes of retrying (200 × 30s). Purchases are valuable - don't give up easily.
@@ -362,7 +363,7 @@ class BillingService {
             for (const purchase of this.restoredPurchases) {
                 const productId = purchase.productIdentifier || purchase.productId || purchase.sku;
                 if (productId === LIFETIME_PRODUCT_ID || productId === LIFETIME_PRODUCT_ID_ALT) {
-                    const transactionId = purchase.transactionId || purchase.orderId || 'restore_sync';
+                    const transactionId = purchase.transactionId || purchase.orderId || `restore_${productId}_${Date.now()}`;
                     const verificationToken = purchase.purchaseToken || transactionId;
 
                     console.log('Anti-Gravity Billing: 🔐 Verifying restored purchase...', { productId, transactionId });
@@ -715,13 +716,19 @@ class BillingService {
      * Call this on app initialization
      */
     async startPendingPurchaseRetryService(): Promise<void> {
+        // Guard: prevent multiple intervals if called more than once
+        if (this.retryIntervalId) {
+            console.log('Anti-Gravity Billing: Retry service already running, skipping');
+            return;
+        }
+
         console.log('Anti-Gravity Billing: 🚀 Starting pending purchase retry service');
 
         // Immediate attempt on startup
         await this.processPendingPurchases();
 
         // Retry every 30 seconds while app is active
-        setInterval(async () => {
+        this.retryIntervalId = setInterval(async () => {
             const queue = await this.getPendingQueue();
             if (queue.length > 0) {
                 console.log('Anti-Gravity Billing: ⏰ Background retry check', { pendingCount: queue.length });
