@@ -997,48 +997,34 @@ export default async function handler(req, res) {
                         );
                         console.log('✅ Device usage updated:', { error: usageUpdate.error });
 
-                        if (session?.uid) {
-                            // FIX: Use session.uid regardless of is_auth — google_uid is present
-                            // even when session isn't fully authenticated yet (timing issue at purchase moment)
+                        // Always resolve the google_uid — use session.uid first, fall back to
+                        // ag_user_usage lookup. Fixes timing gap where session.uid is null at
+                        // purchase moment, causing user_accounts to stay on FREE tier.
+                        let uidToSync = session?.uid || null;
+                        if (!uidToSync && deviceId) {
+                            try {
+                                const { data: usageRow } = await supabase
+                                    .from('ag_user_usage')
+                                    .select('google_uid')
+                                    .eq('device_id', deviceId)
+                                    .single();
+                                if (usageRow?.google_uid) {
+                                    uidToSync = usageRow.google_uid;
+                                    console.log('✅ Resolved google_uid from ag_user_usage fallback');
+                                }
+                            } catch (lookupError) {
+                                console.warn('⚠️ Could not resolve google_uid from ag_user_usage:', lookupError.message);
+                            }
+                        }
+
+                        if (uidToSync) {
                             const accountUpdate = await supabase.from('user_accounts').update({
                                 tier: targetTier,
                                 active_purchase_token: purchaseToken
-                            }).eq('google_uid', session.uid);
-                            console.log('✅ User account updated:', { error: accountUpdate.error });
-                        } else if (deviceId) {
-                            // CRITICAL FIX: For anonymous/device-only sessions, try to find a user_account
-                            // linked to this device and update it too. This prevents drift reconciliation
-                            // from downgrading a user who purchased before logging in with Google.
-                            try {
-                                const { data: linkedAccount } = await supabase
-                                    .from('ag_user_usage')
-                                    .select('device_id')
-                                    .eq('device_id', deviceId)
-                                    .single();
-
-                                if (linkedAccount) {
-                                    // Find any user_accounts that have used this device
-                                    // Update ALL matching accounts to prevent drift on any linked Google account
-                                    const { data: linkedUsers } = await supabase
-                                        .from('sessions')
-                                        .select('user_uid')
-                                        .eq('device_id', deviceId)
-                                        .not('user_uid', 'eq', deviceId); // Exclude device-only sessions
-
-                                    if (linkedUsers && linkedUsers.length > 0) {
-                                        for (const linked of linkedUsers) {
-                                            await supabase.from('user_accounts').update({
-                                                tier: targetTier,
-                                                active_purchase_token: purchaseToken
-                                            }).eq('google_uid', linked.user_uid);
-                                        }
-                                        console.log('✅ Linked user accounts also updated:', { count: linkedUsers.length });
-                                    }
-                                }
-                            } catch (linkError) {
-                                console.warn('⚠️ Could not update linked user accounts:', linkError.message);
-                                // Non-blocking - device usage is already updated
-                            }
+                            }).eq('google_uid', uidToSync);
+                            console.log('✅ User account updated:', { error: accountUpdate.error, uid: uidToSync });
+                        } else {
+                            console.warn('⚠️ No google_uid available — user_accounts not updated. Manual grant may be needed.');
                         }
                     }
 
