@@ -729,7 +729,7 @@ export default async function handler(req, res) {
                 try {
                     const { data: user } = await supabase
                         .from('user_accounts')
-                        .select('active_purchase_token, tier, last_subscription_check')
+                        .select('purchase_token, tier, last_subscription_check')
                         .eq('google_uid', session.uid)
                         .single();
 
@@ -743,12 +743,12 @@ export default async function handler(req, res) {
                         // SAFETY: Skip re-validation if no purchase token stored
                         // This prevents downgrading users who purchased before we stored the token
                         // Lifetime one-time purchases don't expire, so trusting the DB tier is safe
-                        if (!user.active_purchase_token) {
-                            console.log(`ℹ️ Subscription check: No active_purchase_token for ${maskDeviceId(session.uid)}, skipping re-validation (tier: ${user.tier})`);
+                        if (!user.purchase_token) {
+                            console.log(`ℹ️ Subscription check: No purchase_token for ${maskDeviceId(session.uid)}, skipping re-validation (tier: ${user.tier})`);
                             await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
                         } else {
                             const productId = user.tier === 'lifetime' ? 'lifetime_pro_access' : 'monthly_pro_pass';
-                            const playResult = await validateWithGooglePlay(productId, user.active_purchase_token);
+                            const playResult = await validateWithGooglePlay(productId, user.purchase_token);
 
                             if (!playResult.valid) {
                                 // Only downgrade subscriptions, not lifetime purchases
@@ -1020,7 +1020,7 @@ export default async function handler(req, res) {
                         if (uidToSync) {
                             const accountUpdate = await supabase.from('user_accounts').update({
                                 tier: targetTier,
-                                active_purchase_token: purchaseToken
+                                purchase_token: purchaseToken
                             }).eq('google_uid', uidToSync);
                             console.log('✅ User account updated:', { error: accountUpdate.error, uid: uidToSync });
                         } else {
@@ -1124,7 +1124,7 @@ export default async function handler(req, res) {
                 if (targetGoogleUid) {
                     await supabase.from('user_accounts').update({
                         tier: targetTier,
-                        active_purchase_token: purchaseToken
+                        purchase_token: purchaseToken
                     }).eq('google_uid', targetGoogleUid);
                     console.log(`✅ Admin Force Sync: Updated user_accounts for ${maskDeviceId(targetGoogleUid)}`);
                 }
