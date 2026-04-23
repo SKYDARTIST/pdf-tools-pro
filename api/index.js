@@ -1184,24 +1184,23 @@ export default async function handler(req, res) {
                         updated_at: new Date().toISOString()
                     };
 
-                    // Include tier from request body if provided
-                    // SECURITY: Only allow upgrade syncs, never allow downgrade via this endpoint
-                    // Downgrades must go through verify_purchase or check_subscription_status
-                    const clientUsage = req.body.usage;
-                    if (clientUsage?.tier && clientUsage.tier !== 'free') {
-                        syncData.tier = clientUsage.tier;
+                    // SECURITY: Never trust client-supplied tier values.
+                    // Tier is authoritative in user_accounts (set only by verify_purchase).
+                    // If authenticated, read tier from user_accounts and reflect it into ag_user_usage.
+                    if (session?.is_auth && session?.uid) {
+                        const { data: account } = await supabase
+                            .from('user_accounts')
+                            .select('tier')
+                            .eq('google_uid', session.uid)
+                            .single();
+                        if (account?.tier) {
+                            syncData.tier = account.tier;
+                        }
                     }
 
                     await supabase
                         .from('ag_user_usage')
                         .upsert([syncData], { onConflict: 'device_id' });
-
-                    // Also sync to user_accounts if authenticated
-                    if (session?.is_auth && session?.uid && clientUsage?.tier) {
-                        await supabase.from('user_accounts').update({
-                            tier: clientUsage.tier
-                        }).eq('google_uid', session.uid);
-                    }
 
                     return res.status(200).json({ success: true });
                 } catch (syncError) {
