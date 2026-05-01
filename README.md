@@ -1,115 +1,144 @@
-<div align="center">
-<img width="1200" height="475" alt="Anti-Gravity Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Anti-Gravity
 
-# Anti-Gravity — Private AI PDF Toolkit
+Private AI PDF toolkit for Android and web. Anti-Gravity combines local-first PDF utilities with Gemini-powered document analysis, so users can read, chat with, extract from, and edit important documents without subscriptions or ads.
 
-Live on the Play Store. 900+ installs. 5 countries. Built solo.
+[Live Web App](https://pdf-tools-pro-indol.vercel.app) | [Play Store](https://play.google.com/store/apps/details?id=com.cryptobulla.antigravity)
 
-Anti-Gravity is a privacy-first PDF assistant for Android. Users upload a document and talk to it — the AI reads, summarizes, and answers questions. No subscription. No ads. No third-party data exposure. One-time purchase, lifetime access.
+## Screenshots
 
-[Play Store](https://play.google.com/store/apps/details?id=com.cryptobulla.antigravity)
+![Anti-Gravity workspace home](./public/screenshots/anti-gravity-home.png)
 
----
+![Pro and Neural workspace](./public/screenshots/pro-neural-workspace.png)
 
-## Why it exists
+![Pro power utilities](./public/screenshots/pro-power-utilities.png)
 
-Most AI document tools send your files to servers you don't control and charge monthly. Anti-Gravity was built on a different assumption: the user owns their document and their data. Every AI call goes through a signed server proxy — the API key never touches the client, and no document content is stored.
+![Secure link login](./public/screenshots/secure-link-login.png)
 
----
+## What It Does
+
+- Chat with PDFs using Gemini AI
+- Summarize documents and ask follow-up questions
+- Extract structured data from PDFs, scans, invoices, and receipts
+- Compare document versions with AI assistance
+- Redact sensitive information with AI-assisted workflows
+- Merge, split, rotate, sign, watermark, reorder, and remove PDF pages
+- Convert images to PDF and export PDF pages as images
+- Extract text and images from PDF files
+- View PDFs with reader, chat, outline, and mind-map modes
+- Use one-time lifetime access instead of a subscription model
+
+## Privacy Model
+
+Anti-Gravity uses a hybrid architecture:
+
+- Core PDF utilities run locally where possible.
+- AI features send document context through a signed server proxy to Gemini.
+- The Gemini API key stays on the server and is never shipped to the client.
+- Document content is not intentionally stored by the app backend after AI processing.
+- Google auth, Supabase, and server-side usage tracking are used for account, access, and limit management.
+
+Do not describe the app as fully offline or 100% local for AI features. Gemini-backed workflows require cloud processing.
+
+## API Costs & Performance
+
+- Gemini-powered features can create API costs based on document size and usage volume.
+- Large PDFs increase text extraction time, memory usage, and AI token consumption.
+- Scanned PDFs may require image rendering before AI analysis, which is slower than text-based PDFs.
+- PDF.js workers are bundled locally for WebView compatibility, but CMap/font assets may still use CDN fallbacks.
+- Server-side rate limiting and usage tracking are part of the cost-control layer.
 
 ## Architecture
 
+```txt
+React + TypeScript + Vite frontend
+        |
+        | Capacitor Android shell
+        |
+        v
+Node.js / Express server proxy
+        |
+        | HMAC-signed AI requests
+        | JWT/session validation
+        | Play Integrity checks on Android
+        | Rate limiting and usage tracking
+        v
+Gemini API
+
+Supabase stores auth/session/usage data.
+RevenueCat-style native purchase handling manages lifetime access.
 ```
-Android App (React + Capacitor)
-    |
-    | HMAC-signed requests
-    v
-Node.js Proxy Server (Express)
-    |
-    | Play Integrity API check (rejects sideloaded/tampered APKs)
-    | JWT validation
-    | Rate limiting
-    v
-Gemini API (document Q&A, summarization, extraction)
-    |
-Supabase (PostgreSQL) — user auth, session, usage tracking
-```
-
-The security layer exists because the Gemini API key lives only on the server. Every request from the app is HMAC-signed with a shared secret. The server validates the signature before forwarding anything to Gemini. Play Integrity API rejects requests from modified APKs before they reach the auth layer.
-
----
-
-## Features
-
-- Chat with any PDF — ask questions, get summaries, extract tables
-- Structured data extraction: invoices and receipts to JSON/CSV
-- Google OAuth with JWT session management (httpOnly cookies)
-- Offline-capable document viewer
-- Rate limiting per user per endpoint
-- CSRF protection on all state-changing routes
-
----
 
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | Frontend | React 19, TypeScript, Vite 7, Tailwind CSS |
-| Mobile | Capacitor 8 (Android) |
-| Backend | Node.js 22, Express |
-| AI | Gemini 2.5 Flash (via server-side proxy) |
-| Auth | Google OAuth, JWT (httpOnly cookies) |
-| Database | Supabase (PostgreSQL) |
-| Security | HMAC request signing, Play Integrity API, rate limiting |
-
----
+| Mobile | Capacitor 8, Android |
+| PDF processing | pdf-lib, PDF.js, react-pdf |
+| AI | Gemini via server-side proxy |
+| Backend | Node.js, Express |
+| Auth/data | Google OAuth, Supabase |
+| Payments | Native in-app purchase flow |
+| Deployment | Vercel |
 
 ## Project Structure
 
-```
-pdf-tools-pro/
-├── src/                # React frontend
-│   ├── components/     # UI components
-│   ├── screens/        # Route-level views
-│   ├── services/       # API client, business logic
-│   └── utils/          # Shared helpers
-├── server/             # Node.js proxy — AI calls, auth, rate limiting
-├── android/            # Native Android project (Capacitor-managed)
-└── public/             # Static assets
-```
+```txt
+src/
+  components/   Shared UI components
+  screens/      App screens and PDF tools
+  services/     Auth, AI, billing, analytics, API clients
+  utils/        PDF, image, validation, logging helpers
 
----
+server/         Express proxy for AI and backend operations
+api/            Vercel API routes
+android/        Capacitor Android project
+public/         Static assets, PDF workers, screenshots
+docs/           Setup, security, migration, and deployment notes
+```
 
 ## Local Development
 
-**Prerequisites:** Node.js v22+, NPM v10+
+Prerequisites:
+
+- Node.js 22+
+- npm 10+
+- Android Studio, only for Android builds
+
+Install dependencies:
 
 ```bash
-# Install dependencies
 npm install
-cd server && npm install && cd ..
-
-# Environment — root .env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
-VITE_API_BASE_URL=http://localhost:3001
-
-# Environment — server/.env
-GEMINI_API_KEY=
-SUPABASE_URL=
-SUPABASE_SERVICE_KEY=
-JWT_SECRET=
-HMAC_SECRET=
-
-# Run frontend (port 3000)
-npm run dev
-
-# Run backend (port 3001)
-cd server && node index.js
+cd server
+npm install
+cd ..
 ```
 
----
+Create a local environment file from `.env.example`:
+
+```env
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_AG_PROTOCOL_SIGNATURE=your_protocol_signature
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+RESEND_API_KEY=your_resend_api_key
+OWNER_EMAIL=your_email
+RESEND_FROM_EMAIL=onboarding@resend.dev
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+Run the frontend:
+
+```bash
+npm run dev
+```
+
+Run the server:
+
+```bash
+cd server
+npm start
+```
 
 ## Android Build
 
@@ -117,21 +146,26 @@ cd server && node index.js
 nvm use 22
 npm run build
 npx cap sync android
-# Open android/ in Android Studio and build APK/AAB
 ```
 
----
+Then open `android/` in Android Studio and build the APK or AAB.
 
-## Lessons from shipping
+## Security Notes
 
-Three things that weren't obvious until production:
+- AI calls go through a server proxy so client builds do not expose the Gemini API key.
+- Requests use protocol signing and server-side validation.
+- Android builds include Play Integrity checks to reduce abuse from tampered or sideloaded clients.
+- State-changing flows use auth/session checks and usage enforcement.
+- Sensitive PDF workflows should be tested with large and scanned files before production release.
 
-**Billing failure diagnosis.** After launch, payment gateway reported success but no funds arrived. Traced it to a silent webhook failure — a schema migration I'd done late-night caused the transaction write to fail without throwing an error. Found it by diffing gateway logs against the database manually. No alert fired.
+## Scripts
 
-**Play Integrity blocking legitimate users.** The API rejects requests it considers untrusted — which includes some legitimate users on custom ROMs or rooted devices. Required a fallback path with degraded (but not blocked) access.
+```bash
+npm run dev       # Start Vite dev server
+npm run build     # Sync PDF worker and build production assets
+npm run preview   # Preview production build
+```
 
-**Gemini hallucinating structured output.** Early versions of the extraction feature returned plausible-looking JSON with invented field values. Fixed by adding strict schema validation and returning the raw text alongside parsed output so users can verify.
+## Built By
 
----
-
-Built by [Aakash Gajbhiye](https://aakashbuild.vercel.app) | [@AakashBuild](https://x.com/AakashBuild)
+Built by [Aakash Gajbhiye](https://aakashbuild.vercel.app) / [@AakashBuild](https://x.com/AakashBuild).
