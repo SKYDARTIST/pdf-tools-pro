@@ -1,23 +1,58 @@
-# Anti-Gravity: Neural Roadmap 🛰️🚀
+# Roadmap — Anti-Gravity
 
-This document tracks upcoming features, tool enhancements, and strategic updates for the Anti-Gravity ecosystem. Use this list to prioritize development phases after the initial Play Store launch.
-
-## 🟢 Priority A: Core Tool Enhancements
-- **[ ] Image-based Text Extraction (OCR)**
-  - *Context*: From tester feedback. Enable Camera and Gallery access in the "Extract & Edit" tool to allow direct text extraction from photos.
-  - *Tech*: Integrate Gemini Vision API via `aiService.ts`.
-
-## 🟡 Priority B: Professional Workflow
-- **[ ] Batch Processing Suite**
-  - *Context*: Allow users to select multiple files for Merge, Watermark, or Redact operations in one go.
-- **[ ] Legally-Binding Forms Bridge**
-  - *Context*: Automatic field detection for signing government or medical forms.
-
-## 🔵 Priority C: Intelligence Layer
-- **[ ] Neural Search**
-  - *Context*: On-device semantic search to find information across all local PDFs without opening them.
-- **[ ] Voice-to-PDF Commands**
-  - *Context*: "Hey Anti-Gravity, summarize this document for me" – hands-free accessibility.
+Planned features and improvements. Priority order reflects user impact vs. build cost.
 
 ---
-*Last Updated: 2026-01-29*
+
+## Priority 1 — High impact, doable now
+
+**Image-based OCR**
+Extract text from photos, scanned documents, and camera captures.
+Implementation: Gemini Vision API via `aiService.ts`. UI entry point in ExtractTextScreen.
+Source: tester feedback.
+
+**Batch Processing**
+Select multiple files for Merge, Watermark, or Redact in a single operation.
+Currently each tool processes one file at a time — this is the top friction point in power-user workflows.
+
+---
+
+## Priority 2 — Medium effort
+
+**Neural Search**
+Semantic search across all locally stored PDFs without opening them.
+Requires local embeddings or a Gemini-backed index. Privacy constraint: search index stays on-device.
+
+**Form Field Detection**
+Automatic detection and filling of government/medical form fields before signing.
+Useful for the Sign tool — currently manual field placement.
+
+---
+
+## Priority 3 — Future / research
+
+**Voice Commands**
+"Summarize this document" via voice input. Accessibility play.
+Dependency: stable Web Speech API support in Capacitor WebView.
+
+**iOS / iPad port**
+Capacitor supports iOS. Blocked on Apple Developer account ($99/year).
+
+---
+
+## Completed (shipped)
+
+- Lifetime one-time purchase via Google Play Billing
+- Gemini AI chat, summarize, extract, redact assist
+- Play Integrity API for tamper detection
+- JWT + CSRF session security
+- IndexedDB purchase retry queue
+- Google Sign-In + account-linked purchases
+- Split, merge, rotate, sign, watermark, reorder, remove pages
+- Image-to-PDF, PDF-to-images, text extraction
+- NeuralDiff (document comparison)
+- Admin dashboard (Nexus) for payment recovery
+
+---
+
+*Last updated: 2026-05-17*
