@@ -1236,11 +1236,22 @@ export default async function handler(req, res) {
             }
 
             if (requestType === 'admin_grant_access') {
+                // DISABLED: Tier grants are handled via direct Supabase SQL.
+                // This endpoint is intentionally off to reduce attack surface.
+                // Remove the line below to re-enable.
+                return res.status(410).json({ error: 'ENDPOINT_DISABLED', details: 'Tier grants are managed via direct database operations.' });
+
                 if (!session?.is_auth || session.email !== OWNER_EMAIL) {
                     return res.status(403).json({ error: 'ADMIN_ACCESS_REQUIRED' });
                 }
 
                 const { targetUid, targetDeviceId, targetTier } = req.body;
+
+                // Whitelist tier values — only 'free' and 'lifetime' are valid
+                const VALID_TIERS = ['free', 'lifetime'];
+                if (!VALID_TIERS.includes(targetTier)) {
+                    return res.status(400).json({ error: 'INVALID_TIER', details: `tier must be one of: ${VALID_TIERS.join(', ')}` });
+                }
 
                 try {
                     // AUDIT: Log admin grant action
