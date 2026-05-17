@@ -934,7 +934,7 @@ export default async function handler(req, res) {
                     let creditsToAdd = 0;
 
                     // 5. PROCESS PRODUCT TYPES (Normalized to Lifetime)
-                    if (productId === 'lifetime_pro_access' || productId === 'pro_access_lifetime' || productId === 'monthly_pro_pass') {
+                    if (productId === 'lifetime_pro_access' || productId === 'pro_access_lifetime') {
                         targetTier = 'lifetime';
                     }
 
