@@ -1236,6 +1236,11 @@ export default async function handler(req, res) {
             }
 
             if (requestType === 'admin_grant_access') {
+                // DISABLED: Tier grants are handled via direct Supabase SQL.
+                // This endpoint is intentionally off to reduce attack surface.
+                // Remove the line below to re-enable.
+                return res.status(410).json({ error: 'ENDPOINT_DISABLED', details: 'Tier grants are managed via direct database operations.' });
+
                 if (!session?.is_auth || session.email !== OWNER_EMAIL) {
                     return res.status(403).json({ error: 'ADMIN_ACCESS_REQUIRED' });
                 }
