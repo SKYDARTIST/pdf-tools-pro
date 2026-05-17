@@ -131,3 +131,10 @@ trace_push.sh
 
 # npm tooling cache
 .npm-cache/
+
+# AI tool run artifacts
+graphify-out/
+.codex-pet-runs/
+
+# Backup files
+*.backup
