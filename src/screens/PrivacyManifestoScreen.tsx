@@ -39,8 +39,8 @@ const PrivacyManifestoScreen: React.FC = () => {
                     {[
                         {
                             icon: Lock,
-                            title: "We Store Nothing",
-                            desc: "We don't have a central server. This means we can't track you, store your files, or sell your data. Your documents stay on your device while you work on them."
+                            title: "Your Files Stay With You",
+                            desc: "Your documents never leave your device. We never upload, store, or read the content of your files. Our servers only hold your account info, subscription status, and anonymous usage counts — never your documents."
                         },
                         {
                             icon: EyeOff,
@@ -49,8 +49,8 @@ const PrivacyManifestoScreen: React.FC = () => {
                         },
                         {
                             icon: Lock,
-                            title: "No Hidden Tracking",
-                            desc: "Only basic settings like your AI credit balance are saved on your device. We never save your document names or content after you close the app."
+                            title: "No Hidden Trackers",
+                            desc: "We don't use third-party ads, advertising networks, or behavior trackers. We log basic app events (tool opens, screen views) anonymously to improve the product. Your document content is never saved after you close the app."
                         },
                         {
                             icon: Zap,

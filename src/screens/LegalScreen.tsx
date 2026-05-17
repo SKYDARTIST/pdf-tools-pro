@@ -12,7 +12,7 @@ const LEGAL_CONTENT = {
         content: [
             "HYBRID PROCESSING: Anti-Gravity processes core PDF tools locally on your device. AI features use Gemini API with transient processing (no permanent storage). We never permanently store your files.",
             "IDENTITY SYNC: If you sign in with Google, we securely store your email and profile info only to synchronize your subscription and credits across devices.",
-            "DATA MINIMIZATION: we do NOT track your behavior, use analytics, or share data with third parties. We collect only what is necessary for security and limits.",
+            "DATA MINIMIZATION: We collect anonymous usage events (tool opens, screen views) to improve the app. We do NOT sell or share your data with third parties. Only the minimum needed for security and usage limits is stored on our servers.",
             "SOVEREIGNTY: Your data belongs to you. You can permanently delete your account or download your account metadata at any time from your settings.",
             "MANAGEMENT: Manage your subscription and find our full Privacy Manifesto and legal policy links in the app footer and settings."
         ]
