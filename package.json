@@ -23,7 +23,6 @@
     "@capacitor/filesystem": "^8.1.0",
     "@capacitor/share": "^8.0.0",
     "@capgo/native-purchases": "^8.0.18",
-    "@google/genai": "^1.34.0",
     "@google/generative-ai": "^0.24.1",
     "@react-oauth/google": "^0.13.4",
     "@supabase/auth-helpers-react": "^0.15.0",
