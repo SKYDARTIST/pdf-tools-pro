@@ -138,7 +138,7 @@ const DataExtractorScreen: React.FC = () => {
             // Track successful AI extraction
             Analytics.track('ai_tool_success', {
                 tool: 'data-extractor',
-                data_type: selectedDataType,
+                data_type: format,
                 ai_operation: 'heavy'
             });
         } catch (err: any) {
@@ -147,7 +147,7 @@ const DataExtractorScreen: React.FC = () => {
             // Track AI error
             Analytics.track('ai_tool_error', {
                 tool: 'data-extractor',
-                data_type: selectedDataType,
+                data_type: format,
                 error: friendlyMsg
             });
 
