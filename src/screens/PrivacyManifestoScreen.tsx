@@ -30,7 +30,7 @@ const PrivacyManifestoScreen: React.FC = () => {
                         Privacy is<br />Absolute.
                     </h1>
                     <p className="text-xl text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tight max-w-xl leading-relaxed">
-                        Anti-Gravity 2026: No Servers. No Cookies. No Compromise.
+                        Anti-Gravity 2026: Local-First. No Ad Trackers. No Compromise.
                     </p>
                 </div>
 
