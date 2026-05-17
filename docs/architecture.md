@@ -110,3 +110,33 @@ See `.env.example` for the full list. Critical ones:
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | `api/index.js` — Play Developer API |
 | `VITE_AG_PROTOCOL_SIGNATURE` | Client → HMAC signing for proxy requests |
 | `RESEND_API_KEY` | `api/index.js` — payment email alerts |
+
+## Configuration Decisions
+
+### Why the production API URL is hardcoded in `configService.ts`
+
+The production API URL (`pdf-tools-pro-indol.vercel.app`) is hardcoded
+as a fallback in `src/services/configService.ts` instead of being
+required from an environment variable.
+
+This is intentional:
+
+1. **Android-first architecture** — The URL is bundled into the
+   released AAB. Changing it requires a new Play Store release, not
+   just a Vercel env var change. Moving to env-var-only would only
+   affect web builds and future AABs, not the 1000+ installed users.
+
+2. **The URL is stable** — Project rename or custom domain is not
+   planned. Value has not changed since launch.
+
+3. **Not a secret** — Anyone with the published APK can inspect this
+   URL. Moving it to an env var provides no security benefit.
+
+4. **Failure mode is worse than the smell** — If `VITE_AG_API_URL` is
+   missing during a deploy, every user gets 404. The hardcoded fallback
+   prevents that failure mode.
+
+This will be revisited if:
+- We migrate to a custom domain (e.g. `api.antigravity.app`)
+- We add a staging environment that needs a separate URL
+- The Vercel project is renamed
