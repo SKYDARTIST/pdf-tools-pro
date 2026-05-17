@@ -1242,6 +1242,12 @@ export default async function handler(req, res) {
 
                 const { targetUid, targetDeviceId, targetTier } = req.body;
 
+                // Whitelist tier values — only 'free' and 'lifetime' are valid
+                const VALID_TIERS = ['free', 'lifetime'];
+                if (!VALID_TIERS.includes(targetTier)) {
+                    return res.status(400).json({ error: 'INVALID_TIER', details: `tier must be one of: ${VALID_TIERS.join(', ')}` });
+                }
+
                 try {
                     // AUDIT: Log admin grant action
                     await supabase.from('purchase_transactions').insert([{
