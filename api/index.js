@@ -197,7 +197,6 @@ const PACKAGE_NAME = 'com.cryptobulla.antigravity';
 const VALID_PRODUCTS = new Set([
     'lifetime_pro_access',
     'pro_access_lifetime', // legacy
-    'monthly_pro_pass'
 ]);
 let playDeveloperApi = null;
 
@@ -747,7 +746,8 @@ export default async function handler(req, res) {
                             console.log(`ℹ️ Subscription check: No purchase_token for ${maskDeviceId(session.uid)}, skipping re-validation (tier: ${user.tier})`);
                             await supabase.from('user_accounts').update({ last_subscription_check: new Date().toISOString() }).eq('google_uid', session.uid);
                         } else {
-                            const productId = user.tier === 'lifetime' ? 'lifetime_pro_access' : 'monthly_pro_pass';
+                            // monthly_pro_pass was never sold in production — only lifetime products exist
+                            const productId = 'lifetime_pro_access';
                             const playResult = await validateWithGooglePlay(productId, user.purchase_token);
 
                             if (!playResult.valid) {
