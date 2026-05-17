@@ -110,7 +110,7 @@ const ReorderPagesScreen: React.FC = () => {
       const pageOrder = pages.map(p => p.originalIndex); // 0-based indices in new order
       const result = await reorderPdfPages(file.file, pageOrder);
       const outputName = `reordered_${file.name}`;
-      const blob = new Blob([result], { type: 'application/pdf' });
+      const blob = new Blob([new Uint8Array(result)], { type: 'application/pdf' });
       await downloadFile(blob, outputName);
 
       FileHistoryManager.addEntry({
