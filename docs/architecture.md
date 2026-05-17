@@ -140,4 +140,3 @@ This will be revisited if:
 - We migrate to a custom domain (e.g. `api.antigravity.app`)
 - We add a staging environment that needs a separate URL
 - The Vercel project is renamed
-| `RESEND_API_KEY` | `api/index.js` — payment email alerts |
