@@ -1,3 +1,17 @@
+What's New in v3.2.10 (Repo Hardening — May 18, 2026):
+
+Internal cleanup pass. No user-facing changes; existing installs behave
+identically.
+
+- Removed dead dependencies (@vercel/kv, react-router duplicate, unused @google/genai SDK)
+- Fixed 3 latent TypeScript reference errors in data extractor and reorder pages tools
+- Added typecheck and lint scripts to package.json
+- Disabled the unused admin_grant_access backend endpoint (tier grants are done via direct SQL)
+- Removed all references to the never-sold monthly_pro_pass legacy product
+- Rewrote privacy policy and in-app legal copy to accurately reflect data storage
+- Normalized tier values in the database (consolidated FREE uppercase → free)
+- Archived duplicate billingService.ts that was sitting unused outside src/
+
 What's New in v3.1.1 (Security & Account Protection):
 
 - **Purchase Security:** Google Sign-In is now required before purchasing Lifetime Access. This ensures your purchase is securely linked to your account for better recovery and support. 

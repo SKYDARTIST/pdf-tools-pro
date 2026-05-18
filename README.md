@@ -1,8 +1,10 @@
 # Anti-Gravity
 
-Private AI PDF toolkit for Android and web. Anti-Gravity combines local-first PDF utilities with Gemini-powered document analysis, so users can read, chat with, extract from, and edit important documents without subscriptions or ads.
+Private AI PDF toolkit for Android. Anti-Gravity combines local-first PDF utilities with Gemini-powered document analysis, so users can read, chat with, extract from, and edit important documents without subscriptions or ads.
 
-[Live Web App](https://pdf-tools-pro-indol.vercel.app) | [Play Store](https://play.google.com/store/apps/details?id=com.cryptobulla.antigravity)
+[Get it on Google Play](https://play.google.com/store/apps/details?id=com.cryptobulla.antigravity)
+
+> Anti-Gravity is built as an Android app via Capacitor. The codebase also builds to a web target for development, but Google Sign-In, Play Billing, and Play Integrity require the Android shell — running the bundle on a desktop browser is a developer-only preview.
 
 ## Screenshots
 
@@ -55,12 +57,12 @@ React + TypeScript + Vite frontend
         | Capacitor Android shell
         |
         v
-Node.js / Express server proxy
+Vercel serverless API (api/index.js)
         |
-        | HMAC-signed AI requests
-        | JWT/session validation
-        | Play Integrity checks on Android
-        | Rate limiting and usage tracking
+        | JWT session validation
+        | CSRF tokens for state-changing requests
+        | Play Integrity token collected from Android client
+        | Server-side usage tracking and tier checks
         v
 Gemini API
 
@@ -161,10 +163,19 @@ Then open `android/` in Android Studio and build the APK or AAB.
 ## Scripts
 
 ```bash
-npm run dev       # Start Vite dev server
-npm run build     # Sync PDF worker and build production assets
-npm run preview   # Preview production build
+npm run dev         # Start Vite dev server
+npm run build       # Sync PDF worker and build production assets
+npm run preview     # Preview production build
+npm run typecheck   # TypeScript check without emitting files
+npm run lint        # ESLint on src/
 ```
+
+## Documentation
+
+- [docs/architecture.md](docs/architecture.md) — System architecture, data flow, environment variables, and configuration decisions
+- [docs/PAYMENT_FAQ.md](docs/PAYMENT_FAQ.md) — Payment verification, troubleshooting, and recovery flows
+- [PRIVACY_POLICY.md](PRIVACY_POLICY.md) — What data is stored, where, and how it's used
+- [RELEASE_NOTES.md](RELEASE_NOTES.md) — Versioned release log
 
 ## Built By
 
