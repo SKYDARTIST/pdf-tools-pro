@@ -780,6 +780,16 @@ export default async function handler(req, res) {
                 // This prevents anonymous device-only users from purchasing without sign-in
                 if (!session?.is_auth || !session?.uid) {
                     console.warn(`🛡️ Anti-Gravity Security: Anonymous purchase attempt blocked from ${maskDeviceId(deviceId)}`);
+                    try {
+                        if (supabase) await supabase.from('purchase_audit_log').insert({
+                            transaction_id: transactionId || null,
+                            device_id: deviceId,
+                            google_uid: null,
+                            product_id: productId || null,
+                            reject_reason: 'SIGN_IN_REQUIRED',
+                            created_at: new Date().toISOString()
+                        });
+                    } catch (e) { console.warn('Audit log insert failed (SIGN_IN_REQUIRED):', e.message); }
                     return res.status(403).json({
                         error: 'SIGN_IN_REQUIRED',
                         details: 'Google Sign-In required before purchasing. Please sign in and try again.'
@@ -789,6 +799,16 @@ export default async function handler(req, res) {
                 // 0. WHITELIST CHECK (V6.0)
                 if (!VALID_PRODUCTS.has(productId)) {
                     console.error(`🛡️ Anti-Gravity Security: Invalid ProductID ${productId} from ${maskDeviceId(deviceId)}`);
+                    try {
+                        if (supabase) await supabase.from('purchase_audit_log').insert({
+                            transaction_id: transactionId || null,
+                            device_id: deviceId,
+                            google_uid: session?.uid || null,
+                            product_id: productId || null,
+                            reject_reason: 'INVALID_PRODUCT_ID',
+                            created_at: new Date().toISOString()
+                        });
+                    } catch (e) { console.warn('Audit log insert failed (INVALID_PRODUCT_ID):', e.message); }
                     return res.status(400).json({ error: 'INVALID_PRODUCT_ID' });
                 }
 
@@ -809,6 +829,16 @@ export default async function handler(req, res) {
                         transactionId,
                         timestamp: new Date().toISOString()
                     });
+                    try {
+                        if (supabase) await supabase.from('purchase_audit_log').insert({
+                            transaction_id: transactionId || null,
+                            device_id: deviceId,
+                            google_uid: googleUid || null,
+                            product_id: productId || null,
+                            reject_reason: 'CSRF_VALIDATION_FAILED',
+                            created_at: new Date().toISOString()
+                        });
+                    } catch (e) { console.warn('Audit log insert failed (CSRF_VALIDATION_FAILED):', e.message); }
                     return res.status(403).json({ error: 'CSRF_VALIDATION_FAILED', details: 'CSRF token missing or invalid' });
                 }
 
@@ -820,6 +850,16 @@ export default async function handler(req, res) {
 
                 if (!clientTimestamp || Math.abs(now - clientTimestamp) > 300000) {
                     console.warn(`🛡️ Anti-Gravity Security: Expired request from ${maskDeviceId(deviceId)}`);
+                    try {
+                        if (supabase) await supabase.from('purchase_audit_log').insert({
+                            transaction_id: transactionId || null,
+                            device_id: deviceId,
+                            google_uid: googleUid || null,
+                            product_id: productId || null,
+                            reject_reason: 'REQUEST_EXPIRED',
+                            created_at: new Date().toISOString()
+                        });
+                    } catch (e) { console.warn('Audit log insert failed (REQUEST_EXPIRED):', e.message); }
                     return res.status(401).json({ error: 'REQUEST_EXPIRED' });
                 }
 
@@ -827,6 +867,16 @@ export default async function handler(req, res) {
                 console.log(`🛡️ Anti-Gravity Security: Purchase request validated (session + timestamp)`)
 
                 if (!purchaseToken || !productId || (!transactionId && productId !== 'reset_to_free')) {
+                    try {
+                        if (supabase) await supabase.from('purchase_audit_log').insert({
+                            transaction_id: transactionId || null,
+                            device_id: deviceId,
+                            google_uid: googleUid || null,
+                            product_id: productId || null,
+                            reject_reason: 'INVALID_REQUEST',
+                            created_at: new Date().toISOString()
+                        });
+                    } catch (e) { console.warn('Audit log insert failed (INVALID_REQUEST):', e.message); }
                     return res.status(400).json({ error: "INVALID_REQUEST", details: "Missing purchase evidence." });
                 }
 

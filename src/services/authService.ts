@@ -52,13 +52,13 @@ class AuthService {
     /**
      * initializes the secure session by exchanging integrity proofs (and optionally identity) for a session token
      */
-    async initializeSession(credential?: string): Promise<{ token: string | null; profile?: any; success: boolean }> {
+    async initializeSession(credential?: string, options?: { forceRefresh?: boolean }): Promise<{ token: string | null; profile?: any; success: boolean; is_auth?: boolean }> {
         // If we have a valid token AND no new identity is being bound, return it
         const isExpired = !this.sessionToken || Date.now() >= this.tokenExpiry;
         const needsRefresh = !isExpired && (this.tokenExpiry - Date.now() < 5 * 60 * 1000); // 5 min buffer
 
-        // If it's valid and NOT a forced login (credential provided), return existing
-        if (!isExpired && !needsRefresh && !credential) {
+        // Skip early return if forceRefresh is set — purchase flow needs a fresh CSRF token
+        if (!isExpired && !needsRefresh && !credential && !options?.forceRefresh) {
             return { token: this.sessionToken, success: true };
         }
 
@@ -88,7 +88,7 @@ class AuthService {
     /**
      * Handshake with exponential backoff retry (Fix for 401 loops)
      */
-    private async performHandshakeWithRetry(credential?: string, attempt: number = 0): Promise<{ token: string | null; profile?: any; success: boolean }> {
+    private async performHandshakeWithRetry(credential?: string, attempt: number = 0): Promise<{ token: string | null; profile?: any; success: boolean; is_auth?: boolean }> {
         const MAX_RETRIES = 3;
         try {
             console.log(`Anti-Gravity Auth: Handshake attempt ${attempt + 1}/${MAX_RETRIES}`, { hasCredential: !!credential });
@@ -166,7 +166,7 @@ class AuthService {
                 }
 
                 console.log('Anti-Gravity Auth: ✅ Secure session synchronized');
-                return { token: this.sessionToken, profile: data.profile, success: true };
+                return { token: this.sessionToken, profile: data.profile, is_auth: data.is_auth === true, success: true };
             }
         } catch (error) {
             console.error('Anti-Gravity Auth: Network error during handshake:', error);

@@ -176,9 +176,30 @@ class BillingService {
                 timestamp: new Date().toISOString()
             });
 
+            // Fix #1: Force fresh session + CSRF before opening Play billing dialog
+            // Prevents CSRF_VALIDATION_FAILED when user has been in the app for >1 hour
+            console.log('Anti-Gravity Billing: 🔄 Pre-purchase session refresh...');
+            const preAuth = await AuthService.initializeSession(undefined, { forceRefresh: true });
+            const sessionUid = preAuth.profile?.uid || preAuth.profile?.google_uid;
+            if (!preAuth.success || preAuth.is_auth !== true || !sessionUid || sessionUid !== googleUid) {
+                console.error('Anti-Gravity Billing: ❌ Pre-purchase auth check failed', {
+                    success: preAuth.success,
+                    is_auth: preAuth.is_auth,
+                    sessionUid,
+                    googleUid
+                });
+                alert('Sign-in required before purchasing. Please sign out, sign back in, and try again.');
+                return false;
+            }
+
+            // Hashed appAccountToken — SHA-256 of googleUid, truncated to 64 chars
+            const uidHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(googleUid));
+            const appAccountToken = Array.from(new Uint8Array(uidHash)).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 64);
+
             const result = await NativePurchases.purchaseProduct({
                 productIdentifier: LIFETIME_PRODUCT_ID,
-                productType: PURCHASE_TYPE.INAPP
+                productType: PURCHASE_TYPE.INAPP,
+                appAccountToken
             });
 
             if (result.transactionId) {
@@ -412,12 +433,11 @@ class BillingService {
                 timestamp: new Date().toISOString()
             });
 
-            // CRITICAL FIX: ALWAYS force session refresh before purchase verification
-            // This ensures CSRF token UID matches the current session UID
-            // (Prevents CSRF_VALIDATION_FAILED when user logged in after initial session)
+            // Fix #3: Always force session + CSRF refresh before verification
+            // initializeSession() without forceRefresh returns cached session (stale CSRF)
             console.log('Anti-Gravity Billing: 🔄 Forcing session refresh to ensure CSRF sync...');
 
-            const refreshPromise = AuthService.initializeSession();
+            const refreshPromise = AuthService.initializeSession(undefined, { forceRefresh: true });
             const timeoutPromise = new Promise<{ success: boolean }>((_, reject) =>
                 setTimeout(() => reject(new Error('Session refresh timeout after 8s')), 8000)
             );
