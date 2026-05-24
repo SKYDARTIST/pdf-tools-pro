@@ -1,11 +1,11 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Check, Zap, Sparkles, Shield, Lock, Globe,
   Cpu, ZapOff, CreditCard, ChevronRight, Info,
   Star, ArrowRight, Activity, Mail, Twitter, ChevronDown,
-  BookOpen, Bot
+  BookOpen, Bot, Crown, X
 } from 'lucide-react';
 import { getSubscription, upgradeTier, SubscriptionTier } from '@/services/subscriptionService';
 import BillingService from '@/services/billingService';
@@ -22,6 +22,7 @@ const PricingScreen: React.FC = () => {
   const cachedPrice = localStorage.getItem(PRICE_CACHE_KEY);
   const [lifetimePrice, setLifetimePrice] = React.useState(cachedPrice || '');
   const [expandedFaq, setExpandedFaq] = React.useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
 
 
   React.useEffect(() => {
@@ -65,6 +66,7 @@ const PricingScreen: React.FC = () => {
       window.removeEventListener('storage', handleSubscriptionChange);
     };
   }, []);
+
 
   const handleLifetimePurchase = async () => {
     // GATE 1: Require Google Sign-In (profile must exist)
@@ -116,7 +118,12 @@ const PricingScreen: React.FC = () => {
   const handleSuccess = async () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     setCurrentTier(getSubscription().tier);
-    setTimeout(() => window.location.reload(), 200);
+    setShowSuccessModal(true);
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    window.location.reload();
   };
 
   const tiers = [
@@ -617,6 +624,75 @@ const PricingScreen: React.FC = () => {
         </motion.div>
 
       </div>
+
+      <AnimatePresence>
+        {showSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 20 }}
+              className="relative w-full max-w-md rounded-[32px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-black border border-[#00C896]/30 p-8 space-y-6 shadow-2xl"
+            >
+              <button
+                onClick={handleSuccessModalClose}
+                className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                aria-label="Close"
+              >
+                <X size={16} className="text-gray-500 dark:text-gray-400" />
+              </button>
+
+              <div className="flex flex-col items-center text-center space-y-3">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', damping: 15, delay: 0.1 }}
+                  className="w-20 h-20 rounded-full bg-gradient-to-br from-[#00C896] to-[#00A878] flex items-center justify-center shadow-lg shadow-[#00C896]/30"
+                >
+                  <Crown size={36} className="text-white" />
+                </motion.div>
+
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white">
+                  🎉 You're Lifetime!
+                </h2>
+                <p className="text-sm font-bold text-gray-600 dark:text-gray-400">
+                  Premium unlocked. Enjoy.
+                </p>
+              </div>
+
+              <div className="space-y-3 text-[10px] font-bold uppercase tracking-wide leading-relaxed">
+                <div className="p-4 rounded-2xl bg-[#00C896]/5 border border-[#00C896]/10 text-gray-700 dark:text-gray-300">
+                  Don't see Lifetime access? Tap <span className="text-[#00C896]">RESTORE PURCHASES</span> on the Pricing page.
+                </div>
+                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300">
+                  Still stuck? Email{' '}
+                  <a
+                    href="mailto:antigravitybybulla@gmail.com?subject=Anti-Gravity Lifetime Issue"
+                    className="text-gray-900 dark:text-white underline decoration-[#00C896]/30 hover:decoration-[#00C896]"
+                  >
+                    antigravitybybulla@gmail.com
+                  </a>
+                  {' '}with ur transaction ID. (Also found on the Pricing page under ur Lifetime card.)
+                </div>
+              </div>
+
+              <button
+                onClick={handleSuccessModalClose}
+                className="w-full py-4 rounded-2xl bg-gradient-to-br from-[#00C896] to-[#00A878] text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-[#00C896]/30 hover:shadow-xl hover:shadow-[#00C896]/40 transition-all flex items-center justify-center gap-2"
+              >
+                Continue to App
+                <ArrowRight size={16} />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div >
   );
 };
