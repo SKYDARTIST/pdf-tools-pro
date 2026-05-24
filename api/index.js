@@ -933,12 +933,17 @@ export default async function handler(req, res) {
 
                 if (!playResult.valid) {
                     const failReason = playResult.reason || 'Unknown';
+                    const purchaseTokenFingerprint = typeof purchaseToken === 'string' && purchaseToken.length > 0
+                        ? crypto.createHash('sha256').update(purchaseToken).digest('hex').slice(0, 12)
+                        : null;
                     console.error(`❌ api/index: Authoritative verification FAILED for purchase`, {
                         productId,
                         transactionId,
                         device: maskDeviceId(deviceId),
                         user: maskDeviceId(googleUid || 'anonymous'),
-                        purchaseTokenPreview: purchaseToken ? purchaseToken.substring(0, 16) + '...' : 'none',
+                        hasPurchaseToken: typeof purchaseToken === 'string' && purchaseToken.length > 0,
+                        purchaseTokenLength: typeof purchaseToken === 'string' ? purchaseToken.length : 0,
+                        purchaseTokenFingerprint,
                         failReason,
                         timestamp: new Date().toISOString()
                     });
