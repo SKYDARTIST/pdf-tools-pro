@@ -159,7 +159,7 @@ const ToolsScreen: React.FC = () => {
                         <p className="text-[9px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-tight leading-relaxed line-clamp-2 max-w-[120px]">{tool.desc}</p>
                         {tool.isAI && (
                             <div className="mt-2 text-[7px] font-black text-emerald-500 uppercase tracking-widest">
-                                Free AI Sampler
+                                Lifetime AI
                             </div>
                         )}
                     </div>

@@ -1435,12 +1435,11 @@ export default async function handler(req, res) {
                 usageRecord = usage;
                 const isPaidTier = ['pro', 'premium', 'lifetime'].includes(usage.tier);
 
-                // P0 FIX: Allow Reader AI types, guidance, and public actions to bypass paid check
-                // Reader Hub uses 'chat', 'mindmap', 'outline' which are now free for everyone
+                // Only the help/guidance assistant and non-AI public actions bypass the paid check.
+                // All document-content AI (chat/mindmap/outline/redact/table/diff/...) requires Lifetime.
                 const FREE_REQUEST_TYPES = [
-                    'sampler', 'guidance',                       // Client-side bypass types
-                    'chat', 'mindmap', 'outline',                // Reader Hub AI features (FREE)
-                    'usage_sync', 'usage_fetch', 'check_subscription_status' // Public actions
+                    'guidance',                                  // Help assistant only (free)
+                    'usage_sync', 'usage_fetch', 'check_subscription_status' // Public non-AI actions
                 ];
                 const isFreeAction = FREE_REQUEST_TYPES.includes(requestType);
 

@@ -134,7 +134,7 @@ const PricingScreen: React.FC = () => {
       period: 'FOREVER',
       features: [
         { text: '15 Free Tools, No Sign-In', icon: Zap },
-        { text: 'Free AI Hub: Unlimited Reader', icon: Bot },
+        { text: 'Free AI Help Assistant', icon: Bot },
         { text: 'Scanner & PDF Essentials', icon: BookOpen },
         { text: 'Local Security & Privacy', icon: Shield }
       ],

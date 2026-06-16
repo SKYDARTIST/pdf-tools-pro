@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, Loader2, Bot, ShieldAlert, Quote } from 'lucide-react';
 import { askGemini } from '@/services/aiService';
-import { recordAIUsage, AiOperationType } from '@/services/subscriptionService';
+import { recordAIUsage, AiOperationType, canUseAI } from '@/services/subscriptionService';
 
 interface AIAssistantProps {
   contextText: string;
@@ -23,6 +23,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
     setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
     setIsLoading(true);
 
+    // Document-content AI chat is a Lifetime feature
+    if (!canUseAI(AiOperationType.HEAVY).allowed) {
+      setMessages(prev => [...prev, { role: 'bot', text: '🔒 AI chat over your document is a Lifetime feature. Unlock unlimited AI in Settings → Upgrade.' }]);
+      setIsLoading(false);
+      return;
+    }
+
     const response = await askGemini(userMsg, contextText);
 
     if (response.success && response.data) {
@@ -38,6 +45,13 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ contextText }) => {
     if (isLoading) return;
     setIsLoading(true);
     setMessages(prev => [...prev, { role: 'user', text: "Please extract all academic citations and references from this document." }]);
+
+    // Document-content AI extraction is a Lifetime feature
+    if (!canUseAI(AiOperationType.HEAVY).allowed) {
+      setMessages(prev => [...prev, { role: 'bot', text: '🔒 Citation extraction is a Lifetime feature. Unlock unlimited AI in Settings → Upgrade.' }]);
+      setIsLoading(false);
+      return;
+    }
 
     const response = await askGemini("Extract all academic citations, references, and bibliography entries found in this text. Format them clearly.", contextText, "citation");
 

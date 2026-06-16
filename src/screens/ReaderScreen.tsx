@@ -153,7 +153,7 @@ const ReaderScreen: React.FC = () => {
         if (!file || isGeneratingSummary || chatHistory.length > 0) return;
 
         // AI CREDIT CHECK - Add this block
-        const aiCheck = canUseAI(AiOperationType.SAMPLER);
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
@@ -179,13 +179,13 @@ const ReaderScreen: React.FC = () => {
 
             if (response.success && response.data) {
                 setChatHistory([{ role: 'bot', text: response.data }]);
-                await recordAIUsage(AiOperationType.SAMPLER);
+                await recordAIUsage(AiOperationType.HEAVY);
 
                 // Track successful summary
                 Analytics.track('ai_tool_success', {
                     tool: 'smart-reader',
                     feature: 'summary',
-                    ai_operation: 'sampler'
+                    ai_operation: 'paid_ai'
                 });
             }
         } catch (err) {
@@ -200,7 +200,7 @@ const ReaderScreen: React.FC = () => {
         if (!chatQuery.trim() || isAsking || !documentContext) return;
 
         // AI CREDIT CHECK - Add this block
-        const aiCheck = canUseAI(AiOperationType.SAMPLER);
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
@@ -217,13 +217,13 @@ const ReaderScreen: React.FC = () => {
             const response = await askGemini(currentQuery, documentContext, 'chat');
             if (response.success && response.data) {
                 setChatHistory(prev => [...prev, { role: 'bot', text: response.data! }]);
-                await recordAIUsage(AiOperationType.SAMPLER);
+                await recordAIUsage(AiOperationType.HEAVY);
 
                 // Track successful chat question
                 Analytics.track('ai_tool_success', {
                     tool: 'smart-reader',
                     feature: 'chat',
-                    ai_operation: 'sampler'
+                    ai_operation: 'paid_ai'
                 });
             }
         } catch (err) {
@@ -242,7 +242,7 @@ const ReaderScreen: React.FC = () => {
         if (!settings && !mindMapData) { setShowMindMapSettings(true); return; }
 
         // AI CREDIT CHECK - Add this block
-        const aiCheck = canUseAI(AiOperationType.SAMPLER);
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
             setAiLimitInfo({
                 blockMode: aiCheck.blockMode,
@@ -314,13 +314,13 @@ Analyze the provided document text and return ONLY the indented list structure.`
             const response = await askGemini(prompt, text, "mindmap", imageBase64 || undefined, fileMime);
             if (response.success && response.data) {
                 setMindMapData(response.data);
-                await recordAIUsage(AiOperationType.SAMPLER);
+                await recordAIUsage(AiOperationType.HEAVY);
 
                 // Track successful mind map
                 Analytics.track('ai_tool_success', {
                     tool: 'smart-reader',
                     feature: 'mindmap',
-                    ai_operation: 'sampler'
+                    ai_operation: 'paid_ai'
                 });
             }
         } catch (error) { console.error(error); } finally {
@@ -333,7 +333,7 @@ Analyze the provided document text and return ONLY the indented list structure.`
         if (!file || isGeneratingOutline) return;
         if (!hasConsent) { setShowConsent(true); return; }
 
-        const aiCheck = canUseAI(AiOperationType.SAMPLER);
+        const aiCheck = canUseAI(AiOperationType.HEAVY);
         if (!aiCheck.allowed) {
             setAiLimitInfo({ blockMode: aiCheck.blockMode });
             setShowAiLimit(true);
@@ -358,13 +358,13 @@ Analyze the provided document text and return ONLY the indented list structure.`
             const response = await askGemini(prompt, text, "outline");
             if (response.success && response.data) {
                 setOutlineData(response.data);
-                await recordAIUsage(AiOperationType.SAMPLER);
+                await recordAIUsage(AiOperationType.HEAVY);
 
                 // Track successful outline
                 Analytics.track('ai_tool_success', {
                     tool: 'smart-reader',
                     feature: 'outline',
-                    ai_operation: 'sampler'
+                    ai_operation: 'paid_ai'
                 });
             } else {
                 // API returned error
