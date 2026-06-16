@@ -57,15 +57,15 @@ const getNudgeText = (variant: NudgeVariant): string => {
     if (variant === 'retention') {
         const mostUsed = getMostUsedTool();
         if (mostUsed && mostUsed.count >= 3) {
-            return `You've used ${mostUsed.tool} ${mostUsed.count} times. Unlock Sign, Watermark & 15 more tools.`;
+            return `You've used ${mostUsed.tool} ${mostUsed.count} times. Unlock unlimited AI chat, Smart Redact & Neural tools.`;
         }
-        return 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.';
+        return 'You\'ve been using Anti-Gravity for over a week. Unlock unlimited AI forever.';
     }
 
     const DEFAULT_TEXT: Record<NudgeVariant, string> = {
-        success: 'Pro users also get Sign, Scanner, AI Reader & 12 more tools',
+        success: 'Lifetime unlocks unlimited AI Reader, Smart Redact, Neural Diff & Data/Table extraction',
         ai: 'Pro Pack unlocks Neural Reader with unlimited AI chat, outlines & mind maps',
-        retention: 'You\'ve been using Anti-Gravity for over a week. Unlock all tools forever.',
+        retention: 'You\'ve been using Anti-Gravity for over a week. Unlock unlimited AI forever.',
     };
 
     return DEFAULT_TEXT[variant];

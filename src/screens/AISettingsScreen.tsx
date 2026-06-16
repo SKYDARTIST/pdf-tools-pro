@@ -206,7 +206,7 @@ const AISettingsScreen: React.FC = () => {
                 {subscription.tier === SubscriptionTier.FREE ? 'Free Tier' : 'Lifetime Pro'}
               </h4>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                {subscription.tier === SubscriptionTier.FREE ? '5/18 Tools Unlocked' : 'All 18 Tools Unlocked'}
+                {subscription.tier === SubscriptionTier.FREE ? '15 Free Tools' : 'Lifetime AI Unlocked'}
               </p>
             </div>
           </div>
@@ -217,7 +217,7 @@ const AISettingsScreen: React.FC = () => {
               className="w-full flex items-center justify-between p-5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 transition-all group"
             >
               <span className="text-sm font-black uppercase tracking-wider text-white">
-                Unlock 13 Pro Tools
+                Unlock Unlimited AI
               </span>
               <ChevronRight size={18} className="text-white" />
             </button>

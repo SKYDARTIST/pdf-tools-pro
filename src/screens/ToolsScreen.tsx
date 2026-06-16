@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     Search, Combine, Scissors, PenTool, Image, FileText, Droplet, Zap,
-    RotateCw, Trash2, Hash, BookOpen, GitMerge, Sparkles
+    RotateCw, Trash2, Hash, BookOpen, GitMerge, Sparkles, FileImage, Layers
 } from 'lucide-react';
 
 import TaskCounter from '@/components/TaskCounter';
@@ -52,6 +52,17 @@ const ToolsScreen: React.FC = () => {
         { title: 'Split', desc: 'Split PDF Pages', icon: Scissors, path: '/split', cat: 'popular', id: 'split' },
         { title: 'Image to PDF', desc: 'Convert Photos to PDF', icon: Image, path: '/image-to-pdf', cat: 'popular', id: 'image-to-pdf' },
         { title: 'Reader', desc: 'AI-Powered PDF Hub', icon: BookOpen, path: '/reader', cat: 'convert', id: 'view', isAI: true },
+        // Free local utility tools (made free Jun 2026) — surfaced here for discoverability
+        { title: 'Sign', desc: 'Sign PDF Documents', icon: PenTool, path: '/sign', cat: 'security', id: 'sign' },
+        { title: 'Watermark', desc: 'Add Watermarks', icon: Droplet, path: '/watermark', cat: 'security', id: 'watermark' },
+        { title: 'Remove Pages', desc: 'Delete PDF Pages', icon: Trash2, path: '/remove-pages', cat: 'convert', id: 'remove-pages' },
+        { title: 'Reorder', desc: 'Rearrange Pages', icon: Layers, path: '/reorder-pages', cat: 'convert', id: 'reorder-pages' },
+        { title: 'Rotate', desc: 'Rotate PDF Pages', icon: RotateCw, path: '/rotate', cat: 'convert', id: 'rotate' },
+        { title: 'Page Numbers', desc: 'Add Page Numbers', icon: Hash, path: '/page-numbers', cat: 'convert', id: 'page-numbers' },
+        { title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text', cat: 'convert', id: 'extract-text' },
+        { title: 'Extract Images', desc: 'Save PDF Images', icon: FileImage, path: '/extract-images', cat: 'convert', id: 'extract-images' },
+        { title: 'PDF to Images', desc: 'Export as JPG/PNG', icon: FileImage, path: '/pdf-to-images', cat: 'convert', id: 'pdf-to-images' },
+        { title: 'Text to PDF', desc: 'Convert Text to PDF', icon: FileText, path: '/text-to-pdf', cat: 'convert', id: 'text-to-pdf' },
     ];
 
 
@@ -105,7 +116,7 @@ const ToolsScreen: React.FC = () => {
                             {localPrice ? `${localPrice} One-Time` : 'One-Time Access'}
                         </p>
                         <div className="mt-2 text-[7px] font-black text-[#00C896] uppercase tracking-widest">
-                            20+ Pro Tools
+                            Unlimited AI
                         </div>
                     </div>
                 </motion.div>
@@ -172,7 +183,7 @@ const ToolsScreen: React.FC = () => {
                     <p className="text-[10px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-[0.4em]">Choose a tool to start</p>
                 </motion.div>
 
-                {/* Pro Tools Bar - TOP PLACEMENT (Free users only) */}
+                {/* AI upgrade bar - TOP PLACEMENT (Free users only) */}
                 {subscription.tier === SubscriptionTier.FREE && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -188,19 +199,19 @@ const ToolsScreen: React.FC = () => {
                         <div className="space-y-3 relative z-10">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
-                                <h3 className="text-lg font-black uppercase tracking-tighter">15+ Pro Tools Available</h3>
+                                <h3 className="text-lg font-black uppercase tracking-tighter">Unlimited AI & Neural Tools</h3>
                             </div>
                             <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400 opacity-80">
-                                Sign • Rotate • Watermark • Extract • Redact + More
+                                AI Reader • Smart Redact • Neural Diff • Data & Table Extraction
                             </p>
 
-                            {/* Tool Counter */}
+                            {/* Plan status */}
                             <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                                 <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">
-                                    Your Access:
+                                    Your Plan:
                                 </span>
                                 <span className="text-sm font-black text-[#00C896]">
-                                    5/18+ Tools
+                                    15 Free Tools
                                 </span>
                             </div>
                         </div>
@@ -229,7 +240,7 @@ const ToolsScreen: React.FC = () => {
                                 <h3 className="text-lg font-black uppercase tracking-tighter text-gray-900 dark:text-white">Neural Workspace</h3>
                             </div>
                             <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 opacity-80">
-                                Access All 18 Pro & Neural Tools
+                                Unlimited AI & Neural Tools
                             </p>
 
                             {/* Pro Status */}

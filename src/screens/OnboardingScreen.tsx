@@ -178,12 +178,12 @@ const OnboardingScreen: React.FC = () => {
 
               <div className="space-y-3">
                 {[
-                  '18 Total Tools (13 Pro + 5 Free)',
-                  'Sign • Rotate • Watermark PDFs',
+                  '15 Free Tools + Unlimited AI',
                   'AI Reader with Chat & Summary',
-                  'Smart Document Compare',
-                  'Extract • Redact • Remove Pages',
-                  'Table Extractor • Text to PDF'
+                  'Smart Document Compare (Neural Diff)',
+                  'Smart Redact — AI PII Removal',
+                  'AI Data & Table Extraction',
+                  'Lifetime AI Access, One-Time Payment'
                 ].map((feature, index) => (
                   <motion.div
                     key={index}

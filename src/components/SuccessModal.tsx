@@ -253,7 +253,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                                                 </span>
                                             </div>
                                             <p className="text-[9px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed">
-                                                You've tried {uniqueToolsUsed} free tools. Unlock 13 more Pro tools to maximize your workflow.
+                                                You've tried {uniqueToolsUsed} free tools. Unlock unlimited AI to maximize your workflow.
                                             </p>
                                         </div>
                                     </div>

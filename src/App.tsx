@@ -378,19 +378,20 @@ const App: React.FC = () => {
                   <Route path="/scanner" element={<ScannerScreen />} />
                   <Route path="/view" element={<ViewScreen />} />
                   <Route path="/my-files" element={<MyFilesScreen />} />
+                  {/* Local utility tools — made free Jun 2026, no login required (pure client-side) */}
+                  <Route path="/remove-pages" element={<RemovePagesScreen />} />
+                  <Route path="/text-to-pdf" element={<TextToPdfScreen />} />
+                  <Route path="/watermark" element={<WatermarkScreen />} />
+                  <Route path="/sign" element={<SignScreen />} />
+                  <Route path="/pdf-to-images" element={<PdfToImagesScreen />} />
+                  <Route path="/reorder-pages" element={<ReorderPagesScreen />} />
+                  <Route path="/extract-text" element={<ExtractTextScreen />} />
+                  <Route path="/rotate" element={<RotateScreen />} />
+                  <Route path="/page-numbers" element={<PageNumbersScreen />} />
+                  <Route path="/extract-images" element={<ExtractImagesScreen />} />
 
-                  {/* AI & Pro tools — sign in required */}
+                  {/* AI tools — sign in required (hit paid AI backend) */}
                   <Route path="/reader" element={<ProtectedRoute><ReaderScreen /></ProtectedRoute>} />
-                  <Route path="/remove-pages" element={<ProtectedRoute><RemovePagesScreen /></ProtectedRoute>} />
-                  <Route path="/text-to-pdf" element={<ProtectedRoute><TextToPdfScreen /></ProtectedRoute>} />
-                  <Route path="/watermark" element={<ProtectedRoute><WatermarkScreen /></ProtectedRoute>} />
-                  <Route path="/sign" element={<ProtectedRoute><SignScreen /></ProtectedRoute>} />
-                  <Route path="/pdf-to-images" element={<ProtectedRoute><PdfToImagesScreen /></ProtectedRoute>} />
-                  <Route path="/reorder-pages" element={<ProtectedRoute><ReorderPagesScreen /></ProtectedRoute>} />
-                  <Route path="/extract-text" element={<ProtectedRoute><ExtractTextScreen /></ProtectedRoute>} />
-                  <Route path="/rotate" element={<ProtectedRoute><RotateScreen /></ProtectedRoute>} />
-                  <Route path="/page-numbers" element={<ProtectedRoute><PageNumbersScreen /></ProtectedRoute>} />
-                  <Route path="/extract-images" element={<ProtectedRoute><ExtractImagesScreen /></ProtectedRoute>} />
                   <Route path="/ai-settings" element={<ProtectedRoute><AISettingsScreen /></ProtectedRoute>} />
                   <Route path="/ag-workspace" element={<AntiGravityWorkspace />} />
                   <Route path="/table-extractor" element={<ProtectedRoute><TableExtractorScreen /></ProtectedRoute>} />

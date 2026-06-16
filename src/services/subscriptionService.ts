@@ -24,7 +24,13 @@ export enum SubscriptionTier {
     PREMIUM = 'premium'
 }
 
-export const FREE_TOOLS = ['scanner', 'merge', 'split', 'image-to-pdf', 'view'];
+export const FREE_TOOLS = [
+    // Quick tools (always free)
+    'scanner', 'merge', 'split', 'image-to-pdf', 'view',
+    // Local utility tools — made free Jun 2026 (pure client-side, zero backend cost)
+    'remove-pages', 'text-to-pdf', 'watermark', 'sign', 'pdf-to-images',
+    'reorder-pages', 'extract-text', 'rotate', 'page-numbers', 'extract-images',
+];
 
 
 export enum AiOperationType {
@@ -249,7 +255,7 @@ export const canUseAI = (operationType: AiOperationType = AiOperationType.HEAVY)
 
     return {
         allowed: false,
-        reason: "Pro & Neural features require Lifetime Access. Upgrade now for unlimited AI and Pro tools!",
+        reason: "Neural AI features require Lifetime Access. Upgrade now for unlimited AI!",
         blockMode: AiBlockMode.BUY_PRO
     };
 };
@@ -278,7 +284,7 @@ export const canUseTool = (toolId: string): {
     // Otherwise, it's a Pro feature
     return {
         allowed: false,
-        reason: "This tool is part of the Pro & Neural Workspace. Upgrade to Lifetime for access!",
+        reason: "This is a Neural AI tool. Upgrade to Lifetime for unlimited AI access!",
         blockMode: AiBlockMode.BUY_PRO
     };
 };
@@ -377,7 +383,7 @@ export const checkPostPurchaseStatus = async (): Promise<void> => {
                 const wantVerify = window.confirm(
                     '🛰️ RECOVERY PROTOCOL\n\n' +
                     'We noticed a pending Lifetime Pro purchase from a previous session.\n\n' +
-                    'Your payment was processed by Google. Would you like us to verify and unlock your Pro features now?'
+                    'Your payment was processed by Google. Would you like us to verify and unlock your Lifetime AI access now?'
                 );
                 if (wantVerify) {
                     console.log('Anti-Gravity Subscription: 🔐 User confirmed recovery, attempting verification...');

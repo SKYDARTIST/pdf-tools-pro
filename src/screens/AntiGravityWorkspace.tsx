@@ -238,18 +238,18 @@ const AntiGravityWorkspace: React.FC = () => {
           <div className="space-y-4 relative z-10">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">18 Pro & Neural Tools</h3>
+              <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Unlimited AI & Neural Tools</h3>
             </div>
             <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-gray-600 dark:text-gray-400">
-              You're viewing all 18 tools below. Unlock lifetime access to use them.
+              Unlock Lifetime for unlimited AI and every Neural tool.
             </p>
             <div className="flex items-center justify-between pt-3 border-t border-black/10 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <span className="text-[9px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest">
-                  Currently Locked:
+                  Lifetime Unlocks:
                 </span>
                 <span className="text-base font-black text-emerald-500">
-                  13 Tools
+                  Unlimited AI
                 </span>
               </div>
               <motion.div
@@ -269,10 +269,10 @@ const AntiGravityWorkspace: React.FC = () => {
             <motion.div key="idle" className="space-y-12 w-full">
               <ToolGuide
                 title="Pro & Neural Operation Guide"
-                description="The Pro & Neural Workspace is an elite suite for your most important documents. From heavy-duty AI analysis to secure professional utilities, hybrid processing ensures both power and privacy."
+                description="The Neural Workspace is your AI command center for important documents. From heavy-duty AI analysis to instant Neural insights, hybrid processing ensures both power and privacy."
                 steps={[
                   "AI Neural Suite: Chat, compare, and extract structured data using Gemini AI (transient cloud processing).",
-                  "Pro Utilities: Sign, watermark, reorder pages, and export PDFs as images — all processed locally.",
+                  "Free Utilities: Sign, watermark, reorder pages, and export PDFs as images — all free and processed locally.",
                   "New Tools: PDF→Images exports every page as JPG/PNG. Reorder rearranges pages instantly.",
                   "Hybrid Architecture: Core PDF tools run locally. AI features use secure cloud processing (no data retention)."
                 ]}
@@ -405,7 +405,7 @@ const AntiGravityWorkspace: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-4 ml-2">
             <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
-            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">Pro Power Utilities</h2>
+            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">Free Power Utilities</h2>
             <div className="flex-1 h-px bg-black/5 dark:bg-white/5" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

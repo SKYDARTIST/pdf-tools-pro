@@ -106,17 +106,17 @@ const MyFilesScreen: React.FC = () => {
                         <div className="space-y-3 relative z-10">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
-                                <h3 className="text-base font-black uppercase tracking-tighter">Unlock 13 Pro Tools</h3>
+                                <h3 className="text-base font-black uppercase tracking-tighter">Unlock Unlimited AI</h3>
                             </div>
                             <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400 opacity-80">
-                                Sign • Watermark • Extract • Redact • Compare + More
+                                AI Reader • Smart Redact • Neural Diff • Data & Table Extraction
                             </p>
                             <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                                 <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest">
-                                    Your Access:
+                                    Your Plan:
                                 </span>
                                 <span className="text-sm font-black text-[#00C896]">
-                                    5/18 Tools
+                                    15 Free Tools
                                 </span>
                             </div>
                         </div>
@@ -246,7 +246,7 @@ const MyFilesScreen: React.FC = () => {
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-3 px-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                            <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#000000] dark:text-white">Pro Tools Ready</h4>
+                                            <h4 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-[#000000] dark:text-white">Quick Tools</h4>
                                             <div className="flex-1 h-px bg-[#E2E8F0] dark:bg-white/5" />
                                         </div>
                                         <div className="grid grid-cols-3 gap-3">

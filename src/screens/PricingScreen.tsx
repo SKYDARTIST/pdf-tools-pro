@@ -133,7 +133,7 @@ const PricingScreen: React.FC = () => {
       price: '$0',
       period: 'FOREVER',
       features: [
-        { text: 'Unlimited Essentials 5', icon: Zap },
+        { text: '15 Free Tools, No Sign-In', icon: Zap },
         { text: 'Free AI Hub: Unlimited Reader', icon: Bot },
         { text: 'Scanner & PDF Essentials', icon: BookOpen },
         { text: 'Local Security & Privacy', icon: Shield }
@@ -149,9 +149,9 @@ const PricingScreen: React.FC = () => {
       period: 'ONE-TIME PAYMENT',
       badge: 'FOUNDER PACK',
       features: [
-        { text: '18 Total Tools (13 Pro + 5 Free)', icon: Sparkles },
+        { text: 'Everything Free + Unlimited AI', icon: Sparkles },
         { text: 'Full AI Neural Suite Access', icon: Bot },
-        { text: 'Pro Power Utilities Hub', icon: Zap },
+        { text: 'Smart Redact, Compare & Extractors', icon: Zap },
         { text: 'Lifetime Founder Status', icon: Star }
       ],
       cta: currentTier === SubscriptionTier.LIFETIME ? 'PLAN ACTIVE' : 'CLAIM FOUNDER PACK',
@@ -537,7 +537,7 @@ const PricingScreen: React.FC = () => {
           </div>
           <p className="text-[14px] font-bold text-gray-600 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
             Anti-Gravity uses hybrid processing: Core PDF tools run locally on your device for maximum privacy. AI features use Gemini API with transient processing (no data retention or training).
-            We've simplified our model: Start for free with the Essentials 5 tools, or secure permanent access with our Lifetime Protocol.
+            We've simplified our model: Start for free with 15 local PDF tools (no sign-in), or unlock unlimited AI with our Lifetime Protocol.
           </p>
         </motion.div>
 
@@ -585,7 +585,7 @@ const PricingScreen: React.FC = () => {
               {
                 id: 'trial',
                 q: 'Is There A Trial Period?',
-                a: 'No, but the Free tier gives you unlimited access to the Essentials 5 tools forever (Scanner, Merge, Split, etc.). Upgrade to Lifetime Protocol to unlock 13 Pro Tools (18 tools total).'
+                a: 'No, but the Free tier gives you 15 local PDF tools forever, no sign-in required (Scanner, Merge, Split, Sign, Watermark, and more). Upgrade to Lifetime Protocol to unlock unlimited AI and the Neural tools.'
               },
               {
                 id: 'support',
