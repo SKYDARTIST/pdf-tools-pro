@@ -194,7 +194,7 @@ const HomeScreen: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#00C896] animate-pulse shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
-                  <h3 className="text-2xl font-black uppercase tracking-tighter">Pro & Neural</h3>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter">Neural AI</h3>
                 </div>
                 <p className="text-[9px] font-mono font-black uppercase tracking-[0.3em] opacity-80 text-emerald-400">
                   AI Workspace

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, PenTool, Droplet, RotateCw, FileImage, Trash2, Hash, FileText, Image as ImageIcon, Layers, Lock } from 'lucide-react';
+import { FileUp, Bot, X, MessageSquare, ListChecks, Sparkles, Activity, Zap, Flag, Database, Shield, Headphones, EyeOff, BookOpen, GitMerge, Image as ImageIcon, Lock } from 'lucide-react';
 
 import { askGemini } from '@/services/aiService';
 import { canUseAI, recordAIUsage, getSubscription, SubscriptionTier, AiOperationType, canUseTool } from '@/services/subscriptionService';
@@ -215,7 +215,7 @@ const AntiGravityWorkspace: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center shadow-2xl shrink-0"><Sparkles size={20} className="text-white dark:text-black" /></div>
             <div className="space-y-0.5 min-w-0">
-              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-emerald-500 truncate">Pro & Neural</div>
+              <div className="text-[9px] font-mono font-black uppercase tracking-[0.3em] text-emerald-500 truncate">Neural AI</div>
               <h2 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white uppercase leading-none">Workspace</h2>
             </div>
           </div>
@@ -238,10 +238,10 @@ const AntiGravityWorkspace: React.FC = () => {
           <div className="space-y-4 relative z-10">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Unlimited AI & Neural Tools</h3>
+              <h3 className="text-xl font-black uppercase tracking-tighter text-gray-900 dark:text-white">Unlock AI Tools</h3>
             </div>
             <p className="text-[9px] font-mono font-black uppercase tracking-[0.2em] text-gray-600 dark:text-gray-400">
-              Unlock Lifetime for unlimited AI and every Neural tool.
+              AI Reader • Smart Redact • Neural Diff • Data Extractor • Table Extractor
             </p>
             <div className="flex items-center justify-between pt-3 border-t border-black/10 dark:border-white/10">
               <div className="flex items-center gap-2">
@@ -268,16 +268,16 @@ const AntiGravityWorkspace: React.FC = () => {
           {status === 'idle' && (
             <motion.div key="idle" className="space-y-12 w-full">
               <ToolGuide
-                title="Pro & Neural Operation Guide"
+                title="AI Tools Guide"
                 description="The Neural Workspace is your AI command center for important documents. From heavy-duty AI analysis to instant Neural insights, hybrid processing ensures both power and privacy."
                 steps={[
-                  "AI Neural Suite: Chat, compare, and extract structured data using Gemini AI (transient cloud processing).",
-                  "Free Utilities: Sign, watermark, reorder pages, and export PDFs as images — all free and processed locally.",
-                  "New Tools: PDF→Images exports every page as JPG/PNG. Reorder rearranges pages instantly.",
-                  "Hybrid Architecture: Core PDF tools run locally. AI features use secure cloud processing (no data retention)."
+                  "AI Reader: chat with your document, summarize, outline, and generate mind maps.",
+                  "Smart Redact & Neural Diff: AI-powered PII removal and document version comparison.",
+                  "Data & Table Extractor: pull structured data and tables from scans and PDFs using Gemini AI.",
+                  "Hybrid AI processing: transient cloud analysis with no data retention — privacy preserved."
                 ]}
                 useCases={[
-                  "Deep AI Analysis", "Secure Signing", "Privacy Watermarking", "Data Extraction", "PDF to Images", "Reorder Pages"
+                  "AI Reader", "Smart Redact", "Neural Diff", "Data Extractor", "Table Extractor", "Hybrid AI Privacy"
                 ]}
               />
             </motion.div>
@@ -363,7 +363,7 @@ const AntiGravityWorkspace: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-4 ml-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
-            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">AI Neural Suite</h2>
+            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">Lifetime AI Tools</h2>
             <div className="flex-1 h-px bg-black/5 dark:bg-white/5" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -402,56 +402,6 @@ const AntiGravityWorkspace: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center gap-4 ml-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#00C896] shadow-[0_0_10px_rgba(0,200,150,0.5)]" />
-            <h2 className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-gray-900 dark:text-gray-100">Free Power Utilities</h2>
-            <div className="flex-1 h-px bg-black/5 dark:bg-white/5" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {[
-              { id: 'sign', title: 'Sign', desc: 'Secure Sign', icon: PenTool, path: '/sign' },
-              { id: 'extract-text', title: 'Extract Text', desc: 'PDF to Text', icon: FileText, path: '/extract-text' },
-              { id: 'rotate', title: 'Rotate', desc: 'Fix Pages', icon: RotateCw, path: '/rotate' },
-              { id: 'watermark', title: 'Watermark', desc: 'Secure Files', icon: Droplet, path: '/watermark' },
-              { id: 'extract-images', title: 'Extract Images', desc: 'Save Assets', icon: FileImage, path: '/extract-images' },
-              { id: 'pdf-to-images', title: 'PDF→Images', desc: 'Export as JPG/PNG', icon: FileImage, path: '/pdf-to-images', isNew: true },
-              { id: 'reorder-pages', title: 'Reorder', desc: 'Rearrange Pages', icon: Layers, path: '/reorder-pages', isNew: true },
-              { id: 'remove-pages', title: 'Remove', desc: 'Delete Pages', icon: Trash2, path: '/remove-pages' },
-              { id: 'page-numbers', title: 'Numbers', desc: 'Add Pages', icon: Hash, path: '/page-numbers' },
-            ].map((tool, i) => {
-              const isLocked = subscription.tier === SubscriptionTier.FREE && !canUseTool(tool.id).allowed;
-              return (
-                <motion.button
-                  key={i}
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleToolClick(tool.path, tool.id)}
-                  className={`monolith-card rounded-[32px] p-5 flex flex-col items-center text-center space-y-3 relative overflow-hidden ${isLocked ? 'opacity-60 border-2 border-[#00C896]/30' : ''}`}
-                >
-                  {(tool as any).isNew && !isLocked && (
-                    <div className="absolute top-2 left-2 px-2 py-0.5 bg-emerald-500 text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
-                      New
-                    </div>
-                  )}
-                  {isLocked && (
-                    <div className="absolute top-2 right-2 w-7 h-7 bg-[#00C896]/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                      <Lock size={12} className="text-[#00C896]" />
-                    </div>
-                  )}
-                  <div className={`p-4 bg-[#00C896]/10 rounded-2xl text-[#00C896] ${isLocked ? 'opacity-70' : ''}`}><tool.icon size={20} /></div>
-                  <div>
-                    <div className="flex items-center justify-center gap-1.5">
-                      <div className="text-[9px] font-black uppercase tracking-widest text-gray-900 dark:text-white leading-none mb-1">{tool.title}</div>
-                      {isLocked && <Lock size={8} className="text-[#00C896] mb-1" />}
-                    </div>
-                    <div className="text-[7px] font-bold text-gray-400 uppercase tracking-tight">{tool.desc}</div>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
 
 
         <AIOptInModal isOpen={showConsent} onClose={() => setShowConsent(false)} onAccept={() => { localStorage.setItem('ai_neural_consent', 'true'); setHasConsent(true); setShowConsent(false); }} />

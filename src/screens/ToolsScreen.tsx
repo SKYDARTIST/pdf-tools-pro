@@ -100,7 +100,7 @@ const ToolsScreen: React.FC = () => {
                     className="monolith-card rounded-[40px] cursor-pointer p-6 flex flex-col items-center text-center gap-3 shadow-sm hover:shadow-2xl transition-all group relative overflow-hidden border-2 border-[#00C896]/30 bg-gradient-to-br from-[#00C896]/5 to-transparent hover:border-[#00C896]/50"
                 >
                     <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#00C896] text-white rounded-full text-[7px] font-black uppercase tracking-wider shadow-lg">
-                        PRO
+                        AI
                     </div>
                     <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#00C896]/10 rounded-full blur-2xl group-hover:bg-[#00C896]/20 transition-colors" />
 
@@ -110,7 +110,7 @@ const ToolsScreen: React.FC = () => {
 
                     <div className="min-w-0 px-1">
                         <div className="flex flex-col items-center gap-2 mb-1.5">
-                            <h3 className="text-[10px] font-black uppercase tracking-wider text-[#000000] dark:text-white leading-none">Unlock Pro</h3>
+                            <h3 className="text-[10px] font-black uppercase tracking-wider text-[#000000] dark:text-white leading-none">Unlock AI Tools</h3>
                         </div>
                         <p className="text-[9px] font-bold text-[#4A5568] dark:text-gray-400 uppercase tracking-tight leading-relaxed line-clamp-2 max-w-[120px]">
                             {localPrice ? `${localPrice} One-Time` : 'One-Time Access'}
@@ -190,7 +190,7 @@ const ToolsScreen: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
                         whileHover={{ y: -4 }}
-                        onClick={() => navigate('/ag-workspace')}
+                        onClick={() => navigate('/pricing')}
                         className="monolith-glass p-8 cursor-pointer group relative overflow-hidden bg-gradient-to-br from-[#0c0c0c] to-[#1a1a1a] text-white border border-emerald-500/20 shadow-2xl rounded-[40px] flex items-center justify-between"
                     >
                         <div className="absolute top-1/2 -translate-y-1/2 -right-6 opacity-[0.05] group-hover:opacity-10 transition-all duration-700">
@@ -199,10 +199,10 @@ const ToolsScreen: React.FC = () => {
                         <div className="space-y-3 relative z-10">
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-[#00C896] animate-pulse" />
-                                <h3 className="text-lg font-black uppercase tracking-tighter">Unlimited AI & Neural Tools</h3>
+                                <h3 className="text-lg font-black uppercase tracking-tighter">Unlock AI Tools</h3>
                             </div>
                             <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-400 opacity-80">
-                                AI Reader • Smart Redact • Neural Diff • Data & Table Extraction
+                                AI Reader • Smart Redact • Neural Diff • Data Extractor • Table Extractor
                             </p>
 
                             {/* Plan status */}
@@ -240,7 +240,7 @@ const ToolsScreen: React.FC = () => {
                                 <h3 className="text-lg font-black uppercase tracking-tighter text-gray-900 dark:text-white">Neural Workspace</h3>
                             </div>
                             <p className="text-[8px] font-mono font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 opacity-80">
-                                Unlimited AI & Neural Tools
+                                AI Reader + Neural Tools
                             </p>
 
                             {/* Pro Status */}
@@ -303,7 +303,7 @@ const ToolsScreen: React.FC = () => {
             <UpgradeModal
                 isOpen={showUpgrade}
                 onClose={() => setShowUpgrade(false)}
-                featureName="Pro & Neural Workspace"
+                featureName="Lifetime AI Access"
             />
         </div>
     );
