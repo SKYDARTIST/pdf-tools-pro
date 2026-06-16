@@ -136,6 +136,15 @@ class TaskLimitManager {
     }
 
     /**
+     * Invalidate the in-memory Pro/limit cache so the next read re-derives from SubscriptionService.
+     * Used when the local subscription tier changes (e.g. reverting an optimistic grant on pending).
+     */
+    static clearCache(): void {
+        this.cachedData = null;
+        this.cacheTime = 0;
+    }
+
+    /**
      * Reset to free (for testing)
      */
     static resetToFree(): void {

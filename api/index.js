@@ -9,6 +9,13 @@ const OWNER_EMAIL = process.env.OWNER_EMAIL || 'antigravitybybulla@gmail.com';
 const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 const EMAIL_SERVICE = process.env.EMAIL_SERVICE || 'resend'; // 'resend' or 'sendgrid'
 
+// In-memory throttle for PENDING payment notifications (no DB by design — pending is transient).
+// The client re-verifies a pending purchase every ~30s; without this we'd email on every retry.
+// We notify the owner at most once per transaction per warm instance; retries log only.
+// Cold starts may re-notify once (acceptable — far better than per-retry spam).
+const pendingNotifiedTxns = new Map(); // transactionId -> firstNotifiedAt (ms)
+const PENDING_NOTIFY_PRUNE_MS = 24 * 60 * 60 * 1000; // drop entries older than 24h to bound memory
+
 /**
  * Send payment notification email to owner
  */
@@ -324,6 +331,12 @@ async function validateWithGooglePlay(productId, purchaseToken) {
             }
 
             if (!isPurchased) {
+                // purchaseState 2 = PENDING: slow payment method (UPI/bank/cash/"pay later").
+                // Google has NOT confirmed the money yet. Not a failure — do not grant, do not mark failed.
+                if (res.data.purchaseState === 2) {
+                    console.log(`⏳ Anti-Gravity: Purchase PENDING (purchaseState=2) — awaiting Google confirmation. No grant.`);
+                    return { valid: false, pending: true, reason: `Purchase pending (purchaseState=2)` };
+                }
                 console.warn(`🛡️ Anti-Gravity Security: Product not purchased (purchaseState=${res.data.purchaseState})`);
                 return { valid: false, reason: `Product not purchased (purchaseState=${res.data.purchaseState})` };
             }
@@ -930,6 +943,44 @@ export default async function handler(req, res) {
                 });
 
                 const playResult = await validateWithGooglePlay(productId, purchaseToken);
+
+                // PENDING (purchaseState=2): not yet confirmed by Google. Do NOT grant, do NOT write a
+                // 'failed' audit row, do NOT alarm. Route to the calm payment_pending channel and return
+                // a distinct PURCHASE_PENDING status (HTTP 202). Client keeps it in its retry queue.
+                if (playResult.pending) {
+                    console.log(`⏳ api/index: Purchase PENDING — awaiting Google confirmation (no grant)`, {
+                        productId,
+                        transactionId,
+                        device: maskDeviceId(deviceId),
+                        user: maskDeviceId(googleUid || 'anonymous'),
+                        timestamp: new Date().toISOString()
+                    });
+
+                    // Notify owner at most once per transaction. The client re-verifies every ~30s while
+                    // pending; only the first attempt emails — retries log only (no spam, no DB needed).
+                    const now = Date.now();
+                    const alreadyNotified = !transactionId || pendingNotifiedTxns.has(transactionId);
+                    if (!alreadyNotified) {
+                        // Prune stale entries so the map can't grow unbounded across many transactions.
+                        for (const [txn, ts] of pendingNotifiedTxns) {
+                            if (now - ts > PENDING_NOTIFY_PRUNE_MS) pendingNotifiedTxns.delete(txn);
+                        }
+                        pendingNotifiedTxns.set(transactionId, now);
+                        await sendPaymentNotification('payment_pending', {
+                            transactionId,
+                            deviceId: maskDeviceId(deviceId),
+                            addedAt: now
+                        }).catch(e => console.warn('Failed to send pending notification:', e));
+                    } else {
+                        console.log(`⏳ api/index: Pending notification suppressed (retry/duplicate) — log only`, { transactionId });
+                    }
+
+                    return res.status(202).json({
+                        status: 'PURCHASE_PENDING',
+                        details: 'Payment is pending confirmation by Google Play. Access unlocks automatically once it clears.',
+                        transactionId
+                    });
+                }
 
                 if (!playResult.valid) {
                     const failReason = playResult.reason || 'Unknown';

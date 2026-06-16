@@ -1,5 +1,5 @@
 import { NativePurchases, PURCHASE_TYPE } from '@capgo/native-purchases';
-import { upgradeTier, SubscriptionTier, saveSubscription, getSubscription } from './subscriptionService';
+import { upgradeTier, SubscriptionTier, saveSubscription, getSubscription, revertOptimisticTier } from './subscriptionService';
 import { syncUsageToServer, fetchUserUsage } from './usageService';
 import { secureFetch } from './apiService';
 import AuthService from './authService';
@@ -253,14 +253,24 @@ class BillingService {
 
                 // Attempt verification with full error context
                 console.log('Anti-Gravity Billing: 🔐 Attempting server verification...', { transactionId: result.transactionId });
-                const verifyResult = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
+                const verifyOutcome = await this.verifyPurchaseOnServer(purchaseToken, LIFETIME_PRODUCT_ID, result.transactionId);
 
-                if (verifyResult) {
+                if (verifyOutcome === 'verified') {
                     console.log('Anti-Gravity Billing: ✅ Server verification confirmed!', { transactionId: result.transactionId });
                     await this.removeFromPendingQueue(result.transactionId);
                     // Tier already granted optimistically above, just confirm
                     alert('🎉 Lifetime Access Unlocked!');
                     return true;
+                } else if (verifyOutcome === 'pending') {
+                    // PENDING: Google hasn't confirmed payment (slow method). Drop the optimistic grant
+                    // LOCALLY ONLY (no server downgrade) so the user isn't shown Lifetime until money clears.
+                    // The tx stays in the retry queue and auto-grants once Google confirms (state → 0).
+                    console.warn('Anti-Gravity Billing: ⏳ Payment pending — reverting optimistic grant (local only)', {
+                        transactionId: result.transactionId
+                    });
+                    revertOptimisticTier(); // local-only: NO syncUsageToServer, NO server downgrade
+                    alert('⏳ Payment received — pending confirmation by Google Play.\n\nThis is normal for slower payment methods. While the app is open, your Lifetime access unlocks automatically once the payment clears (often a few minutes). If you close the app before then, just reopen it or tap "Restore Purchases" in Settings to finish unlocking.');
+                    return false;
                 } else {
                     // Server verification failed, but user already has optimistic grant.
                     // Purchase is in pending queue for automatic retry every 30s.
@@ -389,13 +399,17 @@ class BillingService {
 
                     console.log('Anti-Gravity Billing: 🔐 Verifying restored purchase...', { productId, transactionId });
 
-                    const isVerified = await this.verifyPurchaseOnServer(verificationToken, productId, transactionId);
-                    if (isVerified) {
+                    const restoreOutcome = await this.verifyPurchaseOnServer(verificationToken, productId, transactionId);
+                    if (restoreOutcome === 'verified') {
                         hasLifetime = true;
                         console.log('Anti-Gravity Billing: ✅ Restored purchase verified!', { transactionId });
                         TaskLimitManager.upgradeToPro();
                         upgradeTier(SubscriptionTier.LIFETIME, transactionId);
                         if (!silent) alert('✅ Lifetime status restored!');
+                    } else if (restoreOutcome === 'pending') {
+                        // Purchase exists but payment is still pending Google confirmation — do not grant,
+                        // and do not treat as a hard error (no scary alert).
+                        console.log('Anti-Gravity Billing: ⏳ Restored purchase is pending confirmation', { transactionId });
                     } else {
                         console.error('Anti-Gravity Billing: ❌ Verification failed for restored purchase', { transactionId });
                         verificationErrors++;
@@ -422,11 +436,11 @@ class BillingService {
         }
     }
 
-    private async verifyPurchaseOnServer(purchaseToken: string, productId: string, transactionId: string): Promise<boolean> {
+    private async verifyPurchaseOnServer(purchaseToken: string, productId: string, transactionId: string): Promise<'verified' | 'pending' | 'unconfirmed'> {
         const verificationStartTime = Date.now();
         const VERIFICATION_TIMEOUT = 30000; // 30 seconds for entire verification flow
 
-        const performVerification = async (): Promise<boolean> => {
+        const performVerification = async (): Promise<'verified' | 'pending' | 'unconfirmed'> => {
             console.log('Anti-Gravity Billing: 🔐 Verifying purchase on server...', {
                 transactionId,
                 productId,
@@ -447,13 +461,13 @@ class BillingService {
                 if (!result.success) {
                     console.error('Anti-Gravity Billing: ❌ Session refresh failed - cannot verify purchase');
                     alert('⚠️ Session error. Your payment was received but sync failed.\n\nPlease try "Restore Purchases" from Settings, or restart the app.');
-                    return false;
+                    return 'unconfirmed';
                 }
                 console.log('Anti-Gravity Billing: ✅ Session and CSRF token refreshed');
             } catch (refreshError: any) {
                 console.error('Anti-Gravity Billing: ❌ Session refresh timeout:', refreshError.message);
                 alert('⚠️ Connection timeout. Your payment was received but sync failed.\n\nPlease try "Restore Purchases" from Settings, or restart the app.');
-                return false;
+                return 'unconfirmed';
             }
 
             // secureFetch automatically includes CSRF token and x-ag-timestamp
@@ -483,7 +497,7 @@ class BillingService {
                         transactionId,
                         status: response.status
                     });
-                    return true;
+                    return 'verified';
                 }
 
                 console.error('Anti-Gravity Billing: ❌ Purchase verification failed', {
@@ -505,7 +519,7 @@ class BillingService {
                     console.error('Anti-Gravity Billing: 🚨 Rate limited - too many verification attempts');
                 }
 
-                return false;
+                return 'unconfirmed';
             }
 
             const data = await response.json();
@@ -516,20 +530,27 @@ class BillingService {
                     transactionId,
                     duration: Date.now() - verificationStartTime
                 });
-                return true;
+                return 'verified';
+            } else if (response.status === 202 || data.status === 'PURCHASE_PENDING') {
+                // Pending payment (slow method): Google has NOT confirmed the money. Not an error.
+                // Do NOT grant; caller reverts any optimistic grant and shows a pending message.
+                console.log('Anti-Gravity Billing: ⏳ Purchase pending Google confirmation — will auto-retry', {
+                    transactionId
+                });
+                return 'pending';
             } else {
                 console.error('Anti-Gravity Billing: ❌ Server returned success=false', {
                     error: data.error,
                     details: data.details,
                     transactionId
                 });
-                return false;
+                return 'unconfirmed';
             }
         };
 
         try {
             // Wrap entire verification in timeout
-            const timeoutPromise = new Promise<boolean>((_, reject) =>
+            const timeoutPromise = new Promise<'verified' | 'pending' | 'unconfirmed'>((_, reject) =>
                 setTimeout(
                     () => reject(new Error(`Verification timeout after ${VERIFICATION_TIMEOUT / 1000}s`)),
                     VERIFICATION_TIMEOUT
@@ -557,7 +578,7 @@ class BillingService {
                 });
             }
 
-            return false;
+            return 'unconfirmed';
         }
     }
 
@@ -674,13 +695,13 @@ class BillingService {
                 });
 
                 try {
-                    const verified = await this.verifyPurchaseOnServer(
+                    const outcome = await this.verifyPurchaseOnServer(
                         purchase.purchaseToken,
                         purchase.productId,
                         purchase.transactionId
                     );
 
-                    if (verified) {
+                    if (outcome === 'verified') {
                         console.log('Anti-Gravity Billing: ✅ Pending purchase verified! Granting access...', {
                             transactionId: purchase.transactionId
                         });
@@ -688,7 +709,7 @@ class BillingService {
                         upgradeTier(SubscriptionTier.LIFETIME, purchase.transactionId);
                         await this.removeFromPendingQueue(purchase.transactionId);
                     } else {
-                        console.warn('Anti-Gravity Billing: ⏳ Pending purchase still failing, will retry later', {
+                        console.warn(`Anti-Gravity Billing: ⏳ Pending purchase not yet confirmed (${outcome}), will retry later`, {
                             transactionId: purchase.transactionId,
                             age: Date.now() - (purchase.addedAt || 0)
                         });

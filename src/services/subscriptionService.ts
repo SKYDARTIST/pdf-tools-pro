@@ -320,6 +320,25 @@ export const upgradeTier = (tier: SubscriptionTier, purchaseToken?: string): voi
     syncUsageToServer(subscription);
 };
 
+/**
+ * LOCAL-ONLY revert of an optimistic Lifetime grant back to Free.
+ * Unlike upgradeTier(), this does NOT call syncUsageToServer — it must never push a downgrade
+ * to the server. Used when a purchase is PENDING (server hasn't confirmed payment): drop the
+ * optimistic local Pro state, leave the server untouched. When the payment clears, the normal
+ * verify path re-grants Lifetime.
+ */
+export const revertOptimisticTier = (): void => {
+    const subscription = getSubscription();
+    subscription.tier = SubscriptionTier.FREE;
+    subscription.purchaseToken = undefined;
+    saveSubscription(subscription); // local-only: localStorage write + 'subscription-updated' event. No server sync.
+    try {
+        TaskLimitManager.clearCache(); // re-derive Pro=false immediately (avoid the 5s stale cache window)
+    } catch (e) {
+        console.warn('Anti-Gravity Subscription: TaskLimitManager cache clear failed', e);
+    }
+};
+
 // Unlimited limits
 export const getCurrentLimits = () => {
     return {
