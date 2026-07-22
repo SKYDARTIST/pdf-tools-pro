@@ -14,8 +14,25 @@ const PullToRefresh: React.FC<PullToRefreshProps> = ({ onRefresh, children }) =>
     const containerRef = useRef<HTMLDivElement>(null);
     const startY = useRef(0);
 
+    /**
+     * The app scrolls inside <main className="overflow-y-auto">, not the window,
+     * so window.scrollY is permanently 0 and can't tell us whether we're at the
+     * top. Walk up to the real scrolling ancestor and ask it instead.
+     */
+    const isAtTop = (): boolean => {
+        let node: HTMLElement | null = containerRef.current;
+        while (node) {
+            const overflowY = window.getComputedStyle(node).overflowY;
+            if (overflowY === 'auto' || overflowY === 'scroll') {
+                return node.scrollTop <= 0;
+            }
+            node = node.parentElement;
+        }
+        return window.scrollY === 0;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
-        if (window.scrollY === 0) {
+        if (isAtTop()) {
             startY.current = e.touches[0].pageY;
         } else {
             startY.current = -1;
