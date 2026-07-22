@@ -26,13 +26,6 @@ interface State {
  * user can navigate to another tool instead of restarting.
  */
 class ErrorBoundary extends React.Component<Props, State> {
-    // This project has no @types/react installed, so React (and therefore
-    // React.Component) is `any` and the inherited members are invisible to TS.
-    // Declared here so the class type-checks; no runtime effect, since
-    // useDefineForClassFields is false and these have no initializers.
-    declare props: Props;
-    declare setState: (state: Partial<State>) => void;
-
     state: State = { hasError: false, message: '' };
 
     static getDerivedStateFromError(error: Error): State {
