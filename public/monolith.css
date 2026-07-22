@@ -72,6 +72,23 @@ body {
     transition-duration: 0s !important;
 }
 
+/* Android WebView Optimizations - Drop the inactive background layer.
+   opacity: 0 does not stop an element being painted and composited, so the
+   theme's unused full-screen gradient pair was costing every frame. The
+   crossfade this would break is already disabled above on Android, so
+   removing the layer outright is visually identical here. Web keeps both
+   layers and the fade. */
+.is-android:not(.dark) #bg-dark,
+.is-android.dark #bg-light {
+    display: none;
+}
+
+/* will-change permanently promotes a layer to GPU memory. Worth it only
+   while something actually animates, and on Android nothing does. */
+.is-android .neural-background {
+    will-change: auto;
+}
+
 /* Hide scrollbars for app-like behavior */
 ::-webkit-scrollbar {
     display: none;

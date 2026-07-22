@@ -331,6 +331,14 @@ const ScannerScreen: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      // Full-bleed camera UI: the close button sits in the top row and the
+      // capture controls in the bottom one, both of which land under the system
+      // bars once Android 16 forces edge-to-edge. Insetting the container keeps
+      // the black backdrop full-screen while moving the controls clear.
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
       className="fixed inset-0 z-[100] bg-black flex flex-col"
     >
       {/* Header */}

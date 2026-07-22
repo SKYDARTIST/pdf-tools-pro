@@ -97,6 +97,49 @@ const ImageToPdfScreen: React.FC = () => {
     setItems(prev => prev.filter(f => f.id !== id));
   };
 
+  // PREVIEW URLS: these used to be created inline in JSX, which allocated a new
+  // blob URL for every item on every render and never revoked any of them.
+  // Reorder.Group re-renders each frame of a drag, so a single drag gesture
+  // could leak hundreds of full-size images. Cache one URL per item id instead
+  // — reordering changes order, not ids, so the cache stays stable.
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const previewUrlsRef = React.useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    const next = { ...previewUrlsRef.current };
+    let changed = false;
+
+    for (const item of items) {
+      if (!next[item.id]) {
+        next[item.id] = URL.createObjectURL(item.file);
+        changed = true;
+      }
+    }
+
+    for (const id of Object.keys(next)) {
+      if (!items.some(item => item.id === id)) {
+        URL.revokeObjectURL(next[id]);
+        delete next[id];
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      previewUrlsRef.current = next;
+      setPreviewUrls(next);
+    }
+  }, [items]);
+
+  // Release everything still held when leaving the screen.
+  useEffect(() => {
+    return () => {
+      for (const id of Object.keys(previewUrlsRef.current)) {
+        URL.revokeObjectURL(previewUrlsRef.current[id]);
+      }
+      previewUrlsRef.current = {};
+    };
+  }, []);
+
   const handleConvert = async () => {
     if (items.length === 0) return;
 
@@ -216,11 +259,13 @@ const ImageToPdfScreen: React.FC = () => {
               <GripVertical size={16} className="text-slate-300 group-active:text-rose-500" />
 
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-100 border border-slate-100">
-                <img
-                  src={URL.createObjectURL(item.file)}
-                  alt="preview"
-                  className="w-full h-full object-cover"
-                />
+                {previewUrls[item.id] && (
+                  <img
+                    src={previewUrls[item.id]}
+                    alt="preview"
+                    className="w-full h-full object-cover"
+                  />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">

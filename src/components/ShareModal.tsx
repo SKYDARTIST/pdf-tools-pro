@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Link2, Download, Share2, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { X, Mail, Download, Share2 } from 'lucide-react';
 import { downloadFile } from '@/services/downloadService';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface ShareModalProps {
     isOpen: boolean;
@@ -19,7 +19,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
     fileData,
     fileType
 }) => {
-    const [copied, setCopied] = useState(false);
+    useBackButton(() => { onClose(); return true; }, isOpen);
 
     const handleWebShare = async () => {
         try {
@@ -55,20 +55,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
         }, 100);
     };
 
-    const handleCopyLink = async () => {
-        // Create a temporary blob URL
-        const blob = new Blob([fileData], { type: fileType });
-        const url = window.URL.createObjectURL(blob);
-
-        try {
-            await navigator.clipboard.writeText(url);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    };
-
     const handleDownload = async () => {
         const blob = new Blob([fileData], { type: fileType });
         await downloadFile(blob, fileName);
@@ -84,6 +70,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
+                        // Bottom sheet sits flush on the screen edge, i.e. over the
+                        // gesture pill once Android 16 forces edge-to-edge.
+                        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
                     >
                         {/* Modal */}
@@ -118,7 +107,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
                             </div>
 
                             {/* Share Options */}
-                            <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="grid grid-cols-3 gap-3 mb-4">
                                 {/* Web Share */}
                                 <button
                                     onClick={handleWebShare}
@@ -138,21 +127,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
                                     <Mail size={24} className="text-blue-600 dark:text-blue-400" />
                                     <span className="text-xs font-bold text-blue-700 dark:text-blue-300">
                                         Email
-                                    </span>
-                                </button>
-
-                                {/* Copy Link */}
-                                <button
-                                    onClick={handleCopyLink}
-                                    className="flex flex-col items-center gap-2 p-4 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 rounded-2xl transition-colors border border-emerald-200 dark:border-emerald-500/20"
-                                >
-                                    {copied ? (
-                                        <Check size={24} className="text-emerald-600 dark:text-emerald-400" />
-                                    ) : (
-                                        <Copy size={24} className="text-emerald-600 dark:text-emerald-400" />
-                                    )}
-                                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                                        {copied ? 'Copied!' : 'Copy Link'}
                                     </span>
                                 </button>
 

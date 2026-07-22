@@ -306,7 +306,13 @@ const MergeScreen: React.FC = () => {
 
         {/* Progress Indicator */}
         {isProcessing && progress > 0 && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
+          <div
+            style={{
+              paddingTop: 'env(safe-area-inset-top, 0px)',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center"
+          >
             <div className="bg-white dark:bg-[#1a1a1a] rounded-[32px] p-8 border border-slate-200 dark:border-[#2a2a2a]">
               <ProgressIndicator
                 progress={progress}

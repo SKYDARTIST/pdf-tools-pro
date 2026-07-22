@@ -612,7 +612,13 @@ Analyze the provided document text and return ONLY the indented list structure.`
             {/* Login Required Modal */}
             <AnimatePresence>
                 {showLoginPrompt && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+                    <div
+                        style={{
+                            paddingTop: 'env(safe-area-inset-top, 0px)',
+                            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                        }}
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+                    >
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Headphones, FileText, Settings2, Zap } from 'lucide-react';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface BriefingSettings {
     range: string;
@@ -16,6 +17,8 @@ interface BriefingSettingsModalProps {
 }
 
 const BriefingSettingsModal: React.FC<BriefingSettingsModalProps> = ({ isOpen, onClose, onConfirm, numPages }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const [range, setRange] = useState(`1-${Math.min(numPages, 10)}`);
     const [focus, setFocus] = useState('');
 
@@ -23,7 +26,13 @@ const BriefingSettingsModal: React.FC<BriefingSettingsModalProps> = ({ isOpen, o
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+            <div
+                style={{
+                    paddingTop: 'env(safe-area-inset-top, 0px)',
+                    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                }}
+                className="fixed inset-0 z-[100] flex items-center justify-center px-6"
+            >
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

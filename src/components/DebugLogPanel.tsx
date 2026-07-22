@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Copy, Trash2, RefreshCcw } from 'lucide-react';
 import { getLogs, clearLogs, getLogsAsText } from '@/services/persistentLogService';
 import TaskLimitManager from '@/utils/TaskLimitManager';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface DebugLogPanelProps {
     isOpen: boolean;
@@ -9,6 +10,8 @@ interface DebugLogPanelProps {
 }
 
 const DebugLogPanel: React.FC<DebugLogPanelProps> = ({ isOpen, onClose }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const [logs, setLogs] = useState<any[]>([]);
     const [copied, setCopied] = useState(false);
 
@@ -48,7 +51,10 @@ const DebugLogPanel: React.FC<DebugLogPanelProps> = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end">
+        <div
+            style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end"
+        >
             <div className="w-full max-h-[80vh] bg-gray-900 border-t border-gray-700 flex flex-col rounded-t-2xl">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-700">

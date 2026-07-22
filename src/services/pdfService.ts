@@ -35,10 +35,13 @@ const downsizeImage = async (file: File, maxSize: number = 4000): Promise<ArrayB
       canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
+        releaseSource();
         reject(new Error("Canvas context failed"));
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
+      // Pixels now live in the canvas; the source URL is no longer needed.
+      releaseSource();
 
       canvas.toBlob((blob) => {
         if (!blob) {
@@ -48,8 +51,22 @@ const downsizeImage = async (file: File, maxSize: number = 4000): Promise<ArrayB
         blob.arrayBuffer().then(resolve).catch(reject);
       }, 'image/jpeg', 0.92);
     };
-    img.onerror = () => reject(new Error("Failed to load image for downsizing"));
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => {
+      releaseSource();
+      reject(new Error("Failed to load image for downsizing"));
+    };
+
+    // Held in a closure so every exit path can revoke it exactly once —
+    // this URL was previously never released, leaking one full image per call.
+    const sourceUrl = URL.createObjectURL(file);
+    let released = false;
+    function releaseSource() {
+      if (released) return;
+      released = true;
+      URL.revokeObjectURL(sourceUrl);
+    }
+
+    img.src = sourceUrl;
   });
 };
 

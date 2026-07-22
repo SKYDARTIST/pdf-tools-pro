@@ -62,6 +62,9 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { getCurrentUser } from '@/services/googleAuthService';
 import { App as CapApp } from '@capacitor/app';
 import Analytics from '@/services/analyticsService';
+import { runBackInterceptors } from '@/hooks/useBackButton';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import ScreenSkeleton from '@/components/ScreenSkeleton';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -247,31 +250,76 @@ const App: React.FC = () => {
 
 
 
-  // PERFORMANCE: Throttled mouse/touch tracking to prevent excessive reflows
+  // ANDROID BACK BUTTON: Capacitor only runs its own back handling when nobody
+  // is listening, so registering here means we own it entirely. Without this
+  // listener the default does nothing at all once canGoBack() is false — i.e.
+  // back was a dead key on the root screen and the app could not be exited.
+  //
+  // Refs keep the listener registered exactly once while still seeing the
+  // current route; re-registering on every navigation would drop presses.
+  const locationRef = React.useRef(location);
+  locationRef.current = location;
+  const navigateRef = React.useRef(navigate);
+  navigateRef.current = navigate;
+
   React.useEffect(() => {
-    let lastUpdate = 0;
-    const throttleMs = 16; // Max 60fps (1000ms / 60fps = 16.67ms)
+    if (!Capacitor.isNativePlatform()) return;
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      const now = Date.now();
-      if (now - lastUpdate < throttleMs) return; // Skip if too soon
-      lastUpdate = now;
+    const listenerPromise = CapApp.addListener('backButton', () => {
+      // 1. Give open surfaces (modals, sheets) first refusal.
+      if (runBackInterceptors()) return;
 
-      const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      document.documentElement.style.setProperty('--mouse-x', `${x}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${y}px`);
-    };
+      // 2. 'default' is the key React Router assigns to the first entry of the
+      //    session. Deep links land there with no history behind them, so
+      //    navigate(-1) would silently do nothing and feel frozen.
+      if (locationRef.current.key === 'default') {
+        CapApp.exitApp();
+        return;
+      }
 
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchstart', handleMove);
-    window.addEventListener('touchmove', handleMove);
+      // 3. Normal in-app back. Uses router history rather than webView.goBack()
+      //    so PDF iframes can't swallow the press.
+      navigateRef.current(-1);
+    });
 
     return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchstart', handleMove);
-      window.removeEventListener('touchmove', handleMove);
+      listenerPromise
+        .then(handle => handle.remove())
+        .catch(e => console.warn('App: Failed to remove backButton listener:', e));
     };
+  }, []);
+
+  // POINTER GLOW: --mouse-x/--mouse-y drive three radial gradients — the two
+  // full-screen .neural-background layers and .monolith-card::after. Updating
+  // them repaints all of that, so it must never run on touch: a finger covers
+  // the glow point, meaning mobile paid a full-screen repaint per frame of
+  // every scroll and drag for an effect nobody could see.
+  //
+  // Mouse only. On touch the variables keep their monolith.css defaults
+  // (50%/50%), so the gradient still renders, just centred.
+  React.useEffect(() => {
+    if (Capacitor.isNativePlatform() || window.matchMedia('(hover: none)').matches) return;
+
+    let queued = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    const handleMove = (e: MouseEvent) => {
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (queued) return;
+      queued = true;
+      // rAF instead of a timestamp throttle: writes land once per frame,
+      // aligned with paint, rather than up to a frame early or late.
+      requestAnimationFrame(() => {
+        queued = false;
+        document.documentElement.style.setProperty('--mouse-x', `${lastX}px`);
+        document.documentElement.style.setProperty('--mouse-y', `${lastY}px`);
+      });
+    };
+
+    window.addEventListener('mousemove', handleMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMove);
   }, []);
 
   // 5-tap to open debug logs (prevents accidental triggers)
@@ -364,7 +412,8 @@ const App: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.1, ease: "linear" }}
             >
-              <Suspense fallback={null}>
+              <ErrorBoundary resetKey={location.pathname}>
+              <Suspense fallback={<ScreenSkeleton />}>
                 <Routes location={location}>
                   <Route path="/" element={shouldShowOnboarding ? <OnboardingScreen /> : <LandingPage />} />
                   <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -406,6 +455,7 @@ const App: React.FC = () => {
                   <Route path="/admin/payments" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </PullToRefresh>

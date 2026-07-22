@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Crown, Zap, AlertCircle, Loader2, Shield, Star } from 'lucide-react';
 import { getSubscription, SubscriptionTier, AiBlockMode } from '@/services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface AiLimitModalProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
     onClose,
     blockMode
 }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const navigate = useNavigate();
     const subscription = getSubscription();
 
@@ -57,6 +60,10 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                         initial={{ opacity: 0, scale: 0.9, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                        style={{
+                            paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+                            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+                        }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
                     >
                         <div className="relative w-full max-w-sm bg-white dark:bg-[#050505] rounded-[48px] overflow-hidden border border-white/10 shadow-2xl flex flex-col">
