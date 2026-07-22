@@ -274,20 +274,26 @@ const NeuralAssistant: React.FC = () => {
                 )}
             </AnimatePresence>
 
+            {/* Breathing glow, rendered as its own layer.
+                This used to animate boxShadow on the button itself. box-shadow
+                cannot be GPU-composited, so it repainted the button and the area
+                behind it every frame — forever, on every screen, since this
+                button is mounted app-wide. Animating opacity on a separate
+                blurred layer is composited on the GPU and looks the same. */}
+            {!isOpen && (
+                <motion.div
+                    aria-hidden="true"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 1, 0] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                    className="pointer-events-none absolute inset-0 rounded-3xl bg-emerald-500/30 blur-xl"
+                />
+            )}
+
             {/* Toggle Button with Breathing Pulse (PERFORMANCE: Only animate when closed) */}
             <motion.button
                 initial={false}
-                animate={!isOpen ? {
-                    scale: [1, 1.05, 1],
-                    boxShadow: [
-                        "0 16px 32px -12px rgba(0,0,0,0.5)",
-                        "0 16px 48px -12px rgba(16, 185, 129, 0.3)",
-                        "0 16px 32px -12px rgba(0,0,0,0.5)"
-                    ]
-                } : {
-                    scale: 1,
-                    boxShadow: "0 16px 32px -12px rgba(0,0,0,0.5)"
-                }}
+                animate={!isOpen ? { scale: [1, 1.05, 1] } : { scale: 1 }}
                 transition={!isOpen ? {
                     repeat: Infinity,
                     duration: 4,
