@@ -73,6 +73,10 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={handleClose}
+                        style={{
+                            paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))',
+                            paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+                        }}
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
                     >
                         {/* Modal */}

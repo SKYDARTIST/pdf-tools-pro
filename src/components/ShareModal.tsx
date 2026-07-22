@@ -70,6 +70,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
+                        // Bottom sheet sits flush on the screen edge, i.e. over the
+                        // gesture pill once Android 16 forces edge-to-edge.
+                        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
                         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
                     >
                         {/* Modal */}

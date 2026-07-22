@@ -60,6 +60,10 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
                         initial={{ opacity: 0, scale: 0.9, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                        style={{
+                            paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+                            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+                        }}
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
                     >
                         <div className="relative w-full max-w-sm bg-white dark:bg-[#050505] rounded-[48px] overflow-hidden border border-white/10 shadow-2xl flex flex-col">

@@ -42,6 +42,10 @@ const AIReportModal: React.FC<AIReportModalProps> = ({ isOpen, onClose, contentI
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        style={{
+                            paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))',
+                            paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
+                        }}
                         className="fixed inset-0 z-[101] flex items-center justify-center p-6 pointer-events-none"
                     >
                         <div className="relative w-full max-w-sm bg-white dark:bg-[#0a0a0a] rounded-[40px] overflow-hidden border border-black/5 dark:border-white/5 shadow-2xl pointer-events-auto">

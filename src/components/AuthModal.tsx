@@ -111,6 +111,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        style={{
+                            paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+                            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+                        }}
                         className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                     >
                         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-sm w-full p-6">

@@ -631,6 +631,10 @@ const PricingScreen: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            style={{
+                paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+                paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+            }}
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
           >
             <motion.div
