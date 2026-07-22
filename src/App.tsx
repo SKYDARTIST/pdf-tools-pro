@@ -64,6 +64,7 @@ import { App as CapApp } from '@capacitor/app';
 import Analytics from '@/services/analyticsService';
 import { runBackInterceptors } from '@/hooks/useBackButton';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import ScreenSkeleton from '@/components/ScreenSkeleton';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -406,7 +407,7 @@ const App: React.FC = () => {
               transition={{ duration: 0.1, ease: "linear" }}
             >
               <ErrorBoundary resetKey={location.pathname}>
-              <Suspense fallback={null}>
+              <Suspense fallback={<ScreenSkeleton />}>
                 <Routes location={location}>
                   <Route path="/" element={shouldShowOnboarding ? <OnboardingScreen /> : <LandingPage />} />
                   <Route path="/onboarding" element={<OnboardingScreen />} />
