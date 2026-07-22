@@ -63,6 +63,7 @@ import { getCurrentUser } from '@/services/googleAuthService';
 import { App as CapApp } from '@capacitor/app';
 import Analytics from '@/services/analyticsService';
 import { runBackInterceptors } from '@/hooks/useBackButton';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -404,6 +405,7 @@ const App: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.1, ease: "linear" }}
             >
+              <ErrorBoundary resetKey={location.pathname}>
               <Suspense fallback={null}>
                 <Routes location={location}>
                   <Route path="/" element={shouldShowOnboarding ? <OnboardingScreen /> : <LandingPage />} />
@@ -446,6 +448,7 @@ const App: React.FC = () => {
                   <Route path="/admin/payments" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </PullToRefresh>
