@@ -13,8 +13,26 @@ const ViewScreen: React.FC = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractProgress, setExtractProgress] = useState(0);
 
+  // The blob URL backing the <iframe> was never revoked, so every PDF opened
+  // stayed resident for the life of the app. Track it so it can be released
+  // when replaced and when leaving the screen.
+  const pdfUrlRef = React.useRef<string | null>(null);
+
+  const setDocumentUrl = (url: string | null) => {
+    if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+    pdfUrlRef.current = url;
+    setPdfUrl(url);
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+      pdfUrlRef.current = null;
+    };
+  }, []);
+
   const resetDocument = () => {
-    setPdfUrl(null);
+    setDocumentUrl(null);
     setExtractedText('');
     setIsExtracting(false);
     setExtractProgress(0);
@@ -29,7 +47,7 @@ const ViewScreen: React.FC = () => {
         const blob = new Blob([arrayBuffer], { type: f.type });
         const freshFile = new File([blob], f.name, { type: f.type });
         setFileName(freshFile.name);
-        setPdfUrl(URL.createObjectURL(freshFile));
+        setDocumentUrl(URL.createObjectURL(freshFile));
 
         // Pull the REAL document text so the Neural Hub answers about this file.
         // extractTextFromPdf copies the buffer internally and returns '' on failure.
