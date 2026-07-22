@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Flag, AlertTriangle, CheckCircle, Send } from 'lucide-react';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface AIReportModalProps {
     isOpen: boolean;
@@ -9,6 +10,8 @@ interface AIReportModalProps {
 }
 
 const AIReportModal: React.FC<AIReportModalProps> = ({ isOpen, onClose, contentId }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const [step, setStep] = useState<'form' | 'success'>('form');
     const [reason, setReason] = useState('');
 

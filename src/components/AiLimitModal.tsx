@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Crown, Zap, AlertCircle, Loader2, Shield, Star } from 'lucide-react';
 import { getSubscription, SubscriptionTier, AiBlockMode } from '@/services/subscriptionService';
 import { useNavigate } from 'react-router-dom';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface AiLimitModalProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ const AiLimitModal: React.FC<AiLimitModalProps> = ({
     onClose,
     blockMode
 }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const navigate = useNavigate();
     const subscription = getSubscription();
 

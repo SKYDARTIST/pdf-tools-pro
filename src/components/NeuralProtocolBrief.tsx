@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, Headphones, Zap, CheckCircle2, Info } from 'lucide-react';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface NeuralProtocolBriefProps {
     isOpen: boolean;
@@ -10,6 +11,8 @@ interface NeuralProtocolBriefProps {
 }
 
 const NeuralProtocolBrief: React.FC<NeuralProtocolBriefProps> = ({ isOpen, onClose, type }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const content = {
         audit: {
             title: "AI Audit Guide",

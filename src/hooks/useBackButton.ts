@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Android hardware back button interception.
@@ -39,15 +39,20 @@ export const runBackInterceptors = (): boolean => {
  * @param active  Usually the modal's own open state.
  */
 export const useBackButton = (handler: BackInterceptor, active: boolean = true) => {
+    // Kept in a ref so callers can pass an inline arrow without re-registering
+    // on every render — only `active` flipping should touch the stack.
+    const handlerRef = useRef(handler);
+    handlerRef.current = handler;
+
     useEffect(() => {
         if (!active) return;
 
-        interceptors.push(handler);
+        const interceptor: BackInterceptor = () => handlerRef.current();
+        interceptors.push(interceptor);
+
         return () => {
-            const idx = interceptors.lastIndexOf(handler);
+            const idx = interceptors.lastIndexOf(interceptor);
             if (idx !== -1) interceptors.splice(idx, 1);
         };
-        // `handler` is intentionally in deps: an inline arrow re-registers each
-        // render, which is cheap (array push/splice) and keeps the closure fresh.
-    }, [handler, active]);
+    }, [active]);
 };

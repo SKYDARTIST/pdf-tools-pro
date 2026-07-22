@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shield, Cpu, Zap, ArrowRight, EyeOff } from 'lucide-react';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface AIOptInModalProps {
     isOpen: boolean;
@@ -9,6 +10,8 @@ interface AIOptInModalProps {
 }
 
 const AIOptInModal: React.FC<AIOptInModalProps> = ({ isOpen, onClose, onAccept }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     return (
         <AnimatePresence>
             {isOpen && (

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Download, Share2 } from 'lucide-react';
 import { downloadFile } from '@/services/downloadService';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface ShareModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
     fileData,
     fileType
 }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const handleWebShare = async () => {
         try {
             // Create a File object from Uint8Array

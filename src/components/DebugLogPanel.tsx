@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Copy, Trash2, RefreshCcw } from 'lucide-react';
 import { getLogs, clearLogs, getLogsAsText } from '@/services/persistentLogService';
 import TaskLimitManager from '@/utils/TaskLimitManager';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface DebugLogPanelProps {
     isOpen: boolean;
@@ -9,6 +10,8 @@ interface DebugLogPanelProps {
 }
 
 const DebugLogPanel: React.FC<DebugLogPanelProps> = ({ isOpen, onClose }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const [logs, setLogs] = useState<any[]>([]);
     const [copied, setCopied] = useState(false);
 

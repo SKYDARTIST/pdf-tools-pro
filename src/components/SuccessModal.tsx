@@ -7,6 +7,7 @@ import ProNudgeBanner from '@/components/ProNudgeBanner';
 import Analytics from '@/services/analyticsService';
 import FileHistoryManager from '@/utils/FileHistoryManager';
 import { getSubscription, SubscriptionTier } from '@/services/subscriptionService';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface SuccessModalProps {
     isOpen: boolean;
@@ -35,6 +36,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
     metadata,
     onDownload
 }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const subscription = getSubscription();
     const uniqueToolsUsed = FileHistoryManager.getUniqueToolsUsedCount();
     const showProgressNudge = subscription.tier === SubscriptionTier.FREE && uniqueToolsUsed >= 3;

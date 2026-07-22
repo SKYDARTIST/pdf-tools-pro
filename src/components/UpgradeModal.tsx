@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import TaskLimitManager from '@/utils/TaskLimitManager';
 import { upgradeTier, SubscriptionTier } from '@/services/subscriptionService';
 import BillingService from '@/services/billingService';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface UpgradeModalProps {
     isOpen: boolean;
@@ -17,6 +18,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
     onClose,
     reason = 'upgrade_prompt'
 }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const navigate = useNavigate();
     const remaining = TaskLimitManager.getRemainingTasks();
     const limit = TaskLimitManager.getDailyLimit();

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, GitBranch, Layout, FileText, Settings2, Sparkles } from 'lucide-react';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface MindMapSettings {
     range: string;
@@ -16,6 +17,8 @@ interface MindMapSettingsModalProps {
 }
 
 const MindMapSettingsModal: React.FC<MindMapSettingsModalProps> = ({ isOpen, onClose, onConfirm, numPages }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const [range, setRange] = useState(`1-${Math.min(numPages, 10)}`);
     const [focus, setFocus] = useState('');
 

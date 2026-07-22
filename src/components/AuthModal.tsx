@@ -6,6 +6,7 @@ import { getFriendlyErrorMessage } from '@/utils/errorMapping';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateCodeVerifier, generateCodeChallenge } from '@/services/pkce';
 import { Browser } from '@capacitor/browser';
+import { useBackButton } from '@/hooks/useBackButton';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -22,6 +23,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     title = 'Sign In for Pro & Neural Access',
     message = 'Your AI access and subscription sync across devices when you sign in'
 }) => {
+    useBackButton(() => { onClose(); return true; }, isOpen);
+
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
 
