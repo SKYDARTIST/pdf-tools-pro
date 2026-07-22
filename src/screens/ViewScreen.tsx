@@ -1,14 +1,24 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, FileUp, X, ChevronLeft, ChevronRight, Maximize, ZoomIn } from 'lucide-react';
+import { Eye, FileUp, X, ChevronLeft, ChevronRight, Maximize, ZoomIn, Loader2, ShieldAlert } from 'lucide-react';
 import AIAssistant from '@/components/AIAssistant';
 import ToolGuide from '@/components/ToolGuide';
+import { extractTextFromPdf } from '@/utils/pdfExtractor';
 
 const ViewScreen: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const [extractedText, setExtractedText] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractProgress, setExtractProgress] = useState(0);
+
+  const resetDocument = () => {
+    setPdfUrl(null);
+    setExtractedText('');
+    setIsExtracting(false);
+    setExtractProgress(0);
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -20,9 +30,18 @@ const ViewScreen: React.FC = () => {
         const freshFile = new File([blob], f.name, { type: f.type });
         setFileName(freshFile.name);
         setPdfUrl(URL.createObjectURL(freshFile));
-        setExtractedText("This is a sample document about modern PDF management. It details security, merging techniques, and digital signatures. It explains that 'XREF Tables' are a legacy structure of PDFs.");
+
+        // Pull the REAL document text so the Neural Hub answers about this file.
+        // extractTextFromPdf copies the buffer internally and returns '' on failure.
+        setExtractedText('');
+        setExtractProgress(0);
+        setIsExtracting(true);
+        const text = await extractTextFromPdf(arrayBuffer, undefined, undefined, (p) => setExtractProgress(p));
+        setExtractedText(text);
+        setIsExtracting(false);
       } catch (err) {
         console.error('Failed to read file:', f.name, err);
+        setIsExtracting(false);
         alert('Failed to read file. Please try again.');
       }
     }
@@ -85,7 +104,7 @@ const ViewScreen: React.FC = () => {
               </div>
               <div className="flex gap-2">
                 <button className="p-3 text-gray-400 hover:text-black dark:hover:text-white transition-colors"><ZoomIn size={20} /></button>
-                <button onClick={() => { setPdfUrl(null); setExtractedText(''); }} className="p-3 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"><X size={20} /></button>
+                <button onClick={resetDocument} className="p-3 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"><X size={20} /></button>
               </div>
             </motion.div>
 
@@ -110,7 +129,25 @@ const ViewScreen: React.FC = () => {
         {pdfUrl && (
           <div className="space-y-6">
             <div className="text-technical ml-1">Neural Hub</div>
-            <AIAssistant contextText={extractedText} />
+
+            {isExtracting ? (
+              <div className="monolith-card p-6 flex items-center gap-4 border-none shadow-xl">
+                <Loader2 size={20} className="animate-spin text-gray-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white">Reading document</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{extractProgress}% analysed</p>
+                </div>
+              </div>
+            ) : extractedText ? (
+              <AIAssistant contextText={extractedText} />
+            ) : (
+              <div className="monolith-card p-6 flex items-center gap-4 border-none shadow-xl">
+                <ShieldAlert size={20} className="text-amber-500 shrink-0" />
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
+                  No readable text in this PDF — it looks like a scan. Use Scanner to digitise it first.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
