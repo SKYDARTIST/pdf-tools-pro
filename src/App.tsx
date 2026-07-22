@@ -62,6 +62,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { getCurrentUser } from '@/services/googleAuthService';
 import { App as CapApp } from '@capacitor/app';
 import Analytics from '@/services/analyticsService';
+import { runBackInterceptors } from '@/hooks/useBackButton';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -246,6 +247,45 @@ const App: React.FC = () => {
 
 
 
+
+  // ANDROID BACK BUTTON: Capacitor only runs its own back handling when nobody
+  // is listening, so registering here means we own it entirely. Without this
+  // listener the default does nothing at all once canGoBack() is false — i.e.
+  // back was a dead key on the root screen and the app could not be exited.
+  //
+  // Refs keep the listener registered exactly once while still seeing the
+  // current route; re-registering on every navigation would drop presses.
+  const locationRef = React.useRef(location);
+  locationRef.current = location;
+  const navigateRef = React.useRef(navigate);
+  navigateRef.current = navigate;
+
+  React.useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const listenerPromise = CapApp.addListener('backButton', () => {
+      // 1. Give open surfaces (modals, sheets) first refusal.
+      if (runBackInterceptors()) return;
+
+      // 2. 'default' is the key React Router assigns to the first entry of the
+      //    session. Deep links land there with no history behind them, so
+      //    navigate(-1) would silently do nothing and feel frozen.
+      if (locationRef.current.key === 'default') {
+        CapApp.exitApp();
+        return;
+      }
+
+      // 3. Normal in-app back. Uses router history rather than webView.goBack()
+      //    so PDF iframes can't swallow the press.
+      navigateRef.current(-1);
+    });
+
+    return () => {
+      listenerPromise
+        .then(handle => handle.remove())
+        .catch(e => console.warn('App: Failed to remove backButton listener:', e));
+    };
+  }, []);
 
   // PERFORMANCE: Throttled mouse/touch tracking to prevent excessive reflows
   React.useEffect(() => {
