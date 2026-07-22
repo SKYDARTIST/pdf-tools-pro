@@ -289,31 +289,37 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // PERFORMANCE: Throttled mouse/touch tracking to prevent excessive reflows
+  // POINTER GLOW: --mouse-x/--mouse-y drive three radial gradients — the two
+  // full-screen .neural-background layers and .monolith-card::after. Updating
+  // them repaints all of that, so it must never run on touch: a finger covers
+  // the glow point, meaning mobile paid a full-screen repaint per frame of
+  // every scroll and drag for an effect nobody could see.
+  //
+  // Mouse only. On touch the variables keep their monolith.css defaults
+  // (50%/50%), so the gradient still renders, just centred.
   React.useEffect(() => {
-    let lastUpdate = 0;
-    const throttleMs = 16; // Max 60fps (1000ms / 60fps = 16.67ms)
+    if (Capacitor.isNativePlatform() || window.matchMedia('(hover: none)').matches) return;
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      const now = Date.now();
-      if (now - lastUpdate < throttleMs) return; // Skip if too soon
-      lastUpdate = now;
+    let queued = false;
+    let lastX = 0;
+    let lastY = 0;
 
-      const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const y = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      document.documentElement.style.setProperty('--mouse-x', `${x}px`);
-      document.documentElement.style.setProperty('--mouse-y', `${y}px`);
+    const handleMove = (e: MouseEvent) => {
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (queued) return;
+      queued = true;
+      // rAF instead of a timestamp throttle: writes land once per frame,
+      // aligned with paint, rather than up to a frame early or late.
+      requestAnimationFrame(() => {
+        queued = false;
+        document.documentElement.style.setProperty('--mouse-x', `${lastX}px`);
+        document.documentElement.style.setProperty('--mouse-y', `${lastY}px`);
+      });
     };
 
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchstart', handleMove);
-    window.addEventListener('touchmove', handleMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchstart', handleMove);
-      window.removeEventListener('touchmove', handleMove);
-    };
+    window.addEventListener('mousemove', handleMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMove);
   }, []);
 
   // 5-tap to open debug logs (prevents accidental triggers)
