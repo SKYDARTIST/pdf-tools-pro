@@ -13,8 +13,29 @@ const EMAIL_SERVICE = process.env.EMAIL_SERVICE || 'resend'; // 'resend' or 'sen
 // The client re-verifies a pending purchase every ~30s; without this we'd email on every retry.
 // We notify the owner at most once per transaction per warm instance; retries log only.
 // Cold starts may re-notify once (acceptable — far better than per-retry spam).
-const pendingNotifiedTxns = new Map(); // transactionId -> firstNotifiedAt (ms)
+const pendingNotifiedTxns = new Map(); // token hash -> firstNotifiedAt (ms)
 const PENDING_NOTIFY_PRUNE_MS = 24 * 60 * 60 * 1000; // drop entries older than 24h to bound memory
+const failedPaymentAlertUntil = new Map();
+const FAILURE_ACCOUNT_COOLDOWN_MS = 60 * 60 * 1000;
+
+function billingHash(value) {
+    return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function reserveFailureAlert(tokenHash, accountHash, now) {
+    const tokenKey = `token:${tokenHash}`;
+    const accountKey = `account:${accountHash}`;
+    for (const [key, until] of failedPaymentAlertUntil) {
+        if (until <= now) failedPaymentAlertUntil.delete(key);
+    }
+    if (failedPaymentAlertUntil.has(tokenKey) || failedPaymentAlertUntil.has(accountKey) ||
+        failedPaymentAlertUntil.size >= 4096) return null;
+
+    failedPaymentAlertUntil.set(tokenKey, now + PENDING_NOTIFY_PRUNE_MS);
+    failedPaymentAlertUntil.set(accountKey, now + FAILURE_ACCOUNT_COOLDOWN_MS);
+    // Keep the email key and payload stable across Vercel instances.
+    return `payment-failed/${accountHash}/${Math.floor(now / FAILURE_ACCOUNT_COOLDOWN_MS)}`;
+}
 
 /**
  * Send payment notification email to owner
@@ -34,7 +55,7 @@ async function sendPaymentNotification(eventType, data) {
             htmlContent = `
                 <h2 style="color: #10b981;">✅ Payment Successful</h2>
                 <p><strong>Product:</strong> Lifetime Pro Access</p>
-                <p><strong>Transaction ID:</strong> <code>${data.transactionId}</code></p>
+                <p><strong>Purchase reference:</strong> <code>${data.purchaseReference}</code></p>
                 <p><strong>Device ID:</strong> <code>${data.deviceId}</code></p>
                 <p><strong>User ID:</strong> ${data.googleUid || 'Anonymous'}</p>
                 <p><strong>Amount:</strong> Lifetime Access (One-time)</p>
@@ -45,36 +66,28 @@ async function sendPaymentNotification(eventType, data) {
                 </p>
             `;
         } else if (eventType === 'payment_failed') {
-            subject = `⚠️ Payment Verification Failed: Manual Review Needed`;
+            subject = 'Google Play purchase could not be verified';
             htmlContent = `
-                <h2 style="color: #ef4444;">❌ Payment Verification Failed</h2>
+                <h2>Google Play purchase could not be verified</h2>
                 <p><strong>Product:</strong> Lifetime Pro Access</p>
-                <p><strong>Transaction ID:</strong> <code>${data.transactionId}</code></p>
-                <p><strong>Device ID:</strong> <code>${data.deviceId}</code></p>
-                <p><strong>User ID:</strong> ${data.googleUid || 'Anonymous'}</p>
-                <p><strong>Error:</strong> ${data.error}</p>
-                <p><strong>Details:</strong> ${data.details}</p>
-                <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
-                <hr>
-                <p style="color: #ef4444; font-weight: bold;">
-                    ⚠️ ACTION REQUIRED: This purchase may need manual verification.
-                    The customer's payment was processed by Google, but your server couldn't verify it.
-                </p>
-                <p>
-                    <strong>Next Steps:</strong>
-                    <ol>
-                        <li>Check Vercel logs for detailed error information</li>
-                        <li>Verify the transaction with Google Play Console</li>
-                        <li>Manually grant access if verified, or contact the customer</li>
-                    </ol>
-                </p>
+                <p><strong>Account reference:</strong> <code>${data.accountReference}</code></p>
+                <p>Payment status is unknown. This alert does not confirm a charge or a new order.</p>
+                <p>Check backend logs using the account reference. If a customer reports a charge,
+                confirm their Google Play order before taking action.</p>
+            `;
+        } else if (eventType === 'payment_audit_failed') {
+            subject = 'Verified Google Play purchase could not be recorded';
+            htmlContent = `
+                <h2>Verified Google Play purchase could not be recorded</h2>
+                <p><strong>Purchase reference:</strong> <code>${data.purchaseReference}</code></p>
+                <p>Google Play verified this purchase, but billing storage returned an error before the grant.</p>
             `;
         } else if (eventType === 'payment_pending') {
             subject = `⏳ Pending Payment Recovery: Retry Scheduled`;
             htmlContent = `
                 <h2 style="color: #f59e0b;">⏳ Payment Pending</h2>
                 <p><strong>Product:</strong> Lifetime Pro Access</p>
-                <p><strong>Transaction ID:</strong> <code>${data.transactionId}</code></p>
+                <p><strong>Purchase reference:</strong> <code>${data.purchaseReference}</code></p>
                 <p><strong>Device ID:</strong> <code>${data.deviceId}</code></p>
                 <p><strong>Pending Since:</strong> ${new Date(data.addedAt).toISOString()}</p>
                 <p><strong>Age:</strong> ${Math.round((Date.now() - data.addedAt) / 1000 / 60)} minutes</p>
@@ -88,7 +101,7 @@ async function sendPaymentNotification(eventType, data) {
 
         // Send email based on configured service
         if (EMAIL_SERVICE === 'resend') {
-            await sendViaResend(OWNER_EMAIL, subject, htmlContent);
+            await sendViaResend(OWNER_EMAIL, subject, htmlContent, data.idempotencyKey);
         } else if (EMAIL_SERVICE === 'sendgrid') {
             await sendViaSendGrid(OWNER_EMAIL, subject, htmlContent);
         } else {
@@ -96,8 +109,8 @@ async function sendPaymentNotification(eventType, data) {
         }
 
         console.log(`📧 Payment notification sent: ${eventType}`);
-    } catch (error) {
-        console.error('❌ Failed to send payment notification:', error.message);
+    } catch {
+        console.error('Failed to send payment notification:', eventType);
         // Don't block payment flow if email fails
     }
 }
@@ -105,7 +118,7 @@ async function sendPaymentNotification(eventType, data) {
 /**
  * Send email via Resend (modern email service)
  */
-async function sendViaResend(to, subject, htmlContent) {
+async function sendViaResend(to, subject, htmlContent, idempotencyKey) {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
         console.warn('⚠️ RESEND_API_KEY not configured. Install: npm install resend');
@@ -117,7 +130,8 @@ async function sendViaResend(to, subject, htmlContent) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${resendApiKey}`
+                'Authorization': `Bearer ${resendApiKey}`,
+                ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {})
             },
             body: JSON.stringify({
                 from: RESEND_FROM_EMAIL,
@@ -128,12 +142,10 @@ async function sendViaResend(to, subject, htmlContent) {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            console.error('❌ Resend API Error Details:', JSON.stringify(error, null, 2));
-            throw new Error(error.message || 'Resend API error');
+            throw new Error(`Resend API error (${response.status})`);
         }
     } catch (error) {
-        console.error('❌ Resend email failed:', error.message);
+        console.error('Resend email failed.');
         throw error;
     }
 }
@@ -230,8 +242,8 @@ const getPlayApi = async () => {
 
         playDeveloperApi = google.androidpublisher({ version: 'v3', auth });
         return playDeveloperApi;
-    } catch (e) {
-        console.error('Failed to initialize Google Play API:', e);
+    } catch {
+        console.error('Failed to initialize Google Play API.');
         return null;
     }
 };
@@ -345,10 +357,10 @@ async function validateWithGooglePlay(productId, purchaseToken) {
         }
     } catch (err) {
         const isTimeout = err.message === 'TIMEOUT' || err.name === 'AbortError';
+        const status = err.response?.status ?? err.status;
         const errorDetail = isTimeout
-            ? 'TIMEOUT: Google Play API did not respond within 15s (Vercel cold start?)'
-            : `API_ERROR: ${err.message} | Code: ${err.code || 'none'} | Status: ${err.status || 'none'} | Stack: ${(err.stack || '').split('\n')[1]?.trim() || 'none'}`;
-        console.error(`Google Play Verification Failed for ${productId}:`, errorDetail);
+            ? 'TIMEOUT: Google Play API did not respond in time'
+            : `API_ERROR: Google Play request failed | HTTP status: ${Number.isInteger(status) ? status : 'unknown'}`;
         return { valid: false, reason: errorDetail };
     }
 }
@@ -839,7 +851,6 @@ export default async function handler(req, res) {
                         hasCsrfPayload: !!csrfPayload,
                         csrfUid: csrfPayload?.uid,
                         sessionUid: googleUid,
-                        transactionId,
                         timestamp: new Date().toISOString()
                     });
                     try {
@@ -935,9 +946,11 @@ export default async function handler(req, res) {
 
                 // 4. AUTHORITATIVE VERIFICATION: Google Play API
                 // SECURITY: Strict Mode - No fallback heuristics (Issue #2 Fix)
+                const tokenHash = billingHash(typeof purchaseToken === 'string' ? purchaseToken : '');
+                const purchaseTokenFingerprint = tokenHash.slice(0, 12);
                 console.log(`🔐 api/index: Verifying purchase with Google Play...`, {
                     productId,
-                    transactionId,
+                    purchaseTokenFingerprint,
                     hasToken: !!purchaseToken,
                     userPreview: maskDeviceId(googleUid || deviceId)
                 });
@@ -950,7 +963,7 @@ export default async function handler(req, res) {
                 if (playResult.pending) {
                     console.log(`⏳ api/index: Purchase PENDING — awaiting Google confirmation (no grant)`, {
                         productId,
-                        transactionId,
+                        purchaseTokenFingerprint,
                         device: maskDeviceId(deviceId),
                         user: maskDeviceId(googleUid || 'anonymous'),
                         timestamp: new Date().toISOString()
@@ -959,20 +972,20 @@ export default async function handler(req, res) {
                     // Notify owner at most once per transaction. The client re-verifies every ~30s while
                     // pending; only the first attempt emails — retries log only (no spam, no DB needed).
                     const now = Date.now();
-                    const alreadyNotified = !transactionId || pendingNotifiedTxns.has(transactionId);
+                    const alreadyNotified = pendingNotifiedTxns.has(tokenHash);
                     if (!alreadyNotified) {
                         // Prune stale entries so the map can't grow unbounded across many transactions.
                         for (const [txn, ts] of pendingNotifiedTxns) {
                             if (now - ts > PENDING_NOTIFY_PRUNE_MS) pendingNotifiedTxns.delete(txn);
                         }
-                        pendingNotifiedTxns.set(transactionId, now);
+                        pendingNotifiedTxns.set(tokenHash, now);
                         await sendPaymentNotification('payment_pending', {
-                            transactionId,
+                            purchaseReference: purchaseTokenFingerprint,
                             deviceId: maskDeviceId(deviceId),
                             addedAt: now
                         }).catch(e => console.warn('Failed to send pending notification:', e));
                     } else {
-                        console.log(`⏳ api/index: Pending notification suppressed (retry/duplicate) — log only`, { transactionId });
+                        console.log('Pending notification suppressed (retry/duplicate).', { purchaseTokenFingerprint });
                     }
 
                     return res.status(202).json({
@@ -984,12 +997,11 @@ export default async function handler(req, res) {
 
                 if (!playResult.valid) {
                     const failReason = playResult.reason || 'Unknown';
-                    const purchaseTokenFingerprint = typeof purchaseToken === 'string' && purchaseToken.length > 0
-                        ? crypto.createHash('sha256').update(purchaseToken).digest('hex').slice(0, 12)
-                        : null;
+                    const accountHash = billingHash(googleUid || deviceId || 'anonymous');
+                    const accountReference = accountHash.slice(0, 12);
                     console.error(`❌ api/index: Authoritative verification FAILED for purchase`, {
                         productId,
-                        transactionId,
+                        accountReference,
                         device: maskDeviceId(deviceId),
                         user: maskDeviceId(googleUid || 'anonymous'),
                         hasPurchaseToken: typeof purchaseToken === 'string' && purchaseToken.length > 0,
@@ -999,16 +1011,12 @@ export default async function handler(req, res) {
                         timestamp: new Date().toISOString()
                     });
 
-                    // Send payment failed notification email with EXACT reason
-                    await sendPaymentNotification('payment_failed', {
-                        transactionId,
-                        deviceId: maskDeviceId(deviceId),
-                        googleUid: googleUid || 'Anonymous',
-                        error: 'PURCHASE_NOT_VALID',
-                        details: `Google Play verification failed: ${failReason}`
-                    }).catch(e => console.warn('Failed to send failure notification:', e));
+                    const idempotencyKey = reserveFailureAlert(tokenHash, accountHash, Date.now());
+                    if (idempotencyKey) {
+                        await sendPaymentNotification('payment_failed', { accountReference, idempotencyKey });
+                    }
 
-                    // LOG FAILURE TO DB with exact reason
+                    // Keep audit evidence private; logs and alerts use fingerprints only.
                     if (transactionId) {
                         await supabase.from('purchase_transactions').insert([{
                             transaction_id: transactionId,
@@ -1031,7 +1039,7 @@ export default async function handler(req, res) {
 
                 console.log(`✅ api/index: Purchase verified successfully with Google Play`, {
                     productId,
-                    transactionId,
+                    purchaseTokenFingerprint,
                     timestamp: new Date().toISOString()
                 });
 
@@ -1062,7 +1070,7 @@ export default async function handler(req, res) {
                         if (auditInsert.error) {
                             if (auditInsert.error.code === '23505') {
                                 // UNIQUE constraint violation - transaction already processed
-                                console.log(`ℹ️ Duplicate transaction detected (already processed): ${transactionId}`);
+                                console.log('Duplicate purchase transaction detected.', { purchaseTokenFingerprint });
                                 return res.status(409).json({
                                     error: 'DUPLICATE_TRANSACTION',
                                     details: 'This purchase has already been verified.',
@@ -1070,15 +1078,11 @@ export default async function handler(req, res) {
                                 });
                             } else {
                                 // Other database error
-                                console.error(`❌ CRITICAL: Audit log insertion failed:`, auditInsert.error);
-                                // Send critical alert
-                                await sendPaymentNotification('payment_failed', {
-                                    transactionId,
-                                    deviceId: maskDeviceId(deviceId),
-                                    googleUid: googleUid || 'Anonymous',
-                                    error: 'AUDIT_INSERT_FAILED',
-                                    details: `Database error: ${auditInsert.error.message}`
-                                }).catch(e => console.warn('Failed to send failure notification:', e));
+                                console.error('Purchase audit insertion failed.', { purchaseTokenFingerprint });
+                                await sendPaymentNotification('payment_audit_failed', {
+                                    purchaseReference: purchaseTokenFingerprint,
+                                    idempotencyKey: `payment-audit-failed/${tokenHash}`
+                                });
                                 return res.status(500).json({
                                     error: 'AUDIT_FAILED',
                                     details: 'Failed to record transaction in audit log'
@@ -1092,7 +1096,7 @@ export default async function handler(req, res) {
                     if (targetTier) {
                         console.log(`🛡️ GRANTING ${targetTier.toUpperCase()} STATUS`, {
                             productId,
-                            transactionId,
+                            purchaseTokenFingerprint,
                             device: maskDeviceId(deviceId),
                             user: maskDeviceId(googleUid || 'anonymous')
                         });
@@ -1101,7 +1105,7 @@ export default async function handler(req, res) {
                             [{ device_id: deviceId, tier: targetTier }],
                             { onConflict: 'device_id' }
                         );
-                        console.log('✅ Device usage updated:', { error: usageUpdate.error });
+                        console.log('Purchase device update finished.', { failed: !!usageUpdate.error });
 
                         // Always resolve the google_uid — use session.uid first, fall back to
                         // ag_user_usage lookup. Fixes timing gap where session.uid is null at
@@ -1128,7 +1132,7 @@ export default async function handler(req, res) {
                                 tier: targetTier,
                                 purchase_token: purchaseToken
                             }).eq('google_uid', uidToSync);
-                            console.log('✅ User account updated:', { error: accountUpdate.error, uid: uidToSync });
+                            console.log('Purchase account update finished.', { failed: !!accountUpdate.error });
                         } else {
                             console.warn('⚠️ No google_uid available — user_accounts not updated. Manual grant may be needed.');
                         }
@@ -1145,7 +1149,7 @@ export default async function handler(req, res) {
 
                     console.log(`✅✅✅ PURCHASE COMPLETE AND GRANTED`, {
                         productId,
-                        transactionId,
+                        purchaseTokenFingerprint,
                         tier: targetTier,
                         device: maskDeviceId(deviceId),
                         user: maskDeviceId(googleUid || 'anonymous'),
@@ -1154,15 +1158,15 @@ export default async function handler(req, res) {
 
                     // Send payment success notification email
                     await sendPaymentNotification('payment_success', {
-                        transactionId,
+                        purchaseReference: purchaseTokenFingerprint,
                         deviceId: maskDeviceId(deviceId),
                         googleUid: googleUid || 'Anonymous'
                     }).catch(e => console.warn('Failed to send success notification:', e));
 
                     return res.status(200).json({ success: true, verified: true, tier: targetTier, creditsAdded: creditsToAdd });
 
-                } catch (err) {
-                    console.error("Purchase Processing Error:", err);
+                } catch {
+                    console.error('Purchase processing failed.', { purchaseTokenFingerprint });
                     return res.status(500).json({ error: "Purchase grant failed" });
                 }
             }
@@ -1187,8 +1191,7 @@ export default async function handler(req, res) {
                 console.log(`☢️ ADMIN FORCE SYNC INITIATED by ${maskDeviceId(session.uid)}`, {
                     targetDeviceId: maskDeviceId(targetDeviceId),
                     targetGoogleUid: maskDeviceId(targetGoogleUid),
-                    productId,
-                    transactionId
+                    productId: VALID_PRODUCTS.has(productId) ? productId : 'other'
                 });
 
                 // Step 1: Verify with Google Play (REQUIRED - we don't bypass this)
@@ -1212,7 +1215,7 @@ export default async function handler(req, res) {
                     }]);
 
                     if (auditInsert.error && auditInsert.error.code !== '23505') {
-                        console.error('Admin Force Sync: Audit insert failed:', auditInsert.error);
+                        console.error('Admin Force Sync: Audit insert failed.');
                     }
                 }
 
